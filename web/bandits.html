@@ -196,7 +196,77 @@
       </div>
     </div>
   </div>
-</div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Seven agents play the same casino. Each sees only the reward of the machine it pulled, and none is trained: every run starts from scratch and learns from rewards alone. The page runs a JavaScript port of the Python agents, which reproduces the same pulls for a given seed.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>The casino and regret</h3>
+      <p class="hiw-plain"><b>New to this?</b> A slot machine pays out with a hidden chance. Pull one and you learn about that machine only. Pulling the machine that has paid best so far earns now, but a machine you have barely tried may be better. That tension is the whole problem.</p>
+      <p>The benchmark casino has 5 machines. Bernoulli machines pay 1 with a hidden probability p, otherwise 0. Gaussian machines pay their mean plus noise with sigma 0.2. Drifting machines are Bernoulli, but every 500 pulls all their probabilities are redrawn. Each mean is drawn uniformly from [0.1, 0.9], and redrawn until the best machine leads the second best by at least 0.05.</p>
+      <p>Regret is the reward given up. Each pull adds (best mean minus the mean of the machine pulled), so it measures expected loss, not the luck of one pull. Every agent on a seed faces the same outcomes: each machine's reward for each pull is rolled once.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy and epsilon-greedy</h3>
+      <p class="hiw-plain"><b>New to this?</b> Greedy always takes the machine with the best average so far. Epsilon-greedy does the same most of the time, but on a fixed share of pulls it picks a machine at random, so it keeps learning about the rest.</p>
+      <p>Greedy locks onto whichever machine looked good early. Epsilon-greedy with a fixed epsilon pulls a uniformly random machine with probability 0.1. The decaying version uses epsilon_t = min(1, K / t), where K is the number of machines, so random pulls become rarer as t grows. Greedy, both epsilon-greedy versions and UCB1 begin with a forced round: each machine is pulled once before any average is used.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>UCB1 (optimism)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Give each machine the benefit of the doubt. Its score is its average plus a bonus for how little has been tried. A machine pulled only a few times gets a big bonus and is tried again, and the bonus shrinks as evidence builds up.</p>
+      <p>Each pull picks the machine with the largest mean + sigma × sqrt(2 ln t / n), where t is the pull number, n the machine's pulls so far, and sigma the reward scale: 1 for Bernoulli machines, 0.2 for Gaussian ones. This is the bound of Auer, Cesa-Bianchi and Fischer (2002).</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Thompson sampling</h3>
+      <p class="hiw-plain"><b>New to this?</b> Keep a belief about each machine's payout. Each turn, draw one plausible payout for every machine from those beliefs and pull the machine with the highest draw. A machine you are unsure about sometimes draws high, so it gets pulled. Once you know a machine well, it is pulled about as often as it is likely to be the best.</p>
+      <p>Bernoulli machines have a Beta(1 + wins, 1 + losses) posterior, starting from a uniform Beta(1, 1) prior. Gaussian machines have a normal posterior for the mean, with a N(0, 1) prior and sigma 0.2: precision = 1 + n / 0.04, mean = (sum / 0.04) / precision, standard deviation = 1 / sqrt(precision). Thompson has no forced round, so its first draws come from the prior.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>EXP3 and sliding-window UCB</h3>
+      <p class="hiw-plain"><b>New to this?</b> EXP3 keeps a score per machine, raises the scores of machines that pay, and picks machines in proportion to their scores, with a little uniform mixing so none is shut out. Sliding-window UCB is UCB1 that forgets: it counts only the last 200 pulls, so when a payout changes, the old evidence expires.</p>
+      <p>EXP3 mixes the weights into probabilities p_i = (1 − gamma) w_i / sum(w) + gamma / K. After each pull it multiplies the pulled machine's weight by exp(gamma · (reward / p_i) / K), dividing by p_i so the estimate is unbiased, and rescales the weights by their maximum. It makes no statistical assumption about the payouts. Sliding-window UCB scores each machine by its mean over the window plus sigma × sqrt(xi · ln(min(t, W)) / n_window), with W = 200 and xi = 0.6. A machine with no pulls in the window is tried first.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The Lai-Robbins floor</h3>
+      <p class="hiw-plain"><b>New to this?</b> Lai and Robbins (1985) showed that an agent which keeps pulling the best machine most of the time must have regret of at least about c × ln T on fixed machines. The c grows when machines are close together, because close machines are hard to tell apart.</p>
+      <p>For Bernoulli arms, c = sum over suboptimal arms of gap / KL(p_i ‖ p*). For Gaussian arms with sigma 0.2, each arm contributes 2 sigma² / gap. Averaged over the benchmark's machine sets, c = 7.342 for Bernoulli (a floor of 67.6 at T = 10,000) and 1.448 for Gaussian (13.3 at T = 10,000). It is an asymptotic bound, not a guarantee at one horizon: Thompson and UCB1 on Gaussian machines, and Thompson on Bernoulli machines, finish below it at T = 10,000.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
+    <tr><td>Machines K</td><td>5 in the benchmark; the page offers 2 to 10</td><td>all</td></tr>
+    <tr><td>Pulls T</td><td>10,000 in the benchmark; the page offers 100, 300 (default) and 1,000</td><td>all</td></tr>
+    <tr><td>Machine means</td><td>Uniform in [0.1, 0.9], redrawn until the best leads the second by at least 0.05</td><td>all</td></tr>
+    <tr><td>Gaussian noise sigma</td><td>0.2</td><td>Gaussian casino; scale of the UCB bonus and Thompson posterior</td></tr>
+    <tr><td>Drift period</td><td>500 pulls (all probabilities redrawn)</td><td>drifting casino</td></tr>
+    <tr><td>Epsilon, fixed</td><td>0.1</td><td>epsilon-greedy</td></tr>
+    <tr><td>Epsilon, decaying</td><td>min(1, K / t), K = number of machines</td><td>epsilon-greedy decaying</td></tr>
+    <tr><td>UCB1 bonus</td><td>sqrt(2 ln t / n) × sigma</td><td>UCB1</td></tr>
+    <tr><td>Thompson prior</td><td>Beta(1, 1); N(0, 1) on the mean for Gaussian machines</td><td>Thompson</td></tr>
+    <tr><td>EXP3 gamma</td><td>min(1, sqrt(K ln K / ((e − 1) T))). With K = 5: 0.0216 at T = 10,000, 0.0684 at T = 1,000, 0.125 at T = 300</td><td>EXP3</td></tr>
+    <tr><td>Window W</td><td>200 pulls</td><td>sliding-window UCB</td></tr>
+    <tr><td>Window bonus xi</td><td>0.6</td><td>sliding-window UCB</td></tr>
+    <tr><td>Seeds</td><td>0 to 99 in the benchmark; the page takes any seed</td><td>all</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The casino constants (means in [0.1, 0.9], a 0.05 gap, sigma 0.2, a 500-pull drift period, 5 machines) were set by hand so the demonstration is clear. The gap keeps the best machine identifiable. Epsilon 0.1, the decay form K / t, the UCB1 constant 2, and Thompson's uniform prior are standard choices and were not swept. EXP3's gamma is the tuning Auer et al. give for a known horizon, so it depends on T. The window of 200 and xi = 0.6 are fixed picks; the code marks xi as not tuned. No parameter sweep is committed for any agent.</p>
+
+  <h3 class="hiw-sub">Results on fixed seeds</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Bernoulli</th><th class="num">Gaussian</th><th class="num">Drifting</th></tr></thead><tbody>
+    <tr><td>Greedy</td><td class="num">679.9 ± 236.0</td><td class="num">202.5 ± 87.1</td><td class="num">2640.1 ± 96.4</td></tr>
+    <tr><td>Epsilon-greedy 0.1</td><td class="num">309.9 ± 19.5</td><td class="num">282.5 ± 16.7</td><td class="num">2316.1 ± 70.2</td></tr>
+    <tr><td>Epsilon-greedy decaying</td><td class="num">161.2 ± 75.3</td><td class="num">58.9 ± 36.3</td><td class="num">2456.0 ± 93.1</td></tr>
+    <tr><td>UCB1</td><td class="num">197.2 ± 9.5</td><td class="num">13.0 ± 1.1</td><td class="num">978.3 ± 51.8</td></tr>
+    <tr><td>Thompson sampling</td><td class="num">35.6 ± 4.1</td><td class="num">9.0 ± 0.8</td><td class="num">2058.8 ± 72.4</td></tr>
+    <tr><td>EXP3</td><td class="num">not run</td><td class="num">not run</td><td class="num">2558.0 ± 64.1</td></tr>
+    <tr><td>Sliding-window UCB (W = 200)</td><td class="num">not run</td><td class="num">not run</td><td class="num">950.5 ± 8.4</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Cumulative regret at T = 10,000, mean ± 95% half-width over 100 seeds. Lower is better. On drifting machines, sliding-window UCB (950.5) and UCB1 (978.3) do best, because they follow the redraws; Thompson's posteriors never forget, so it falls to about the level of greedy. The Lai-Robbins floor is 67.6 (Bernoulli) and 13.3 (Gaussian) at this horizon.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py">bandits/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py">bandits/env.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/sim.py">bandits/sim.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/benchmark.py">bandits/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py">bandits/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/bandits-core.js">web/js/bandits-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.md">results/bandits_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.json">results/bandits_benchmark.json</a></p>
+</section>
+  </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>

@@ -275,6 +275,71 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Four agents try to place N queens on an N × N board so that no two attack each other. Backtracking is exhaustive, so it can prove that no answer exists. The other three are local search: they start from a board with conflicts and move queens to reduce them, with no proof of anything. Min-conflicts is the one that scales: in the benchmark it solved a 1,000,000-queen board in one run of 13.6 s.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>The problem and the conflict count</h3>
+      <p class="hiw-plain"><b>New to this?</b> On a chessboard, a queen captures along its row, column and diagonals. The puzzle asks for N queens placed so none can capture another. Random placements almost never work for large N, so the agents have to search with some sense of direction.</p>
+      <p>The board keeps one queen per row, so only columns and diagonals can clash. A conflict is a pair of queens sharing a column or a diagonal. Three count arrays hold the number of queens on each column and each diagonal, so the change in conflicts from moving one queen is an O(1) lookup. A line holding k queens has C(k, 2) conflicting pairs, and a solution has zero.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Backtracking with bitmasks</h3>
+      <p class="hiw-plain"><b>New to this?</b> Place queens one row at a time. If a row has no safe square, take back the queen above and try its next square. It is slow on big boards, but every partial board it keeps is conflict-free, and when it finishes it has either a solution or a proof that none exists.</p>
+      <p>For each row, three n-bit masks mark the columns already taken and the two diagonals hit by queens above. The open squares are full &amp; ~(cols | ld | rd), and the lowest open bit is tried first. The search is iterative, so a board of 10,000 rows does not overflow Python's recursion limit. Being exhaustive, it reports "exhausted" when no solution exists, as it does for N = 2 and 3.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Steepest-ascent hill climbing</h3>
+      <p class="hiw-plain"><b>New to this?</b> Look at every single queen move and take the one that removes the most conflicts. When no move helps, the search is in a dip or on a flat plateau, so it tips the board over and starts again from a random placement.</p>
+      <p>Each step scores every move (each row against each column), which is N × N squares, and plays one of the best, ties broken at random. Sideways moves are not allowed. A restart counts as a step and as a restart. The run stops when it solves the board or reaches its time cap.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Simulated annealing</h3>
+      <p class="hiw-plain"><b>New to this?</b> Like a metal cooling into shape. Propose a random queen move. An improvement is always accepted. A worse move is sometimes accepted, and less often as the temperature falls. While hot the search can climb out of a dip, and once cold it settles.</p>
+      <p>A proposal moves one random queen to another random column. Its change in conflicts is d. A move with d ≤ 0 is always taken; an uphill move is taken with probability exp(−d / T). The temperature falls geometrically from T = 2.0 to 0.05 over a run of max(200, 60 N) proposals. A run that ends unsolved restarts from a random placement at T = 2.0.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Min-conflicts</h3>
+      <p class="hiw-plain"><b>New to this?</b> Pick a queen that is under attack, lift it, and set it down in the square in its row with the fewest attacks. Repeat until nothing is attacked. Each repair scores the columns of one row, so it stays cheap even on enormous boards.</p>
+      <p>The start is greedy: each row tries up to 4,096 random unused columns and keeps the first with no attacks, or else the least attacked one. Each repair then picks a conflicted queen uniformly at random, removes it, scores every column in its row, and moves the queen to a least-attacked column, ties broken at random (the current column can win). If the conflict count has not reached a new low for max(200, 20 N) repairs, the run restarts from a fresh greedy start.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
+    <tr><td>Queens per row</td><td>Exactly 1 (conflicts are columns and diagonals only)</td><td>all</td></tr>
+    <tr><td>Column order</td><td>Lowest open column first</td><td>backtracking</td></tr>
+    <tr><td>Move choice</td><td>Best move; ties at random; no sideways moves; restart at a local minimum</td><td>hill climbing</td></tr>
+    <tr><td>Start and end temperature</td><td>T0 = 2.0, T1 = 0.05, geometric cooling</td><td>annealing</td></tr>
+    <tr><td>Run length</td><td>max(200, 60 N) proposals, then restart</td><td>annealing</td></tr>
+    <tr><td>Step cap (default)</td><td>10,000,000 proposals</td><td>annealing</td></tr>
+    <tr><td>Greedy start tries</td><td>4,096 random unused columns per row</td><td>min-conflicts</td></tr>
+    <tr><td>Random rows before a full scan</td><td>4,000 tries, then one vectorised pass over all rows</td><td>min-conflicts</td></tr>
+    <tr><td>Restart rule</td><td>No new low in max(200, 20 N) repairs</td><td>min-conflicts</td></tr>
+    <tr><td>Benchmark caps</td><td>Time cap of 5 to 120 s per run, by agent and size; backtracking also a 2,000,000-step cap</td><td>benchmark</td></tr>
+    <tr><td>Benchmark seeds</td><td>From 1000; trial i uses seed 1000 + i for every agent</td><td>benchmark</td></tr>
+    <tr><td>Server time budget</td><td>2.0 s of CPU per request</td><td>server</td></tr>
+    <tr><td>Largest N served</td><td>Backtracking 64; hill climbing 100; annealing 2,000; min-conflicts 10,000</td><td>server</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The annealing temperatures (2.0 down to 0.05) and run length (60 N, with a floor of 200) are fixed choices, not tuned. Cooling is geometric, so every run spends the same factor of temperature. The greedy start's 4,096 tries and the rejection threshold of 4,000 favour speed. The docstring records that the greedy start leaves about 10 conflicts at every size from 1,000 to 1,000,000 queens, and that repairs then take 26 to 87 steps. The restart rule max(200, 20 N) is also a fixed choice. The server's largest sizes are the ones a request can finish within its 2-second budget, not benchmark results. No parameter sweep is committed for any agent.</p>
+
+  <h3 class="hiw-sub">Results on fixed seeds</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>N</th><th>Backtracking</th><th>Hill climbing</th><th>Annealing</th><th>Min-conflicts</th></tr></thead><tbody>
+    <tr><td>8</td><td>1 of 1 solved, 218 steps</td><td>200 of 200, 22 steps</td><td>200 of 200, 778 steps</td><td>200 of 200, 24 steps</td></tr>
+    <tr><td>16</td><td>1 of 1, 20,088 steps</td><td>100 of 100, 170 steps</td><td>100 of 100, 13,420 steps</td><td>200 of 200, 44 steps</td></tr>
+    <tr><td>32</td><td>0 of 1 (step cap)</td><td>30 of 30, 1,024 steps</td><td>30 of 30, 712,202 steps</td><td>100 of 100, 44 steps</td></tr>
+    <tr><td>128</td><td>0 of 1 (step cap)</td><td>0 of 3 (time cap)</td><td>0 of 5 (time cap)</td><td>100 of 100, 52 steps</td></tr>
+    <tr><td>1,000</td><td>0 of 1 (step cap)</td><td>0 of 2 (time cap)</td><td>0 of 3 (time cap)</td><td>50 of 50, 54 steps</td></tr>
+    <tr><td>10,000</td><td>0 of 1 (step cap)</td><td>not run</td><td>0 of 2 (step cap)</td><td>20 of 20, 56 steps</td></tr>
+    <tr><td>100,000</td><td>not run</td><td>not run</td><td>not run</td><td>3 of 3, 116 steps</td></tr>
+    <tr><td>1,000,000</td><td>not run</td><td>not run</td><td>not run</td><td>1 of 1, 47 steps (13.6 s)</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Steps are each agent's own unit: placements and retreats for backtracking, moves played for hill climbing (restarts included), proposals for annealing, and repairs for min-conflicts. The shared work measure is candidate squares scored. At 16 queens the medians are 10,052 for backtracking, 43,392 for hill climbing, 13,420 for annealing and 9,976 for min-conflicts. Hill climbing at 10,000 queens was not run, because one step would score 10^8 squares. Medians are over solved runs, from the committed benchmark.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py">queens/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py">queens/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/benchmark.py">queens/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/queens_api.py">server/queens_api.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/queens.js">web/js/queens.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.md">results/queens_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.json">results/queens_benchmark.json</a></p>
+</section>
 </div>
 </div>
 

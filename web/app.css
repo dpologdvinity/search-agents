@@ -48,7 +48,7 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
 .cmp-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.72rem; }
 .cmp-table th { text-align: left; color: var(--dim); font-weight: 400; border-bottom: 1px solid var(--border); padding: 0.35rem 0.4rem; }
 .cmp-table td { padding: 0.35rem 0.4rem; border-bottom: 1px solid rgba(0,245,255,0.07); }
-.cmp-table td.num { text-align: right; }
+.cmp-table td.num, .cmp-table th.num { text-align: right; }
 .cmp-table tr.best td { color: var(--green); }
 .cmp-bar { height: 6px; background: linear-gradient(90deg, var(--cyan), var(--purple)); box-shadow: 0 0 6px var(--cyan); }
 .status-solved { color: var(--green); }

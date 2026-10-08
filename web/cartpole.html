@@ -158,7 +158,7 @@
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">ACTOR-CRITIC</div>
-            <div class="field-hint">A second network predicts the return V(s). The advantage is the surprise: reward plus the next value minus the current value. The policy learns from surprise rather than from full returns.</div>
+            <div class="field-hint">A second network predicts the return V(s) from each situation. The advantage is the return actually earned minus V(s), so the policy learns from how much better or worse the episode went than the critic expected. The critic is trained on full Monte Carlo returns.</div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CROSS-ENTROPY SEARCH</div>
@@ -168,7 +168,87 @@
       </div>
     </div>
   </div>
-</div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Five agents balance the same pole. A random coin flip sets the floor. A PD controller is hand-tuned. Three agents learn from reward alone, in NumPy with hand-written gradients: REINFORCE with a baseline, actor-critic, and a cross-entropy search. The two gradient-trained policies are small networks with one hidden layer of 16 tanh units; the cross-entropy rule is a single linear function of the state.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>The physics</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture balancing a broom upright on your palm. You move your hand under the top of the broom before it tips. Here the cart is the hand and the pole is the broom.</p>
+      <p>The cart slides on a track and a pole hangs from a hinge on it. Every 0.02 s the agent pushes the cart left or right with a fixed force of 10 N. These are the classic cart-pole equations, with the constants of gym's CartPole: gravity 9.8 m/s², cart mass 1.0 kg, pole mass 0.1 kg, pole half-length 0.5 m. Each step is integrated by explicit Euler. The episode ends when |θ| &gt; 12° or |x| &gt; 2.4 m, and is cut off at 500 steps. Every step gives reward 1, so the return is the number of steps balanced. Each starting state variable is uniform in [−0.05, 0.05].</p>
+    </article>
+    <article class="hiw-card">
+      <h3>PD controller (hand-tuned)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A PD controller corrects an error in proportion to how far off you are (the P) and how fast it is changing (the D). Like a thermostat that pushes back harder the further and faster the room drifts.</p>
+      <p>No learning. Each step it computes u = 30·θ + 6·θ̇ + 0.1·x + 0.5·ẋ and pushes right when u &gt; 0, left otherwise. The first two terms keep the pole upright, and the last two steer the cart back toward the middle of the track.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>REINFORCE with a baseline</h3>
+      <p class="hiw-plain"><b>New to this?</b> Play episodes with mostly random actions. In episodes that lasted long, the actions taken become a little more likely; in short episodes they become less likely. Each episode is judged against the batch average, so only better-than-average luck moves the policy.</p>
+      <p>The policy is a network 4 → 16 → 2: scaled state values, 16 tanh units, and a softmax over left and right. Each update uses 8 sampled episodes. The return G_t is the discounted sum of future rewards with γ = 0.99. The baseline is the batch mean of G, and the advantage is (G − mean) / std over the batch. The gradients are written out by hand and Adam, at learning rate 0.01, takes the step. The output layer starts scaled by 0.1, so the first policy is close to 50/50.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Actor-critic (Monte Carlo critic)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A second network learns to predict, from each situation, how well the episode will go (its value). An action is then judged by whether the outcome beat that prediction, instead of the batch average.</p>
+      <p>The critic is 4 → 16 → 1 and predicts V / 50. It is trained toward the Monte Carlo return G_t with squared error, on the same batch of 8 episodes, with Adam at 0.01. The actor's advantage is G_t − V(s_t), divided by 50. The textbook alternative bootstraps from the critic's own estimate: target r + 0.99 · V(s′). That TD(0) version did not learn reliably in our pilot runs, so the shipped critic regresses onto Monte Carlo returns.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Cross-entropy search</h3>
+      <p class="hiw-plain"><b>New to this?</b> Try many candidate rules, keep the best quarter, and make the next batch of candidates resemble those winners. Repeat. No gradients are involved.</p>
+      <p>The rule is linear: push right when w · x + b &gt; 0, where x is the four scaled state values, so there are five numbers. Each generation samples 40 rules from a Gaussian and scores each on one shared start state. The top 10 set the next Gaussian: its mean is their mean, and its spread is their standard deviation plus a 0.01 floor. The search starts at mean 0 and spread 1.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Random (the floor)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A coin flip each step. It sets the floor that any real controller should beat.</p>
+      <p>Left or right, uniformly at random, every step. It averages 22.5 steps before the pole falls.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
+    <tr><td>Gravity, cart and pole mass, pole half-length</td><td>9.8 m/s²; 1.0 kg; 0.1 kg; 0.5 m</td><td>physics</td></tr>
+    <tr><td>Push force, time step</td><td>10 N; 0.02 s, explicit Euler</td><td>physics</td></tr>
+    <tr><td>Fall limits, step cap</td><td>|θ| &gt; 12°, |x| &gt; 2.4 m; 500 steps</td><td>physics</td></tr>
+    <tr><td>Start state</td><td>Each variable uniform in [−0.05, 0.05]</td><td>all</td></tr>
+    <tr><td>Input scaling</td><td>x ÷ 2.4; θ ÷ 0.2094 rad (12°); ẋ and θ̇ ÷ 2</td><td>networks, CEM</td></tr>
+    <tr><td>PD gains (θ, θ̇, x, ẋ)</td><td>30, 6, 0.1, 0.5</td><td>PD controller</td></tr>
+    <tr><td>Hidden units</td><td>16 tanh per network</td><td>REINFORCE, actor-critic</td></tr>
+    <tr><td>Output scale at start</td><td>0.1 (policy); 1.0 (critic)</td><td>REINFORCE, actor-critic</td></tr>
+    <tr><td>Discount γ</td><td>0.99</td><td>REINFORCE, actor-critic</td></tr>
+    <tr><td>Episodes per update</td><td>8</td><td>REINFORCE, actor-critic</td></tr>
+    <tr><td>Adam</td><td>Learning rate 0.01 for policy and critic; betas 0.9 and 0.999; eps 1e-8</td><td>REINFORCE, actor-critic</td></tr>
+    <tr><td>Critic output scale</td><td>50 (the critic predicts V / 50)</td><td>actor-critic</td></tr>
+    <tr><td>CEM population, elite, noise floor</td><td>40 rules per generation; the best 10; 0.01</td><td>CEM</td></tr>
+    <tr><td>CEM start</td><td>Mean 0, spread 1 for each of the 5 numbers</td><td>CEM</td></tr>
+    <tr><td>Training</td><td>Seeds 0 to 4, 1,500 episodes each</td><td>trained agents</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The physics uses the standard constants and is not tuned. The PD gains were set by hand after a coarse sweep over tuning seeds 9000 to 9099; that sweep is not in the repository. The network width (16), batch size (8), learning rate (0.01 for both networks), discount (0.99), critic scale (50, so the critic's output stays near 1 when values approach 100) and CEM settings (40, 10, 0.01) are single hand-picked values. No sweep over them is committed. The one comparison on record is the actor-critic target: TD(0) variants were tried while tuning, and the Monte Carlo target was kept (table in cartpole/__main__.py).</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">REINFORCE, actor-critic and CEM were each trained on seeds 0 to 4 for 1,500 episodes. Training episodes are sampled, not greedy. The shipped weights are the seed whose last 50 training episodes averaged highest, as recorded in results/cartpole_learning.md: REINFORCE seed 2, actor-critic seed 0, CEM seed 0. The table gives the first training episode at which the trailing 100-episode mean reached 475.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Seed</th><th class="num">REINFORCE</th><th class="num">Actor-critic</th><th class="num">CEM</th></tr></thead><tbody>
+    <tr><td>0</td><td class="num">376</td><td class="num">344</td><td class="num">391</td></tr>
+    <tr><td>1</td><td class="num">384</td><td class="num">381</td><td class="num">388</td></tr>
+    <tr><td>2</td><td class="num">408</td><td class="num">370</td><td class="num">528</td></tr>
+    <tr><td>3</td><td class="num">478</td><td class="num">347</td><td class="num">299</td></tr>
+    <tr><td>4</td><td class="num">377</td><td class="num">382</td><td class="num">329</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The TD(0) pilots are recorded as configurations in cartpole/__main__.py. Across the five configurations tried, at most one of five seeds ended with a last-50 mean of 475 or more, so the TD(0) critic did not learn reliably and was not shipped. The in-browser REINFORCE trainer uses the same equations (batch 8, γ 0.99, learning rate 0.01, batch-normalised advantages) with its own random stream, so its runs will not match the Python seeds.</p>
+
+  <h3 class="hiw-sub">Results on fixed seeds</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Mean steps</th><th class="num">95% CI</th><th class="num">Reached 500</th></tr></thead><tbody>
+    <tr><td>Random</td><td class="num">22.5</td><td class="num">±1.6</td><td class="num">0.0%</td></tr>
+    <tr><td>PD controller</td><td class="num">500.0</td><td class="num">±0.0</td><td class="num">100.0%</td></tr>
+    <tr><td>REINFORCE + baseline</td><td class="num">500.0</td><td class="num">±0.0</td><td class="num">100.0%</td></tr>
+    <tr><td>Actor-critic</td><td class="num">500.0</td><td class="num">±0.0</td><td class="num">100.0%</td></tr>
+    <tr><td>Cross-entropy search</td><td class="num">500.0</td><td class="num">±0.0</td><td class="num">100.0%</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">200 episodes per agent at seeds 10000 to 10199, which no training run used, with a 500-step cap. Learned policies act greedily (argmax). The benchmark saturates: every learned agent balances all 200 episodes, so the training table above is what separates them.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py">cartpole/env.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py">cartpole/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py">cartpole/nets.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py">cartpole/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/benchmark.py">cartpole/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py">cartpole/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js">web/js/cartpole.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/cartpole_benchmark.md">results/cartpole_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/cartpole_learning.md">results/cartpole_learning.md</a></p>
+</section>
+  </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
