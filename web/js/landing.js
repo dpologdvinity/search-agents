@@ -414,8 +414,35 @@ function checkersSim(ctx, S) {
   };
 }
 
+function routesSim(ctx, S) {
+  // Simulated annealing on 18 random cities: random segment reversals,
+  // accepting worse routes with probability exp(-delta / T) as T cools.
+  let pts, tour, T, hold;
+  const d = (a, b) => Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
+  const reset = () => {
+    pts = Array.from({ length: 18 }, () => [0.08 + Math.random() * 0.84, 0.08 + Math.random() * 0.84]);
+    tour = [...pts.keys()].sort(() => Math.random() - 0.5); T = 0.3; hold = 0;
+  };
+  reset();
+  return (speed) => {
+    for (let k = 0; k < 40 * speed; k++) {
+      const n = tour.length, i = 1 + rand(n - 2), j = i + 1 + rand(n - 1 - i);
+      const a = tour[i - 1], b = tour[i], c = tour[j], e = tour[(j + 1) % n];
+      const delta = d(a, c) + d(b, e) - d(a, b) - d(c, e);
+      if (delta < 0 || Math.random() < Math.exp(-delta / T)) tour.splice(i, j - i + 1, ...tour.slice(i, j + 1).reverse());
+      T *= 0.9995;
+    }
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    ctx.save(); ctx.strokeStyle = C.green; ctx.shadowColor = C.green; ctx.shadowBlur = 10; ctx.lineWidth = 2;
+    ctx.beginPath(); tour.forEach((i, k) => (k ? ctx.lineTo(pts[i][0] * S, pts[i][1] * S) : ctx.moveTo(pts[i][0] * S, pts[i][1] * S)));
+    ctx.closePath(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = C.yellow; pts.forEach(([x, y]) => ctx.fillRect(x * S - 3, y * S - 3, 6, 6));
+    if (T < 0.002 && (hold += speed) > 120) reset();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, g2048: g2048Sim, sudoku: sudokuSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

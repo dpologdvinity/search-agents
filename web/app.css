@@ -247,3 +247,13 @@ body:not(.landing-page)::before { z-index: 0; }
   .ck-piece.king::after { font-size: 1rem; }
   .prune-meter { grid-template-columns: 1fr; }
 }
+
+/* Route planner */
+.rt-map { width: min(640px, 100%); aspect-ratio: 1; border: 2px solid var(--green); box-shadow: 0 0 28px rgba(0,255,136,0.3); cursor: crosshair; }
+.rt-chart { width: 100%; height: 190px; display: block; }
+.rt-race { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
+.rt-race figure { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.rt-race canvas { width: 100%; aspect-ratio: 1; border: 1px solid var(--border); }
+.rt-race figcaption { font-family: var(--mono); font-size: 0.68rem; color: var(--dim); text-align: center; }
+#btn-draw[aria-pressed="true"] { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 16px rgba(255,0,160,0.5); }
+@media (max-width: 600px) { .rt-race { grid-template-columns: 1fr; } }
