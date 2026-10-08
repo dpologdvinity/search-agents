@@ -5,8 +5,9 @@ The Q-value of an action is a weighted sum of features of the position it leads 
 f describes the position right after Pac-Man's move and before the ghosts move, which
 is the moment he has to decide with. The features are chosen so a linear model can
 express the trade-offs that matter: eat pellets and power pellets, stay away from
-active ghosts, chase scared ghosts, and avoid dead ends. The weights are learned, so
-nothing here encodes how strongly each feature should count.
+active ghosts, chase scared ghosts, avoid dead ends, and keep clear of traps that only
+show up a few turns later (the survival feature, see lookahead.py). The weights are
+learned, so nothing here encodes how strongly each feature should count.
 
 Distances are walking distances from the destination cell (one BFS), so walls and
 corridors count the way they do for a ghost.
@@ -16,7 +17,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .engine import State
+from .engine import State, legal_actions
+from .lookahead import SURVIVAL_HORIZON, survival_depths
 from .mazes import NO_CELL
 from .search import UNREACHABLE, distances
 
@@ -33,6 +35,7 @@ FEATURE_NAMES = (
     "eat_ghost",
     "openness",
     "trap",
+    "survival",
 )
 FEATURE_DOCS = {
     "bias": "constant 1; learns the typical value of a turn",
@@ -47,6 +50,7 @@ FEATURE_DOCS = {
     "eat_ghost": "1 if the move lands on a scared ghost",
     "openness": "open neighbours of the destination / 4 (low values are dead ends)",
     "trap": "ghost_near * (1 - openness): a ghost closing in on a dead end",
+    "survival": "turns Pac-Man stays alive after the move if the ghosts move as they really do, / 6",
 }
 GHOST_RANGE = 6
 SCARED_RANGE = 8
@@ -105,8 +109,8 @@ def _scaled_distance(d: int | None) -> float:
     return 0.0 if d is None or d == UNREACHABLE else d / DISTANCE_SCALE
 
 
-def features_of(s: Successor) -> tuple[float, ...]:
-    """The feature vector in FEATURE_NAMES order."""
+def features_of(s: Successor, survival: int) -> tuple[float, ...]:
+    """The feature vector in FEATURE_NAMES order. `survival` is the move's survival depth (see lookahead.py)."""
     ghost_near = sum(max(0.0, 1 - d / GHOST_RANGE) for d in s.active)
     return (
         1.0,
@@ -121,9 +125,11 @@ def features_of(s: Successor) -> tuple[float, ...]:
         float(s.eats_ghost),
         s.openness,
         ghost_near * (1 - s.openness),
+        survival / SURVIVAL_HORIZON,
     )
 
 
-def features(state: State, action: int) -> tuple[float, ...]:
-    """f(s, a): the features of taking `action` in `state`."""
-    return features_of(successor(state, action))
+def state_features(state: State) -> dict[int, tuple[float, ...]]:
+    """f(s, a) for every legal action of `state`. The survival search is shared by all of them."""
+    depths = survival_depths(state)
+    return {a: features_of(successor(state, a), depths[a]) for a in legal_actions(state)}

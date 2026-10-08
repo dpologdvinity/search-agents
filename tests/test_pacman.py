@@ -26,8 +26,9 @@ from pacman.engine import (
     legal_actions,
 )
 from pacman.episode import run_episode
-from pacman.features import FEATURE_NAMES, features, successor
+from pacman.features import FEATURE_NAMES, state_features, successor
 from pacman.ghosts import Ghost, choose_move, target_for
+from pacman.lookahead import SURVIVAL_HORIZON, survival_depths
 from pacman.mazes import ACTIONS, LAYOUTS, parse
 from pacman.qlearning import td_update, train
 from pacman.search import astar, distances
@@ -231,22 +232,69 @@ def test_scared_ghost_flees_to_the_farthest_neighbour():
 
 def test_feature_vector_has_one_entry_per_name_and_sane_ranges():
     state = initial_state(mazes.get("lanes"))
-    for a in legal_actions(state):
-        f = features(state, a)
+    feats = state_features(state)
+    assert set(feats) == set(legal_actions(state))
+    for f in feats.values():
         assert len(f) == len(FEATURE_NAMES)
         assert f[0] == 1.0
         assert all(x >= 0 for x in f)
         assert 0.25 <= f[FEATURE_NAMES.index("openness")] <= 1.0
+        assert 0.0 <= f[FEATURE_NAMES.index("survival")] <= 1.0
 
 
 def test_caught_and_adjacent_features_see_the_ghost(monkeypatch):
     m = tiny(monkeypatch, "feat", ["#####", "#PG.#", "#####"])
-    f = features(initial_state(m), E)  # Pac-Man would step onto the ghost
+    f = state_features(initial_state(m))[E]  # Pac-Man would step onto the ghost
     assert f[FEATURE_NAMES.index("caught")] == 1.0
+    assert f[FEATURE_NAMES.index("survival")] == 0.0
     m2 = tiny(monkeypatch, "feat2", ["######", "#P.G##", "######"])
-    f2 = features(initial_state(m2), E)  # Pac-Man would stand one step from the ghost
+    f2 = state_features(initial_state(m2))[E]  # Pac-Man would stand one step from the ghost
     assert f2[FEATURE_NAMES.index("ghost_adjacent")] == 1.0
     assert f2[FEATURE_NAMES.index("caught")] == 0.0
+
+
+def _brute_survival(game, state, plies):
+    """Reference survival without the memo: try every line of play, return the best survived plies."""
+    if plies == 0 or state.over:
+        return plies
+    best = 0
+    for action in legal_actions(state):
+        game.state = state
+        turn = game.step(action)
+        if "death" not in turn.events:
+            best = max(best, 1 + _brute_survival(game, game.state, plies - 1))
+    return best
+
+
+def _random_midgame_state(turns):
+    """A living position after `turns` random moves, from the first seed whose game is still going."""
+    for seed in range(100):
+        rng = random.Random(seed)
+        game = Game(mazes.get("vault"), seed=seed)
+        for _ in range(turns):
+            game.step(rng.choice(game.legal_actions()))
+        if not game.state.over:
+            return game.state
+    raise AssertionError("no random game survives that long")
+
+
+@pytest.mark.parametrize("turns", [0, 2, 4])
+def test_survival_search_matches_brute_force_on_real_positions(turns):
+    state = _random_midgame_state(turns)
+    reference = Game(state.maze, seed=0)
+    expected = {}
+    for a in legal_actions(state):
+        reference.state = state
+        turn = reference.step(a)
+        expected[a] = 0 if "death" in turn.events else 1 + _brute_survival(reference, reference.state, 3)
+    assert survival_depths(state, horizon=4) == expected
+
+
+def test_survival_depths_cover_every_legal_move_within_the_horizon():
+    state = initial_state(mazes.get("lanes"))
+    depths = survival_depths(state)
+    assert set(depths) == set(legal_actions(state))
+    assert all(0 <= d <= SURVIVAL_HORIZON for d in depths.values())
 
 
 def test_successor_reports_pellet_eating_and_food_distance():

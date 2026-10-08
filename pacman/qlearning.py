@@ -26,8 +26,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from .agents import greedy_action
-from .engine import MAX_TURNS, Game, learning_reward, legal_actions
-from .features import FEATURE_NAMES, features
+from .engine import MAX_TURNS, Game, learning_reward
+from .features import FEATURE_NAMES, state_features
 from .mazes import get
 
 DEFAULT_MAZES = ("lanes", "vault")
@@ -95,7 +95,7 @@ def train(
         step_size = alpha[0] + (alpha[1] - alpha[0]) * (ep / max(1, episodes - 1))
         maze = get(mazes[ep % len(mazes)])
         game = Game(maze, seed=rng.randrange(2**31), max_turns=max_turns)
-        feats_now = {a: features(game.state, a) for a in legal_actions(game.state)}
+        feats_now = state_features(game.state)
         while not game.state.over:
             values = {a: dot(weights, f) for a, f in feats_now.items()}
             if rng.random() < eps:
@@ -107,7 +107,7 @@ def train(
             if game.state.over:
                 next_feats: dict[int, tuple[float, ...]] = {}
             else:
-                next_feats = {a: features(game.state, a) for a in legal_actions(game.state)}
+                next_feats = state_features(game.state)
             update_target = list(next_feats.values())
             td_update(weights, feats_now[action], reward, update_target, step_size, gamma)
             feats_now = next_feats  # features do not depend on weights, so they carry over

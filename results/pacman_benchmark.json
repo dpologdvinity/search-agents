@@ -6,39 +6,39 @@
   ],
   "agents": {
     "q": {
-      "description": "Approximate Q-learning: a linear model scores each move from hand-built features (pellet distance, ghost distance, power pellets). Its weights were learned from self-play.",
+      "description": "Approximate Q-learning: a linear model scores each move from hand-built features (pellet distance, ghost distance, power pellets, and how long the ghosts' real moves let Pac-Man survive). Its weights were learned from self-play.",
       "overall": {
         "games": 400,
-        "win_rate": 0.05,
-        "mean_score": 667.5,
-        "mean_turns": 78.9,
+        "win_rate": 0.6425,
+        "mean_score": 1350.3,
+        "mean_turns": 193.9,
         "outcomes": {
-          "won": 20,
-          "lost": 377,
-          "timeout": 3
+          "won": 257,
+          "lost": 47,
+          "timeout": 96
         }
       },
       "mazes": {
         "lanes": {
           "games": 200,
-          "win_rate": 0.0,
-          "mean_score": 613.0,
-          "mean_turns": 67.6,
+          "win_rate": 0.435,
+          "mean_score": 1218.0,
+          "mean_turns": 235.8,
           "outcomes": {
-            "won": 0,
-            "lost": 198,
-            "timeout": 2
+            "won": 87,
+            "lost": 19,
+            "timeout": 94
           }
         },
         "vault": {
           "games": 200,
-          "win_rate": 0.1,
-          "mean_score": 722.0,
-          "mean_turns": 90.3,
+          "win_rate": 0.85,
+          "mean_score": 1482.5,
+          "mean_turns": 152.1,
           "outcomes": {
-            "won": 20,
-            "lost": 179,
-            "timeout": 1
+            "won": 170,
+            "lost": 28,
+            "timeout": 2
           }
         }
       }

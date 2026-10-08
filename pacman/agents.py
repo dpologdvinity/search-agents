@@ -21,7 +21,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from .engine import State, legal_actions
-from .features import FEATURE_NAMES, Successor, features_of, successor
+from .features import FEATURE_NAMES, Successor, state_features, successor
 
 WEIGHTS_PATH = Path(__file__).parent / "data" / "weights.json"
 
@@ -85,7 +85,7 @@ class QAgent:
 
     def evaluate(self, state: State) -> tuple[dict[int, float], dict[int, tuple[float, ...]]]:
         """Q-value and feature vector for every legal action in `state`."""
-        feats = {a: features_of(successor(state, a)) for a in legal_actions(state)}
+        feats = state_features(state)
         values = {a: sum(w * f for w, f in zip(self.weights, fv, strict=True)) for a, fv in feats.items()}
         return values, feats
 
@@ -134,7 +134,8 @@ AGENTS = ("q", "reflex", "random")
 DESCRIPTIONS = {
     "q": (
         "Approximate Q-learning: a linear model scores each move from hand-built features (pellet "
-        "distance, ghost distance, power pellets). Its weights were learned from self-play."
+        "distance, ghost distance, power pellets, and how long the ghosts' real moves let Pac-Man "
+        "survive). Its weights were learned from self-play."
     ),
     "reflex": "Greedy rule: go for the nearest pellet, but step away from any ghost within two cells.",
     "random": "Picks a legal move at random. The floor that every other agent should beat.",

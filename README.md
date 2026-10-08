@@ -13,7 +13,7 @@ Eleven puzzles and games, each played or solved by a classic AI algorithm: searc
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 | **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
-| **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 12 hand-built features, trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
+| **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 13 hand-built features (one is a six-turn survival search over the ghosts' real moves), trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 | **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
@@ -130,16 +130,18 @@ Seeds 10000-10199, 200 games per maze on two hand-drawn mazes (400 games per age
 
 | Agent | Win rate | Mean score | Mean turns | Won / lost / timeout |
 |---|---|---|---|---|
-| **Approximate Q-learning** | **5.0%** | **667.5** | 78.9 | 20 / 377 / 3 |
+| **Approximate Q-learning** | **64.2%** | **1350.3** | 193.9 | 257 / 47 / 96 |
 | Reflex (greedy nearest pellet, avoids ghosts) | 0.5% | 157.5 | 22.8 | 2 / 395 / 3 |
 | Random | 0.0% | 45.5 | 8.9 | 0 / 400 / 0 |
 
-Per maze: the Q-agent wins 0% on Neon Lanes (mean 613) and 10% on Vault (mean 722).
+Per maze: the Q-agent wins 43.5% on Neon Lanes (mean 1218) and 85.0% on Vault (mean 1483).
 Reflex: 0.5% and 0.5% (means 178 and 137). Random: 0% on both (means 51 and 40).
+
+For comparison, the 12-feature agent this replaced (no survival feature) won 5.0% with a mean of 667.5 on the same seeds. The timeouts are games that reached the 300-turn limit with pellets left: the agent survives them but clears the maze too slowly.
 
 Training: 3000 self-play games, seed 1, alternating the two mazes; step size 0.01 falling
 to 0.001, discount 0.9, exploration 0.3 falling to 0.02. Over the final 25 training games
-(exploration 0.02) it averaged 600 points and won 1 in 25.
+(exploration 0.02) it averaged 852 points and won 5 of them.
 
 ### Warehouse robots: optimal cost without collisions
 
@@ -228,7 +230,7 @@ The engine (`pacman/engine.py`) is a turn-based game: Pac-Man steps first, then 
 
 Ghosts plan with A* (`pacman/search.py`, Manhattan heuristic, unit steps). The chaser targets Pac-Man's cell, the ambusher targets the cell four steps ahead of him, and the scatter ghost chases until it comes within four cells, then retreats to a corner.
 
-The learned agent scores each legal move as `Q(s, a) = w · f(s, a)`, where `f` holds twelve hand-built features of the position after the move: pellet and power-pellet eating, distances to the nearest pellet and power pellet (linear, so far targets still produce a gradient), active ghosts within six cells and one step away, a fatal move, scared ghosts within eight cells, eating a scared ghost, the openness of the destination, and an interaction term for a ghost closing in on a dead end. Each turn it applies the Q-learning update `w += α (r + γ max Q(s', ·) − Q(s, a)) f(s, a)`, with a per-turn cost and a large penalty for being caught. The weights come from self-play (`python -m pacman train`). The server runs the same Python code, and the page shows each move's Q-value and each feature's contribution.
+The learned agent scores each legal move as `Q(s, a) = w · f(s, a)`, where `f` holds thirteen hand-built features of the position after the move: pellet and power-pellet eating, distances to the nearest pellet and power pellet (linear, so far targets still produce a gradient), active ghosts within six cells and one step away, a fatal move, scared ghosts within eight cells, eating a scared ghost, the openness of the destination, an interaction term for a ghost closing in on a dead end, and the survival feature. The survival feature (`pacman/lookahead.py`) plays the game forward from the move, letting the ghosts answer with the same AI the game uses, and records how many of the next six turns Pac-Man stays alive (up to six), with each position memoised. This is a search inside the feature, and it is exact for the ghost AI: the agent effectively has a model of how the ghosts move. The learned part is the weights. Without this feature the same learning reached about 5% wins. Each turn it applies the Q-learning update `w += α (r + γ max Q(s', ·) − Q(s, a)) f(s, a)`, with a per-turn cost and a large penalty for being caught. The weights come from self-play (`python -m pacman train`). The server runs the same Python code, and the page shows each move's Q-value and each feature's contribution.
 
 ### Warehouse robots
 
