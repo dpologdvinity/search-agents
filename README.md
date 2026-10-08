@@ -1,0 +1,138 @@
+# search-agents
+
+Agents that solve puzzles and play games by search, each paired with a stronger guide than the textbook version: hand-built heuristics, precomputed pattern databases, and models trained from self-generated data. Every search runs in Python and streams to a browser frontend.
+
+| Domain | Classic search | Learned guidance | Live demo shows |
+|---|---|---|---|
+| **N-Puzzle** | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\* | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
+| **Connect Four** | Alpha-beta negamax, UCT Monte Carlo tree search | AlphaZero-style PUCT with a policy-value ResNet trained only by self-play | The network's prior vs search visits per column, and its win probability |
+| **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
+| **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
+
+**Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
+
+## Results
+
+### N-Puzzle: learned guidance on random 15-puzzles
+
+40 uniformly random 15-puzzles (mean optimal solution 52.6 moves), each solved optimally beforehand by IDA* + pattern database:
+
+| Search | Solved | Median nodes expanded | Mean extra moves vs optimal | Optimal paths |
+|---|---|---|---|---|
+| IDA\* + 5-5-5 pattern database (optimal) | 40/40 | 598,989 | 0% | 40/40 |
+| Batch weighted A\* + pattern database | 37/40 | 19,895 | 2.2% | 20/37 |
+| **Batch weighted A\* + neural heuristic** | **40/40** | **5,009** | **3.3%** | **18/40** |
+
+The learned heuristic expands about 120x fewer nodes than optimal search, at the cost of paths 3.3% longer on average. Deployed on a shared 1 GB machine, it solves a random 15-puzzle in under a second.
+
+Heuristic strength for IDA\* on 15 random 60-move scrambles: Manhattan distance 12.8M nodes, linear conflict 2.8M, pattern database 416K. The neural heuristic's average error against true optimal costs is 2.8 moves, vs 12.2 for the pattern database alone.
+
+### 2048: TD-learned n-tuple network
+
+500 games, no search, each move chosen by reward + learned afterstate value:
+
+| Agent | Games | Mean score | Median score | Reached 2048 | Reached 4096 | Reached 8192 | Best tile |
+|---|---|---|---|---|---|---|---|
+| N-tuple network, greedy (no search) | 500 | 42,085 | 40,834 | 81% | 31% | 1% | 8192 |
+
+With expectimax search on top (50 ms per move; 4 games per agent, so a small sample):
+
+| Agent | Games | Mean score | Median score | Reached 2048 | Reached 4096 | Reached 8192 | Best tile |
+|---|---|---|---|---|---|---|---|
+| Expectimax, tuned eval + cache + probability cutoff (50 ms/move) | 4 | 8,277 | 9,446 | 0% | 0% | 0% | 512 |
+| Expectimax, learned n-tuple eval (50 ms/move) | 4 | 78,849 | 64,462 | 100% | 50% | 25% | 8192 |
+
+Tuning the hand-crafted evaluation's six weights with the cross-entropy method raised greedy play from a mean score of 5,221 to 7,081 (1,000 fresh games each).
+
+### Sudoku: 200 generated puzzles with unique solutions
+
+| Solver | Solved | Mean guesses | Max guesses |
+|---|---|---|---|
+| Plain backtracking | 198/200 (2M-guess limit) | 119,468 | 2,000,001 |
+| MRV + forward checking | 200/200 | 364 | 4,058 |
+| Constraint propagation + MRV | 200/200 | 7 | 89 |
+
+### Connect Four: AlphaZero-style self-play
+
+Training is in progress on a laptop CPU. After 1,664 self-play games (iteration 13), with 200 simulations per move over 20 games per opponent:
+
+| Opponent | AlphaZero wins | Draws | Losses |
+|---|---|---|---|
+| Alpha-beta minimax, depth 2 | 7 | 0 | 13 |
+| Alpha-beta minimax, depth 4 | 9 | 2 | 9 |
+| Alpha-beta minimax, depth 6 | 2 | 6 | 12 |
+
+For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against depth-4 minimax. AlphaZero implementations typically need tens of thousands of self-play games on Connect Four; these numbers will be updated as training continues.
+
+
+## How it works
+
+### N-Puzzle
+
+- **Search** (`npuzzle/search.py`, `npuzzle/iterative.py`). One frontier interface covers FIFO, LIFO, and a priority queue with decrease-key (lazy deletion, with live states tracked separately so a heap of stale entries never looks non-empty). IDA\* runs on one mutable board and updates Manhattan distance and pattern database values incrementally: a move changes one tile, so it changes one lookup.
+- **Pattern database** (`npuzzle/pdb.py`). The 15 tiles split into three groups of five. A 0-1 BFS from the goal records, for every placement of a group, the fewest moves of that group's tiles; other tiles move for free, so the three values add up to an admissible heuristic. Building all three takes about 40 seconds.
+- **Neural heuristic** (`npuzzle/train.py`, `npuzzle/neural.py`). h(s) = PDB(s) + softplus(MLP(one-hot(s))): the network learns only how far the pattern database underestimates. Training uses approximate value iteration (as in DeepCubeA): sample boards by random walks from the goal, set the target to 1 + min over children of a frozen copy of h, fit, and copy. No solver labels are needed. The learned h is not admissible, so it is used with batch weighted A\*, which scores hundreds of states per network call.
+- **Test set** (`npuzzle/testset.py`). 100 uniformly random 15-puzzles solved optimally by IDA\* + PDB. The mean optimal cost is 52.6 moves, which matches the known average for random 15-puzzles.
+
+### Connect Four
+
+- **Board** (`connect4/board.py`). Two 64-bit integers (all stones, and the stones of the player to move), with a spare bit per column so line checks never wrap. Four in a row is four shift-and-AND operations.
+- **AlphaZero** (`connect4/puct.py`, `connect4/train_az.py`). PUCT search guided by a residual policy-value network. Self-play runs 128 games at once and batches every game's leaf evaluation into one network call per simulation round. Positions are stored with mirror images; the loss is value MSE plus policy cross-entropy.
+- **Serving without torch** (`connect4/net.py`). Batch norm is folded into the convolutions at export, so inference is NumPy convolutions and matrix multiplies.
+
+### 2048
+
+- **Board** (`game2048/board.py`). One 64-bit integer, four bits per tile. Every row's slide is precomputed for all 65,536 rows, so a move is four lookups plus a bit-trick transpose.
+- **Expectimax** (`game2048/expectimax.py`). Six hand-crafted features (empty cells, monotonicity, smoothness, max tile in a corner, mergeable neighbours, max tile) come from per-row lookup tables. Their weights are found automatically by the cross-entropy method over batches of simulated games (`game2048/tune.py`). A transposition table and a cutoff for unlikely tile spawns let the search go deeper in the same time.
+- **N-tuple network** (`game2048/ntuple.py`, `game2048/train_td.py`). Six 5-cell patterns, each applied in all 8 board symmetries with a shared table: 48 lookups per evaluation. Trained by TD(0) on afterstates with 1,000 games in lockstep in NumPy. Batched TD updates are averaged per weight; summing them made shared weights take batch-sized steps and diverge.
+
+### Sudoku
+
+`sudoku/solver.py` has three solvers behind one interface, each recording a trace of guesses and backtracks for the visualizer. Propagation keeps candidate sets as 9-bit masks and, after every guess, fills cells with one candidate and digits with one possible place in a row, column, or box, until nothing changes.
+
+## Architecture
+
+```
+web/            static HTML/CSS/JS, no build step
+server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
+npuzzle/ connect4/ game2048/ sudoku/   search code, training scripts, data files
+```
+
+- Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
+- Trained models ship as `.npz` weights and run in NumPy, so the server image has no torch (about 350 MB) and loads every model in about 120 MB of RAM.
+
+## Running locally
+
+```bash
+uv venv && uv pip install -e ".[dev]"      # add ".[train]" for torch and matplotlib
+uvicorn server.app:app --reload            # then open http://localhost:8000
+python -m pytest -q
+```
+
+Command-line tools:
+
+```bash
+python -m npuzzle astar 7,2,4,5,0,6,8,3,1          # any algorithm by name
+python -m npuzzle.benchmark 8puzzle               # results/npuzzle_8puzzle.md
+python -m sudoku.generate --count 200            # unique-solution puzzles
+python -m sudoku solve 009000000160004023000009...  # or: python -m sudoku benchmark
+python -m game2048.benchmark greedy --games 1000
+```
+
+Training (CPU is enough; times are for a laptop i7):
+
+```bash
+python -m npuzzle.pdb                              # pattern database, ~40 s
+python -m npuzzle.train --minutes 45               # neural heuristic
+python -m connect4.train_az --hours 3              # AlphaZero self-play
+python -m game2048.train_td --minutes 90           # n-tuple network
+```
+
+## Deploying
+
+`Dockerfile` builds the serving image and `fly.toml` runs it on one always-on Fly.io machine (shared CPU, 1 GB):
+
+```bash
+fly launch --no-deploy   # first time: create the app
+fly deploy
+```

@@ -1,0 +1,35 @@
+# Fly.io deployment: one machine that suspends when idle.
+# A suspended machine resumes in a few hundred milliseconds on the next request and
+# is billed only for its disk while idle. For a machine that never sleeps, set
+# auto_stop_machines = "off" and min_machines_running = 1.
+# Deploy with: fly launch --no-deploy (first time, to claim the app name), then fly deploy
+
+app = "kb-search-agents"
+primary_region = "iad"
+
+[env]
+  SEARCH_SLOTS = "2"
+  SOLVES_PER_MIN = "30"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 50
+    hard_limit = 100
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

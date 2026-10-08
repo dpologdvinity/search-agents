@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEARCH AGENTS // KB</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<style>
+  .landing { max-width: 1100px; margin: 0 auto; padding: 90px 2rem 3rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .card { border: 1px solid var(--border); background: var(--panel); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; transition: border-color 0.2s, box-shadow 0.2s; }
+  a.card:hover { border-color: var(--pink); box-shadow: 0 0 18px rgba(255,0,160,0.3); }
+  .card .tag { font-family: var(--mono); font-size: 0.62rem; color: var(--dim); letter-spacing: 0.15em; }
+  .card .name { font-family: var(--orb); font-weight: 900; font-size: 1.1rem; }
+  .card .soon { font-family: var(--mono); font-size: 0.62rem; color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links">
+    <li><a href="index.html" class="act">MAIN</a></li>
+    <li><a href="npuzzle.html">N-PUZZLE</a></li>
+    <li><a href="connect4.html">CONNECT FOUR</a></li>
+    <li><a href="2048.html">2048</a></li>
+    <li><a href="sudoku.html">SUDOKU</a></li>
+  </ul>
+</nav>
+
+<div class="landing">
+  <div class="proj-pg-tag">CLASSIC SEARCH · LEARNED GUIDANCE · PYTHON BACKEND</div>
+  <div class="proj-pg-title neon-cyan">SEARCH AGENTS</div>
+  <div class="proj-pg-sub" style="max-width:720px">
+    Agents that solve puzzles and play games by search. Each one pairs a classic algorithm with a
+    stronger guide: hand-built heuristics, precomputed pattern databases, and neural networks trained
+    from self-generated data. Every search runs live in Python and streams to your browser.
+  </div>
+
+  <div class="cards">
+    <a class="card" href="npuzzle.html">
+      <span class="tag">01 // STATE-SPACE SEARCH</span>
+      <span class="name neon-pink">N-PUZZLE</span>
+      <span class="field-hint">BFS to IDA*, linear conflict, a 5-5-5 pattern database, and a neural heuristic trained by value iteration.</span>
+    </a>
+    <a class="card" href="connect4.html">
+      <span class="tag">02 // ADVERSARIAL SEARCH</span>
+      <span class="name neon-cyan">CONNECT FOUR</span>
+      <span class="field-hint">Play against AlphaZero-style search with a policy-value network trained only by self-play, or watch it face alpha-beta minimax.</span>
+    </a>
+    <a class="card" href="2048.html">
+      <span class="tag">03 // STOCHASTIC SEARCH</span>
+      <span class="name neon-purple">2048</span>
+      <span class="field-hint">Expectiminimax with a hand-tuned evaluation vs an n-tuple network learned by temporal-difference learning.</span>
+    </a>
+    <a class="card" href="sudoku.html">
+      <span class="tag">04 // CONSTRAINT SATISFACTION</span>
+      <span class="name neon-green">SUDOKU</span>
+      <span class="field-hint">Plain backtracking, MRV with forward checking, and full constraint propagation, with every guess and backtrack replayed.</span>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

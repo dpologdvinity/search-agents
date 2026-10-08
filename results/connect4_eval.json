@@ -1,0 +1,26 @@
+{
+ "alphazero_vs_minimax_d2": {
+  "win": 7,
+  "draw": 0,
+  "loss": 13
+ },
+ "alphazero_vs_minimax_d4": {
+  "win": 9,
+  "draw": 2,
+  "loss": 9
+ },
+ "alphazero_vs_minimax_d6": {
+  "win": 2,
+  "draw": 6,
+  "loss": 12
+ },
+ "mcts1000_vs_minimax_d4": {
+  "win": 5,
+  "draw": 0,
+  "loss": 5
+ },
+ "training": {
+  "iteration": 13,
+  "games": 1664
+ }
+}

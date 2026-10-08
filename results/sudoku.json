@@ -1,0 +1,4898 @@
+[
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 43830,
+  "backtracks": 43774,
+  "seconds": 0.28374886800156673
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 29731,
+  "backtracks": 29676,
+  "seconds": 0.1328979169993545
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 66631,
+  "backtracks": 66573,
+  "seconds": 0.5360552679994726
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 25007,
+  "backtracks": 24952,
+  "seconds": 0.23717974800092634
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 52507,
+  "backtracks": 52450,
+  "seconds": 2.961871451996558
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1148,
+  "backtracks": 1091,
+  "seconds": 0.079732193997188
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14195,
+  "backtracks": 14137,
+  "seconds": 0.6738454770020326
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2199,
+  "backtracks": 2141,
+  "seconds": 0.14609277099953033
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 118727,
+  "backtracks": 118668,
+  "seconds": 6.049095681999461
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 144288,
+  "backtracks": 144231,
+  "seconds": 5.515504650997173
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 24766,
+  "backtracks": 24710,
+  "seconds": 0.763991273001011
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 235630,
+  "backtracks": 235571,
+  "seconds": 3.891573979999521
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1779,
+  "backtracks": 1725,
+  "seconds": 0.006413714996597264
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6519,
+  "backtracks": 6460,
+  "seconds": 0.03311833199404646
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 49824,
+  "backtracks": 49768,
+  "seconds": 2.2034197289976873
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6111,
+  "backtracks": 6055,
+  "seconds": 0.6135795840018545
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1622244,
+  "backtracks": 1622187,
+  "seconds": 15.715173867996782
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 29179,
+  "backtracks": 29122,
+  "seconds": 0.0923057499967399
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 41249,
+  "backtracks": 41193,
+  "seconds": 0.1291354089989909
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14674,
+  "backtracks": 14618,
+  "seconds": 0.03771703599340981
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 31645,
+  "backtracks": 31588,
+  "seconds": 0.13056776499433909
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 27333,
+  "backtracks": 27277,
+  "seconds": 0.09539136099920142
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 47756,
+  "backtracks": 47699,
+  "seconds": 0.19946481499937363
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 49024,
+  "backtracks": 48968,
+  "seconds": 0.19059465999453096
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 25979,
+  "backtracks": 25922,
+  "seconds": 0.11663918499834836
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 319443,
+  "backtracks": 319387,
+  "seconds": 1.5590237330034142
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 55312,
+  "backtracks": 55256,
+  "seconds": 0.17365423899900634
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15036,
+  "backtracks": 14978,
+  "seconds": 0.04717207900102949
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9406,
+  "backtracks": 9349,
+  "seconds": 0.04908341799455229
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7929,
+  "backtracks": 7872,
+  "seconds": 0.037571376997220796
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 582990,
+  "backtracks": 582930,
+  "seconds": 2.9227409180020913
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57996,
+  "backtracks": 57941,
+  "seconds": 0.17857532699417789
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1645,
+  "backtracks": 1590,
+  "seconds": 0.0034858489962061867
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6381,
+  "backtracks": 6324,
+  "seconds": 0.020216455995978322
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 206256,
+  "backtracks": 206200,
+  "seconds": 0.7026354910049122
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 44377,
+  "backtracks": 44318,
+  "seconds": 0.10773924000386614
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2576,
+  "backtracks": 2519,
+  "seconds": 0.006193668996274937
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1753,
+  "backtracks": 1698,
+  "seconds": 0.004281494002498221
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 893,
+  "backtracks": 836,
+  "seconds": 0.0020279249947634526
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 174889,
+  "backtracks": 174832,
+  "seconds": 0.6332458739998401
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 250792,
+  "backtracks": 250733,
+  "seconds": 2.63426245500159
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 29939,
+  "backtracks": 29882,
+  "seconds": 0.31305607200192753
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 746297,
+  "backtracks": 746241,
+  "seconds": 5.550777055999788
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 21780,
+  "backtracks": 21722,
+  "seconds": 0.42401585100014927
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 151223,
+  "backtracks": 151164,
+  "seconds": 2.1794167769985506
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 21904,
+  "backtracks": 21848,
+  "seconds": 0.3947587999937241
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3798,
+  "backtracks": 3745,
+  "seconds": 0.06615889399836306
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 74396,
+  "backtracks": 74341,
+  "seconds": 0.6769958500008215
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56950,
+  "backtracks": 56893,
+  "seconds": 0.2000098370044725
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 66382,
+  "backtracks": 66325,
+  "seconds": 0.5896145700025954
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 25092,
+  "backtracks": 25036,
+  "seconds": 0.12710658400465036
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 255769,
+  "backtracks": 255713,
+  "seconds": 1.1726923289970728
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 13817,
+  "backtracks": 13759,
+  "seconds": 0.04055956700176466
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 520889,
+  "backtracks": 520830,
+  "seconds": 6.824024191999342
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6554,
+  "backtracks": 6498,
+  "seconds": 0.1253176159953
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 28166,
+  "backtracks": 28109,
+  "seconds": 0.2340950529978727
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 25184,
+  "backtracks": 25129,
+  "seconds": 0.14104880100057926
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 39108,
+  "backtracks": 39051,
+  "seconds": 0.27911049500107765
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8961,
+  "backtracks": 8905,
+  "seconds": 0.07529109899769537
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 65602,
+  "backtracks": 65544,
+  "seconds": 0.5330317910047597
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18247,
+  "backtracks": 18194,
+  "seconds": 0.4683975039952202
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1054,
+  "backtracks": 998,
+  "seconds": 0.02759217599668773
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 55101,
+  "backtracks": 55044,
+  "seconds": 1.159902179002529
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11779,
+  "backtracks": 11721,
+  "seconds": 0.05049920400051633
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10542,
+  "backtracks": 10487,
+  "seconds": 0.030426224002439994
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 343765,
+  "backtracks": 343709,
+  "seconds": 1.2499809289947734
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 24458,
+  "backtracks": 24402,
+  "seconds": 0.09603501100355061
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1252,
+  "backtracks": 1196,
+  "seconds": 0.0029076869977870956
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 873,
+  "backtracks": 816,
+  "seconds": 0.004176004003966227
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 44971,
+  "backtracks": 44914,
+  "seconds": 0.14164598999923328
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2019,
+  "backtracks": 1964,
+  "seconds": 0.010393275995738804
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15176,
+  "backtracks": 15119,
+  "seconds": 0.05761886300024344
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5780,
+  "backtracks": 5726,
+  "seconds": 0.014414622004551347
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 133469,
+  "backtracks": 133411,
+  "seconds": 0.41700774500350235
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 264388,
+  "backtracks": 264332,
+  "seconds": 1.036389325003256
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 91220,
+  "backtracks": 91163,
+  "seconds": 0.33988386599958176
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57650,
+  "backtracks": 57593,
+  "seconds": 0.21010648000083165
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 12108,
+  "backtracks": 12052,
+  "seconds": 0.043281161997583695
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 299,
+  "backtracks": 243,
+  "seconds": 0.001982514004339464
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 73307,
+  "backtracks": 73250,
+  "seconds": 0.29529529200226534
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 613163,
+  "backtracks": 613104,
+  "seconds": 5.225385063997237
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19547,
+  "backtracks": 19492,
+  "seconds": 0.07841681599529693
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8260,
+  "backtracks": 8204,
+  "seconds": 0.039950296995812096
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9991,
+  "backtracks": 9936,
+  "seconds": 0.04742657099995995
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 62987,
+  "backtracks": 62931,
+  "seconds": 0.3620113989964011
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17379,
+  "backtracks": 17323,
+  "seconds": 0.09762474200397264
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10432,
+  "backtracks": 10375,
+  "seconds": 0.06101278300047852
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9130,
+  "backtracks": 9073,
+  "seconds": 0.041878893003740814
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "limit",
+  "nodes": 2000001,
+  "backtracks": 1999969,
+  "seconds": 26.84946776900324
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 124817,
+  "backtracks": 124759,
+  "seconds": 0.9742253600052209
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1003146,
+  "backtracks": 1003089,
+  "seconds": 16.12304039100127
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18225,
+  "backtracks": 18167,
+  "seconds": 0.776072734995978
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 13073,
+  "backtracks": 13014,
+  "seconds": 1.1781188850000035
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 155545,
+  "backtracks": 155489,
+  "seconds": 6.126165600006061
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 72087,
+  "backtracks": 72033,
+  "seconds": 0.6875793590006651
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 72612,
+  "backtracks": 72555,
+  "seconds": 0.5813765580023755
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10730,
+  "backtracks": 10673,
+  "seconds": 0.05259646999911638
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "limit",
+  "nodes": 2000001,
+  "backtracks": 1999976,
+  "seconds": 15.870465431995399
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19166,
+  "backtracks": 19109,
+  "seconds": 0.2943225229973905
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18103,
+  "backtracks": 18047,
+  "seconds": 0.15629416400042828
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4799,
+  "backtracks": 4742,
+  "seconds": 0.025228022001101635
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1328,
+  "backtracks": 1272,
+  "seconds": 0.0064532339965808205
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6206,
+  "backtracks": 6150,
+  "seconds": 0.04594411500147544
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 23953,
+  "backtracks": 23898,
+  "seconds": 0.13457569800084457
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 140690,
+  "backtracks": 140635,
+  "seconds": 2.3411894039963954
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 39550,
+  "backtracks": 39494,
+  "seconds": 0.8354951849978534
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17689,
+  "backtracks": 17631,
+  "seconds": 0.1781794569978956
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8437,
+  "backtracks": 8381,
+  "seconds": 0.11641978999978164
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 427421,
+  "backtracks": 427363,
+  "seconds": 10.90793684199889
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9164,
+  "backtracks": 9108,
+  "seconds": 0.04995798999880208
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15427,
+  "backtracks": 15371,
+  "seconds": 0.07895670599828009
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4001,
+  "backtracks": 3945,
+  "seconds": 0.026928150000458118
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 23855,
+  "backtracks": 23799,
+  "seconds": 0.13356115199712804
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 118718,
+  "backtracks": 118660,
+  "seconds": 1.1643771409944748
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 90213,
+  "backtracks": 90157,
+  "seconds": 0.5563719199999468
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 45007,
+  "backtracks": 44950,
+  "seconds": 0.21322090300236596
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 16728,
+  "backtracks": 16670,
+  "seconds": 0.11864121699909447
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 111482,
+  "backtracks": 111424,
+  "seconds": 0.7872640799978399
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 22570,
+  "backtracks": 22512,
+  "seconds": 0.11995223999838345
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 22304,
+  "backtracks": 22246,
+  "seconds": 0.6522071010040236
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4514,
+  "backtracks": 4457,
+  "seconds": 0.3023686300002737
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 16939,
+  "backtracks": 16881,
+  "seconds": 0.568610736001574
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14171,
+  "backtracks": 14116,
+  "seconds": 0.12101941199944122
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 111078,
+  "backtracks": 111021,
+  "seconds": 1.044933912999113
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 33156,
+  "backtracks": 33101,
+  "seconds": 0.19022518699784996
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 383,
+  "backtracks": 326,
+  "seconds": 0.0012332580008660443
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1103,
+  "backtracks": 1045,
+  "seconds": 0.004232274004607461
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3193,
+  "backtracks": 3136,
+  "seconds": 0.024065786004939582
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9349,
+  "backtracks": 9292,
+  "seconds": 0.03707469900109572
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1163164,
+  "backtracks": 1163105,
+  "seconds": 13.752916917997936
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9864,
+  "backtracks": 9808,
+  "seconds": 0.06994513399695279
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18324,
+  "backtracks": 18267,
+  "seconds": 0.1381826600045315
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6455,
+  "backtracks": 6400,
+  "seconds": 0.05249113600439159
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17391,
+  "backtracks": 17334,
+  "seconds": 0.14628514700598316
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7662,
+  "backtracks": 7607,
+  "seconds": 0.03589209199708421
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17637,
+  "backtracks": 17580,
+  "seconds": 0.07787018900125986
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15258,
+  "backtracks": 15201,
+  "seconds": 0.17725707299541682
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 30135,
+  "backtracks": 30081,
+  "seconds": 0.14342307700280799
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 341871,
+  "backtracks": 341814,
+  "seconds": 2.265341782993346
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2230,
+  "backtracks": 2175,
+  "seconds": 0.006283625996729825
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 105976,
+  "backtracks": 105918,
+  "seconds": 1.313195476999681
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2029,
+  "backtracks": 1974,
+  "seconds": 0.005880374999833293
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 37894,
+  "backtracks": 37837,
+  "seconds": 0.14437445200019283
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57821,
+  "backtracks": 57764,
+  "seconds": 0.44562257199868327
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 100640,
+  "backtracks": 100583,
+  "seconds": 0.4642134169989731
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4779,
+  "backtracks": 4724,
+  "seconds": 0.024746326002059504
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 37326,
+  "backtracks": 37270,
+  "seconds": 0.10180804000265198
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 22399,
+  "backtracks": 22342,
+  "seconds": 0.061076938996848185
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 37461,
+  "backtracks": 37404,
+  "seconds": 0.19740012900001602
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1136461,
+  "backtracks": 1136401,
+  "seconds": 12.750799715999165
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 278567,
+  "backtracks": 278508,
+  "seconds": 4.360850375000155
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 83784,
+  "backtracks": 83725,
+  "seconds": 0.20271826699899975
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 26132,
+  "backtracks": 26076,
+  "seconds": 0.05980211800488178
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 121643,
+  "backtracks": 121587,
+  "seconds": 1.3068588769965572
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 81116,
+  "backtracks": 81061,
+  "seconds": 0.3285208009983762
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 46770,
+  "backtracks": 46713,
+  "seconds": 0.17325010299828136
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 60052,
+  "backtracks": 59995,
+  "seconds": 0.13935376500012353
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 71986,
+  "backtracks": 71929,
+  "seconds": 0.20033026700548362
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14764,
+  "backtracks": 14708,
+  "seconds": 0.042559980996884406
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1010,
+  "backtracks": 953,
+  "seconds": 0.0022781069928896613
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 96655,
+  "backtracks": 96598,
+  "seconds": 0.32919779299845686
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3333,
+  "backtracks": 3276,
+  "seconds": 0.010740532998170238
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 80890,
+  "backtracks": 80834,
+  "seconds": 0.30922843200096395
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 68431,
+  "backtracks": 68376,
+  "seconds": 0.32939581699611153
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 44224,
+  "backtracks": 44168,
+  "seconds": 0.1305911070012371
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 93656,
+  "backtracks": 93599,
+  "seconds": 0.2675149659989984
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 39510,
+  "backtracks": 39451,
+  "seconds": 0.11849202599842101
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 169056,
+  "backtracks": 168998,
+  "seconds": 0.6132767960007186
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 47306,
+  "backtracks": 47247,
+  "seconds": 0.21461031299986644
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 44343,
+  "backtracks": 44288,
+  "seconds": 0.37218862200097647
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 120101,
+  "backtracks": 120043,
+  "seconds": 2.0439115180051886
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1297,
+  "backtracks": 1241,
+  "seconds": 0.016236276998824906
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19826,
+  "backtracks": 19769,
+  "seconds": 0.3702734930047882
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6173,
+  "backtracks": 6116,
+  "seconds": 0.044586721996893175
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 66552,
+  "backtracks": 66495,
+  "seconds": 0.8652239319999353
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1256844,
+  "backtracks": 1256787,
+  "seconds": 15.771017872997618
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 169671,
+  "backtracks": 169614,
+  "seconds": 4.109897228998307
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 38684,
+  "backtracks": 38628,
+  "seconds": 1.1911160470044706
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 150469,
+  "backtracks": 150412,
+  "seconds": 3.689528399001574
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2521,
+  "backtracks": 2463,
+  "seconds": 0.014059356995858252
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6556,
+  "backtracks": 6502,
+  "seconds": 0.026924427002086304
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18456,
+  "backtracks": 18400,
+  "seconds": 0.13920029500150122
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5699,
+  "backtracks": 5643,
+  "seconds": 0.0345248840021668
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4511,
+  "backtracks": 4456,
+  "seconds": 0.01994114300032379
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2014,
+  "backtracks": 1957,
+  "seconds": 0.008947198999521788
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 251399,
+  "backtracks": 251342,
+  "seconds": 2.9192956690021674
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 823735,
+  "backtracks": 823677,
+  "seconds": 11.666118073000689
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 257332,
+  "backtracks": 257277,
+  "seconds": 7.862289363001764
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10044,
+  "backtracks": 9988,
+  "seconds": 0.08733837899490027
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3296,
+  "backtracks": 3239,
+  "seconds": 0.025624506000895053
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5469,
+  "backtracks": 5413,
+  "seconds": 0.04424695300258463
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8138,
+  "backtracks": 8081,
+  "seconds": 0.06035792599868728
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 44969,
+  "backtracks": 44912,
+  "seconds": 1.1318082210054854
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17779,
+  "backtracks": 17723,
+  "seconds": 0.25311663900356507
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 59923,
+  "backtracks": 59865,
+  "seconds": 1.0058801420018426
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 114094,
+  "backtracks": 114037,
+  "seconds": 1.729513243000838
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 326074,
+  "backtracks": 326018,
+  "seconds": 4.598836749006296
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8355,
+  "backtracks": 8297,
+  "seconds": 0.09395259399752831
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10755,
+  "backtracks": 10697,
+  "seconds": 0.1284414990004734
+ },
+ {
+  "solver": "plain",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56039,
+  "backtracks": 55983,
+  "seconds": 1.010366716000135
+ },
+ {
+  "solver": "plain",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 2630,
+  "backtracks": 2567,
+  "seconds": 0.02820994499779772
+ },
+ {
+  "solver": "plain",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 8969,
+  "backtracks": 8911,
+  "seconds": 0.12853123099921504
+ },
+ {
+  "solver": "plain",
+  "set": "4 hard puzzles",
+  "status": "limit",
+  "nodes": 2000001,
+  "backtracks": 1999969,
+  "seconds": 45.9142900270017
+ },
+ {
+  "solver": "plain",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 1114771,
+  "backtracks": 1114711,
+  "seconds": 20.79134895500465
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1638,
+  "backtracks": 1582,
+  "seconds": 2.229426065001462
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 226,
+  "backtracks": 171,
+  "seconds": 0.09413407100510085
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 389,
+  "backtracks": 331,
+  "seconds": 0.1365628450002987
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 251,
+  "backtracks": 196,
+  "seconds": 0.15984510500129545
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 74,
+  "backtracks": 17,
+  "seconds": 0.05820945999585092
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 107,
+  "backtracks": 50,
+  "seconds": 0.09004117400036193
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 234,
+  "backtracks": 176,
+  "seconds": 0.012246278995007742
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 77,
+  "backtracks": 19,
+  "seconds": 0.13414932700106874
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 122,
+  "backtracks": 63,
+  "seconds": 0.18950662400311558
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 296,
+  "backtracks": 239,
+  "seconds": 0.12163570900156628
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 61,
+  "backtracks": 5,
+  "seconds": 0.01271202399948379
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 241,
+  "backtracks": 182,
+  "seconds": 0.18038245299976552
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 263,
+  "backtracks": 209,
+  "seconds": 0.09825089399964781
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 62,
+  "backtracks": 3,
+  "seconds": 0.004829477999010123
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 886,
+  "backtracks": 830,
+  "seconds": 0.1335559600047418
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56,
+  "backtracks": 0,
+  "seconds": 0.005016138005885296
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 145,
+  "backtracks": 88,
+  "seconds": 0.014878196998324711
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 708,
+  "backtracks": 651,
+  "seconds": 0.35251793799398
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 762,
+  "backtracks": 706,
+  "seconds": 0.2607138359962846
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 599,
+  "backtracks": 543,
+  "seconds": 0.23325694300001487
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 113,
+  "backtracks": 56,
+  "seconds": 0.03172081299999263
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 61,
+  "backtracks": 5,
+  "seconds": 0.06252098800177919
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.050930507997691166
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 477,
+  "backtracks": 421,
+  "seconds": 0.1308636449975893
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 529,
+  "backtracks": 472,
+  "seconds": 0.05617454100138275
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 192,
+  "backtracks": 136,
+  "seconds": 0.012909025004773866
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 326,
+  "backtracks": 270,
+  "seconds": 0.055356804994517006
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 312,
+  "backtracks": 254,
+  "seconds": 0.07233226600510534
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 95,
+  "backtracks": 38,
+  "seconds": 0.005680467002093792
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 88,
+  "backtracks": 31,
+  "seconds": 0.005977471002552193
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 60,
+  "backtracks": 0,
+  "seconds": 0.004592516001139302
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 98,
+  "backtracks": 43,
+  "seconds": 0.013754120001976844
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 108,
+  "backtracks": 53,
+  "seconds": 0.006057186998077668
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 100,
+  "backtracks": 43,
+  "seconds": 0.009868672001175582
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 124,
+  "backtracks": 68,
+  "seconds": 0.00671490599779645
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 59,
+  "backtracks": 0,
+  "seconds": 0.005864247999852523
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 120,
+  "backtracks": 63,
+  "seconds": 0.004608071998518426
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 618,
+  "backtracks": 563,
+  "seconds": 0.0396136999988812
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 59,
+  "backtracks": 2,
+  "seconds": 0.004408601998875383
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2684,
+  "backtracks": 2627,
+  "seconds": 0.2073139150015777
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 256,
+  "backtracks": 197,
+  "seconds": 0.02007063999917591
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 588,
+  "backtracks": 531,
+  "seconds": 0.042933138996886555
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56,
+  "backtracks": 0,
+  "seconds": 0.002363381994655356
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 399,
+  "backtracks": 341,
+  "seconds": 0.020452093005587813
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 111,
+  "backtracks": 52,
+  "seconds": 0.005440560998977162
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 625,
+  "backtracks": 569,
+  "seconds": 0.02923067299707327
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 330,
+  "backtracks": 277,
+  "seconds": 0.013467718999891076
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 475,
+  "backtracks": 420,
+  "seconds": 0.03018470900133252
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 78,
+  "backtracks": 21,
+  "seconds": 0.0035932719983975403
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 153,
+  "backtracks": 96,
+  "seconds": 0.008081555999524426
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 250,
+  "backtracks": 194,
+  "seconds": 0.014534279005602002
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 68,
+  "backtracks": 12,
+  "seconds": 0.0052219409990357235
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 210,
+  "backtracks": 152,
+  "seconds": 0.016179470003407914
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1293,
+  "backtracks": 1234,
+  "seconds": 0.16724723600054858
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 101,
+  "backtracks": 45,
+  "seconds": 0.008811375999357551
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 164,
+  "backtracks": 107,
+  "seconds": 0.02756040899839718
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1206,
+  "backtracks": 1151,
+  "seconds": 0.14011164700059453
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 331,
+  "backtracks": 274,
+  "seconds": 0.3471295440031099
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 78,
+  "backtracks": 22,
+  "seconds": 0.15577038500487106
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 354,
+  "backtracks": 296,
+  "seconds": 0.05335224699956598
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 152,
+  "backtracks": 99,
+  "seconds": 0.2747918729946832
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 94,
+  "backtracks": 38,
+  "seconds": 0.05503651999606518
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 426,
+  "backtracks": 369,
+  "seconds": 0.11208002900093561
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 135,
+  "backtracks": 77,
+  "seconds": 0.01854655500210356
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 186,
+  "backtracks": 131,
+  "seconds": 0.010692017000110354
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56,
+  "backtracks": 0,
+  "seconds": 0.004323348999605514
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 72,
+  "backtracks": 16,
+  "seconds": 0.003486745001282543
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 196,
+  "backtracks": 140,
+  "seconds": 0.008216704001824837
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 68,
+  "backtracks": 11,
+  "seconds": 0.005178496998269111
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.00618121799925575
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 55,
+  "backtracks": 0,
+  "seconds": 0.003749378003703896
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 744,
+  "backtracks": 687,
+  "seconds": 0.08492638699681265
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 340,
+  "backtracks": 286,
+  "seconds": 0.020860599004663527
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 128,
+  "backtracks": 70,
+  "seconds": 0.01202472900331486
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 90,
+  "backtracks": 34,
+  "seconds": 0.0066808289993787184
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 114,
+  "backtracks": 57,
+  "seconds": 0.005840924000949599
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 742,
+  "backtracks": 685,
+  "seconds": 0.04576166899641976
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 894,
+  "backtracks": 838,
+  "seconds": 0.06108869500167202
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 88,
+  "backtracks": 32,
+  "seconds": 0.006089401002100203
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 236,
+  "backtracks": 179,
+  "seconds": 0.02029931399738416
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1757,
+  "backtracks": 1698,
+  "seconds": 0.12288265400275122
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 73,
+  "backtracks": 18,
+  "seconds": 0.0044276890039327554
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 71,
+  "backtracks": 15,
+  "seconds": 0.007047513005090877
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 798,
+  "backtracks": 743,
+  "seconds": 0.052572920998500194
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 69,
+  "backtracks": 13,
+  "seconds": 0.004987356005585752
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 579,
+  "backtracks": 523,
+  "seconds": 0.05401388100290205
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 174,
+  "backtracks": 117,
+  "seconds": 0.02588662999914959
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.0072460590017726645
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 96,
+  "backtracks": 38,
+  "seconds": 0.010575979998975527
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 435,
+  "backtracks": 377,
+  "seconds": 0.07838827899831813
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 193,
+  "backtracks": 136,
+  "seconds": 0.020196975994622335
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 131,
+  "backtracks": 73,
+  "seconds": 0.014340431000164244
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 380,
+  "backtracks": 321,
+  "seconds": 0.032290602997818496
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56,
+  "backtracks": 0,
+  "seconds": 0.0032775670042610727
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 101,
+  "backtracks": 47,
+  "seconds": 0.006271727004786953
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2685,
+  "backtracks": 2628,
+  "seconds": 0.20806415600236505
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 634,
+  "backtracks": 577,
+  "seconds": 0.07018290500127478
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 97,
+  "backtracks": 40,
+  "seconds": 2.3620514210051624
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 93,
+  "backtracks": 36,
+  "seconds": 0.055211619997862726
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 328,
+  "backtracks": 272,
+  "seconds": 0.036301257998275105
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 87,
+  "backtracks": 30,
+  "seconds": 0.16355572599422885
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 98,
+  "backtracks": 42,
+  "seconds": 0.015162871000939049
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 774,
+  "backtracks": 718,
+  "seconds": 0.10551350499736145
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 142,
+  "backtracks": 87,
+  "seconds": 0.037604570999974385
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 720,
+  "backtracks": 665,
+  "seconds": 0.28700259500328684
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 448,
+  "backtracks": 392,
+  "seconds": 0.2900754069996765
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 548,
+  "backtracks": 490,
+  "seconds": 0.5072067919973051
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 64,
+  "backtracks": 8,
+  "seconds": 0.005828287001349963
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 99,
+  "backtracks": 41,
+  "seconds": 0.006329274001473095
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 104,
+  "backtracks": 48,
+  "seconds": 0.011525027999596205
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 325,
+  "backtracks": 269,
+  "seconds": 0.02832685600151308
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 109,
+  "backtracks": 53,
+  "seconds": 0.04869760099973064
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 56,
+  "backtracks": 0,
+  "seconds": 0.08867647199804196
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 176,
+  "backtracks": 118,
+  "seconds": 0.015350616995419841
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 436,
+  "backtracks": 380,
+  "seconds": 0.04095793099986622
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1321,
+  "backtracks": 1264,
+  "seconds": 0.5561338609986706
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 253,
+  "backtracks": 195,
+  "seconds": 0.07210393699642736
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 899,
+  "backtracks": 841,
+  "seconds": 0.05932992699672468
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 58,
+  "backtracks": 0,
+  "seconds": 0.004010413998912554
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 596,
+  "backtracks": 538,
+  "seconds": 0.04758895599661628
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 623,
+  "backtracks": 566,
+  "seconds": 0.12082065600407077
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 123,
+  "backtracks": 65,
+  "seconds": 0.14409453100233804
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 63,
+  "backtracks": 8,
+  "seconds": 0.00415984500432387
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 568,
+  "backtracks": 511,
+  "seconds": 0.9362709410052048
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 161,
+  "backtracks": 106,
+  "seconds": 0.036870715994155034
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 207,
+  "backtracks": 150,
+  "seconds": 0.031062246998772025
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 68,
+  "backtracks": 10,
+  "seconds": 0.01677323499461636
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 88,
+  "backtracks": 31,
+  "seconds": 0.0180984959952184
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 132,
+  "backtracks": 75,
+  "seconds": 0.046975289995316416
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 81,
+  "backtracks": 22,
+  "seconds": 0.01712983299512416
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 221,
+  "backtracks": 165,
+  "seconds": 0.062034282003878616
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 59,
+  "backtracks": 2,
+  "seconds": 0.01429814999573864
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 776,
+  "backtracks": 721,
+  "seconds": 0.17833696899469942
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 490,
+  "backtracks": 433,
+  "seconds": 0.08158764700056054
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 398,
+  "backtracks": 343,
+  "seconds": 0.03290371899493039
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 72,
+  "backtracks": 15,
+  "seconds": 0.007596875999297481
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.0035336680011823773
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 124,
+  "backtracks": 70,
+  "seconds": 0.006630274998315144
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 380,
+  "backtracks": 323,
+  "seconds": 0.02719140800036257
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 281,
+  "backtracks": 226,
+  "seconds": 0.024848519002262037
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 120,
+  "backtracks": 62,
+  "seconds": 0.004580838001857046
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 2,
+  "seconds": 0.002054668999335263
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 70,
+  "backtracks": 13,
+  "seconds": 0.003102322996710427
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 271,
+  "backtracks": 214,
+  "seconds": 0.022391558995877858
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 854,
+  "backtracks": 797,
+  "seconds": 0.03721085700090043
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 119,
+  "backtracks": 64,
+  "seconds": 0.005297723000694532
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 103,
+  "backtracks": 47,
+  "seconds": 0.005952349994913675
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 846,
+  "backtracks": 789,
+  "seconds": 0.05708384099852992
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 244,
+  "backtracks": 187,
+  "seconds": 0.012880165995738935
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2278,
+  "backtracks": 2218,
+  "seconds": 0.13815303100273013
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1315,
+  "backtracks": 1256,
+  "seconds": 0.11210421400028281
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1437,
+  "backtracks": 1378,
+  "seconds": 0.14169793400651542
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 138,
+  "backtracks": 82,
+  "seconds": 0.013572739000665024
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 93,
+  "backtracks": 37,
+  "seconds": 0.036914365002303384
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 91,
+  "backtracks": 36,
+  "seconds": 0.015036816999781877
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 216,
+  "backtracks": 159,
+  "seconds": 0.04185443800088251
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 561,
+  "backtracks": 504,
+  "seconds": 0.06125184400298167
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 113,
+  "backtracks": 56,
+  "seconds": 0.005852579000929836
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 121,
+  "backtracks": 65,
+  "seconds": 0.00591134400019655
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 121,
+  "backtracks": 64,
+  "seconds": 0.007436571999278385
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 774,
+  "backtracks": 717,
+  "seconds": 0.03883010299614398
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 144,
+  "backtracks": 87,
+  "seconds": 0.006426732004911173
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 496,
+  "backtracks": 440,
+  "seconds": 0.029488703999959398
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 67,
+  "backtracks": 12,
+  "seconds": 0.003164857000228949
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 88,
+  "backtracks": 32,
+  "seconds": 0.006877975996758323
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 300,
+  "backtracks": 243,
+  "seconds": 0.01770838999800617
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 320,
+  "backtracks": 261,
+  "seconds": 0.023067305999575183
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 448,
+  "backtracks": 390,
+  "seconds": 0.019511045000399463
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 103,
+  "backtracks": 44,
+  "seconds": 0.00431694900180446
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1183,
+  "backtracks": 1128,
+  "seconds": 0.059279484004946426
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4058,
+  "backtracks": 4000,
+  "seconds": 0.38162430800002767
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 174,
+  "backtracks": 118,
+  "seconds": 0.0058057199930772185
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.005010535998735577
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 370,
+  "backtracks": 313,
+  "seconds": 0.029879572000936605
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 712,
+  "backtracks": 655,
+  "seconds": 0.055116875999374315
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 428,
+  "backtracks": 371,
+  "seconds": 0.043140599998878315
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 800,
+  "backtracks": 743,
+  "seconds": 0.07331147199874977
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1910,
+  "backtracks": 1854,
+  "seconds": 0.11240326999541139
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 664,
+  "backtracks": 607,
+  "seconds": 0.10393514400493586
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 167,
+  "backtracks": 109,
+  "seconds": 0.008088540998869576
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 80,
+  "backtracks": 26,
+  "seconds": 0.005145267998159397
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 124,
+  "backtracks": 68,
+  "seconds": 0.00820285399822751
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 381,
+  "backtracks": 325,
+  "seconds": 0.022521890998177696
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 59,
+  "backtracks": 4,
+  "seconds": 0.0028136670007370412
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 215,
+  "backtracks": 158,
+  "seconds": 0.0112362479994772
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 99,
+  "backtracks": 42,
+  "seconds": 0.0051534520025597885
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 58,
+  "backtracks": 0,
+  "seconds": 0.0032212340011028573
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 329,
+  "backtracks": 274,
+  "seconds": 0.018792121001752093
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 212,
+  "backtracks": 156,
+  "seconds": 0.012501556004281156
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 391,
+  "backtracks": 334,
+  "seconds": 0.01896765999845229
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 127,
+  "backtracks": 71,
+  "seconds": 0.006959338999877218
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 57,
+  "backtracks": 0,
+  "seconds": 0.0037970609992044047
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 88,
+  "backtracks": 31,
+  "seconds": 0.007516967998526525
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 328,
+  "backtracks": 272,
+  "seconds": 0.01637075699545676
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 147,
+  "backtracks": 89,
+  "seconds": 0.009172502999717835
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 61,
+  "backtracks": 4,
+  "seconds": 0.00462306499684928
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 558,
+  "backtracks": 502,
+  "seconds": 0.03814711199811427
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 151,
+  "backtracks": 93,
+  "seconds": 0.005105388001538813
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 101,
+  "backtracks": 43,
+  "seconds": 0.005284025995933916
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 172,
+  "backtracks": 116,
+  "seconds": 0.00928382900019642
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 201,
+  "backtracks": 138,
+  "seconds": 0.017230895995453466
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 217,
+  "backtracks": 159,
+  "seconds": 0.010958910999761429
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 481,
+  "backtracks": 417,
+  "seconds": 0.03531186399777653
+ },
+ {
+  "solver": "mrv_fc",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 2562,
+  "backtracks": 2502,
+  "seconds": 1.4553654280025512
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 37,
+  "backtracks": 32,
+  "seconds": 0.053565465001156554
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 0,
+  "seconds": 0.03981568099698052
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.021206350000284147
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.009359477000543848
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.0021603439963655546
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.019175806002749596
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 13,
+  "seconds": 0.052044265998119954
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 3,
+  "seconds": 0.0704627020022599
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.040121252997778356
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0016737300029490143
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.006294026999967173
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 0,
+  "seconds": 0.00688368700502906
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.015938276999804657
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 7,
+  "seconds": 0.031847250000282656
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 14,
+  "seconds": 0.00929125800030306
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.008448697997664567
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.032947047002380714
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14,
+  "backtracks": 11,
+  "seconds": 0.16771615999459755
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15,
+  "backtracks": 11,
+  "seconds": 0.14232497399643762
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 18,
+  "backtracks": 14,
+  "seconds": 0.1710098539988394
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.10240989799785893
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.004806722994544543
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.02841470700514037
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 15,
+  "backtracks": 11,
+  "seconds": 0.08553945200401358
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.029849754995666444
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 3,
+  "seconds": 0.1465754780001589
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.09870587600016734
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.037386498996056616
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.009703363000880927
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.018899957001849543
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0031827970015001483
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.031044446004671045
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.002430013002594933
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.021737720002420247
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 5,
+  "seconds": 0.02078997500211699
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.07062229900475359
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.011426292003307026
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 17,
+  "seconds": 0.05333668299863348
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.003452124998148065
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.0025440109966439195
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.01492695399792865
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17,
+  "backtracks": 13,
+  "seconds": 0.0045372059976216406
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.006216198999027256
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 24,
+  "backtracks": 21,
+  "seconds": 0.02766389500175137
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.004386678003356792
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 20,
+  "backtracks": 15,
+  "seconds": 0.0045731249992968515
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 3,
+  "seconds": 0.003510157002892811
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8,
+  "backtracks": 4,
+  "seconds": 0.00789942799747223
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.005833741997776087
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0036910310009261593
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 4,
+  "seconds": 0.016480109996336978
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.006940710998605937
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 4,
+  "seconds": 0.0027608079981291667
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.003035433001059573
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.017535439001221675
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 8,
+  "seconds": 0.003854700000374578
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 2,
+  "seconds": 0.03543436100153485
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 3,
+  "seconds": 0.015498462998948526
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.007981198003108148
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.006437351999920793
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.015856486999837216
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.010151131005841307
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 16,
+  "seconds": 0.020310536994657014
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.004602291002811398
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.007043569996312726
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.060164752998389304
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.0320489110017661
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 1,
+  "seconds": 0.0028358839990687557
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 0,
+  "seconds": 0.02151558399782516
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.015257445003953762
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.016810809000162408
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.03185721000045305
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 6,
+  "seconds": 0.03670202600187622
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0026584120059851557
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.0027412790004746057
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.008130513000651263
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 29,
+  "backtracks": 25,
+  "seconds": 0.02939697599504143
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 3,
+  "seconds": 0.020415401995705906
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.0069327509991126135
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.023764985999150667
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.007940028001030441
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 2,
+  "seconds": 0.0024394139982177876
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.012688178001553752
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8,
+  "backtracks": 5,
+  "seconds": 0.023966690998349804
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 3,
+  "seconds": 0.021511667997401673
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 8,
+  "seconds": 0.0037812630034750327
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 8,
+  "seconds": 0.02458677300455747
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.00423785499879159
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.018507642998883966
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 14,
+  "backtracks": 10,
+  "seconds": 0.060213422002561856
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.01557766900077695
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 2,
+  "seconds": 0.020809744004509412
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 23,
+  "backtracks": 18,
+  "seconds": 0.021892420001677237
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.011673159002384637
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.002550730998336803
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 89,
+  "backtracks": 84,
+  "seconds": 0.12967029900028137
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8,
+  "backtracks": 6,
+  "seconds": 0.00898824699834222
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 2,
+  "seconds": 0.007155397004680708
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 1,
+  "seconds": 0.033435331999498885
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 5,
+  "seconds": 0.007866619998821989
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.0051085029990645126
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.023459832002117764
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 7,
+  "seconds": 0.015666127001168206
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.011637105002591852
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.006675597003777511
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 8,
+  "seconds": 0.037716349004767835
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.007419447996653616
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.010230975000013132
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0017486899960204028
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.0020754009965457954
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8,
+  "backtracks": 4,
+  "seconds": 0.0028283949941396713
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 2,
+  "seconds": 0.011592167000344489
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 0,
+  "seconds": 0.0021328720031306148
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.01692989800358191
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 45,
+  "backtracks": 40,
+  "seconds": 0.011351617002219427
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.01103287700243527
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 3,
+  "seconds": 0.013374854999710806
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 3,
+  "seconds": 0.0027807529986603186
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.010658148996299133
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.015941904995997902
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 3,
+  "seconds": 0.01629805300035514
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.014826826998614706
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0020716479994007386
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 66,
+  "backtracks": 58,
+  "seconds": 0.09414151600503828
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.006661967003310565
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 3,
+  "seconds": 0.0069917369983159006
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0019758140042540617
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0018068199933622964
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0022777409976697527
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 0,
+  "seconds": 0.007788652001181617
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 4,
+  "seconds": 0.007955875000334345
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.002245117000711616
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 16,
+  "seconds": 0.010868641002161894
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.006682913000986446
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 6,
+  "seconds": 0.005759824998676777
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0026666520061553456
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.002740174997597933
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0026514989949646406
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 5,
+  "seconds": 0.00401422000140883
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 7,
+  "seconds": 0.003138431995466817
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.002081437000015285
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0025831200036918744
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.003748261005966924
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 11,
+  "backtracks": 7,
+  "seconds": 0.0028494009966379963
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 32,
+  "backtracks": 27,
+  "seconds": 0.008612813995569013
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 4,
+  "seconds": 0.002662004997546319
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.0021147369989193976
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 6,
+  "seconds": 0.003186385001754388
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.022587229999771807
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 4,
+  "seconds": 0.03389996699843323
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 7,
+  "seconds": 0.28067923900380265
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 23,
+  "backtracks": 19,
+  "seconds": 0.350583617000666
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.023373433999950066
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 0,
+  "seconds": 0.024791503994492814
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 3,
+  "seconds": 0.030737369001144543
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.00208051400113618
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.0066869220027001575
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 8,
+  "backtracks": 5,
+  "seconds": 0.008227862999774516
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 7,
+  "backtracks": 4,
+  "seconds": 0.023716283998510335
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.005249920999631286
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17,
+  "backtracks": 14,
+  "seconds": 0.012465619998693
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.008008245000382885
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 17,
+  "backtracks": 13,
+  "seconds": 0.013753819002886303
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.011502549001306761
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.0024890220011002384
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 12,
+  "backtracks": 5,
+  "seconds": 0.0036763530006282963
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 4,
+  "seconds": 0.008077947000856511
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.016342703005648218
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.03324154199799523
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.013388789004238788
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 62,
+  "backtracks": 53,
+  "seconds": 0.05891171399707673
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 5,
+  "seconds": 0.031022855997434817
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.0023630069990758784
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 8,
+  "seconds": 0.05832817900227383
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.0022429570017266087
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 13,
+  "backtracks": 7,
+  "seconds": 0.03435786999762058
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 1,
+  "seconds": 0.0315123189939186
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 40,
+  "backtracks": 38,
+  "seconds": 0.1640842769993469
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 2,
+  "seconds": 0.019774804000917356
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 6,
+  "backtracks": 3,
+  "seconds": 0.13815008399978979
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 5,
+  "backtracks": 1,
+  "seconds": 0.15570132300490513
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.12184472400258528
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 10,
+  "backtracks": 8,
+  "seconds": 0.07624905300326645
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.05247840600350173
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 13,
+  "backtracks": 9,
+  "seconds": 0.084589309997682
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 6,
+  "seconds": 0.07274184199923184
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.07261240500520216
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 22,
+  "backtracks": 17,
+  "seconds": 0.032250748001388274
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 1,
+  "seconds": 0.0024034470043261535
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 2,
+  "seconds": 0.011104021003120579
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 1,
+  "seconds": 0.021555441999225877
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 1,
+  "backtracks": 0,
+  "seconds": 0.002305093003087677
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.031323424002039246
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 9,
+  "backtracks": 5,
+  "seconds": 0.023848813005315606
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.020861680997768417
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 0,
+  "backtracks": 0,
+  "seconds": 0.04768260499986354
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 3,
+  "backtracks": 0,
+  "seconds": 0.08597690900205635
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.08466208900063066
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 2,
+  "backtracks": 0,
+  "seconds": 0.017559325002366677
+ },
+ {
+  "solver": "propagate",
+  "set": "200 generated puzzles",
+  "status": "solved",
+  "nodes": 4,
+  "backtracks": 3,
+  "seconds": 0.04801619399950141
+ },
+ {
+  "solver": "propagate",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 17,
+  "backtracks": 0,
+  "seconds": 0.05510561499977484
+ },
+ {
+  "solver": "propagate",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 19,
+  "backtracks": 10,
+  "seconds": 0.2655298039971967
+ },
+ {
+  "solver": "propagate",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 49,
+  "backtracks": 41,
+  "seconds": 0.13697784900432453
+ },
+ {
+  "solver": "propagate",
+  "set": "4 hard puzzles",
+  "status": "solved",
+  "nodes": 89,
+  "backtracks": 79,
+  "seconds": 0.2837755599975935
+ }
+]

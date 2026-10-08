@@ -1,0 +1,22 @@
+{
+ "neural": {
+  "solved": 40,
+  "n": 40,
+  "mean_expanded": 5176.575,
+  "median_expanded": 5008.5,
+  "mean_seconds": 8.719609117425005,
+  "gap_pct": 3.2996789657264674,
+  "optimal": 18,
+  "idastar_pdb_median_expanded": 598988.5
+ },
+ "pdb": {
+  "solved": 37,
+  "n": 40,
+  "mean_expanded": 33490.56756756757,
+  "median_expanded": 19895,
+  "mean_seconds": 2.1591043114864887,
+  "gap_pct": 2.243635185872651,
+  "optimal": 20,
+  "idastar_pdb_median_expanded": 598988.5
+ }
+}

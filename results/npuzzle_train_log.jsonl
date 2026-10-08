@@ -1,0 +1,172 @@
+{"round": 1, "minutes": 0.48, "loss": 0.5818225190043449, "mean_target": 31.187368392944336}
+{"round": 2, "minutes": 1.16, "loss": 0.601199033856392, "mean_target": 31.437374114990234}
+{"round": 3, "minutes": 1.73, "loss": 0.5771780729293823, "mean_target": 31.18600082397461}
+{"round": 4, "minutes": 2.16, "loss": 0.5326682522892952, "mean_target": 31.33199119567871}
+{"round": 5, "minutes": 2.63, "loss": 0.5043569326400756, "mean_target": 31.459077835083008}
+{"round": 6, "minutes": 3.3, "loss": 0.4835032045841217, "mean_target": 31.694990158081055}
+{"round": 7, "minutes": 4.0, "loss": 0.4543320879340172, "mean_target": 31.6633243560791}
+{"round": 8, "minutes": 4.58, "loss": 0.4577185705304146, "mean_target": 31.794857025146484}
+{"round": 9, "minutes": 5.02, "loss": 0.4825547203421593, "mean_target": 32.06338882446289}
+{"round": 10, "minutes": 5.28, "loss": 0.46857418715953825, "mean_target": 32.10667037963867, "eval": {"mae": 10.548893928527832, "pdb_mae": 11.936842105263159, "overestimate_rate": 0.0, "n": 95}}
+{"round": 11, "minutes": 5.53, "loss": 0.4527421906590462, "mean_target": 32.159950256347656}
+{"round": 12, "minutes": 5.74, "loss": 0.4203871637582779, "mean_target": 32.03597640991211}
+{"round": 13, "minutes": 6.01, "loss": 0.43779482394456865, "mean_target": 32.113033294677734}
+{"round": 14, "minutes": 6.26, "loss": 0.41588627845048903, "mean_target": 32.316287994384766}
+{"round": 15, "minutes": 6.53, "loss": 0.42317321598529817, "mean_target": 32.44578170776367}
+{"round": 16, "minutes": 6.86, "loss": 0.4318327456712723, "mean_target": 32.64902114868164}
+{"round": 17, "minutes": 7.06, "loss": 0.4399492859840393, "mean_target": 32.646934509277344}
+{"round": 18, "minutes": 7.2, "loss": 0.40431576371192934, "mean_target": 32.417457580566406}
+{"round": 19, "minutes": 7.34, "loss": 0.4028270304203033, "mean_target": 32.83513259887695}
+{"round": 20, "minutes": 7.49, "loss": 0.4040540635585785, "mean_target": 32.876625061035156, "eval": {"mae": 9.718108177185059, "pdb_mae": 12.10204081632653, "overestimate_rate": 0.0, "n": 98}}
+{"round": 21, "minutes": 7.64, "loss": 0.401816189289093, "mean_target": 33.03945541381836}
+{"round": 22, "minutes": 7.97, "loss": 0.4218739107251167, "mean_target": 33.21876525878906}
+{"round": 23, "minutes": 8.43, "loss": 0.4297373294830322, "mean_target": 33.42682647705078}
+{"round": 24, "minutes": 8.58, "loss": 0.43035468757152556, "mean_target": 33.41399383544922}
+{"round": 25, "minutes": 8.82, "loss": 0.43395875990390775, "mean_target": 33.35255813598633}
+{"round": 26, "minutes": 9.07, "loss": 0.4388759195804596, "mean_target": 33.84199523925781}
+{"round": 27, "minutes": 9.2, "loss": 0.4978429228067398, "mean_target": 33.62348937988281}
+{"round": 28, "minutes": 9.45, "loss": 0.6109164506196976, "mean_target": 33.834110260009766}
+{"round": 29, "minutes": 9.64, "loss": 0.9288444653153419, "mean_target": 33.829673767089844}
+{"round": 30, "minutes": 10.13, "loss": 1.2305518746376038, "mean_target": 34.008419036865234, "eval": {"mae": 7.507617950439453, "pdb_mae": 12.10204081632653, "overestimate_rate": 0.0, "n": 98}}
+{"round": 31, "minutes": 10.55, "loss": 0.943976429104805, "mean_target": 34.384517669677734}
+{"round": 32, "minutes": 10.76, "loss": 0.6431052356958389, "mean_target": 34.693538665771484}
+{"round": 33, "minutes": 10.95, "loss": 0.4588369935750961, "mean_target": 34.760074615478516}
+{"round": 34, "minutes": 11.15, "loss": 0.42464327067136765, "mean_target": 34.74251174926758}
+{"round": 35, "minutes": 11.36, "loss": 0.41062419265508654, "mean_target": 34.9603385925293}
+{"round": 36, "minutes": 11.71, "loss": 0.42916852980852127, "mean_target": 34.68687057495117}
+{"round": 37, "minutes": 11.92, "loss": 0.4229994103312492, "mean_target": 35.05223846435547}
+{"round": 38, "minutes": 12.19, "loss": 0.4235024034976959, "mean_target": 35.26276397705078}
+{"round": 39, "minutes": 12.42, "loss": 0.4241180747747421, "mean_target": 35.35175704956055}
+{"round": 40, "minutes": 12.67, "loss": 0.4365399658679962, "mean_target": 35.44193649291992, "eval": {"mae": 5.87643575668335, "pdb_mae": 12.10204081632653, "overestimate_rate": 0.0, "n": 98}}
+{"round": 41, "minutes": 12.89, "loss": 0.41595040261745453, "mean_target": 35.448020935058594}
+{"round": 42, "minutes": 13.16, "loss": 0.41613247990608215, "mean_target": 35.57396697998047}
+{"round": 43, "minutes": 13.41, "loss": 0.4270541578531265, "mean_target": 35.57118606567383}
+{"round": 44, "minutes": 13.68, "loss": 0.42210069596767424, "mean_target": 35.56486129760742}
+{"round": 45, "minutes": 13.91, "loss": 0.4121641397476196, "mean_target": 35.55827331542969}
+{"round": 46, "minutes": 14.27, "loss": 0.42280935645103457, "mean_target": 35.5103645324707}
+{"round": 47, "minutes": 14.55, "loss": 0.4197182714939117, "mean_target": 35.53395462036133}
+{"round": 48, "minutes": 14.85, "loss": 0.4191204771399498, "mean_target": 35.52186965942383}
+{"round": 49, "minutes": 15.11, "loss": 0.42255547642707825, "mean_target": 35.673004150390625}
+{"round": 50, "minutes": 15.34, "loss": 0.4262008905410767, "mean_target": 35.568973541259766, "eval": {"mae": 5.323783874511719, "pdb_mae": 12.16161616161616, "overestimate_rate": 0.020202020202020204, "n": 99}}
+{"round": 51, "minutes": 15.5, "loss": 0.4138530507683754, "mean_target": 35.643104553222656}
+{"round": 52, "minutes": 15.7, "loss": 0.42434855699539187, "mean_target": 35.57182693481445}
+{"round": 53, "minutes": 15.87, "loss": 0.4335248008370399, "mean_target": 35.61831283569336}
+{"round": 54, "minutes": 16.01, "loss": 0.4207342192530632, "mean_target": 35.72235870361328}
+{"round": 55, "minutes": 16.19, "loss": 0.4398885935544968, "mean_target": 35.81744384765625}
+{"round": 56, "minutes": 16.34, "loss": 0.4282520905137062, "mean_target": 35.39549255371094}
+{"round": 57, "minutes": 16.45, "loss": 0.4429564192891121, "mean_target": 35.702178955078125}
+{"round": 58, "minutes": 16.57, "loss": 0.4418462157249451, "mean_target": 35.97850036621094}
+{"round": 59, "minutes": 16.71, "loss": 0.4606626436114311, "mean_target": 35.792781829833984}
+{"round": 60, "minutes": 16.84, "loss": 0.5127362370491028, "mean_target": 35.79819869995117, "eval": {"mae": 4.737024784088135, "pdb_mae": 12.22, "overestimate_rate": 0.06, "n": 100}}
+{"round": 61, "minutes": 16.95, "loss": 0.5328811228275299, "mean_target": 35.926273345947266}
+{"round": 62, "minutes": 17.08, "loss": 0.60015599578619, "mean_target": 36.045372009277344}
+{"round": 63, "minutes": 17.2, "loss": 0.6387295499444008, "mean_target": 36.029640197753906}
+{"round": 64, "minutes": 17.32, "loss": 0.6168139398097991, "mean_target": 36.007022857666016}
+{"round": 65, "minutes": 17.45, "loss": 0.5897179797291756, "mean_target": 35.844032287597656}
+{"round": 66, "minutes": 17.54, "loss": 0.5443014577031136, "mean_target": 36.237144470214844}
+{"round": 67, "minutes": 17.69, "loss": 0.5018594816327095, "mean_target": 36.1342887878418}
+{"round": 68, "minutes": 17.97, "loss": 0.454402731359005, "mean_target": 36.30287170410156}
+{"round": 69, "minutes": 18.11, "loss": 0.4364479973912239, "mean_target": 35.97801208496094}
+{"round": 70, "minutes": 18.34, "loss": 0.443763242661953, "mean_target": 36.006351470947266, "eval": {"mae": 4.259388446807861, "pdb_mae": 12.22, "overestimate_rate": 0.1, "n": 100}}
+{"round": 71, "minutes": 18.54, "loss": 0.43178851157426834, "mean_target": 36.138370513916016}
+{"round": 72, "minutes": 18.67, "loss": 0.45194341987371445, "mean_target": 36.40886688232422}
+{"round": 73, "minutes": 18.82, "loss": 0.4571520254015923, "mean_target": 36.18782424926758}
+{"round": 74, "minutes": 18.94, "loss": 0.43395006358623506, "mean_target": 36.199607849121094}
+{"round": 75, "minutes": 19.05, "loss": 0.4396713450551033, "mean_target": 36.39997100830078}
+{"round": 76, "minutes": 19.22, "loss": 0.4383977949619293, "mean_target": 36.27798080444336}
+{"round": 77, "minutes": 19.42, "loss": 0.4407374501228333, "mean_target": 36.36595153808594}
+{"round": 78, "minutes": 19.58, "loss": 0.42515259981155396, "mean_target": 36.15275192260742}
+{"round": 79, "minutes": 19.77, "loss": 0.4358426660299301, "mean_target": 36.37257766723633}
+{"round": 80, "minutes": 20.23, "loss": 0.4360978499054909, "mean_target": 36.44292449951172, "eval": {"mae": 3.876687526702881, "pdb_mae": 12.22, "overestimate_rate": 0.16, "n": 100}}
+{"round": 81, "minutes": 20.46, "loss": 0.4340982034802437, "mean_target": 36.47861099243164}
+{"round": 82, "minutes": 20.59, "loss": 0.42852838784456254, "mean_target": 36.253841400146484}
+{"round": 83, "minutes": 20.81, "loss": 0.4357806950807571, "mean_target": 36.56306838989258}
+{"round": 84, "minutes": 21.04, "loss": 0.42913984060287474, "mean_target": 36.52869415283203}
+{"round": 85, "minutes": 21.31, "loss": 0.4278934940695763, "mean_target": 36.40703582763672}
+{"round": 86, "minutes": 21.56, "loss": 0.43352478444576265, "mean_target": 36.47175216674805}
+{"round": 87, "minutes": 21.76, "loss": 0.45705144852399826, "mean_target": 36.57258224487305}
+{"round": 88, "minutes": 21.99, "loss": 0.4998959004878998, "mean_target": 36.36992645263672}
+{"round": 89, "minutes": 22.18, "loss": 0.47026646584272386, "mean_target": 36.35343551635742}
+{"round": 90, "minutes": 22.41, "loss": 0.44473393708467485, "mean_target": 36.37263107299805, "eval": {"mae": 3.8230667114257812, "pdb_mae": 12.22, "overestimate_rate": 0.16, "n": 100}}
+{"round": 91, "minutes": 22.6, "loss": 0.4428222209215164, "mean_target": 36.37079620361328}
+{"round": 92, "minutes": 22.74, "loss": 0.44929932057857513, "mean_target": 36.39645004272461}
+{"round": 93, "minutes": 22.91, "loss": 0.45434013158082964, "mean_target": 36.39890670776367}
+{"round": 94, "minutes": 23.08, "loss": 0.4594243913888931, "mean_target": 36.5789680480957}
+{"round": 95, "minutes": 23.23, "loss": 0.46168852895498275, "mean_target": 36.565921783447266}
+{"round": 96, "minutes": 23.39, "loss": 0.46936928778886794, "mean_target": 36.617488861083984}
+{"round": 97, "minutes": 23.52, "loss": 0.47561465203762054, "mean_target": 36.53549575805664}
+{"round": 98, "minutes": 23.68, "loss": 0.472435986995697, "mean_target": 36.555110931396484}
+{"round": 99, "minutes": 23.82, "loss": 0.4719353422522545, "mean_target": 36.66134262084961}
+{"round": 100, "minutes": 23.93, "loss": 0.4659784257411957, "mean_target": 36.68766403198242, "eval": {"mae": 3.7325210571289062, "pdb_mae": 12.22, "overestimate_rate": 0.15, "n": 100}}
+{"round": 101, "minutes": 24.06, "loss": 0.46477117091417314, "mean_target": 36.47820281982422}
+{"round": 102, "minutes": 24.19, "loss": 0.4702442243695259, "mean_target": 36.55348205566406}
+{"round": 103, "minutes": 24.34, "loss": 0.44860759973526, "mean_target": 36.412723541259766}
+{"round": 104, "minutes": 24.5, "loss": 0.4496050849556923, "mean_target": 36.5794792175293}
+{"round": 105, "minutes": 24.66, "loss": 0.4460427463054657, "mean_target": 36.526329040527344}
+{"round": 106, "minutes": 24.81, "loss": 0.4272733747959137, "mean_target": 36.34500503540039}
+{"round": 107, "minutes": 24.92, "loss": 0.4313530147075653, "mean_target": 36.50397872924805}
+{"round": 108, "minutes": 25.06, "loss": 0.424401231110096, "mean_target": 36.51860809326172}
+{"round": 109, "minutes": 25.18, "loss": 0.4337094247341156, "mean_target": 36.6782341003418}
+{"round": 110, "minutes": 25.27, "loss": 0.4250786080956459, "mean_target": 36.76484298706055, "eval": {"mae": 3.454702138900757, "pdb_mae": 12.22, "overestimate_rate": 0.18, "n": 100}}
+{"round": 111, "minutes": 25.37, "loss": 0.4230273738503456, "mean_target": 36.825130462646484}
+{"round": 112, "minutes": 25.5, "loss": 0.4385214224457741, "mean_target": 36.76283645629883}
+{"round": 113, "minutes": 25.7, "loss": 0.43688360005617144, "mean_target": 36.9613151550293}
+{"round": 114, "minutes": 25.86, "loss": 0.4344587460160255, "mean_target": 36.98768615722656}
+{"round": 115, "minutes": 26.03, "loss": 0.43518452197313306, "mean_target": 36.87566375732422}
+{"round": 116, "minutes": 26.21, "loss": 0.44872295409440993, "mean_target": 37.07515335083008}
+{"round": 117, "minutes": 26.38, "loss": 0.4764020964503288, "mean_target": 37.321109771728516}
+{"round": 118, "minutes": 26.55, "loss": 0.43700510263442993, "mean_target": 37.232948303222656}
+{"round": 119, "minutes": 26.72, "loss": 0.44385467767715453, "mean_target": 37.07503128051758}
+{"round": 120, "minutes": 26.88, "loss": 0.4431985139846802, "mean_target": 36.86223220825195, "eval": {"mae": 3.1893341541290283, "pdb_mae": 12.22, "overestimate_rate": 0.23, "n": 100}}
+{"round": 121, "minutes": 27.06, "loss": 0.4510586306452751, "mean_target": 37.217960357666016}
+{"round": 122, "minutes": 27.24, "loss": 0.4679031431674957, "mean_target": 37.24276351928711}
+{"round": 123, "minutes": 27.41, "loss": 0.48624148815870283, "mean_target": 37.0181884765625}
+{"round": 124, "minutes": 27.59, "loss": 0.4920521780848503, "mean_target": 37.171287536621094}
+{"round": 125, "minutes": 27.78, "loss": 0.521577775478363, "mean_target": 37.14907455444336}
+{"round": 126, "minutes": 27.98, "loss": 0.5144770979881287, "mean_target": 37.16255187988281}
+{"round": 127, "minutes": 28.17, "loss": 0.5183674573898316, "mean_target": 37.16360092163086}
+{"round": 128, "minutes": 28.4, "loss": 0.5337049722671509, "mean_target": 37.35814666748047}
+{"round": 129, "minutes": 28.67, "loss": 0.5587012872099877, "mean_target": 37.562625885009766}
+{"round": 130, "minutes": 28.98, "loss": 0.5389797315001488, "mean_target": 37.434749603271484, "eval": {"mae": 2.9732184410095215, "pdb_mae": 12.22, "overestimate_rate": 0.3, "n": 100}}
+{"round": 131, "minutes": 29.18, "loss": 0.5150090619921684, "mean_target": 37.45439529418945}
+{"round": 132, "minutes": 29.4, "loss": 0.5240610793232918, "mean_target": 37.69507598876953}
+{"round": 133, "minutes": 29.61, "loss": 0.5014081776142121, "mean_target": 37.388832092285156}
+{"round": 134, "minutes": 29.78, "loss": 0.48848152458667754, "mean_target": 37.57624053955078}
+{"round": 135, "minutes": 30.0, "loss": 0.4684231445193291, "mean_target": 37.57998275756836}
+{"round": 136, "minutes": 30.2, "loss": 0.47698493748903276, "mean_target": 37.69126892089844}
+{"round": 137, "minutes": 30.46, "loss": 0.44356518387794497, "mean_target": 37.6071891784668}
+{"round": 138, "minutes": 30.7, "loss": 0.4473707050085068, "mean_target": 37.936763763427734}
+{"round": 139, "minutes": 30.93, "loss": 0.44209200888872147, "mean_target": 37.81477355957031}
+{"round": 140, "minutes": 31.12, "loss": 0.4414531320333481, "mean_target": 37.87544250488281, "eval": {"mae": 2.856027841567993, "pdb_mae": 12.22, "overestimate_rate": 0.35, "n": 100}}
+{"round": 141, "minutes": 31.33, "loss": 0.4428259953856468, "mean_target": 37.661529541015625}
+{"round": 142, "minutes": 31.54, "loss": 0.437213821709156, "mean_target": 37.67275619506836}
+{"round": 143, "minutes": 31.76, "loss": 0.4498191013932228, "mean_target": 37.84678268432617}
+{"round": 144, "minutes": 32.08, "loss": 0.42693500220775604, "mean_target": 37.62479782104492}
+{"round": 145, "minutes": 32.28, "loss": 0.4501044452190399, "mean_target": 37.75541305541992}
+{"round": 146, "minutes": 32.44, "loss": 0.42923418879508973, "mean_target": 37.86040115356445}
+{"round": 147, "minutes": 32.65, "loss": 0.4305757388472557, "mean_target": 37.69034957885742}
+{"round": 148, "minutes": 32.84, "loss": 0.43547618836164476, "mean_target": 37.81256103515625}
+{"round": 149, "minutes": 33.16, "loss": 0.44719731956720354, "mean_target": 37.853050231933594}
+{"round": 150, "minutes": 33.53, "loss": 0.445770226418972, "mean_target": 37.88705062866211, "eval": {"mae": 2.7627780437469482, "pdb_mae": 12.22, "overestimate_rate": 0.38, "n": 100}}
+{"round": 151, "minutes": 34.02, "loss": 0.43863501250743864, "mean_target": 37.782127380371094}
+{"round": 152, "minutes": 34.49, "loss": 0.427189028263092, "mean_target": 37.82368850708008}
+{"round": 153, "minutes": 34.96, "loss": 0.45375159084796907, "mean_target": 37.9529914855957}
+{"round": 154, "minutes": 35.37, "loss": 0.4519164443016052, "mean_target": 38.054901123046875}
+{"round": 155, "minutes": 35.8, "loss": 0.4414578154683113, "mean_target": 37.95121383666992}
+{"round": 156, "minutes": 36.39, "loss": 0.4470826268196106, "mean_target": 38.2608757019043}
+{"round": 157, "minutes": 36.89, "loss": 0.45950390100479127, "mean_target": 37.95492935180664}
+{"round": 158, "minutes": 37.43, "loss": 0.4628628671169281, "mean_target": 38.16484069824219}
+{"round": 159, "minutes": 37.9, "loss": 0.46678136587142943, "mean_target": 38.2994384765625}
+{"round": 160, "minutes": 38.32, "loss": 0.508982564508915, "mean_target": 37.99602127075195, "eval": {"mae": 2.7207419872283936, "pdb_mae": 12.22, "overestimate_rate": 0.46, "n": 100}}
+{"round": 161, "minutes": 38.76, "loss": 0.5117160931229592, "mean_target": 38.082420349121094}
+{"round": 162, "minutes": 39.18, "loss": 0.5363331511616707, "mean_target": 38.545372009277344}
+{"round": 163, "minutes": 39.61, "loss": 0.5615822702646256, "mean_target": 38.213661193847656}
+{"round": 164, "minutes": 39.98, "loss": 0.5930836707353592, "mean_target": 38.391929626464844}
+{"round": 165, "minutes": 40.43, "loss": 0.6504161074757576, "mean_target": 38.13811492919922}
+{"round": 166, "minutes": 40.78, "loss": 0.6457330077886582, "mean_target": 38.19410705566406}
+{"round": 167, "minutes": 41.11, "loss": 0.6059447661042213, "mean_target": 38.25652313232422}
+{"round": 168, "minutes": 41.36, "loss": 0.5295275539159775, "mean_target": 38.276145935058594}
+{"round": 169, "minutes": 41.56, "loss": 0.48600820899009706, "mean_target": 38.169532775878906}
+{"round": 170, "minutes": 41.77, "loss": 0.451814104616642, "mean_target": 37.92746353149414, "eval": {"mae": 2.8361334800720215, "pdb_mae": 12.22, "overestimate_rate": 0.46, "n": 100}}
+{"round": 171, "minutes": 42.05, "loss": 0.45594113022089006, "mean_target": 38.104488372802734}
+{"round": 172, "minutes": 42.26, "loss": 0.45504360049963, "mean_target": 38.08240509033203}
