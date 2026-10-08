@@ -117,7 +117,7 @@ Trained only by self-play on a laptop CPU: 2,432 games (19 iterations). The serv
 | Alpha-beta minimax, depth 4 | 36 | 5 | 9 | 77% |
 | Alpha-beta minimax, depth 6 | 18 | 8 | 24 | 44% |
 
-For reference, plain MCTS with 1,000 random-rollout simulations scores 32-2-16 against depth-4 minimax. AlphaZero implementations typically train on tens of thousands of self-play games for Connect Four; this one has seen 2,432.
+For reference, plain MCTS with 1,000 random-rollout simulations scores 32-2-16 against depth-4 minimax. AlphaZero implementations typically train on tens of thousands of self-play games for Connect Four; this one has seen 2,432. How it was trained, on what hardware and for how long: [docs/connect4-training.md](docs/connect4-training.md).
 
 
 ### Lights Out: exact linear algebra over GF(2)
