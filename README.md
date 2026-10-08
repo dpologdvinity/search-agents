@@ -1,6 +1,6 @@
 # search-agents
 
-Thirteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Fourteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -17,6 +17,7 @@ Thirteen puzzles and games, each played or solved by a classic AI algorithm: sea
 | **Sokoban** | Search over pushes (player walks are free, so states are box layouts and the player's region): BFS, greedy best-first, and A\* with a sum-of-nearest-goal bound or a minimum-cost box-to-goal matching (Hungarian), each with or without deadlock pruning (dead squares, frozen boxes) | None needed: the search is exact, and both bounds are admissible (they never overestimate) | The next push the solver suggests, the matching lines from each box to its goal, dead squares tinted red, and the nodes expanded with and without deadlock pruning, side by side |
 | **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 13 hand-built features (one is a six-turn survival search over the ghosts' real moves), trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 | **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
+| **Wordle** | Information theory: pick the guess with the most expected bits (entropy of the feedback patterns over the candidates); minimax (smallest worst-case bucket); random consistent word as the baseline | None needed: a guess is scored exactly against every answer, so the search is exhaustive over the allowed guesses | Every candidate's feedback and bucket size, the bits each guess is expected to give against the bits it actually gave, and the remaining words after each guess |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -200,6 +201,21 @@ Shelf aisles, 8 robots, 10 instances (`--layout aisles --robots 8 --instances 10
 
 Prioritized planning was suboptimal on 9 of 10 (mean extra cost 3.8).
 
+### Wordle: information theory vs minimax vs random
+
+All 3,568 answers (SCOWL common-word tier), with 6,748 allowed guesses for each strategy. Full numbers:
+`results/wordle_benchmark.md` and `results/wordle_benchmark.json`.
+
+| Strategy | Mean guesses | 1 | 2 | 3 | 4 | 5 | 6 | Failed (over 6) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **Max expected information (entropy)** | **3.627** | 0 | 59 | 1,513 | 1,710 | 272 | 14 | **0** |
+| Minimax (smallest worst bucket) | 3.739 | 0 | 50 | 1,223 | 1,927 | 344 | 24 | 0 |
+| Random consistent word | 4.412 | 1 | 94 | 699 | 1,274 | 886 | 368 | 246 (6.89%) |
+
+Best opening word by expected information: TARES (6.23 bits; worst bucket 251, expected 78.7 words left).
+These answers come from SCOWL's common tier, not the official list, so the numbers are not directly comparable
+with published Wordle figures.
+
 ## How it works
 
 ### N-Puzzle
@@ -293,12 +309,21 @@ Conflict-Based Search (Sharon et al., 2012) is optimal for sum of costs. The roo
 
 On small random maps, a brute-force search over joint positions finds the same optimal cost as CBS; the tests check this for two robots.
 
+### Wordle
+
+A guess returns five tiles (gray, yellow, green), so there are 3^5 = 243 possible feedback patterns. The solver
+keeps the answers consistent with the feedback so far, and for each allowed guess it counts how those answers
+would split across the patterns. The expected information of a guess is the entropy of that split,
+H = -sum p log2 p, in bits. The entropy strategy plays the guess with the most bits. Minimax plays the guess with
+the smallest largest bucket. The random baseline picks any consistent answer. The feedback table (every guess
+against every answer, one byte each) is precomputed, so scoring a guess is a gather and a bincount.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -336,6 +361,10 @@ python -m sokoban                                                            # p
 python -m sokoban watch --level 9                                            # the solver's plan for a level, animated
 python -m sokoban solve --level 12 --algorithm astar --heuristic matching    # one search: nodes expanded and the plan
 python -m sokoban benchmark --out results/sokoban_benchmark                  # every search rule on every level
+python -m wordle                                                             # you guess; h = hint with the solver's top guesses and their bits
+python -m wordle solve                                                       # the solver guesses; you type the feedback (gy..g)
+python -m wordle watch --answer crane                                        # the solver plays a secret word and explains each guess
+python -m wordle benchmark                                                   # all answers, all strategies; writes results/wordle_benchmark.*
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

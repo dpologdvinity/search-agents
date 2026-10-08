@@ -809,8 +809,80 @@ function sokobanSim(ctx, S) {
   };
 }
 
+function wordleSim(ctx, S) {
+  // The solver on one answer (ABIDE). First the bars: the expected bits of the best openers, as the solver ranks
+  // them (python -m wordle benchmark). Then its three guesses, tile by tile, with the feedback each one got
+  // (feedback.score). The numbers are fixed, so this sim does no scoring and makes no server calls.
+  const OPENERS = [['TARES', 6.23], ['LARES', 6.17], ['RALES', 6.15], ['TALES', 6.14], ['RATES', 6.12]];
+  const GUESSES = [['TARES', '.y.y.'], ['ABODE', 'gg.gg'], ['ABIDE', 'ggggg']];
+  const TILE = 30, GAP = 6, X0 = (S - (5 * TILE + 4 * GAP)) / 2, Y0 = 124;
+  const FILL = { g: C.green, y: C.yellow, '.': '#1b2638' };
+  const BARS_T = 70, TILE_T = 14, HOLD_T = 160; // ticks for the bars to grow, between tiles, and to hold the result
+  let t = 0, phase = 0;
+
+  function drawTile(x, y, letter, fill, lit) {
+    ctx.fillStyle = fill;
+    ctx.shadowColor = fill;
+    ctx.shadowBlur = lit ? 12 : 0;
+    ctx.fillRect(x, y, TILE, TILE);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0,245,255,0.25)';
+    ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+    if (letter) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(letter, x + TILE / 2, y + TILE / 2 + 1);
+    }
+  }
+
+  return (speed) => {
+    t += speed;
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    if (phase === 0) {
+      // Bar length is expected bits above 5 bits, so small differences between openers still show.
+      const grow = Math.min(1, t / BARS_T);
+      ctx.fillStyle = C.yellow;
+      ctx.fillText('expected bits', 8, 8);
+      OPENERS.forEach(([word, bits], i) => {
+        const h = ((bits - 5) / 1.5) * 84 * grow, x = 22 + i * 42, base = 102;
+        ctx.fillStyle = i === 0 ? C.green : C.cyan;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = i === 0 ? 14 : 6;
+        ctx.fillRect(x, base - h, 26, h);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = C.dim;
+        ctx.textAlign = 'center';
+        ctx.fillText(word, x + 13, base + 6);
+        ctx.textAlign = 'left';
+      });
+      if (t >= BARS_T + 60) { phase = 1; t = 0; }
+    } else {
+      // Tiles reveal one at a time; each guess is scored before the next is typed.
+      const revealed = Math.floor(t / TILE_T);
+      ctx.fillStyle = phase === 2 ? C.green : C.pink;
+      ctx.fillText(phase === 2 ? 'solved: ABIDE' : 'feedback', 8, 8);
+      for (let r = 0; r < GUESSES.length; r++) {
+        const [word, fb] = GUESSES[r];
+        for (let c = 0; c < 5; c++) {
+          const k = r * 5 + c, x = X0 + c * (TILE + GAP), y = Y0 + r * (TILE + GAP);
+          if (k < revealed) drawTile(x, y, word[c].toUpperCase(), FILL[fb[c]], true);
+          else drawTile(x, y, '', '#0a1322', false);
+        }
+      }
+      if (phase === 1 && revealed >= 15) { phase = 2; t = 0; }
+      if (phase === 2 && t > HOLD_T) { phase = 0; t = 0; }
+    }
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

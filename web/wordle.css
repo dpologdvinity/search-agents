@@ -1,0 +1,92 @@
+/* Wordle page. Loaded after style.css and app.css. Tile colours follow the feedback: green, yellow, gray. */
+
+.wd-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+.wd-modes { display: flex; gap: 0.6rem; }
+.wd-modes .cyber-btn.act { box-shadow: 0 0 18px rgba(255,0,160,0.6); }
+
+/* Board: six rows of five tiles. */
+.wd-board {
+  display: grid; grid-template-rows: repeat(6, auto); gap: 6px; padding: 12px;
+  border: 2px solid var(--pink); background: rgba(2,6,16,0.85);
+  box-shadow: 0 0 28px rgba(255,0,160,0.3), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+/* --tile is set on the board, so the rows and the tiles both see it. */
+.wd-board { --tile: 60px; }
+.wd-row { display: grid; grid-template-columns: repeat(5, var(--tile)); gap: 6px; }
+.wd-row.shake { animation: wd-shake 0.4s; }
+@keyframes wd-shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+.wd-tile {
+  width: var(--tile); height: var(--tile); display: flex; align-items: center; justify-content: center;
+  font-family: var(--orb); font-weight: 900; font-size: calc(var(--tile) * 0.42); color: #fff; text-transform: uppercase;
+  border: 2px solid rgba(0,245,255,0.18); background: rgba(5,13,26,0.95);
+  transition: border-color 0.12s, transform 0.12s;
+}
+.wd-tile.filled { border-color: rgba(0,245,255,0.7); transform: scale(1.04); }
+.wd-tile.cur { border-color: var(--yellow); box-shadow: 0 0 10px rgba(255,230,0,0.5); }
+/* A revealed tile flips: it turns edge-on, then shows its colour. The colour is set by the JS after the flip. */
+.wd-tile.flip { animation: wd-flip 0.5s ease-in both; animation-delay: var(--delay, 0s); }
+@keyframes wd-flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+.wd-tile.g { background: radial-gradient(circle at 35% 30%, #b8ffd9, var(--green) 55%, #00804a); border-color: var(--green);
+  box-shadow: 0 0 16px rgba(0,255,136,0.6); color: #021; }
+.wd-tile.y { background: radial-gradient(circle at 35% 30%, #fff7a8, var(--yellow) 55%, #9a8400); border-color: var(--yellow);
+  box-shadow: 0 0 14px rgba(255,230,0,0.5); color: #210; }
+.wd-tile.x { background: #1a2233; border-color: #334155; color: #cbd5e1; }
+.wd-tile.bump { animation: wd-bump 0.18s ease-out; }
+@keyframes wd-bump { from { transform: scale(1.12); } to { transform: scale(1); } }
+
+/* Screen keyboard. A key takes the best colour seen for its letter. */
+.wd-keys { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.wd-keyrow { display: flex; gap: 5px; }
+.wd-key {
+  min-width: 2.1rem; height: 2.7rem; padding: 0 0.4rem; cursor: pointer;
+  font-family: var(--orb); font-size: 0.8rem; font-weight: 700; color: var(--cyan);
+  border: 1px solid rgba(0,245,255,0.35); background: rgba(5,13,26,0.9);
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+}
+.wd-key.wide { min-width: 3.4rem; font-size: 0.6rem; color: var(--pink); border-color: rgba(255,0,160,0.45); }
+.wd-key:hover:not(:disabled) { box-shadow: 0 0 12px rgba(0,245,255,0.5); }
+.wd-key:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.wd-key:disabled { opacity: 0.45; cursor: default; }
+.wd-key.g { background: var(--green); color: #021; border-color: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.5); }
+.wd-key.y { background: var(--yellow); color: #210; border-color: var(--yellow); }
+.wd-key.x { background: #1a2233; color: #64748b; border-color: #334155; }
+
+/* The solver's options: one bar per guess, length = expected bits. */
+.wd-bars { display: flex; flex-direction: column; gap: 0.35rem; }
+.wd-bar-row {
+  display: grid; grid-template-columns: 5.2rem 1fr 4.6rem 4.4rem; gap: 0.6rem; align-items: center;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim);
+}
+.wd-bar-row .w { color: var(--text); letter-spacing: 0.12em; }
+.wd-bar-track { height: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,245,255,0.12); }
+.wd-bar-fill { height: 100%; width: 0; background: var(--purple); box-shadow: 0 0 8px var(--purple); transition: width 0.45s ease-out; }
+.wd-bar-row.cand .wd-bar-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.wd-bar-row.best { color: var(--green); }
+.wd-bar-row.best .w { color: var(--green); text-shadow: 0 0 8px var(--green); }
+.wd-bar-row.best .wd-bar-fill { background: var(--green); box-shadow: 0 0 10px var(--green); }
+.wd-bar-row .v { text-align: right; }
+
+/* Words still possible: chips, shown when there are few enough to name. */
+.wd-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; max-height: 180px; overflow-y: auto; }
+.wd-chip {
+  font-family: var(--mono); font-size: 0.66rem; color: var(--text); letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem; border: 1px solid rgba(0,245,255,0.25); background: rgba(0,245,255,0.05);
+}
+.wd-chip.gone { opacity: 0.35; text-decoration: line-through; }
+
+@media (max-width: 600px) {
+  .wd-board { padding: 8px; gap: 4px; }
+  .wd-row { gap: 4px; }
+  .wd-board { --tile: min(54px, calc((100vw - 9rem) / 5)); }
+  .wd-key { min-width: 1.7rem; height: 2.3rem; font-size: 0.7rem; }
+  .wd-key.wide { min-width: 2.6rem; }
+  .wd-bar-row { grid-template-columns: 4.2rem 1fr 3.6rem; }
+  .wd-bar-row .v:last-child { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-board { animation: none; }
+  .wd-row.shake, .wd-tile.flip, .wd-tile.bump, .wd-bar-fill { animation: none; transition: none; }
+}

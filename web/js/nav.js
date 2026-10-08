@@ -15,6 +15,7 @@ const GAMES = [
   { href: 'warehouse.html', label: 'WAREHOUSE' },
   { href: 'endgame.html', label: 'ENDGAME' },
   { href: 'sokoban.html', label: 'SOKOBAN' },
+  { href: 'wordle.html', label: 'WORDLE' },
 ];
 
 const list = document.getElementById('nav-links');

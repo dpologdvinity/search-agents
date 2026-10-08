@@ -14,6 +14,7 @@ Environment:
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from . import (
     sokoban_api,
     sudoku_api,
     warehouse_api,
+    wordle_api,
 )
 from .limits import Busy, RateLimiter, SearchSlots
 
@@ -62,6 +64,12 @@ async def lifespan(app: FastAPI):
             load()
         except FileNotFoundError:
             pass
+    # Wordle's feedback table takes about 5 s to build, so build it in a daemon thread and let startup go on.
+    # A request that arrives before the build ends waits on the same lock inside get_lexicon, so nothing is
+    # built twice.
+    from wordle.lexicon import get_lexicon as load_wordle
+
+    threading.Thread(target=load_wordle, daemon=True).start()
     yield
 
 
@@ -85,6 +93,7 @@ app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)
 app.include_router(routes_api.router)
 app.include_router(warehouse_api.router)
+app.include_router(wordle_api.router)
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 

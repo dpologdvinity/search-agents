@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORDLE // SEARCH AGENTS</title>
+<meta name="description" content="Wordle solved by information theory: each guess is the one whose feedback has the most entropy over the words still possible. Watch the solver choose, or play against it.">
+<meta property="og:title" content="WORDLE // SEARCH AGENTS">
+<meta property="og:description" content="Wordle solved by information theory: each guess is the one whose feedback has the most entropy over the words still possible. Watch the solver choose, or play against it.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/wordle.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="wordle.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">INFORMATION THEORY · EXPECTED BITS OF FEEDBACK</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="WORDLE">WORDLE</h1>
+      <div class="proj-pg-sub">Every guess returns five colours. The solver picks the guess whose colours are the most surprising on average, which splits the remaining words most evenly.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip">GUESS <span class="val" id="chip-guess">0 / 6</span></span>
+        <span class="stat-chip green">LEFT <span class="val" id="chip-left">—</span></span>
+        <span class="stat-chip">LAST <span class="val" id="chip-last">—</span></span>
+        <span class="stat-chip">STRATEGY <span class="val" id="chip-strategy">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="wd-stage">
+        <div class="wd-modes" role="group" aria-label="Who plays">
+          <button class="cyber-btn pink act" id="mode-you" type="button" aria-pressed="true"><span class="btn-txt">YOU PLAY</span></button>
+          <button class="cyber-btn" id="mode-ai" type="button" aria-pressed="false"><span class="btn-txt">AI PLAYS</span></button>
+        </div>
+        <div id="wd-board" class="wd-board" role="group" aria-label="Wordle board"></div>
+        <div class="wd-msg field-hint" id="wd-msg" role="status" aria-live="polite">Type a five-letter word, or press a key on the screen keyboard.</div>
+        <div id="wd-keys" class="wd-keys" aria-label="Keyboard"></div>
+        <div class="inline" style="justify-content:center;flex-wrap:wrap">
+          <button class="cyber-btn green" id="btn-ai-step" type="button"><span class="btn-txt">▶ AI MOVE</span></button>
+          <button class="cyber-btn" id="btn-ai-auto" type="button" aria-pressed="false"><span class="btn-txt">▶▶ AI AUTO</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW WORD</span></button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">WHAT THE SOLVER IS THINKING</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Loading the word list. The first guess is the same for every game, so it is cached.</div>
+          <div class="field-hint" id="think-text"></div>
+          <div class="wd-bars" id="wd-bars" aria-label="Best guesses by expected bits"></div>
+          <div class="field-hint" id="think-key">Bar length = expected bits: how much the feedback tells us on average. Bits = entropy of the feedback distribution over the candidates.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">WORDS STILL POSSIBLE</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="left-title">—</div>
+          <div class="wd-chips" id="wd-chips"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">GAME LOG</div>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">THE SOLVER</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">STRATEGY</div>
+            <select class="cyber-select" id="strategy" style="width:100%">
+              <option value="entropy" selected>Max expected information (entropy)</option>
+              <option value="minimax">Minimax (smallest worst case)</option>
+              <option value="random">Random consistent word (baseline)</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">AI SPEED</div>
+            <select class="cyber-select" id="speed" style="width:100%">
+              <option value="900">Slow</option>
+              <option value="450" selected>Normal</option>
+              <option value="150">Fast</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title green-ttl">HOW IT THINKS</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">A FEEDBACK IS A PATTERN</div>
+            <div class="field-hint">Five tiles, three colours: 3^5 = 243 possible patterns. Each candidate answer would produce one of them for a given guess.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">BITS ARE SURPRISE</div>
+            <div class="field-hint">H = -Σ p log₂ p over the pattern buckets. A guess that splits 2,000 words into many even buckets might give 5.5 bits; one that splits them into two buckets gives 1.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">MINIMAX PLAYS SAFE</div>
+            <div class="field-hint">It picks the guess whose largest bucket is smallest, so the worst case is as good as possible. It can waste bits on an average turn.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">THE BASELINE IS BLIND</div>
+            <div class="field-hint">Random consistent: any word the feedback so far allows. It uses every clue but never looks ahead, so it needs more guesses.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/wordle.js"></script>
+</body>
+</html>
