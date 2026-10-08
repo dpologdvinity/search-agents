@@ -27,6 +27,7 @@
     <li><a href="routes.html">ROUTES</a></li>
     <li><a href="2048.html">2048</a></li>
     <li><a href="sudoku.html">SUDOKU</a></li>
+    <li><a href="lightsout.html">LIGHTS OUT</a></li>
   </ul>
 </nav>
 
@@ -37,7 +38,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Six agents that solve puzzles and play games by search, each guided by something learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Seven agents that solve puzzles and play games by search, each guided by something learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -88,6 +89,13 @@
         <canvas class="cab-screen" data-sim="checkers" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>26x</b> fewer positions with alpha-beta</span>
         <span class="cab-desc">An agent that assumes you always find your best reply, and prunes every line it can rule out. See how much it skipped.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-cyan" href="lightsout.html">
+        <span class="cab-marquee">Lights Out</span>
+        <canvas class="cab-screen" data-sim="lightsout" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>1 in 4</b> random 5x5 boards can be cleared at all</span>
+        <span class="cab-desc">Each press is a vector over GF(2). Gaussian elimination mod 2 finds the fewest presses, or proves that none exist.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-green" href="routes.html">

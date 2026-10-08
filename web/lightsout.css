@@ -1,0 +1,67 @@
+/* Lights Out page. Loaded after style.css and app.css; the board size comes from --n and --cell,
+   which lightsout.js sets on the board for each size. */
+
+/* Board: n columns of square lights. */
+.lo-board {
+  display: grid; grid-template-columns: repeat(var(--n), auto); gap: 6px; padding: 12px;
+  border: 2px solid var(--cyan); background: rgba(2,6,16,0.85);
+  box-shadow: 0 0 28px rgba(0,245,255,0.3), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+.lo-board.solved { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45), inset 0 0 40px rgba(0,0,0,0.6); }
+
+/* A light. Dark by default; .on is lit. */
+.lo-cell {
+  position: relative; width: var(--cell); height: var(--cell); padding: 0; cursor: pointer;
+  border: 1px solid rgba(0,245,255,0.18); background: rgba(5,13,26,0.95);
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.7);
+  transition: background 0.18s, box-shadow 0.18s, border-color 0.18s, transform 0.12s;
+}
+.lo-cell:hover { transform: scale(1.04); border-color: var(--pink); }
+.lo-cell:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.lo-cell.on {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #9feeff 35%, var(--cyan) 70%, #0a7d8a);
+  box-shadow: 0 0 18px rgba(0,245,255,0.8), 0 0 40px rgba(0,245,255,0.35), inset 0 -4px 0 rgba(0,0,0,0.25);
+  border-color: rgba(0,245,255,0.9);
+}
+
+/* Cells of the solution being shown: dashed pink outline, numbered in press order. */
+.lo-cell.plan { outline: 2px dashed var(--pink); outline-offset: -5px; }
+.lo-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
+  font-family: var(--orb); font-weight: 900; font-size: calc(var(--cell) * 0.32); color: #fff;
+  text-shadow: 0 0 6px var(--pink), 0 1px 0 #000;
+}
+
+/* The next press suggested by HINT pulses green. */
+.lo-cell.next { outline: 3px solid var(--green); outline-offset: 1px; animation: lo-next 0.9s ease-in-out infinite alternate; }
+@keyframes lo-next {
+  from { box-shadow: 0 0 6px var(--green); }
+  to { box-shadow: 0 0 26px var(--green), inset 0 0 12px rgba(0,255,136,0.4); }
+}
+
+/* A light that was just pressed kicks in and out. */
+.lo-cell.flash { animation: lo-flash 0.35s ease-out; }
+@keyframes lo-flash { from { transform: scale(1.14); } to { transform: scale(1); } }
+
+/* Elimination viewer: one canvas, drawn by lightsout.js. The selector is more specific than
+   app.css's ".viz-panel canvas" (fixed 170px height), so the canvas keeps its drawn aspect ratio. */
+.viz-panel canvas.lo-elim {
+  display: block; width: 100%; height: auto; max-width: 640px; image-rendering: pixelated;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+}
+.lo-elim-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+/* Phones: keep the board on screen. Cells shrink so the widest board still fits. */
+@media (max-width: 600px) {
+  .lo-board { gap: 4px; padding: 8px; }
+  .lo-cell {
+    width: min(var(--cell), calc((100vw - 5rem) / var(--n)));
+    height: min(var(--cell), calc((100vw - 5rem) / var(--n)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lo-board { animation: none; }
+  .lo-cell.next, .lo-cell.flash { animation: none; }
+}

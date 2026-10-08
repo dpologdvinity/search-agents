@@ -10,6 +10,7 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 | **Route planner** (traveling salesman) | Nearest neighbour + 2-opt; exact Held-Karp dynamic programming up to 12 cities | Simulated annealing and a genetic algorithm (order crossover, inversion mutation, elitism) | Each route untangling live, length and temperature charts, a three-way race, and drawing your own route to compare |
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
+| **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -93,6 +94,10 @@ Training is in progress on a laptop CPU. After 1,664 self-play games (iteration 
 For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against depth-4 minimax. AlphaZero implementations typically need tens of thousands of self-play games on Connect Four; these numbers will be updated as training continues.
 
 
+### Lights Out: exact linear algebra over GF(2)
+
+Pressing a light is addition mod 2, so a board is a linear system A x = b with a 25x25 matrix of rank 23. That splits the boards: only 1 in 4 can be cleared at all, and every solvable 5x5 board has exactly 4 solutions. Over 3,000 random solvable boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. Solving a 5x5 board takes about 3 ms in Python.
+
 ## How it works
 
 ### N-Puzzle
@@ -127,6 +132,12 @@ For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against
   - *Genetic algorithm*: tournament selection, order crossover (keeps a slice of one parent, fills the rest in the other parent's order, so the child is always a valid route), inversion mutation, and elitism.
   - *Held-Karp*: exact dynamic programming over subsets, O(n²·2ⁿ), used for maps of 12 cities or fewer to report how far each heuristic is from optimal.
 
+### Lights Out
+
+- **Rules** (`lightsout/board.py`). Cells are numbered row by row. A press toggles the cell and its orthogonal neighbours. Boards and press sets are integers, so a press is one XOR of neighbourhood masks.
+- **Solver** (`lightsout/solver.py`). Row i of A is the equation for light i. Gauss-Jordan elimination mod 2 reduces [A | b], with each row operation a single integer XOR. A row with no left-hand side and a 1 on the right proves the board unreachable. Otherwise the solutions are one particular solution plus every combination of the null-space basis, and the lightest of the 2^nullity solutions is returned. For 3x3, 6x6, 7x7 and 8x8 the matrix is invertible, so every board is solvable; 4x4 has nullity 4 and 9x9 has nullity 8.
+- **Checks** (`tests/test_lightsout.py`). Exhaustive brute force over all 512 boards of 3x3, sampled agreement on the minimum press count for 4x4, and solvability checked against the null-space orthogonality test.
+
 ### Sudoku
 
 `sudoku/solver.py` has three solvers behind one interface, each recording a trace of guesses and backtracks for the visualizer. Propagation keeps candidate sets as 9-bit masks and, after every guess, fills cells with one candidate and digits with one possible place in a row, column, or box, until nothing changes.
@@ -136,7 +147,7 @@ For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -156,6 +167,7 @@ Command-line tools:
 python -m connect4                                 # play Connect Four against AlphaZero
 python -m game2048                                 # play 2048 with w/a/s/d
 python -m checkers --agent minimax --level 3       # play checkers against alpha-beta or minimax
+python -m lightsout --solve 110/011/101            # the fewest presses that clear a 3x3 board
 python -m routes --compare --cities 12             # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1          # any algorithm by name
 python -m npuzzle.benchmark 8puzzle               # results/npuzzle_8puzzle.md

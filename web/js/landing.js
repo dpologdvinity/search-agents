@@ -441,8 +441,72 @@ function routesSim(ctx, S) {
   };
 }
 
+function lightsoutSim(ctx, S) {
+  // 5x5 Lights Out. Deal a random solvable board by pressing random cells on the dark board, solve it with
+  // Gauss-Jordan elimination over GF(2) (the same method as lightsout/solver.py), then replay the presses.
+  const n = 5, N = 25, cell = S / n;
+  // Bit mask of what pressing cell i toggles: the cell and its orthogonal neighbours.
+  const toggles = [...Array(N)].map((_, i) => {
+    const r = (i / n) | 0, c = i % n;
+    let m = 1 << i;
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < n && cc >= 0 && cc < n) m |= 1 << (rr * n + cc);
+    }
+    return m;
+  });
+  // Cells to press that clear `board`. Row i holds toggles[i] plus the lit bit of cell i at bit N.
+  function presses(board) {
+    const rows = toggles.map((t, i) => t | (((board >> i) & 1) << N));
+    const pivots = [];
+    let rank = 0;
+    for (let c = 0; c < N; c++) {
+      let f = rank;
+      while (f < N && !((rows[f] >> c) & 1)) f++;
+      if (f === N) continue; // no pivot here: this press is free, so leave it unpressed
+      [rows[rank], rows[f]] = [rows[f], rows[rank]];
+      for (let r = 0; r < N; r++) if (r !== rank && ((rows[r] >> c) & 1)) rows[r] ^= rows[rank];
+      pivots.push(c);
+      rank++;
+    }
+    let x = 0; // free presses stay 0, so each pivot press equals its row's right-hand side
+    for (let r = 0; r < rank; r++) if ((rows[r] >> N) & 1) x |= 1 << pivots[r];
+    return [...Array(N).keys()].filter((i) => (x >> i) & 1);
+  }
+  let board = 0, plan = [], hold = 0;
+  function deal() {
+    do {
+      let x = 0;
+      for (let i = 0; i < N; i++) if (Math.random() < 0.4) x ^= 1 << i;
+      board = 0;
+      for (let i = 0; i < N; i++) if ((x >> i) & 1) board ^= toggles[i];
+    } while (!board);
+    plan = presses(board);
+    hold = 0;
+  }
+  deal();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    const next = plan[0];
+    for (let i = 0; i < N; i++) {
+      const x = (i % n) * cell, y = ((i / n) | 0) * cell, on = (board >> i) & 1;
+      ctx.fillStyle = on ? C.cyan : 'rgba(0,245,255,0.06)';
+      ctx.shadowColor = C.cyan;
+      ctx.shadowBlur = on ? 14 : 0;
+      ctx.fillRect(x + 5, y + 5, cell - 10, cell - 10);
+      ctx.shadowBlur = 0;
+      if (i === next) { ctx.strokeStyle = C.yellow; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y + 3, cell - 6, cell - 6); }
+    }
+    if (!plan.length) { if ((hold += speed) > 140) deal(); return; }
+    if ((hold += speed) < 16) return;
+    hold = 0;
+    board ^= toggles[plan.shift()]; // one press: its cell and neighbours flip
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');
