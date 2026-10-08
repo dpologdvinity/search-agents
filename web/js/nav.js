@@ -22,6 +22,7 @@ const GAMES = [
   { href: 'bandits.html', label: 'BANDITS' },
   { href: 'cartpole.html', label: 'CART POLE' },
   { href: 'queens.html', label: 'N-QUEENS' },
+  { href: 'snake.html', label: 'SNAKE' },
 ];
 
 const list = document.getElementById('nav-links');

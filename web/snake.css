@@ -1,0 +1,71 @@
+/* Snake page. Loaded after style.css and app.css. The board is a canvas sized by snake.js; the
+   network and chart canvases are sized by their parent width, so the page works at 390px. */
+
+/* Board stage: the board, its controls, and the phone steering pad. */
+.sn-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+.sn-board-wrap { width: 100%; display: flex; justify-content: center; }
+.sn-board {
+  display: block; max-width: 100%; aspect-ratio: 1 / 1; border-radius: 4px;
+  box-shadow: 0 0 38px rgba(0,245,255,0.25), 0 0 80px rgba(255,0,160,0.12);
+  cursor: pointer; touch-action: none;
+}
+.sn-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.sn-speed { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; justify-content: center; width: 100%; max-width: 480px; }
+.sn-speed input[type="range"] { flex: 1 1 160px; accent-color: var(--green); }
+
+/* Steering pad: shown on touch-sized screens, where the keyboard is not there. */
+.sn-dpad {
+  display: none; grid-template-columns: repeat(3, 58px); gap: 6px; justify-content: center; align-items: center;
+}
+.sn-dpad .sn-key { width: 58px; height: 52px; padding: 0; justify-content: center; }
+.sn-dpad-mid { font-family: var(--orb); font-size: 0.55rem; color: var(--dim); text-align: center; letter-spacing: 0.1em; }
+
+/* Thinking panel: the explanation, then one bar per sense and one per output. */
+.sn-think { font-size: 1rem; color: var(--text); margin: 0.2rem 0 0.7rem; min-height: 2.8em; }
+.sn-bars { display: grid; gap: 0.25rem; margin-top: 0.6rem; }
+.sn-bar {
+  display: grid; grid-template-columns: 118px 1fr 42px; gap: 0.5rem; align-items: center;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--dim);
+}
+.sn-bar-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn-bar-track { position: relative; height: 8px; background: rgba(0,245,255,0.07); border: 1px solid var(--border); }
+.sn-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: linear-gradient(90deg, var(--cyan), var(--green)); box-shadow: 0 0 8px rgba(0,245,255,0.5);
+  transition: width 0.12s linear;
+}
+.sn-bar-fill.neg { background: linear-gradient(90deg, var(--pink), var(--purple)); box-shadow: 0 0 8px rgba(255,0,160,0.5); }
+.sn-bar-val { text-align: right; color: var(--text); }
+.sn-bar-out.chosen .sn-bar-name, .sn-bar-out.chosen .sn-bar-val { color: var(--yellow); }
+.sn-bar-out.chosen .sn-bar-fill { background: var(--yellow); box-shadow: 0 0 10px rgba(255,230,0,0.7); }
+
+/* Network canvas: full width of its panel, drawn at the panel's width by snake.js. */
+.viz-panel canvas.sn-net, .viz-panel canvas.sn-chart {
+  display: block; width: 100%; height: auto; max-width: 100%;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+}
+.sn-legend { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.5rem; font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
+.sn-legend .sw { display: inline-block; width: 12px; height: 3px; margin-right: 0.4rem; vertical-align: middle; }
+.sw-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.sw-pink { background: var(--pink); box-shadow: 0 0 6px var(--pink); }
+
+/* Champion card: a short list of label / value rows. */
+.sn-champ { font-family: var(--mono); font-size: 0.78rem; }
+.sn-champ-row { display: flex; justify-content: space-between; gap: 0.8rem; padding: 0.3rem 0; border-bottom: 1px dashed var(--border); }
+.sn-champ-row span { color: var(--dim); }
+.sn-champ-row b { color: var(--text); font-weight: 600; text-align: right; }
+.sn-champ .field-hint { margin-top: 0.5rem; }
+
+/* Phones: the pad appears, the network labels tighten, and bar labels shrink. */
+@media (max-width: 900px) {
+  .sn-dpad { display: grid; }
+}
+@media (max-width: 600px) {
+  .sn-bar { grid-template-columns: 92px 1fr 36px; font-size: 0.66rem; }
+  .sn-controls .cyber-btn { flex: 1 1 42%; }
+  .sn-speed { max-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sn-bar-fill { transition: none; }
+}

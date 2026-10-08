@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Twenty puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, and min-conflicts local search.">
+<meta name="description" content="Twenty-one puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, and genetic algorithms.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Twenty puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, and min-conflicts local search.">
+<meta property="og:description" content="Twenty-one puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, and genetic algorithms.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Twenty games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Twenty-one games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -201,6 +201,13 @@
         <canvas class="cab-screen" data-sim="queens" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>About 50</b> repairs solve a million queens by min-conflicts</span>
         <span class="cab-desc">Backtracking blows up past 32 queens. Local search repairs one queen at a time, and the number of repairs barely grows with the board.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-pink" href="snake.html">
+        <span class="cab-marquee">Snake</span>
+        <canvas class="cab-screen" data-sim="snake" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>13.7</b> apples for the evolved net, against <b>20</b> for greedy and <b>56</b> for the BFS planner</span>
+        <span class="cab-desc">A 339-weight network bred by a genetic algorithm: mutate, cross over, keep the fittest. The planner still wins, and the page shows what the net sees.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>

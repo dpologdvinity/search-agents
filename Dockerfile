@@ -17,6 +17,7 @@ COPY lightsout ./lightsout
 COPY bandits ./bandits
 COPY cartpole ./cartpole
 COPY queens ./queens
+COPY snake ./snake
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle

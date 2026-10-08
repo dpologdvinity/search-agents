@@ -1,6 +1,6 @@
 # search-agents
 
-Twenty puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Twenty-one puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -24,6 +24,7 @@ Twenty puzzles and games, each played or solved by a classic AI algorithm: searc
 | **Bandits** (slot machines) | Greedy, epsilon-greedy (fixed and decaying), UCB1, and Thompson sampling with Beta posteriors; EXP3 and sliding-window UCB for drifting payouts | None: each agent learns only from the rewards it sees, and Thompson's posteriors narrow as it pulls | Each agent's regret curve and best-machine share, Thompson's Beta posteriors and UCB bars per machine, and your own regret ranked against the agents on the same machines |
 | **CartPole** | Policy gradients in pure NumPy: REINFORCE with a baseline, actor-critic with a learned value baseline trained on Monte Carlo returns, and a cross-entropy search over linear policies | None: the policies are learned from reward alone. The PD controller is hand-tuned, not learned | The pole's angle and the cart's position as the policy's probabilities and the critic's value change, and the learning curves across seeds |
 | **N-Queens** | Backtracking with column and diagonal bitmasks (exhaustive, so it proves infeasibility), steepest-ascent hill climbing with restarts, simulated annealing on the conflict count, min-conflicts from a greedy start | None: local search over one-queen-per-row boards, with no learned component | Four agents on one board: backtracking blowing up past 32 queens, hill climbing stalling on plateaus, and min-conflicts solving a live pixel board of a thousand queens |
+| **Snake** | Genetic algorithm evolving a 339-weight net (no gradients): tournament selection, uniform crossover, Gaussian mutation, elitism, fresh boards each generation | BFS path planner to the food with a tail-chasing safety check, as the classic baseline | The net's decision in each frame: senses (including room to move), hidden units lit, and the output probabilities |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -214,6 +215,26 @@ Min-conflicts solves every board from 8 to a million queens, and its work barely
 | Min-conflicts | 1,000,000 | 1 | 1 | 47 | 50,094,321 | 13.6 s | — |
 
 Seeds 1000 onward, the same seeds for every agent. Each agent's step counts its own unit (defined in `queens/agents.py`), so the squares-scored column is the comparable work measure. Hill climbing at N = 10,000 is not run: one step scores 10^8 squares. The full table is in `results/queens_benchmark.md`.
+
+### Snake: neuroevolution against a BFS planner
+
+A 339-weight network (17 senses, 16 tanh hidden units, 3 turn outputs) is evolved by a genetic algorithm with no gradients: population 60, 8 fresh training boards per generation (shared by the whole generation), 80 generations, elites 4, tournament 3, mutation 0.1 at sigma 0.15, seed 1, two worker processes. `python -m snake evolve` takes about 10 minutes on two laptop cores. The champion is the generation-80 genome that scored best on 16 fixed validation boards. Benchmark: 200 seeded 12x12 games per agent, seeds 50000 onward, the same boards for every agent.
+
+| Agent | Mean apples | Median | Max | Death rate | Starved | Mean steps |
+|---|---:|---:|---:|---:|---:|---:|
+| Random | 0.16 | 0 | 2 | 100.0% | 0 | 26.9 |
+| Greedy (safe move closest to the food) | 20.12 | 19 | 47 | 100.0% | 0 | 190.9 |
+| Planner (BFS to the food, tail-chasing check) | 56.13 | 49.5 | 137 | 0.0% | 200 | 1241.3 |
+| Evolved (champion) | 13.69 | 13 | 26 | 38.5% | 123 | 457.9 |
+
+**The evolved net does not beat greedy (20.12) or the BFS planner (56.13) yet.** It learned to eat, scoring 13.7 apples on average, but it dies in 38.5% of games and starves in 123 of 200 (circling for two laps without an apple). The first version did much worse:
+
+| Version | Evolved mean | Median | Max | Death rate | Starved | Mean steps | Files |
+|---|---:|---:|---:|---:|---:|---:|---|
+| v1: 3 fixed training boards, 14 senses, 291 weights, 100 generations | 2.05 | 1 | 11 | 5.0% | 190 | 308.0 | `results/snake_benchmark_v1.*`, `results/snake_train_log_v1.jsonl` |
+| v2: fresh boards per generation, 8 games, starvation penalty, room senses, 17 senses, 339 weights, 80 generations | 13.69 | 13 | 26 | 38.5% | 123 | 457.9 | `results/snake_benchmark.*`, `results/snake_train_log.jsonl` |
+
+The baselines are the same in both rows; only the evolved agent changed. The champion's training metric was 12.7 apples per game on the boards it trained on (`train_apples` in `snake/data/champion.json`), close to its 13.7 on the benchmark boards, so the benchmark score is not a lucky draw of boards. The net is still far from the planner, and the next step is a stronger training signal, not more generations of the same setup.
 
 ### Endgame tablebases: exact distance to mate
 
@@ -519,12 +540,16 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 - **Min-conflicts.** A greedy start (random unused columns, up to 4,096 tries per row) leaves about 10 conflicts at any size. A repair picks a conflicted queen at random, lifts it, scores all n columns of its row in one numpy pass, and moves it to a least-attacked column. The run restarts if it stalls on a plateau, which happens at small n.
 - **Checks** (`tests/test_queens.py`). Incremental counts against brute force under random moves; every agent's returned placement is validated; the min-conflicts trace never rises; the backtracking node counts are pinned; the scripted play and CLI paths are exercised.
 
+### Snake
+
+The snake senses its surroundings in its own frame: danger, free run, food and tail offsets, its heading, and how much room it has to move ahead, left and right (a capped flood fill). A one-hidden-layer tanh network maps the 17 senses to left, straight, or right. Its 339 weights are bred by a genetic algorithm: each generation plays on fresh boards, the top genomes are kept, parents are chosen by tournament, children mix weights uniformly, and about one weight in ten is nudged by a small Gaussian. Starving is penalised in fitness. The planner baseline paths to the food with BFS and takes that path only if the snake could still reach its tail after eating.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -590,6 +615,11 @@ python -m queens play                                                        # p
 python -m queens solve -n 8 --agent backtrack --board                        # one agent on one board, printed
 python -m queens solve -n 1000000 --agent minconf --seed 1                   # a million queens, summary only
 python -m queens benchmark --out results                                     # the committed run: results/queens_benchmark.{json,md}
+python -m snake                                  # play yourself, turn by turn (w a s d)
+python -m snake play --delay 0.15                # timed play
+python -m snake watch --agent planner --seed 3   # watch an agent (random, greedy, planner, evolved)
+python -m snake evolve                           # the committed run (about 10 minutes, 2 workers)
+python -m snake benchmark --games 200 --write    # results/snake_benchmark.{json,md}
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

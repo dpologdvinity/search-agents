@@ -39,6 +39,7 @@ from . import (
     poker_api,
     queens_api,
     routes_api,
+    snake_api,
     sokoban_api,
     sudoku_api,
     warehouse_api,
@@ -99,6 +100,7 @@ app.include_router(hexgame_api.router)
 app.include_router(bandits_api.router)
 app.include_router(cartpole_api.router)
 app.include_router(queens_api.router)
+app.include_router(snake_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)

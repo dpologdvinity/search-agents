@@ -1326,8 +1326,70 @@ function queensSim(ctx, S) {
   };
 }
 
+function snakeSim(ctx, S) {
+  // 10x10 snake steered by the greedy rule (the safe move that ends closest to the food), restarted
+  // when it dies or fills the board. No server and no network: it only shows the snake moving on the
+  // cabinet. The evolved net and the planner are on the snake page.
+  const n = 10, cell = S / n;
+  const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  let body, dir, food, hold, dead;
+  const at = (x, y, segs) => segs.some(([bx, by]) => bx === x && by === y);
+  const placeFood = () => {
+    let x, y;
+    do { x = rand(n); y = rand(n); } while (at(x, y, body));
+    food = [x, y];
+  };
+  const reset = () => { body = [[4, 5], [3, 5], [2, 5]]; dir = 1; hold = 0; dead = 0; placeFood(); };
+  // Straight first, so ties keep the snake going straight.
+  const advance = () => {
+    let best = null, bestD = Infinity;
+    for (const turn of [0, 3, 1]) { // 0 straight, 3 turn left, 1 turn right (offsets from dir)
+      const d = (dir + turn) % 4;
+      const [dx, dy] = DIRS[d];
+      const x = body[0][0] + dx, y = body[0][1] + dy;
+      if (x < 0 || x >= n || y < 0 || y >= n) continue;
+      const eats = x === food[0] && y === food[1];
+      if (at(x, y, eats ? body : body.slice(0, -1))) continue;
+      const dist = Math.abs(x - food[0]) + Math.abs(y - food[1]);
+      if (dist < bestD) { best = { d, x, y, eats }; bestD = dist; }
+    }
+    if (!best) { dead = 40; return; }
+    dir = best.d;
+    body.unshift([best.x, best.y]);
+    if (best.eats) { if (body.length === n * n) { dead = 60; return; } placeFood(); } else body.pop();
+  };
+  const draw = () => {
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = 'rgba(0,245,255,0.08)'; ctx.lineWidth = 1;
+    for (let i = 1; i < n; i++) {
+      ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(S, i * cell); ctx.stroke();
+    }
+    ctx.fillStyle = C.pink; ctx.shadowColor = C.pink; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc((food[0] + 0.5) * cell, (food[1] + 0.5) * cell, cell * 0.36, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    body.forEach(([x, y], i) => {
+      ctx.fillStyle = i === 0 ? C.green : (i % 2 ? C.cyan : C.purple);
+      ctx.globalAlpha = dead > 0 ? 0.35 : 1;
+      ctx.fillRect(x * cell + cell * 0.1, y * cell + cell * 0.1, cell * 0.8, cell * 0.8);
+    });
+    ctx.globalAlpha = 1;
+  };
+  reset();
+  return (speed) => {
+    if (dead > 0) {
+      dead -= speed;
+      if (dead <= 0) reset();
+    } else if ((hold += speed) > 5) {
+      hold = 0;
+      advance();
+    }
+    draw();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');
