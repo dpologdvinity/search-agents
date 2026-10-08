@@ -153,6 +153,10 @@ python -m pytest -q
 Command-line tools:
 
 ```bash
+python -m connect4                                 # play Connect Four against AlphaZero
+python -m game2048                                 # play 2048 with w/a/s/d
+python -m checkers --agent minimax --level 3       # play checkers against alpha-beta or minimax
+python -m routes --compare --cities 12             # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1          # any algorithm by name
 python -m npuzzle.benchmark 8puzzle               # results/npuzzle_8puzzle.md
 python -m sudoku.generate --count 200            # unique-solution puzzles

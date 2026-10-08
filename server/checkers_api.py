@@ -10,32 +10,17 @@ Boards use checkers.board's encoding: +1 red man, +2 red king, -1 white man,
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from checkers.board import START, legal_moves, notation, parse_board
-from checkers.search import WIN, AlphaBeta, Minimax
+from checkers.agents import ALPHABETA_SECONDS, DESCRIPTIONS, MINIMAX_DEPTH, choose, move_json
+from checkers.board import START, legal_moves, parse_board
 
 from .limits import Busy
 
 router = APIRouter()
-
-ALPHABETA_SECONDS = {1: 0.2, 2: 0.8, 3: 2.0}
-MINIMAX_DEPTH = {1: 2, 2: 4, 3: 5}
-DESCRIPTIONS = {
-    "alphabeta": (
-        "Alpha-beta search: assumes you will always answer with the reply that is worst for it, and skips "
-        "lines it can prove are worse than one already found. Iterative deepening, a transposition table, "
-        "and best-move-first ordering let it look deeper in the same time."
-    ),
-    "minimax": (
-        "Plain minimax to a fixed depth: the same reasoning, but it examines every line. Compare its node "
-        "count with alpha-beta's to see how much pruning saves."
-    ),
-}
 
 
 class BoardRequest(BaseModel):
@@ -48,49 +33,11 @@ class MoveRequest(BoardRequest):
     level: int = Field(2, ge=1, le=3)
 
 
-def move_json(m):
-    return {"path": list(m.path), "captured": list(m.captured), "result": list(m.result), "notation": notation(m)}
-
-
-def describe(score):
-    if score is None:
-        return None
-    if score >= WIN - 200:
-        return {"result": "win", "plies": WIN - score}
-    if score <= -(WIN - 200):
-        return {"result": "loss", "plies": WIN + score}
-    return {"result": "eval", "score": score}
-
-
 def _board(req: BoardRequest):
     try:
         return parse_board(req.board)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
-
-
-def choose(board, turn, agent, level):
-    if agent == "alphabeta":
-        searcher = AlphaBeta(max_seconds=ALPHABETA_SECONDS[level])
-    else:
-        searcher = Minimax(MINIMAX_DEPTH[level])
-    start = time.perf_counter()
-    info = searcher.search(board, turn)
-    reply_moves = legal_moves(info.move.result, -turn)
-    return {
-        "move": move_json(info.move),
-        "analysis": {
-            "agent": agent,
-            "depth": info.depth,
-            "nodes": info.nodes,
-            "cutoffs": info.cutoffs,
-            "best": describe(info.score),
-            "root": [{"notation": notation(m), "path": list(m.path), "score": describe(sc)}
-                     for m, sc in sorted(info.root, key=lambda x: -(x[1] if x[1] is not None else -WIN))],
-            "seconds": round(time.perf_counter() - start, 3),
-        },
-        "reply": [move_json(m) for m in reply_moves],
-    }
 
 
 @router.get("/api/checkers/meta")
