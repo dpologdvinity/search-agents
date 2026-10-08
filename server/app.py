@@ -37,6 +37,7 @@ from . import (
     npuzzle_api,
     pacman_api,
     poker_api,
+    queens_api,
     routes_api,
     sokoban_api,
     sudoku_api,
@@ -97,6 +98,7 @@ app.include_router(minesweeper_api.router)
 app.include_router(hexgame_api.router)
 app.include_router(bandits_api.router)
 app.include_router(cartpole_api.router)
+app.include_router(queens_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)

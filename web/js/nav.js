@@ -21,6 +21,7 @@ const GAMES = [
   { href: 'hexgame.html', label: 'HEX' },
   { href: 'bandits.html', label: 'BANDITS' },
   { href: 'cartpole.html', label: 'CART POLE' },
+  { href: 'queens.html', label: 'N-QUEENS' },
 ];
 
 const list = document.getElementById('nav-links');

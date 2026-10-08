@@ -1,6 +1,6 @@
 # search-agents
 
-Nineteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Twenty puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -23,6 +23,7 @@ Nineteen puzzles and games, each played or solved by a classic AI algorithm: sea
 | **Hex** | Monte Carlo tree search with RAVE: UCT statistics blended with all-moves-as-first statistics, beta = sqrt(k / (3n + k)); shortest-path and random baselines | None: every playout is a random fill, so nothing is learned | The agent's visit heat map and principal variation, a hint with visits and win rates, and agent-versus-agent games |
 | **Bandits** (slot machines) | Greedy, epsilon-greedy (fixed and decaying), UCB1, and Thompson sampling with Beta posteriors; EXP3 and sliding-window UCB for drifting payouts | None: each agent learns only from the rewards it sees, and Thompson's posteriors narrow as it pulls | Each agent's regret curve and best-machine share, Thompson's Beta posteriors and UCB bars per machine, and your own regret ranked against the agents on the same machines |
 | **CartPole** | Policy gradients in pure NumPy: REINFORCE with a baseline, actor-critic with a learned value baseline trained on Monte Carlo returns, and a cross-entropy search over linear policies | None: the policies are learned from reward alone. The PD controller is hand-tuned, not learned | The pole's angle and the cart's position as the policy's probabilities and the critic's value change, and the learning curves across seeds |
+| **N-Queens** | Backtracking with column and diagonal bitmasks (exhaustive, so it proves infeasibility), steepest-ascent hill climbing with restarts, simulated annealing on the conflict count, min-conflicts from a greedy start | None: local search over one-queen-per-row boards, with no learned component | Four agents on one board: backtracking blowing up past 32 queens, hill climbing stalling on plateaus, and min-conflicts solving a live pixel board of a thousand queens |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -179,6 +180,40 @@ The benchmark saturates: every learned agent balances all 200 episodes, so it do
 | Cross-entropy search | 391 | 388 | 528 | 299 | 329 |
 
 REINFORCE reaches 475 in 376 to 478 episodes, actor-critic in 344 to 382, and cross-entropy in 299 to 528. The shipped policy for each agent is the seed with the best last 50 episodes (`results/cartpole_learning.md`).
+
+### N-Queens: local search repairs what backtracking cannot finish
+
+Min-conflicts solves every board from 8 to a million queens, and its work barely grows: a median of 24 repairs at 8 queens, 56 at 10,000, and 47 at a million (one run). Backtracking solves 8 queens with 113 squares scored and 16 queens in about 10,000, then hits its 2,000,000-step cap at 32 queens and above. Hill climbing and annealing solve 32 queens, but none of their runs finish at 128 or above within their time caps.
+
+| Agent | N | Runs | Solved | Steps (median, solved) | Squares scored (median, solved) | Time (median) | Unsolved runs ended by |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Backtrack | 8 | 1 | 1 | 218 | 113 | 0.0001 s | — |
+| Backtrack | 16 | 1 | 1 | 20,088 | 10,052 | 0.0263 s | — |
+| Backtrack | 32 | 1 | 0 | — | — | 2.21 s | step cap |
+| Backtrack | 128 | 1 | 0 | — | — | 2.28 s | step cap |
+| Backtrack | 1,000 | 1 | 0 | — | — | 3.25 s | step cap |
+| Backtrack | 10,000 | 1 | 0 | — | — | 5.77 s | step cap |
+| Hill climbing | 8 | 200 | 200 | 22 | 1,440 | 0.0002 s | — |
+| Hill climbing | 16 | 100 | 100 | 170 | 43,392 | 0.0061 s | — |
+| Hill climbing | 32 | 30 | 30 | 1,024 | 1,049,088 | 0.142 s | — |
+| Hill climbing | 128 | 3 | 0 | — | — | 15 s | time cap |
+| Hill climbing | 1,000 | 2 | 0 | — | — | 20.1 s | time cap |
+| Annealing | 8 | 200 | 200 | 778 | 778 | 0.0016 s | — |
+| Annealing | 16 | 100 | 100 | 13,420 | 13,420 | 0.0381 s | — |
+| Annealing | 32 | 30 | 30 | 712,202 | 712,202 | 1.76 s | — |
+| Annealing | 128 | 5 | 0 | — | — | 20 s | time cap |
+| Annealing | 1,000 | 3 | 0 | — | — | 30 s | time cap |
+| Annealing | 10,000 | 2 | 0 | — | — | 55.6 s | step cap |
+| Min-conflicts | 8 | 200 | 200 | 24 | 4,826 | 0.0026 s | — |
+| Min-conflicts | 16 | 200 | 200 | 44 | 9,976 | 0.0043 s | — |
+| Min-conflicts | 32 | 100 | 100 | 44 | 13,554 | 0.0047 s | — |
+| Min-conflicts | 128 | 100 | 100 | 52 | 26,432 | 0.0088 s | — |
+| Min-conflicts | 1,000 | 50 | 50 | 54 | 85,032 | 0.0209 s | — |
+| Min-conflicts | 10,000 | 20 | 20 | 56 | 624,649 | 0.149 s | — |
+| Min-conflicts | 100,000 | 3 | 3 | 116 | 11,941,980 | 2.05 s | — |
+| Min-conflicts | 1,000,000 | 1 | 1 | 47 | 50,094,321 | 13.6 s | — |
+
+Seeds 1000 onward, the same seeds for every agent. Each agent's step counts its own unit (defined in `queens/agents.py`), so the squares-scored column is the comparable work measure. Hill climbing at N = 10,000 is not run: one step scores 10^8 squares. The full table is in `results/queens_benchmark.md`.
 
 ### Endgame tablebases: exact distance to mate
 
@@ -476,12 +511,20 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 - **Cross-entropy search** (`cartpole/train.py`). Samples five-number linear policies, keeps the best quarter, and refits the sampling distribution.
 - **Checks** (`tests/test_cartpole.py`). Backprop is compared with finite differences for the policy and the critic, and the physics against the equations worked by hand. The browser port is checked step by step against the Python physics (`/api/cartpole/rollout`).
 
+### N-Queens
+
+- **Board** (`queens/board.py`). One queen per row, so only columns and the two diagonal families can conflict. Three count arrays (column, r+c, r-c+n-1) give the attacks on any square in O(1), and place/remove keep the conflict count exact. Brute-force checks in the tests cover both.
+- **Backtracking** (`queens/agents.py`). Row by row, with three bitmasks: columns taken, and the two diagonal masks shifted one bit per row. The lowest open column is tried first. It is iterative, so 10,000 rows do not overflow the stack. It proves infeasibility for n = 2 and 3.
+- **Hill climbing and annealing.** Steepest ascent scores all n^2 moves per step and restarts at a local minimum. Annealing proposes one move at a time, with an O(1) cost change d and acceptance exp(-d/T).
+- **Min-conflicts.** A greedy start (random unused columns, up to 4,096 tries per row) leaves about 10 conflicts at any size. A repair picks a conflicted queen at random, lifts it, scores all n columns of its row in one numpy pass, and moves it to a least-attacked column. The run restarts if it stalls on a plateau, which happens at small n.
+- **Checks** (`tests/test_queens.py`). Incremental counts against brute force under random moves; every agent's returned placement is validated; the min-conflicts trace never rises; the backtracking node counts are pinned; the scripted play and CLI paths are exercised.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -543,6 +586,10 @@ python -m cartpole watch --agent reinforce --seed 3                          # A
 python -m cartpole play                                                      # you push: a (left) and d (right), then Enter
 python -m cartpole train --algo reinforce --seeds 0 1 2 3 4 --episodes 1500
 python -m cartpole benchmark --episodes 200
+python -m queens play                                                        # place 8 queens yourself; h = min-conflicts hint, s = a solution
+python -m queens solve -n 8 --agent backtrack --board                        # one agent on one board, printed
+python -m queens solve -n 1000000 --agent minconf --seed 1                   # a million queens, summary only
+python -m queens benchmark --out results                                     # the committed run: results/queens_benchmark.{json,md}
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

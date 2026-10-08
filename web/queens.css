@@ -1,0 +1,99 @@
+/* N-Queens page. Loaded after style.css and app.css. The board size comes from --n on each board, and
+   square size from --sq, which the phone rules shrink so the widest board still fits a 390px screen. */
+
+/* Mode tabs: PLAY, WATCH, RACE, BIG N. */
+.qn-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.4rem 0 1.2rem; }
+.qn-tabs .cyber-btn { opacity: 0.7; }
+.qn-tabs .cyber-btn.act, .qn-tabs .cyber-btn[aria-selected="true"] { opacity: 1; box-shadow: 0 0 18px currentColor; }
+.qn-mode .proj-body { align-items: flex-start; }
+
+/* Board: n x n squares. Light and dark squares are both neon-tinted so the grid reads as a chessboard. */
+.qn-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.qn-board {
+  --sq: min(64px, calc((100vw - 6rem) / var(--n)));
+  display: grid; grid-template-columns: repeat(var(--n), var(--sq)); gap: 0;
+  border: 2px solid var(--pink); background: rgba(2,6,16,0.85); padding: 6px;
+  box-shadow: 0 0 28px rgba(255,0,160,0.3), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+.qn-sq {
+  position: relative; width: var(--sq); height: var(--sq); padding: 0; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--orb); font-weight: 900; font-size: calc(var(--sq) * 0.5); color: #fff;
+  background-color: rgba(0,245,255,0.05);
+  background-image: none;
+  transition: background-color 0.18s, box-shadow 0.18s;
+}
+.qn-sq.dark-sq { background-color: rgba(155,0,255,0.09); }
+.qn-sq:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; z-index: 1; }
+.qn-sq.hot { box-shadow: inset 0 0 0 9999px var(--heat, rgba(255,0,160,0.2)); }
+.qn-sq.attacked::after {
+  content: ''; position: absolute; inset: 22%; border: 1px dashed rgba(255,0,160,0.35); pointer-events: none;
+}
+.qn-sq.queen::before {
+  content: '♛'; font-size: calc(var(--sq) * 0.72); line-height: 1; color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan), 0 0 22px var(--cyan), 0 1px 0 #000;
+}
+.qn-sq.queen.bad::before { color: var(--red); text-shadow: 0 0 10px var(--red), 0 0 22px var(--red), 0 1px 0 #000; }
+.qn-sq.queen.good-fit::before { color: var(--green); text-shadow: 0 0 10px var(--green), 0 1px 0 #000; }
+.qn-sq.hint { outline: 3px solid var(--green); outline-offset: -3px; animation: qn-pulse 0.9s ease-in-out infinite alternate; }
+.qn-sq.moved { animation: qn-flash 0.5s ease-out; }
+.qn-sq.empty-row-target::after { content: ''; position: absolute; inset: 35%; border: 2px solid var(--yellow); transform: rotate(45deg); }
+@keyframes qn-pulse { from { box-shadow: 0 0 4px var(--green); } to { box-shadow: 0 0 22px var(--green), inset 0 0 14px rgba(0,255,136,0.35); } }
+@keyframes qn-flash { from { transform: scale(0.82); } to { transform: scale(1); } }
+
+/* The row and column labels are not drawn: the play hint names squares in words. */
+#play-board.solved, #watch-board.solved { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45), inset 0 0 40px rgba(0,0,0,0.6); }
+
+/* Watch mode playback row. */
+.qn-playback { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; width: 100%; max-width: 640px; }
+.qn-scrub { flex: 1 1 200px; accent-color: var(--cyan); }
+
+/* Charts: plain canvases drawn by queens.js. */
+.qn-chart { width: 100%; height: 180px; display: block; background: rgba(0,0,0,0.3); border: 1px solid var(--border); }
+
+/* Race cards: one per agent. */
+.qn-race { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-top: 0.7rem; }
+.qn-card {
+  border: 1px solid var(--border); background: rgba(0,0,0,0.35); padding: 0.6rem 0.7rem; position: relative;
+  display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;
+}
+.qn-card h3 { font-family: var(--orb); font-size: 0.6rem; color: var(--cyan); letter-spacing: 0.08em; }
+.qn-card .big { font-family: var(--orb); font-size: 1rem; color: var(--text); }
+.qn-card .small { font-family: var(--mono); font-size: 0.64rem; color: var(--dim); line-height: 1.5; word-break: break-word; }
+.qn-card.win { border-color: var(--green); box-shadow: 0 0 18px rgba(0,255,136,0.25); }
+.qn-card.win h3 { color: var(--green); }
+.qn-card.lose { border-color: rgba(255,230,0,0.35); }
+.qn-card.lose h3 { color: var(--yellow); }
+.qn-card.na { opacity: 0.55; }
+.qn-bars { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
+.qn-bar-row { display: grid; grid-template-columns: 7rem 1fr 6rem; gap: 0.5rem; align-items: center; font-family: var(--mono); font-size: 0.66rem; color: var(--dim); }
+.qn-bar-row .bar { height: 10px; background: rgba(255,255,255,0.05); }
+.qn-bar-row .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); box-shadow: 0 0 8px var(--cyan); }
+.qn-bar-row.win .bar i { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+.qn-bar-row .sc { text-align: right; }
+
+/* BIG N canvas: one pixel per square, scaled up with pixelated rendering. */
+.qn-big {
+  width: min(520px, 92vw); height: auto; aspect-ratio: 1; image-rendering: pixelated;
+  border: 2px solid var(--cyan); background: #02060f; box-shadow: 0 0 28px rgba(0,245,255,0.3);
+}
+
+/* The agent comparison table under the page. */
+.qn-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.7rem; }
+.qn-table th { text-align: left; color: var(--dim); font-weight: 400; border-bottom: 1px solid var(--border); padding: 0.35rem 0.4rem; }
+.qn-table td { padding: 0.4rem; border-bottom: 1px solid rgba(0,245,255,0.07); vertical-align: top; color: var(--text); }
+
+@media (max-width: 1100px) {
+  .qn-race { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .qn-race { grid-template-columns: 1fr; }
+  .qn-bar-row { grid-template-columns: 5rem 1fr 5rem; }
+  .qn-tabs .cyber-btn { flex: 1 1 45%; font-size: 0.6rem; }
+  .qn-playback { gap: 0.35rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qn-board { animation: none; }
+  .qn-sq.hint, .qn-sq.moved { animation: none; }
+}

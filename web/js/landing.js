@@ -1255,8 +1255,79 @@ function cartpoleSim(ctx, S) {
   };
 }
 
+function queensSim(ctx, S) {
+  // 8 queens. Deal a random board, then repeatedly move a conflicted queen to its least attacked column
+  // (min-conflicts, the same rule as queens/agents.py). A solved board holds for a moment, then a new one is dealt.
+  const n = 8, cell = S / n;
+  const L = { col: new Int32Array(n), d1: new Int32Array(2 * n - 1), d2: new Int32Array(2 * n - 1) };
+  let cols = [], hold = 0;
+  const add = (r, c, s) => { L.col[c] += s; L.d1[r + c] += s; L.d2[r - c + n - 1] += s; };
+  // Queens attacking square (r, c), not counting the row-r queen (its own three counts are removed).
+  const att = (r, c) => L.col[c] + L.d1[r + c] + L.d2[r - c + n - 1] - (cols[r] === c ? 3 : 0);
+  function deal() {
+    L.col.fill(0); L.d1.fill(0); L.d2.fill(0);
+    cols = Array.from({ length: n }, () => Math.floor(Math.random() * n));
+    cols.forEach((c, r) => add(r, c, 1));
+    hold = 0;
+  }
+  // One repair; returns false when no queen is in conflict.
+  function repair() {
+    const bad = [];
+    for (let r = 0; r < n; r++) if (att(r, cols[r]) > 0) bad.push(r);
+    if (!bad.length) return false;
+    const r = bad[Math.floor(Math.random() * bad.length)];
+    add(r, cols[r], -1);
+    let best = Infinity;
+    const ties = [];
+    for (let c = 0; c < n; c++) {
+      const v = L.col[c] + L.d1[r + c] + L.d2[r - c + n - 1];
+      if (v < best) { best = v; ties.length = 0; }
+      if (v === best) ties.push(c);
+    }
+    const to = ties[Math.floor(Math.random() * ties.length)];
+    cols[r] = to;
+    add(r, to, 1);
+    return true;
+  }
+  deal();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    let solved = true;
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const x = c * cell, y = r * cell;
+        const q = cols[r] === c;
+        ctx.fillStyle = (r + c) & 1 ? 'rgba(155,0,255,0.09)' : 'rgba(0,245,255,0.05)';
+        ctx.fillRect(x, y, cell, cell);
+        if (q) {
+          const bad = att(r, c) > 0;
+          if (bad) solved = false;
+          ctx.fillStyle = bad ? C.pink : C.cyan;
+          ctx.shadowColor = ctx.fillStyle;
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(x + cell / 2, y + cell / 2, cell * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else {
+          const h = att(r, c);
+          if (h > 0) {
+            ctx.fillStyle = `rgba(255,0,160,${Math.min(0.3, 0.04 + 0.07 * h).toFixed(3)})`;
+            ctx.fillRect(x, y, cell, cell);
+          }
+        }
+      }
+    }
+    if (solved) { if ((hold += speed) > 120) deal(); return; }
+    if ((hold += speed) < 14) return;
+    hold = 0;
+    repair();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

@@ -16,6 +16,7 @@ COPY blackjack ./blackjack
 COPY lightsout ./lightsout
 COPY bandits ./bandits
 COPY cartpole ./cartpole
+COPY queens ./queens
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle

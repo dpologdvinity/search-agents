@@ -1,0 +1,330 @@
+{
+  "seed_base": 1000,
+  "agents": {
+    "backtrack": {
+      "8": {
+        "runs": 1,
+        "solved": 1,
+        "success_rate": 1.0,
+        "seconds_median": 0.0001,
+        "seconds_max": 0.0,
+        "reasons": {
+          "solved": 1
+        },
+        "steps_median_solved": 218,
+        "evaluations_median_solved": 113,
+        "restarts_median_solved": 0,
+        "seconds_median_solved": 0.0001
+      },
+      "16": {
+        "runs": 1,
+        "solved": 1,
+        "success_rate": 1.0,
+        "seconds_median": 0.0263,
+        "seconds_max": 0.026,
+        "reasons": {
+          "solved": 1
+        },
+        "steps_median_solved": 20088,
+        "evaluations_median_solved": 10052,
+        "restarts_median_solved": 0,
+        "seconds_median_solved": 0.0263
+      },
+      "32": {
+        "runs": 1,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 2.2093,
+        "seconds_max": 2.209,
+        "reasons": {
+          "step cap": 1
+        }
+      },
+      "128": {
+        "runs": 1,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 2.2822,
+        "seconds_max": 2.282,
+        "reasons": {
+          "step cap": 1
+        }
+      },
+      "1000": {
+        "runs": 1,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 3.2476,
+        "seconds_max": 3.248,
+        "reasons": {
+          "step cap": 1
+        }
+      },
+      "10000": {
+        "runs": 1,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 5.7745,
+        "seconds_max": 5.775,
+        "reasons": {
+          "step cap": 1
+        }
+      }
+    },
+    "hill": {
+      "8": {
+        "runs": 200,
+        "solved": 200,
+        "success_rate": 1.0,
+        "seconds_median": 0.0002,
+        "seconds_max": 0.006,
+        "reasons": {
+          "solved": 200
+        },
+        "steps_median_solved": 22.5,
+        "evaluations_median_solved": 1440.0,
+        "restarts_median_solved": 4.0,
+        "seconds_median_solved": 0.0002
+      },
+      "16": {
+        "runs": 100,
+        "solved": 100,
+        "success_rate": 1.0,
+        "seconds_median": 0.0061,
+        "seconds_max": 0.074,
+        "reasons": {
+          "solved": 100
+        },
+        "steps_median_solved": 169.5,
+        "evaluations_median_solved": 43392.0,
+        "restarts_median_solved": 21.0,
+        "seconds_median_solved": 0.0061
+      },
+      "32": {
+        "runs": 30,
+        "solved": 30,
+        "success_rate": 1.0,
+        "seconds_median": 0.1417,
+        "seconds_max": 1.253,
+        "reasons": {
+          "solved": 30
+        },
+        "steps_median_solved": 1024.5,
+        "evaluations_median_solved": 1049088.0,
+        "restarts_median_solved": 67.5,
+        "seconds_median_solved": 0.1417
+      },
+      "128": {
+        "runs": 3,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 15.0012,
+        "seconds_max": 15.015,
+        "reasons": {
+          "time cap": 3
+        }
+      },
+      "1000": {
+        "runs": 2,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 20.0599,
+        "seconds_max": 20.108,
+        "reasons": {
+          "time cap": 2
+        }
+      }
+    },
+    "anneal": {
+      "8": {
+        "runs": 200,
+        "solved": 200,
+        "success_rate": 1.0,
+        "seconds_median": 0.0016,
+        "seconds_max": 0.034,
+        "reasons": {
+          "solved": 200
+        },
+        "steps_median_solved": 778.5,
+        "evaluations_median_solved": 778.5,
+        "restarts_median_solved": 1.0,
+        "seconds_median_solved": 0.0016
+      },
+      "16": {
+        "runs": 100,
+        "solved": 100,
+        "success_rate": 1.0,
+        "seconds_median": 0.0381,
+        "seconds_max": 0.205,
+        "reasons": {
+          "solved": 100
+        },
+        "steps_median_solved": 13420.5,
+        "evaluations_median_solved": 13420.5,
+        "restarts_median_solved": 13.0,
+        "seconds_median_solved": 0.0381
+      },
+      "32": {
+        "runs": 30,
+        "solved": 30,
+        "success_rate": 1.0,
+        "seconds_median": 1.7604,
+        "seconds_max": 4.94,
+        "reasons": {
+          "solved": 30
+        },
+        "steps_median_solved": 712201.5,
+        "evaluations_median_solved": 712201.5,
+        "restarts_median_solved": 370.0,
+        "seconds_median_solved": 1.7604
+      },
+      "128": {
+        "runs": 5,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 20.001,
+        "seconds_max": 20.005,
+        "reasons": {
+          "time cap": 5
+        }
+      },
+      "1000": {
+        "runs": 3,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 30.0016,
+        "seconds_max": 30.002,
+        "reasons": {
+          "time cap": 3
+        }
+      },
+      "10000": {
+        "runs": 2,
+        "solved": 0,
+        "success_rate": 0.0,
+        "seconds_median": 55.6171,
+        "seconds_max": 56.795,
+        "reasons": {
+          "step cap": 2
+        }
+      }
+    },
+    "minconf": {
+      "8": {
+        "runs": 200,
+        "solved": 200,
+        "success_rate": 1.0,
+        "seconds_median": 0.0026,
+        "seconds_max": 0.123,
+        "reasons": {
+          "solved": 200
+        },
+        "steps_median_solved": 24.5,
+        "evaluations_median_solved": 4825.5,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.0026
+      },
+      "16": {
+        "runs": 200,
+        "solved": 200,
+        "success_rate": 1.0,
+        "seconds_median": 0.0043,
+        "seconds_max": 0.074,
+        "reasons": {
+          "solved": 200
+        },
+        "steps_median_solved": 44.5,
+        "evaluations_median_solved": 9976.5,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.0043
+      },
+      "32": {
+        "runs": 100,
+        "solved": 100,
+        "success_rate": 1.0,
+        "seconds_median": 0.0047,
+        "seconds_max": 0.055,
+        "reasons": {
+          "solved": 100
+        },
+        "steps_median_solved": 43.5,
+        "evaluations_median_solved": 13554.0,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.0047
+      },
+      "128": {
+        "runs": 100,
+        "solved": 100,
+        "success_rate": 1.0,
+        "seconds_median": 0.0088,
+        "seconds_max": 0.073,
+        "reasons": {
+          "solved": 100
+        },
+        "steps_median_solved": 52.0,
+        "evaluations_median_solved": 26431.5,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.0088
+      },
+      "1000": {
+        "runs": 50,
+        "solved": 50,
+        "success_rate": 1.0,
+        "seconds_median": 0.0209,
+        "seconds_max": 0.121,
+        "reasons": {
+          "solved": 50
+        },
+        "steps_median_solved": 54.0,
+        "evaluations_median_solved": 85032.5,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.0209
+      },
+      "10000": {
+        "runs": 20,
+        "solved": 20,
+        "success_rate": 1.0,
+        "seconds_median": 0.1486,
+        "seconds_max": 0.547,
+        "reasons": {
+          "solved": 20
+        },
+        "steps_median_solved": 56.0,
+        "evaluations_median_solved": 624649.0,
+        "restarts_median_solved": 0.0,
+        "seconds_median_solved": 0.1486
+      },
+      "100000": {
+        "runs": 3,
+        "solved": 3,
+        "success_rate": 1.0,
+        "seconds_median": 2.0543,
+        "seconds_max": 2.899,
+        "reasons": {
+          "solved": 3
+        },
+        "steps_median_solved": 116,
+        "evaluations_median_solved": 11941980,
+        "restarts_median_solved": 0,
+        "seconds_median_solved": 2.0543
+      },
+      "1000000": {
+        "runs": 1,
+        "solved": 1,
+        "success_rate": 1.0,
+        "seconds_median": 13.6312,
+        "seconds_max": 13.631,
+        "reasons": {
+          "solved": 1
+        },
+        "steps_median_solved": 47,
+        "evaluations_median_solved": 50094321,
+        "restarts_median_solved": 0,
+        "seconds_median_solved": 13.6312
+      }
+    }
+  },
+  "skipped": {
+    "hill N=10000": "not run: one step scores 10^8 squares (N^2), too slow to finish a single step in Python"
+  }
+}
