@@ -7,6 +7,8 @@ Environment:
   SEARCH_SLOTS     searches allowed to run at once (default 2)
   SOLVES_PER_MIN   N-Puzzle solves per client per minute (default 30)
   MOVES_PER_MIN    game moves per client per minute (default 120)
+  PACMAN_EPISODES_PER_MIN  Pac-Man whole-game requests per client per minute (default 30)
+  PACMAN_PLAYS_PER_MIN     Pac-Man human-play requests per client per minute (default 300)
 """
 
 from __future__ import annotations
@@ -20,12 +22,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import (
+    battleship_api,
     blackjack_api,
     checkers_api,
     connect4_api,
     game2048_api,
     lightsout_api,
     npuzzle_api,
+    pacman_api,
     routes_api,
     sudoku_api,
 )
@@ -70,6 +74,8 @@ app.include_router(connect4_api.router)
 app.include_router(game2048_api.router)
 app.include_router(sudoku_api.router)
 app.include_router(checkers_api.router)
+app.include_router(pacman_api.router)
+app.include_router(battleship_api.router)
 app.include_router(lightsout_api.router)
 app.include_router(blackjack_api.router)
 app.include_router(routes_api.router)

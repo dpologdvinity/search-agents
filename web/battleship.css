@@ -1,0 +1,79 @@
+/* Battleship page. Builds on the shared theme (style.css) and game-page layer (app.css). */
+
+[hidden] { display: none !important; }
+
+/* Two boards side by side, wrapping on narrow screens. */
+.bs-stage { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+.bs-board-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.bs-board-title { font-family: var(--orb); font-size: 0.7rem; letter-spacing: 0.14em; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+#enemy-wrap .bs-board-title { color: var(--pink); text-shadow: 0 0 8px var(--pink); }
+
+/* 11 x 11 grid: a label row and a label column around the 10 x 10 cells. */
+.bs-board {
+  display: grid; grid-template-columns: 24px repeat(10, 36px); grid-template-rows: 24px repeat(10, 36px);
+  border: 2px solid var(--cyan); box-shadow: 0 0 28px rgba(0,245,255,0.3), inset 0 0 40px rgba(0,0,0,0.6);
+  background: rgba(2,6,16,0.9);
+}
+.bs-board.enemy { border-color: var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.3), inset 0 0 40px rgba(0,0,0,0.6); }
+.bs-lbl { font-family: var(--mono); font-size: 0.66rem; color: var(--dim); display: flex; align-items: center; justify-content: center; }
+
+.bs-cell {
+  position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  background: rgba(2,6,16,0.95); border: 1px solid rgba(0,245,255,0.1);
+}
+.bs-cell::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.bs-heat { position: absolute; inset: 0; pointer-events: none; transition: background 0.35s; }
+
+/* Your ships: a cyan hull. */
+.bs-cell.ship { background: linear-gradient(135deg, rgba(0,245,255,0.38), rgba(0,245,255,0.1)); box-shadow: inset 0 0 0 1px rgba(0,245,255,0.7), 0 0 8px rgba(0,245,255,0.35); }
+
+/* Shots. A hit is a pink cross; a miss is a small dim dot; a sunk ship turns yellow. */
+.bs-cell.hit::after { content: '✖'; font-size: 0.95rem; color: var(--pink); text-shadow: 0 0 10px var(--pink); display: flex; align-items: center; justify-content: center; }
+.bs-cell.hit { background: rgba(255,0,160,0.22); }
+.bs-cell.sunk { background: rgba(255,230,0,0.22); box-shadow: inset 0 0 0 2px var(--yellow); }
+.bs-cell.sunk::after { content: '✖'; font-size: 0.95rem; color: var(--yellow); text-shadow: 0 0 10px var(--yellow); display: flex; align-items: center; justify-content: center; }
+.bs-cell.miss::after { top: 50%; left: 50%; right: auto; bottom: auto; width: 8px; height: 8px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--cyan); opacity: 0.55; box-shadow: 0 0 6px var(--cyan); }
+
+/* Enemy ships revealed when the game is won. */
+.bs-board.enemy .bs-cell.ship { background: linear-gradient(135deg, rgba(255,230,0,0.35), rgba(255,230,0,0.08)); box-shadow: inset 0 0 0 1px rgba(255,230,0,0.7); }
+
+/* Battle: the enemy grid is clickable. */
+.bs-board.enemy.live .bs-cell:not(.hit):not(.sunk):not(.miss) { cursor: crosshair; }
+.bs-board.enemy.live .bs-cell:not(.hit):not(.sunk):not(.miss):hover { background: rgba(255,0,160,0.14); box-shadow: inset 0 0 0 1px var(--pink); }
+.bs-board.enemy:not(.live) .bs-cell { cursor: default; }
+
+/* Placement preview: green where a ship fits, red where it would overlap or fall off the board. */
+.bs-cell.prev-ok { background: rgba(0,255,136,0.3); box-shadow: inset 0 0 0 2px var(--green); }
+.bs-cell.prev-bad { background: rgba(255,59,59,0.28); box-shadow: inset 0 0 0 2px var(--red); }
+.bs-board:not(.enemy) .bs-cell.ship { cursor: pointer; }
+
+/* The agent's next target: a pulsing reticle, shown while it aims. */
+.bs-cell.aim { box-shadow: inset 0 0 0 2px var(--yellow), 0 0 18px var(--yellow); z-index: 1; }
+.bs-cell.aim::before { content: ''; position: absolute; inset: 6px; border: 2px solid var(--yellow); border-radius: 50%; animation: bs-aim 0.6s ease-in-out infinite alternate; pointer-events: none; }
+@keyframes bs-aim { to { transform: scale(0.7); opacity: 0.4; } }
+
+/* Fleet tray: one button per ship, with one block per cell. */
+.bs-tray { display: flex; flex-direction: column; gap: 0.45rem; }
+.bs-ship {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; width: 100%;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text); background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border); padding: 0.45rem 0.6rem; cursor: pointer; text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bs-ship:hover { border-color: var(--borderb); }
+.bs-ship.active { border-color: var(--pink); box-shadow: 0 0 14px rgba(255,0,160,0.4); color: var(--pink); }
+.bs-ship.placed { opacity: 0.45; }
+.bs-ship .blocks { display: inline-flex; gap: 3px; }
+.bs-ship .blocks i { display: block; width: 14px; height: 14px; background: var(--cyan); box-shadow: 0 0 6px rgba(0,245,255,0.6); }
+.bs-ship.active .blocks i { background: var(--pink); box-shadow: 0 0 6px rgba(255,0,160,0.7); }
+.bs-ship.placed .blocks i { background: var(--green); box-shadow: 0 0 6px rgba(0,255,136,0.6); }
+
+.bs-toggle { font-family: var(--mono); font-size: 0.7rem; color: var(--text); display: flex; gap: 0.5rem; align-items: center; cursor: pointer; }
+.bs-toggle input { accent-color: var(--pink); width: 16px; height: 16px; }
+
+@media (max-width: 600px) {
+  .bs-board { grid-template-columns: 20px repeat(10, 28px); grid-template-rows: 20px repeat(10, 28px); }
+  .bs-cell { width: 28px; height: 28px; }
+  .bs-cell.hit::after, .bs-cell.sunk::after { font-size: 0.75rem; }
+  .bs-stage { gap: 1.2rem; }
+}

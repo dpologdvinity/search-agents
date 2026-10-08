@@ -22,13 +22,14 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.setuptools]
-packages = ["npuzzle", "connect4", "checkers", "routes", "game2048", "sudoku", "server", "lightsout", "blackjack"]
+packages = ["npuzzle", "connect4", "checkers", "routes", "game2048", "sudoku", "server", "lightsout", "blackjack", "battleship", "pacman"]
 
 [tool.setuptools.package-data]
 npuzzle = ["data/*.npz", "data/*.json"]
 connect4 = ["data/*.npz"]
 game2048 = ["data/*.npz"]
 sudoku = ["puzzles.txt"]
+pacman = ["data/*.json"]
 
 [tool.ruff]
 line-length = 120

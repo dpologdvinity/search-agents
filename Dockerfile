@@ -10,6 +10,8 @@ RUN pip install --no-cache-dir "numpy>=1.26" "fastapi>=0.115" "uvicorn[standard]
 COPY npuzzle ./npuzzle
 COPY connect4 ./connect4
 COPY checkers ./checkers
+COPY pacman ./pacman
+COPY battleship ./battleship
 COPY blackjack ./blackjack
 COPY lightsout ./lightsout
 COPY routes ./routes

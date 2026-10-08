@@ -7,11 +7,13 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 | **N-Puzzle** | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\* | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
 | **Connect Four** | Alpha-beta negamax, UCT Monte Carlo tree search | AlphaZero-style PUCT with a policy-value ResNet trained only by self-play | The network's prior vs search visits per column, and its win probability |
 | **Checkers** | Plain minimax, alpha-beta with iterative deepening, a transposition table, and move ordering | Hand-built evaluation (material, advancement, home row, centre) | How many positions it searched and how many branches pruning cut, with every candidate move's score |
+| **Battleship** | Bayesian probability targeting: counts every fleet layout that fits what it has seen, exactly when that is cheap and by importance sampling otherwise | Hunt/target (checkerboard parity, then the neighbours of wounded ships) and random firing | Its odds of every cell of your fleet glowing live, and the cell it fires at next |
 | **Blackjack** | Exact dynamic programming over the dealer's and player's hands (a Markov decision process), plus Monte Carlo control | None needed: the values are exact for the infinite-deck model | The full basic-strategy table, the expected value of each move for your hand, and a learner converging on the same table |
 | **Route planner** (traveling salesman) | Nearest neighbour + 2-opt; exact Held-Karp dynamic programming up to 12 cities | Simulated annealing and a genetic algorithm (order crossover, inversion mutation, elitism) | Each route untangling live, length and temperature charts, a three-way race, and drawing your own route to compare |
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 | **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
+| **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 12 hand-built features, trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -56,6 +58,22 @@ Both agents assume the opponent always answers with its best reply. On a positio
 | 6 | 92,608 | 3,566 | 26x |
 
 The move generator matches the published perft counts from the opening (7, 49, 302, 1,469, 7,361 positions at depths 1-5).
+
+### Battleship: shots to sink a random fleet
+
+100 random fleets on a 10x10 board with the standard fleet (5, 4, 3, 3, 2; 17 ship cells). Every agent plays
+the same fleets, so the comparison is paired. From `python -m battleship benchmark --games 100 --seed 1`:
+
+| Agent | Mean shots | Median | Worst | Time per game (Python) |
+|---|---|---|---|---|
+| Random | 95.4 | 97 | 100 | 0.005 s |
+| Hunt/target (checkerboard, then neighbours) | 51.9 | 54 | 67 | 0.004 s |
+| **Bayesian probability targeting** | **45.9** | **45.5** | **64** | 0.78 s |
+
+Head to head on the same fleets, the Bayesian agent needs fewer shots than hunt/target on 67 of 100 fleets (3 ties), 6.0 shots fewer on average (95% interval 3.7 to 8.2).
+
+The Bayesian agent pays per shot: it recounts consistent layouts (or samples 1000 of them) before every
+shot, so its time per game is well over 100 times the baselines'.
 
 ### Blackjack: exact basic strategy and a learner that finds it
 
@@ -105,6 +123,23 @@ For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against
 
 Pressing a light is addition mod 2, so a board is a linear system A x = b with a 25x25 matrix of rank 23. That splits the boards: only 1 in 4 can be cleared at all, and every solvable 5x5 board has exactly 4 solutions. Over 3,000 random solvable boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. Solving a 5x5 board takes about 3 ms in Python.
 
+### Pac-Man: approximate Q-learning vs baselines
+
+Seeds 10000-10199, 200 games per maze on two hand-drawn mazes (400 games per agent).
+
+| Agent | Win rate | Mean score | Mean turns | Won / lost / timeout |
+|---|---|---|---|---|
+| **Approximate Q-learning** | **5.0%** | **667.5** | 78.9 | 20 / 377 / 3 |
+| Reflex (greedy nearest pellet, avoids ghosts) | 0.5% | 157.5 | 22.8 | 2 / 395 / 3 |
+| Random | 0.0% | 45.5 | 8.9 | 0 / 400 / 0 |
+
+Per maze: the Q-agent wins 0% on Neon Lanes (mean 613) and 10% on Vault (mean 722).
+Reflex: 0.5% and 0.5% (means 178 and 137). Random: 0% on both (means 51 and 40).
+
+Training: 3000 self-play games, seed 1, alternating the two mazes; step size 0.01 falling
+to 0.001, discount 0.9, exploration 0.3 falling to 0.02. Over the final 25 training games
+(exploration 0.02) it averaged 600 points and won 1 in 25.
+
 ## How it works
 
 ### N-Puzzle
@@ -138,6 +173,14 @@ Pressing a light is addition mod 2, so a board is a linear system A x = b with a
 - **Learner** (`blackjack/learner.py`). Monte Carlo control with no model: exploring starts from every table cell, every-visit sample averages, and epsilon-greedy choices. Stand, hit, and double share statistics by hard total and ace flag, since their future does not depend on card count. It is compared with the exact table, not trained on it.
 - **Game** (`blackjack/game.py`, `python -m blackjack`). A 6-deck shoe with reshuffles at 75%, the table's rules, and the same basic strategy for `simulate`. The advice on the page and in the terminal is the exact table, not the learner's.
 
+### Battleship
+
+- **Rules** (`battleship/board.py`). Cells are 0-99 as bitmasks, so set operations on the board are single integer operations. Ships are straight, on the board, and may touch but not overlap. A shooter learns a sunk ship's full cell list, which is the only information the agents see. Fleets are drawn uniformly over legal layouts (rejection sampling), which matches the uniform prior the probability model uses.
+- **Probability model** (`battleship/probability.py`). For each cell, P(ship) is the share of consistent fleet layouts that use it, where a layout is consistent when it avoids misses and sunk ships and covers every hit that has not sunk its ship. Layouts are counted exactly by a depth-first search with pruning when the placements are few enough (about 60,000 candidate checks at most). Otherwise 1000 layouts are sampled by importance sampling: each ship is drawn uniformly from the placements that fit, and each sample is weighted by the number of options at each step, which makes the weighted samples an unbiased stand-in for a uniform draw over consistent layouts. Sampling is vectorised over all samples with numpy.
+- **Agents** (`battleship/agents.py`). The Bayesian agent fires at the unknown cell with the highest probability, breaking ties at random. The hunt/target baseline fires on a checkerboard (every ship covers an even cell) until a hit, then along a line once two hits align, and otherwise next to a hit.
+- **Server** (`server/battleship_api.py`). The agent's fleet is random and stored server-side under an unguessable id, with a bounded store and a 30-minute expiry, so the page cannot read it before the game ends. The player's own fleet never reaches the server: the page sends the agent's shots at it, and the server returns the odds for those observations.
+- **Page** (`web/battleship.html`). Place a fleet, fire at the agent's fleet, and watch the agent's odds glow over your grid while its reticle settles on its next cell. Watch mode lets the agent hunt a random fleet at a chosen speed.
+
 ### Route planner
 
 - **Solvers** (`routes/tsp.py`). All share one move, 2-opt: reverse a segment of the route, which removes a crossing whenever two roads cross. Its effect on length depends on four edges only, so it costs O(1) to evaluate.
@@ -156,12 +199,20 @@ Pressing a light is addition mod 2, so a board is a linear system A x = b with a
 
 `sudoku/solver.py` has three solvers behind one interface, each recording a trace of guesses and backtracks for the visualizer. Propagation keeps candidate sets as 9-bit masks and, after every guess, fills cells with one candidate and digits with one possible place in a row, column, or box, until nothing changes.
 
+### Pac-Man
+
+The engine (`pacman/engine.py`) is a turn-based game: Pac-Man steps first, then each ghost moves one cell. Collisions are checked before and after the ghosts move, so a ghost cannot pass through him. Power pellets scare every ghost for eight turns, during which the ghosts flee from him.
+
+Ghosts plan with A* (`pacman/search.py`, Manhattan heuristic, unit steps). The chaser targets Pac-Man's cell, the ambusher targets the cell four steps ahead of him, and the scatter ghost chases until it comes within four cells, then retreats to a corner.
+
+The learned agent scores each legal move as `Q(s, a) = w · f(s, a)`, where `f` holds twelve hand-built features of the position after the move: pellet and power-pellet eating, distances to the nearest pellet and power pellet (linear, so far targets still produce a gradient), active ghosts within six cells and one step away, a fatal move, scared ghosts within eight cells, eating a scared ghost, the openness of the destination, and an interaction term for a ghost closing in on a dead end. Each turn it applies the Q-learning update `w += α (r + γ max Q(s', ·) − Q(s, a)) f(s, a)`, with a per-turn cost and a large penalty for being caught. The weights come from self-play (`python -m pacman train`). The server runs the same Python code, and the page shows each move's Q-value and each feature's contribution.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -178,17 +229,21 @@ python -m pytest -q
 Command-line tools:
 
 ```bash
-python -m connect4                                 # play Connect Four against AlphaZero
-python -m game2048                                 # play 2048 with w/a/s/d
-python -m checkers --agent minimax --level 3       # play checkers against alpha-beta or minimax
-python -m lightsout --solve 110/011/101            # the fewest presses that clear a 3x3 board
-python -m blackjack                                # play blackjack against the dealer
-python -m blackjack simulate --hands 100000        # measured return of basic strategy through a 6-deck shoe
-python -m routes --compare --cities 12             # compare the TSP solvers on a random map
-python -m npuzzle astar 7,2,4,5,0,6,8,3,1          # any algorithm by name
-python -m npuzzle.benchmark 8puzzle               # results/npuzzle_8puzzle.md
-python -m sudoku.generate --count 200            # unique-solution puzzles
-python -m sudoku solve 009000000160004023000009...  # or: python -m sudoku benchmark
+python -m connect4                                   # play Connect Four against AlphaZero
+python -m game2048                                   # play 2048 with w/a/s/d
+python -m checkers --agent minimax --level 3         # play checkers against alpha-beta or minimax
+python -m lightsout --solve 110/011/101              # the fewest presses that clear a 3x3 board
+python -m blackjack                                  # play blackjack against the dealer
+python -m blackjack simulate --hands 100000          # measured return of basic strategy through a 6-deck shoe
+python -m battleship                                 # play Battleship in the terminal
+python -m battleship benchmark --games 100 --seed 1  # shots to sink a random fleet, per agent
+python -m pacman                                     # play Pac-Man in the terminal
+python -m pacman benchmark --games 200               # win rate and score for each agent
+python -m routes --compare --cities 12               # compare the TSP solvers on a random map
+python -m npuzzle astar 7,2,4,5,0,6,8,3,1            # any algorithm by name
+python -m npuzzle.benchmark 8puzzle                  # results/npuzzle_8puzzle.md
+python -m sudoku.generate --count 200                # unique-solution puzzles
+python -m sudoku solve 009000000160004023000009...   # or: python -m sudoku benchmark
 python -m game2048.benchmark greedy --games 1000
 ```
 

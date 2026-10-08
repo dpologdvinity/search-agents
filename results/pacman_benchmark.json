@@ -1,0 +1,123 @@
+{
+  "games_per_maze": 200,
+  "seeds": [
+    10000,
+    10199
+  ],
+  "agents": {
+    "q": {
+      "description": "Approximate Q-learning: a linear model scores each move from hand-built features (pellet distance, ghost distance, power pellets). Its weights were learned from self-play.",
+      "overall": {
+        "games": 400,
+        "win_rate": 0.05,
+        "mean_score": 667.5,
+        "mean_turns": 78.9,
+        "outcomes": {
+          "won": 20,
+          "lost": 377,
+          "timeout": 3
+        }
+      },
+      "mazes": {
+        "lanes": {
+          "games": 200,
+          "win_rate": 0.0,
+          "mean_score": 613.0,
+          "mean_turns": 67.6,
+          "outcomes": {
+            "won": 0,
+            "lost": 198,
+            "timeout": 2
+          }
+        },
+        "vault": {
+          "games": 200,
+          "win_rate": 0.1,
+          "mean_score": 722.0,
+          "mean_turns": 90.3,
+          "outcomes": {
+            "won": 20,
+            "lost": 179,
+            "timeout": 1
+          }
+        }
+      }
+    },
+    "reflex": {
+      "description": "Greedy rule: go for the nearest pellet, but step away from any ghost within two cells.",
+      "overall": {
+        "games": 400,
+        "win_rate": 0.005,
+        "mean_score": 157.5,
+        "mean_turns": 22.8,
+        "outcomes": {
+          "won": 2,
+          "lost": 395,
+          "timeout": 3
+        }
+      },
+      "mazes": {
+        "lanes": {
+          "games": 200,
+          "win_rate": 0.005,
+          "mean_score": 178.2,
+          "mean_turns": 26.7,
+          "outcomes": {
+            "won": 1,
+            "lost": 196,
+            "timeout": 3
+          }
+        },
+        "vault": {
+          "games": 200,
+          "win_rate": 0.005,
+          "mean_score": 136.8,
+          "mean_turns": 18.8,
+          "outcomes": {
+            "won": 1,
+            "lost": 199,
+            "timeout": 0
+          }
+        }
+      }
+    },
+    "random": {
+      "description": "Picks a legal move at random. The floor that every other agent should beat.",
+      "overall": {
+        "games": 400,
+        "win_rate": 0.0,
+        "mean_score": 45.5,
+        "mean_turns": 8.9,
+        "outcomes": {
+          "won": 0,
+          "lost": 400,
+          "timeout": 0
+        }
+      },
+      "mazes": {
+        "lanes": {
+          "games": 200,
+          "win_rate": 0.0,
+          "mean_score": 51.0,
+          "mean_turns": 10.5,
+          "outcomes": {
+            "won": 0,
+            "lost": 200,
+            "timeout": 0
+          }
+        },
+        "vault": {
+          "games": 200,
+          "win_rate": 0.0,
+          "mean_score": 40.0,
+          "mean_turns": 7.3,
+          "outcomes": {
+            "won": 0,
+            "lost": 200,
+            "timeout": 0
+          }
+        }
+      }
+    }
+  }
+}

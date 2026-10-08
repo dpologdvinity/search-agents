@@ -1,0 +1,110 @@
+/* Pac-Man page. Shared palette, buttons, panels and the log come from style.css and app.css;
+   this file only styles what is specific to the maze and its panels. */
+
+/* Buttons and panels set their own display, which would override the hidden attribute. */
+[hidden] { display: none !important; }
+
+/* The maze sits in a neon frame with a faint scanline overlay, like a CRT. */
+.pm-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; }
+.pm-frame {
+  position: relative;
+  padding: 10px;
+  max-width: 100%;
+  border: 1px solid var(--cyan);
+  border-radius: 6px;
+  background: radial-gradient(ellipse at center, rgba(0, 245, 255, 0.07), #020610 70%);
+  box-shadow: 0 0 22px rgba(0, 245, 255, 0.35), 0 0 60px rgba(155, 0, 255, 0.2),
+              inset 0 0 30px rgba(0, 245, 255, 0.08);
+}
+.pm-frame::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 4px;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+}
+#pm-canvas {
+  display: block;
+  width: min(100%, 600px);
+  height: auto;
+  aspect-ratio: 15 / 11;
+}
+.pm-controls .cyber-btn { min-width: 9.5rem; }
+
+/* Brain panel: one bar per legal move, then the feature table for the chosen move. */
+.pm-card { margin-top: 0.5rem; padding: 0.6rem; }
+.pm-brain .viz-title { font-size: 0.95rem; }
+.pm-qlist {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.pm-qlist li { display: grid; grid-template-columns: 1.6rem 1fr 4.6rem; align-items: center; gap: 0.5rem; }
+.pm-qlist .bar { position: relative; height: 8px; background: rgba(0, 245, 255, 0.08); border: 1px solid var(--border); }
+.pm-qlist .bar i {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  box-shadow: 0 0 8px var(--cyan);
+  transition: width 0.25s ease;
+}
+.pm-qlist li.chosen { color: var(--green); }
+.pm-qlist li.chosen .bar i { background: linear-gradient(90deg, var(--green), var(--yellow)); box-shadow: 0 0 10px var(--green); }
+.pm-qlist .val { text-align: right; }
+.pm-feats {
+  width: 100%;
+  margin-top: 0.7rem;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+}
+.pm-feats th, .pm-feats td { padding: 0.22rem 0.3rem; border-bottom: 1px solid rgba(0, 245, 255, 0.12); text-align: right; }
+.pm-feats th { color: var(--dim); font-weight: 400; font-size: 0.6rem; letter-spacing: 0.05em; }
+.pm-feats th:first-child, .pm-feats td:first-child { text-align: left; }
+.pm-feats td.pos { color: var(--green); }
+.pm-feats td.neg { color: var(--pink); }
+
+/* Ghost rows: a coloured swatch, the personality, and what the ghost is doing now. */
+.pm-ghost {
+  display: grid;
+  grid-template-columns: 0.9rem 1fr;
+  gap: 0.2rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed rgba(0, 245, 255, 0.12);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+.pm-ghost:last-child { border-bottom: 0; }
+.pm-ghost .sw {
+  grid-row: span 2;
+  width: 0.8rem;
+  height: 0.9rem;
+  margin-top: 0.15rem;
+  border-radius: 50% 50% 2px 2px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+.pm-ghost .name { font-family: var(--orb); font-size: 0.62rem; letter-spacing: 0.06em; }
+.pm-ghost .state { color: var(--dim); }
+
+/* Learned weights: positive values grow right (green), negative grow left (pink). */
+.pm-wlist { list-style: none; margin: 0.5rem 0 0; padding: 0; font-family: var(--mono); font-size: 0.68rem; }
+.pm-wlist li { display: grid; grid-template-columns: 6.6rem 1fr 3.8rem; align-items: center; gap: 0.4rem; margin: 0.22rem 0; }
+.pm-wlist .wbar { position: relative; height: 6px; background: rgba(0, 245, 255, 0.06); }
+.pm-wlist .wbar::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--dim); }
+.pm-wlist .wbar i { position: absolute; top: 0; bottom: 0; }
+.pm-wlist .wbar i.pos { left: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+.pm-wlist .wbar i.neg { right: 50%; background: var(--pink); box-shadow: 0 0 6px var(--pink); }
+.pm-wlist .num { text-align: right; }
+
+/* Keeps the panels readable on small screens. */
+@media (max-width: 600px) {
+  .pm-controls .cyber-btn { min-width: 0; flex: 1 1 40%; }
+  .pm-frame { padding: 6px; }
+  .pm-frame::after { inset: 6px; }
+}

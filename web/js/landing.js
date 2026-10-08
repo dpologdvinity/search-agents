@@ -532,8 +532,123 @@ function blackjackSim(ctx, S) {
   };
 }
 
+function battleshipSim(ctx, S) {
+  // Cabinet screen: a random fleet being sunk. The shooter here is the hunt/target baseline (checkerboard
+  // until a hit, then the neighbours of its wounded ships), which is cheap enough for the landing page; the
+  // live Battleship page runs the Bayesian model. The yellow box marks its latest shot.
+  const N = 10, LENS = [5, 4, 3, 3, 2];
+  let ship, shot, next, hold;
+  const adj = (i) => {
+    const r = Math.floor(i / N), c = i % N;
+    return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
+      .filter(([a, b]) => a >= 0 && a < N && b >= 0 && b < N).map(([a, b]) => a * N + b);
+  };
+  const place = () => {
+    ship = Array(N * N).fill(-1); // -1 water, else the index of the ship on that cell
+    shot = Array(N * N).fill(0); // 0 unknown, 1 miss, 2 hit
+    LENS.forEach((len, k) => {
+      for (let tries = 0; tries < 500; tries++) {
+        const vert = Math.random() < 0.5;
+        const r = rand(vert ? N - len + 1 : N), c = rand(vert ? N : N - len + 1);
+        const cells = [...Array(len)].map((_, j) => (vert ? (r + j) * N + c : r * N + c + j));
+        if (cells.every((i) => ship[i] < 0)) { cells.forEach((i) => (ship[i] = k)); return; }
+      }
+    });
+    next = -1; hold = 0;
+  };
+  const pick = () => {
+    const unknown = [...shot.keys()].filter((i) => !shot[i]);
+    const wounded = unknown.filter((i) => adj(i).some((j) => shot[j] === 2));
+    const parity = unknown.filter((i) => (Math.floor(i / N) + (i % N)) % 2 === 0);
+    const pool = wounded.length ? wounded : parity.length ? parity : unknown;
+    return pool[rand(pool.length)];
+  };
+  place();
+  return (speed) => {
+    const cell = S / N;
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < N * N; i++) {
+      const x = (i % N) * cell, y = Math.floor(i / N) * cell;
+      ctx.strokeStyle = 'rgba(0,245,255,0.12)'; ctx.strokeRect(x, y, cell, cell);
+      if (shot[i] === 2) {
+        ctx.strokeStyle = C.pink; ctx.shadowColor = C.pink; ctx.shadowBlur = 8; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x + 6, y + 6); ctx.lineTo(x + cell - 6, y + cell - 6);
+        ctx.moveTo(x + cell - 6, y + 6); ctx.lineTo(x + 6, y + cell - 6); ctx.stroke(); ctx.shadowBlur = 0;
+      } else if (shot[i] === 1) {
+        ctx.fillStyle = C.cyan; ctx.beginPath(); ctx.arc(x + cell / 2, y + cell / 2, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (next >= 0) {
+      const x = (next % N) * cell, y = Math.floor(next / N) * cell;
+      ctx.strokeStyle = C.yellow; ctx.shadowColor = C.yellow; ctx.shadowBlur = 10; ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, cell - 6, cell - 6); ctx.shadowBlur = 0;
+    }
+    if ((hold += speed) < 12) return;
+    hold = 0;
+    const afloat = ship.some((k, i) => k >= 0 && !shot[i]);
+    if (!afloat) { place(); return; }
+    next = pick();
+    shot[next] = ship[next] >= 0 ? 2 : 1;
+  };
+}
+
+function pacmanSim(ctx, S) {
+  // A small maze: Pac-Man eats his way toward the nearest pellet, and each ghost follows a
+  // shortest route (breadth-first search) toward him. The dashed lines are those routes.
+  const MAZE = ['#########', '#...#...#', '#.#.#.#.#', '#.......#', '###.#.###', '#.......#', '#.#.#.#.#', '#...#...#', '#########'];
+  const open = (r, c) => MAZE[r] && MAZE[r][c] !== undefined && MAZE[r][c] !== '#';
+  const N = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+  let pellets, pac, ghosts, hold;
+  const reset = () => {
+    pellets = new Set();
+    MAZE.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === '.') pellets.add(r * 9 + c); }));
+    pac = [3, 4]; ghosts = [[1, 1], [7, 7]]; hold = 0;
+  };
+  // Distance from `src` to every cell, then the neighbour of `at` that is one step closer to `src`.
+  const distFrom = (src) => {
+    const d = new Map([[src[0] * 9 + src[1], 0]]), q = [src];
+    while (q.length) { const [r, c] = q.shift(); for (const [dr, dc] of N) {
+      const k = (r + dr) * 9 + c + dc; if (open(r + dr, c + dc) && !d.has(k)) { d.set(k, d.get(r * 9 + c) + 1); q.push([r + dr, c + dc]); } } }
+    return d;
+  };
+  const stepToward = (at, d) => {
+    let best = at, bestD = d.get(at[0] * 9 + at[1]) ?? Infinity;
+    for (const [dr, dc] of N) { const v = d.get((at[0] + dr) * 9 + at[1] + dc); if (open(at[0] + dr, at[1] + dc) && v < bestD) { best = [at[0] + dr, at[1] + dc]; bestD = v; } }
+    return best;
+  };
+  reset();
+  return (speed) => {
+    const cell = S / 9;
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = C.cyan; ctx.shadowColor = C.cyan; ctx.shadowBlur = 6; ctx.lineWidth = 2;
+    MAZE.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === '#') ctx.strokeRect(c * cell + 2, r * cell + 2, cell - 4, cell - 4); }));
+    ctx.shadowBlur = 0; ctx.fillStyle = C.yellow;
+    for (const k of pellets) { ctx.beginPath(); ctx.arc((k % 9 + 0.5) * cell, (Math.floor(k / 9) + 0.5) * cell, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    ghosts.forEach((g, i) => {
+      ctx.strokeStyle = [C.pink, C.cyan][i]; ctx.setLineDash([4, 4]); ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 8;
+      const d = distFrom(pac); ctx.beginPath(); let at = g; ctx.moveTo((at[1] + 0.5) * cell, (at[0] + 0.5) * cell);
+      for (let k = 0; k < 20 && !(at[0] === pac[0] && at[1] === pac[1]); k++) { at = stepToward(at, d); ctx.lineTo((at[1] + 0.5) * cell, (at[0] + 0.5) * cell); }
+      ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = [C.pink, C.cyan][i]; ctx.beginPath(); ctx.arc((g[1] + 0.5) * cell, (g[0] + 0.5) * cell, cell * 0.36, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc((pac[1] + 0.5) * cell, (pac[0] + 0.5) * cell, cell * 0.4, 0, Math.PI * 2); ctx.fill();
+    if ((hold += speed) < 14) return;
+    hold = 0;
+    const key = pac[0] * 9 + pac[1];
+    pellets.delete(key);
+    const dp = distFrom(pac);
+    if (pellets.size) { // head for the nearest pellet
+      let target = null, best = Infinity;
+      for (const k of pellets) { const v = dp.get(k); if (v < best) { best = v; target = k; } }
+      pac = stepToward(pac, distFrom([Math.floor(target / 9), target % 9]));
+    }
+    ghosts = ghosts.map((g) => stepToward(g, distFrom(pac)));
+    if (!pellets.size || ghosts.some((g) => g[0] === pac[0] && g[1] === pac[1])) reset();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

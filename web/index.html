@@ -19,16 +19,8 @@
 
 <nav id="nav">
   <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
-  <ul class="nav-links">
-    <li><a href="index.html" class="act">MAIN</a></li>
-    <li><a href="npuzzle.html">N-PUZZLE</a></li>
-    <li><a href="connect4.html">CONNECT FOUR</a></li>
-    <li><a href="checkers.html">CHECKERS</a></li>
-    <li><a href="routes.html">ROUTES</a></li>
-    <li><a href="2048.html">2048</a></li>
-    <li><a href="sudoku.html">SUDOKU</a></li>
-    <li><a href="lightsout.html">LIGHTS OUT</a></li>
-    <li><a href="blackjack.html">BLACKJACK</a></li>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
   </ul>
 </nav>
 
@@ -39,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Eight games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Ten games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -106,6 +98,20 @@
         <span class="cab-desc">Solved exactly by dynamic programming over every hand, then a Monte Carlo learner that starts from nothing and converges on the same table.</span>
         <span class="cab-coin">Play</span>
       </a>
+      <a class="cabinet c-pink" href="battleship.html">
+        <span class="cab-marquee">Battleship</span>
+        <canvas class="cab-screen" data-sim="battleship" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>46</b> shots to sink a fleet, against 95 for random firing</span>
+        <span class="cab-desc">An agent that counts every fleet layout that still fits its hits and misses, and fires where a ship is most likely. Watch its odds glow over your fleet.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-yellow" href="pacman.html">
+        <span class="cab-marquee">Pac-Man</span>
+        <canvas class="cab-screen" data-sim="pacman" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>Q-learning</b> from self-play, 12 features</span>
+        <span class="cab-desc">Ghosts plan shortest routes with A*. The agent scores every move with weights it learned by playing itself.</span>
+        <span class="cab-coin">Play</span>
+      </a>
       <a class="cabinet c-green" href="routes.html">
         <span class="cab-marquee">Route Planner</span>
         <canvas class="cab-screen" data-sim="routes" width="240" height="240" aria-hidden="true"></canvas>
@@ -143,6 +149,7 @@
   </section>
 </main>
 
+<script type="module" src="js/nav.js"></script>
 <script type="module" src="js/landing.js"></script>
 </body>
 </html>
