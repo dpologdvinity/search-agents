@@ -1,0 +1,143 @@
+/* Sokoban page. Loaded after style.css and app.css. sokoban.js sets --cols, --cell and --gap on the board
+   (in px) from the window width, and positions the player and box sprites with transforms, so a push
+   reads as the box sliding to the next cell. Grid cells are static; only sprites move. */
+
+.sok-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+
+/* The frame around the grid. Padding leaves room for the overlay SVG, which sits at the same origin. */
+.sok-wrap {
+  position: relative; padding: 14px; max-width: 100%;
+  border: 2px solid var(--cyan); background: rgba(2,6,16,0.85);
+  box-shadow: 0 0 28px rgba(0,245,255,0.3), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+.sok-wrap.solved { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45), inset 0 0 40px rgba(0,0,0,0.6); }
+.sok-wrap.deadlocked { border-color: var(--red); box-shadow: 0 0 36px rgba(255,59,59,0.5), inset 0 0 40px rgba(0,0,0,0.6); }
+
+.sok-board {
+  position: relative; display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-auto-rows: var(--cell); gap: var(--gap);
+}
+
+/* Static tiles. Walls are dark brick, floor is a faint grid, goals get a pink target ring. */
+.sok-cell { position: relative; width: var(--cell); height: var(--cell); box-sizing: border-box; }
+.sok-cell.wall {
+  background:
+    linear-gradient(0deg, rgba(0,245,255,0.12) 1px, transparent 1px) 0 0 / 100% 50% no-repeat,
+    linear-gradient(90deg, rgba(0,245,255,0.12) 1px, transparent 1px) 0 0 / 50% 100% no-repeat,
+    repeating-linear-gradient(0deg, #1b3a66 0 calc(var(--cell) / 2 - 1px), #061022 calc(var(--cell) / 2 - 1px) calc(var(--cell) / 2));
+  border: 1px solid rgba(0,245,255,0.7);
+  box-shadow: inset 0 0 12px rgba(0,245,255,0.35), 0 0 10px rgba(0,245,255,0.3);
+}
+.sok-cell.floor {
+  background: rgba(5,13,26,0.95);
+  border: 1px solid rgba(0,245,255,0.12);
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.7);
+}
+.sok-cell.goal::before {
+  content: ""; position: absolute; inset: 22%; border-radius: 50%;
+  border: 2px solid var(--pink);
+  box-shadow: 0 0 10px var(--pink), inset 0 0 8px rgba(255,0,160,0.6);
+  animation: sok-ring 2.4s ease-in-out infinite alternate;
+}
+@keyframes sok-ring { from { opacity: 0.55; } to { opacity: 1; } }
+
+/* Overlay: dead squares tinted red with hatching, shown only with the DEAD SQUARES toggle. */
+.sok-board.show-dead .sok-cell.dead {
+  background: repeating-linear-gradient(45deg, rgba(255,59,59,0.35) 0 6px, rgba(255,59,59,0.12) 6px 12px), rgba(40,0,8,0.9);
+  border-color: rgba(255,59,59,0.7);
+}
+
+/* Overlay: the nearest push distance, dimmed, in the corner of each live floor cell. */
+.sok-num {
+  position: absolute; right: 3px; bottom: 1px; display: none; pointer-events: none;
+  font-family: var(--mono); font-size: calc(var(--cell) * 0.27); color: var(--dim);
+}
+.sok-board.show-dist .sok-num { display: block; }
+
+/* Sprites: one element per box and one for the player, moved by transform. */
+.sok-sprite {
+  position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); box-sizing: border-box;
+  pointer-events: none; z-index: 2;
+  transition: transform 0.14s ease-out;
+}
+.sok-box {
+  border: 2px solid #ffe600; border-radius: 3px;
+  background: linear-gradient(135deg, #ffd34d 0%, #e8a520 55%, #a8650a 100%);
+  box-shadow: 0 0 10px rgba(255,230,0,0.45), inset 0 0 0 3px rgba(0,0,0,0.2);
+}
+/* The crate's stripe: a dashed band across the middle. */
+.sok-box::before {
+  content: ""; position: absolute; left: 12%; right: 12%; top: 42%; height: 16%;
+  border-top: 2px dashed rgba(0,0,0,0.45); border-bottom: 2px dashed rgba(0,0,0,0.45);
+}
+.sok-box.on-goal { border-color: var(--green); box-shadow: 0 0 16px var(--green), inset 0 0 0 3px rgba(0,0,0,0.2); }
+.sok-box.dead-box { border-color: var(--red); box-shadow: 0 0 14px var(--red), inset 0 0 0 3px rgba(0,0,0,0.25); }
+.sok-box.frozen { outline: 2px dashed var(--red); outline-offset: 3px; }
+
+.sok-player {
+  border-radius: 30%; background: radial-gradient(circle at 35% 30%, #ffffff, #9feeff 30%, var(--cyan) 70%, #0a7d8a);
+  box-shadow: 0 0 16px rgba(0,245,255,0.8), 0 0 36px rgba(0,245,255,0.3), inset 0 -4px 0 rgba(0,0,0,0.25);
+}
+/* A small visor dot on the side the player last moved toward. */
+.sok-player::after {
+  content: ""; position: absolute; width: 22%; height: 22%; border-radius: 50%; background: var(--pink);
+  box-shadow: 0 0 6px var(--pink);
+}
+.sok-player[data-face="w"]::after { top: 8%; left: 39%; }
+.sok-player[data-face="s"]::after { bottom: 8%; left: 39%; }
+.sok-player[data-face="a"]::after { left: 8%; top: 39%; }
+.sok-player[data-face="d"]::after { right: 8%; top: 39%; }
+
+/* A push lands with a short thump on the box. */
+.sok-box.thump { animation: sok-thump 0.22s ease-out; }
+@keyframes sok-thump { from { scale: 1.12; } to { scale: 1; } }
+
+/* Matching lines, drawn in board pixels over the grid. */
+.sok-svg { position: absolute; top: 14px; left: 14px; pointer-events: none; overflow: visible; z-index: 3; }
+.no-pairs .sok-svg { display: none; }
+.sok-svg line { stroke: var(--cyan); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 6 5; opacity: 0.85; }
+.sok-svg circle { fill: var(--cyan); }
+.sok-svg text { fill: #fff; font-family: var(--mono); font-size: 11px; paint-order: stroke; stroke: #020610; stroke-width: 3px; }
+
+.sok-controls, .sok-toggles, .sok-compare-row { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; }
+
+.cyber-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Panels: the thinking text and the plan list. */
+.sok-think { font-family: var(--mono); font-size: 0.74rem; color: var(--dim); line-height: 1.65; }
+.sok-think p { margin: 0 0 0.45rem; }
+.sok-think .hot { color: var(--yellow); }
+.sok-think .bad { color: var(--red); }
+.sok-think .good { color: var(--green); }
+.sok-plan .push { color: var(--pink); text-shadow: 0 0 6px var(--pink); font-weight: 700; }
+
+/* Counters for the pruning comparison. Bars are scaled to the larger of the two final counts. */
+.sok-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; }
+.sok-counter { border: 1px solid var(--border); padding: 0.6rem 0.7rem; background: rgba(0,0,0,0.3); }
+.sok-counter.off { border-color: rgba(255,0,160,0.4); }
+.sok-counter.on { border-color: rgba(0,255,136,0.4); }
+.sok-counter-lbl { font-family: var(--orb); font-size: 0.6rem; color: var(--dim); letter-spacing: 0.08em; }
+.sok-counter-num { font-family: var(--orb); font-weight: 900; font-size: 1.7rem; color: #fff; }
+.sok-counter.off .sok-counter-num { text-shadow: 0 0 10px var(--pink); }
+.sok-counter.on .sok-counter-num { text-shadow: 0 0 10px var(--green); }
+.sok-bar { height: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.5); margin: 0.4rem 0; }
+.sok-bar-fill { height: 100%; width: 0; }
+.sok-counter.off .sok-bar-fill { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+.sok-counter.on .sok-bar-fill { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.sok-spin { font-family: var(--orb); font-size: 0.6rem; color: var(--yellow); animation: sok-blink 0.8s steps(2) infinite; }
+@keyframes sok-blink { 50% { opacity: 0.2; } }
+[hidden] { display: none !important; }
+
+@media (max-width: 600px) {
+  .sok-wrap { padding: 8px; }
+  .sok-svg { top: 8px; left: 8px; }
+  .sok-counters { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sok-wrap { animation: none; }
+  .sok-sprite, .sok-box.thump { transition: none; animation: none; }
+  .sok-cell.goal::before, .sok-spin { animation: none; }
+}

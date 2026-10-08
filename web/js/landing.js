@@ -691,8 +691,126 @@ function warehouseSim(ctx, S) {
   };
 }
 
+function endgameSim(ctx, S) {
+  // King and queen against a lone king: the lone king's moves to mate on each square, Black to move, with the white
+  // king on a1 and the queen on b2, read from the solved table (-1 = not a position). A cursor sweeps the board.
+  const ROW = [-1,-1,4,4,5,7,6,7,-1,-1,6,8,8,8,8,8,4,6,6,8,8,8,8,8,4,8,8,8,10,10,10,9,5,8,8,10,10,10,10,9,7,8,8,10,10,10,10,9,6,8,8,10,10,10,9,9,7,8,8,9,9,9,9,7];
+  const cell = S / 8;
+  let k = 0, hold = 0;
+  // Near mates are green, long defences pink.
+  const colour = (v) => {
+    const t = Math.min(1, Math.max(0, (v - 4) / 6));
+    return `rgb(${Math.round(255 * t)},${Math.round(255 * (1 - t))},${Math.round(136 + 24 * t)})`;
+  };
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.font = `${Math.round(cell * 0.36)}px Orbitron, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let sq = 0; sq < 64; sq++) {
+      const x = (sq & 7) * cell, y = (7 - (sq >> 3)) * cell;
+      const v = ROW[sq];
+      if (v > 0) {
+        ctx.globalAlpha = sq === k ? 1 : 0.55;
+        ctx.fillStyle = colour(v);
+        ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = C.bg;
+        ctx.fillText(String(v), x + cell / 2, y + cell / 2);
+      } else {
+        ctx.fillStyle = 'rgba(0,245,255,0.05)';
+        ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+      }
+    }
+    // The cursor: a yellow frame on the square being looked up.
+    const cx = (k & 7) * cell, cy = (7 - (k >> 3)) * cell;
+    ctx.strokeStyle = C.yellow;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cx + 3, cy + 3, cell - 6, cell - 6);
+    // The fixed pieces: white king on a1, queen on b2.
+    ctx.fillStyle = C.cyan;
+    ctx.fillText('K', cell * 0.5, S - cell * 0.5);
+    ctx.fillText('Q', cell * 1.5, S - cell * 1.5);
+    if ((hold += speed) > 26) {
+      hold = 0;
+      k = (k + 1) % 64;
+    }
+  };
+}
+
+function sokobanSim(ctx, S) {
+  // Pillar level from the Sokoban set, with its 3-push solution fixed in advance: the cabinet replays it on a
+  // small grid with no search in the browser. The loop holds for a moment at the end, then restarts.
+  const TEXT = ['########', '#  .   #', '# #$#  #', '#  $ . #', '#  @   #', '#      #', '########'];
+  const H = TEXT.length, W = TEXT[0].length, cell = S / W;
+  const oy = (S - H * cell) / 2;
+  const MOVES = 'awDWsD';
+  const DIR = { w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1] };
+  const at = (r, c) => TEXT[r][c];
+  const goalAt = (r, c) => at(r, c) === '.';
+  let pr = 0, pc = 0, boxes = [], step = 0, hold = 0;
+  function restart() {
+    boxes = [];
+    TEXT.forEach((row, r) => [...row].forEach((ch, c) => {
+      if (ch === '@') { pr = r; pc = c; }
+      if (ch === '$') boxes.push([r, c]);
+    }));
+    step = 0;
+    hold = 0;
+  }
+  restart();
+  const isBox = (r, c) => boxes.some(([br, bc]) => br === r && bc === c);
+  const isWall = (r, c) => at(r, c) === '#';
+  function apply(letter) {
+    const [dr, dc] = DIR[letter.toLowerCase()];
+    const tr = pr + dr, tc = pc + dc;
+    if (isBox(tr, tc)) {
+      const br = tr + dr, bc = tc + dc;
+      const i = boxes.findIndex(([x, y]) => x === tr && y === tc);
+      boxes[i] = [br, bc];
+    }
+    pr = tr; pc = tc;
+  }
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      const x = c * cell, y = oy + r * cell;
+      if (isWall(r, c)) {
+        ctx.fillStyle = 'rgba(0,245,255,0.16)';
+        ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+        continue;
+      }
+      if (goalAt(r, c)) {
+        ctx.strokeStyle = C.pink; ctx.lineWidth = 2;
+        ctx.strokeRect(x + cell * 0.28, y + cell * 0.28, cell * 0.44, cell * 0.44);
+      }
+    }
+    for (const [r, c] of boxes) {
+      const x = c * cell, y = oy + r * cell, onGoal = goalAt(r, c);
+      ctx.fillStyle = onGoal ? C.green : C.yellow;
+      ctx.shadowColor = onGoal ? C.green : C.yellow;
+      ctx.shadowBlur = 12;
+      ctx.fillRect(x + 4, y + 4, cell - 8, cell - 8);
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = C.cyan;
+    ctx.shadowColor = C.cyan;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(pc * cell + cell / 2, oy + pr * cell + cell / 2, cell * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    if (step >= MOVES.length) { if ((hold += speed) > 160) restart(); return; }
+    if ((hold += speed) < 40) return;
+    hold = 0;
+    apply(MOVES[step++]);
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

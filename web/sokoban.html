@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOKOBAN // SEARCH AGENTS</title>
+<meta name="description" content="Push boxes onto goals. The solver searches over pushes, marks the squares where a box can never reach a goal, and bounds the pushes left with a minimum-cost matching.">
+<meta property="og:title" content="SOKOBAN // SEARCH AGENTS">
+<meta property="og:description" content="Push boxes onto goals. The solver searches over pushes, marks the squares where a box can never reach a goal, and bounds the pushes left with a minimum-cost matching.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/sokoban.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="sokoban.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">10 // PUSH SEARCH · DEADLOCK PRUNING</div>
+      <h1 class="proj-pg-title neon-cyan glitch" data-text="SOKOBAN">SOKOBAN</h1>
+      <div class="proj-pg-sub">Push every box onto a goal. The search runs over pushes, not steps, and it throws away any position where a box can no longer reach a goal.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip">PUSHES <span class="val" id="chip-pushes">0</span></span>
+        <span class="stat-chip">MOVES <span class="val" id="chip-moves">0</span></span>
+        <span class="stat-chip green">OPTIMAL <span class="val" id="chip-optimal">—</span></span>
+        <span class="stat-chip">MATCHING BOUND <span class="val" id="chip-bound">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="sok-stage">
+        <div class="sok-wrap" id="sok-wrap">
+          <div id="sok-board" class="sok-board" role="group" aria-label="Sokoban warehouse grid"></div>
+          <svg id="sok-svg" class="sok-svg" aria-hidden="true"></svg>
+        </div>
+        <div class="field-hint" id="sok-note">Arrow keys or W A S D walk and push. U undo, R restart.</div>
+        <div class="sok-controls">
+          <button class="cyber-btn pink" id="btn-undo" type="button" aria-label="Undo the last move"><span class="btn-txt">↶ UNDO</span></button>
+          <button class="cyber-btn" id="btn-restart" type="button" aria-label="Restart the level"><span class="btn-txt">⟲ RESTART</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" aria-label="Show the solver's next push"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-solve" type="button" aria-label="Solve from here and animate"><span class="btn-txt">◉ SOLVE</span></button>
+          <button class="cyber-btn" id="btn-stop" type="button" aria-label="Stop the animation" disabled><span class="btn-txt">■ STOP</span></button>
+        </div>
+        <div class="sok-toggles">
+          <button class="cyber-btn pink" id="tog-dead" type="button" aria-pressed="false"><span class="btn-txt">DEAD SQUARES</span></button>
+          <button class="cyber-btn" id="tog-dist" type="button" aria-pressed="false"><span class="btn-txt">PUSH DISTANCE</span></button>
+          <button class="cyber-btn" id="tog-pairs" type="button" aria-pressed="true"><span class="btn-txt">MATCHING LINES</span></button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title pink-ttl">WHAT THE SEARCH IS THINKING</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Waiting for the first position.</div>
+          <div class="sok-think" id="think-body"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title green-ttl">THE PLAN</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="plan-title">Press SOLVE or HINT to search from this position.</div>
+          <div class="moves-list" id="plan-list"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title pink-ttl">NODES EXPANDED: PRUNING OFF VS ON</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="cmp-title">Press COMPARE to run the same search twice, once with deadlock pruning and once without.</div>
+          <div class="sok-counters">
+            <div class="sok-counter off">
+              <div class="sok-counter-lbl">PRUNING OFF</div>
+              <div class="sok-counter-num" id="cmp-off-num">0</div>
+              <div class="sok-bar"><div class="sok-bar-fill" id="cmp-off-bar"></div></div>
+              <div class="field-hint" id="cmp-off-info">no run yet</div>
+            </div>
+            <div class="sok-counter on">
+              <div class="sok-counter-lbl">PRUNING ON</div>
+              <div class="sok-counter-num" id="cmp-on-num">0</div>
+              <div class="sok-bar"><div class="sok-bar-fill" id="cmp-on-bar"></div></div>
+              <div class="field-hint" id="cmp-on-info">no run yet</div>
+            </div>
+          </div>
+          <div class="sok-compare-row">
+            <button class="cyber-btn green" id="btn-compare" type="button"><span class="btn-txt">▶ COMPARE</span></button>
+            <span class="sok-spin" id="cmp-spin" hidden aria-live="polite">searching…</span>
+          </div>
+          <div class="field-hint">Counters replay the run's progress samples from the server, then settle on the measured count.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title pink-ttl">GAME LOG</div>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">LEVEL</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">WAREHOUSE</div>
+            <select class="cyber-select" id="sel-level" style="width:100%" aria-label="Level"></select>
+          </div>
+          <div class="field-hint" id="level-note"></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title green-ttl">SEARCH</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">ALGORITHM</div>
+            <select class="cyber-select" id="sel-algo" style="width:100%" aria-label="Search algorithm">
+              <option value="astar" selected>A* (optimal)</option>
+              <option value="greedy">GREEDY (fast, not optimal)</option>
+              <option value="bfs">BFS (no heuristic)</option>
+            </select>
+          </div>
+          <div id="heur-wrap">
+            <div class="field-lbl">HEURISTIC</div>
+            <select class="cyber-select" id="sel-heur" style="width:100%" aria-label="Heuristic">
+              <option value="matching" selected>MATCHING (Hungarian)</option>
+              <option value="simple">SIMPLE (nearest goal per box)</option>
+            </select>
+          </div>
+          <button class="cyber-btn pink" id="btn-prune" type="button" aria-pressed="true" style="width:100%"><span class="btn-txt">DEADLOCK PRUNING: ON</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="section-title green-ttl">HOW IT SEARCHES</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">THE MOVES ARE PUSHES</div>
+            <div class="field-hint">Walking is free: the player's reachable region is one state. Only pushes create new states, so the search depth is the push count.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--red);margin-bottom:0.3rem">DEAD SQUARES</div>
+            <div class="field-hint">Pull every goal backwards along valid pushes. A square no pull reaches is dead: a box there can never be moved to a goal.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">FROZEN BOXES</div>
+            <div class="field-hint">A box with a wall or another frozen box on both sides of one axis cannot slide along it. Frozen off-goal means a deadlock, including the 2x2 block.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">MATCHING BOUND</div>
+            <div class="field-hint">Each box must end on its own goal. The cheapest one-to-one pairing of boxes and goals (Hungarian algorithm) never undercounts the pushes left.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/sokoban.js"></script>
+</body>
+</html>

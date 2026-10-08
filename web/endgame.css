@@ -1,0 +1,136 @@
+/* Endgame page. Loaded after style.css and app.css. Board squares are 8 x 8 buttons; the size is set by --sq. */
+
+.eg-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+
+/* Countdown above the board: the number the side with the piece needs, with the same drama as a clock. */
+.eg-countdown {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 260px;
+  padding: 0.5rem 1rem; border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+}
+.eg-cd-num {
+  font-family: var(--orb); font-weight: 900; font-size: 2.1rem; line-height: 1; color: var(--green);
+  text-shadow: 0 0 14px var(--green);
+}
+.eg-countdown.drawn .eg-cd-num { color: var(--yellow); text-shadow: 0 0 14px var(--yellow); }
+.eg-countdown.lost .eg-cd-num { color: var(--pink); text-shadow: 0 0 14px var(--pink); }
+.eg-countdown.tick .eg-cd-num { animation: eg-tick 0.5s ease-out; }
+.eg-cd-txt { font-family: var(--mono); font-size: 0.72rem; color: var(--dim); letter-spacing: 0.04em; }
+@keyframes eg-tick { from { transform: scale(1.25); } to { transform: scale(1); } }
+
+/* Board: a neon frame, with a grid of squares. */
+.eg-board-wrap { position: relative; }
+.eg-board {
+  --sq: 64px;
+  display: grid; grid-template-columns: repeat(8, var(--sq)); grid-template-rows: repeat(8, var(--sq));
+  border: 2px solid var(--pink); padding: 0;
+  box-shadow: 0 0 30px rgba(255,0,160,0.35), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+.eg-board.over { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45); }
+
+.eg-sq {
+  position: relative; width: var(--sq); height: var(--sq); padding: 0; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; user-select: none; touch-action: none;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.eg-sq.light { background: rgba(155,0,255,0.10); }
+.eg-sq.dark { background: rgba(2,6,16,0.95); }
+.eg-sq:focus-visible { outline: 2px solid var(--yellow); outline-offset: -3px; z-index: 2; }
+.eg-sq.own:hover { background: rgba(0,245,255,0.12); }
+.eg-sq.selected { box-shadow: inset 0 0 0 3px var(--yellow); background: rgba(255,230,0,0.10); }
+.eg-sq.last { background: rgba(0,245,255,0.16); }
+.eg-sq.hint-from, .eg-sq.hint-to { box-shadow: inset 0 0 0 2px var(--green); }
+.eg-sq.hint-to { background: rgba(0,255,136,0.18); }
+.eg-sq.dragover { box-shadow: inset 0 0 0 3px var(--cyan); }
+
+/* Coordinates in the corners of the squares. */
+.eg-coord {
+  position: absolute; left: 3px; bottom: 1px; font-family: var(--mono); font-size: 0.55rem; color: var(--dim);
+  pointer-events: none;
+}
+.eg-sq .eg-rank { position: absolute; right: 3px; top: 1px; font-family: var(--mono); font-size: 0.55rem; color: var(--dim); }
+
+/* Pieces: Unicode chess glyphs with neon. White pieces are cyan, the black king is pink. */
+.eg-piece {
+  font-size: calc(var(--sq) * 0.74); line-height: 1; pointer-events: none;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", serif;
+}
+.eg-piece.white { color: #eafcff; text-shadow: 0 0 10px var(--cyan), 0 0 22px rgba(0,245,255,0.5), 0 1px 0 #000; }
+.eg-piece.black { color: #ffd6ef; text-shadow: 0 0 10px var(--pink), 0 0 22px rgba(255,0,160,0.5), 0 1px 0 #000; }
+.eg-sq.own .eg-piece { pointer-events: none; }
+.eg-sq.own { cursor: grab; }
+.eg-sq.selected .eg-piece { transform: scale(1.08); }
+
+/* Move tags: the distance to mate for a move, drawn in the centre of its target square. */
+.eg-target::after {
+  content: ''; position: absolute; width: 30%; height: 30%; border-radius: 50%;
+  background: rgba(0,255,136,0.55); box-shadow: 0 0 12px var(--green); pointer-events: none;
+}
+.eg-target.tag-draw::after { background: rgba(255,230,0,0.5); box-shadow: 0 0 12px var(--yellow); }
+.eg-target.tag-loss::after { background: rgba(255,0,160,0.45); box-shadow: 0 0 12px var(--pink); }
+.eg-target.tag-mate::after { background: rgba(255,255,255,0.8); box-shadow: 0 0 16px #fff; }
+.eg-tag {
+  position: absolute; right: 2px; bottom: 1px; padding: 0 3px; font-family: var(--orb); font-size: 0.6rem;
+  font-weight: 700; color: #000; background: var(--green); pointer-events: none; z-index: 1;
+}
+.eg-tag.tag-win { background: var(--green); }
+.eg-tag.tag-draw { background: var(--yellow); }
+.eg-tag.tag-loss { background: var(--pink); color: #fff; }
+.eg-tag.tag-mate { background: #fff; }
+.eg-legend .eg-tag { position: static; margin: 0 0.15rem; }
+
+/* Heat map: each square the lone king could stand on is tinted by its distance to mate. */
+.eg-sq .eg-heat-n {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center;
+  font-family: var(--orb); font-weight: 700; font-size: calc(var(--sq) * 0.3); color: #fff;
+  text-shadow: 0 0 6px #000, 0 0 2px #000; pointer-events: none;
+}
+.eg-sq.heat-win { background: rgba(0,255,136, calc(0.12 + var(--h, 0.5) * 0.45)); }
+.eg-sq.heat-loss { background: rgba(255,0,160, calc(0.12 + var(--h, 0.5) * 0.45)); }
+.eg-sq.heat-draw { background: rgba(255,230,0,0.22); }
+.eg-sq.heat-illegal { background: rgba(0,0,0,0.7); }
+.eg-sq.heat-illegal .eg-piece { opacity: 0.45; }
+
+/* Ghost piece that follows the pointer while dragging. */
+.eg-ghost {
+  position: fixed; left: 0; top: 0; width: 64px; height: 64px; pointer-events: none; display: none;
+  transform: translate(-50%, -50%); z-index: 50; font-size: 48px; text-align: center; line-height: 64px;
+}
+.eg-ghost.on { display: block; }
+.eg-ghost.white { color: #eafcff; text-shadow: 0 0 12px var(--cyan); }
+.eg-ghost.black { color: #ffd6ef; text-shadow: 0 0 12px var(--pink); }
+
+.eg-controls { justify-content: center; flex-wrap: wrap; }
+.eg-legend { text-align: center; }
+
+/* The agent's reasoning panel. */
+.eg-think { display: flex; flex-direction: column; gap: 0.45rem; font-family: var(--raj); font-size: 0.95rem; color: var(--text); }
+.eg-think p { margin: 0; }
+.eg-think .eg-why { color: var(--dim); font-size: 0.85rem; }
+.eg-alt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.3rem; }
+.eg-alt {
+  display: flex; justify-content: space-between; gap: 0.4rem; padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.3); font-family: var(--mono); font-size: 0.8rem;
+}
+.eg-alt.best { border-color: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.35); }
+.eg-alt .eg-alt-d { color: var(--dim); }
+.eg-alt.win .eg-alt-d { color: var(--green); }
+.eg-alt.draw .eg-alt-d { color: var(--yellow); }
+.eg-alt.loss .eg-alt-d { color: var(--pink); }
+
+/* Histogram canvas and the "how it is built" cards. */
+canvas.eg-hist {
+  display: block; width: 100%; height: auto; max-width: 420px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.35);
+}
+.eg-how-n { font-family: var(--orb); font-size: 0.65rem; color: var(--cyan); margin-bottom: 0.3rem; }
+
+@media (max-width: 600px) {
+  .eg-board { --sq: min(48px, calc((100vw - 3rem) / 8)); }
+  .eg-countdown { min-width: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eg-board { animation: none; }
+  .eg-countdown.tick .eg-cd-num { animation: none; }
+}

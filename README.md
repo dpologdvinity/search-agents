@@ -1,6 +1,6 @@
 # search-agents
 
-Eleven puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Thirteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -13,6 +13,8 @@ Eleven puzzles and games, each played or solved by a classic AI algorithm: searc
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 | **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
+| **Endgame tablebases** (king and queen or rook against a lone king) | Retrograde analysis: every position's exact distance to mate, built backwards from checkmate. No search at play time | None: the tables are exact, so there is nothing to learn | Each legal move's distance to mate, the agent's choice against the alternatives, the lone king's heat map, and the distance-to-mate histogram over all 368,452 KQK positions |
+| **Sokoban** | Search over pushes (player walks are free, so states are box layouts and the player's region): BFS, greedy best-first, and A\* with a sum-of-nearest-goal bound or a minimum-cost box-to-goal matching (Hungarian), each with or without deadlock pruning (dead squares, frozen boxes) | None needed: the search is exact, and both bounds are admissible (they never overestimate) | The next push the solver suggests, the matching lines from each box to its goal, dead squares tinted red, and the nodes expanded with and without deadlock pruning, side by side |
 | **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 13 hand-built features (one is a six-turn survival search over the ghosts' real moves), trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 | **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
 
@@ -124,6 +126,39 @@ For reference, plain MCTS with 1,000 random-rollout simulations scores 32-2-16 a
 
 Pressing a light is addition mod 2, so a board is a linear system A x = b with a 25x25 matrix of rank 23. That splits the boards: only 1 in 4 can be cleared at all, and every solvable 5x5 board has exactly 4 solutions. Over 3,000 random solvable boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. Solving a 5x5 board takes about 3 ms in Python.
 
+### Endgame tablebases: exact distance to mate
+
+Built by `python -m endgame build` (every entry re-checked against the rules afterwards), counted by `python -m endgame stats`:
+
+| | KQK | KRK |
+|---|---:|---:|
+| Legal positions | 368,452 | 399,112 |
+| Longest forced mate | 10 moves (19 plies) | 16 moves (31 plies) |
+| Black to move: lost / drawn | 200,896 / 23,048 | 201,700 / 22,244 |
+| Solve time (quiet laptop / shared laptop) | 4.9 s / 25.0 s | 4.4 s / 34.3 s |
+
+Every position with White to move is a win in both endgames. The longest mates are the known values for these endgames (10 and 16 moves).
+
+### Sokoban: pushes, deadlocks, and bounds
+
+Twelve levels, from one push to 19 pushes in the optimal solution. Levels 1 to 7 are hand-drawn and 8 to 12 are generated (random reverse pushes from the goals, kept when the solver finds the most pushes). Each run gets 20,000 expanded nodes and 10 s.
+
+| Search | Deadlock pruning | Solved | Optimal | Nodes expanded, all 12 levels | Time |
+|---|---|---:|---:|---:|---:|
+| BFS | off | 8/12 | 8/12 | 77,355 | 41.8 s |
+| BFS | on | 10/12 | 10/12 | 38,292 | 32.4 s |
+| Greedy (matching) | off | 12/12 | 11/12 | 6,039 | 5.9 s |
+| Greedy (matching) | on | 12/12 | 11/12 | 153 | 0.3 s |
+| A\* (simple bound) | off | 10/12 | 10/12 | 28,743 | 29.6 s |
+| A\* (simple bound) | on | 12/12 | 12/12 | 10,907 | 11.3 s |
+| **A\* (matching)** | off | 12/12 | 12/12 | 269 | 0.3 s |
+| **A\* (matching)** | **on** | **12/12** | **12/12** | **154** | **0.2 s** |
+
+Unsolved runs ran out of budget. "Optimal" means the solved plan has the optimal push count. Greedy's plan on the Aisle level is the only non-optimal one. The per-level node counts are in `results/sokoban_benchmark.md`.
+
+- Pruning helps every rule. Greedy drops from 6,039 to 153 nodes, the simple bound from 28,743 to 10,907 (and solves 12 levels instead of 10), and BFS solves 10 levels instead of 8 within the budget.
+- The matching bound does most of the work: without pruning it expands 269 nodes for all 12 levels, against 28,743 for the simple bound, and pruning trims that further to 154.
+
 ### Pac-Man: approximate Q-learning vs baselines
 
 Seeds 10000-10199, 200 games per maze on two hand-drawn mazes (400 games per agent).
@@ -220,6 +255,22 @@ Prioritized planning was suboptimal on 9 of 10 (mean extra cost 3.8).
 - **Solver** (`lightsout/solver.py`). Row i of A is the equation for light i. Gauss-Jordan elimination mod 2 reduces [A | b], with each row operation a single integer XOR. A row with no left-hand side and a 1 on the right proves the board unreachable. Otherwise the solutions are one particular solution plus every combination of the null-space basis, and the lightest of the 2^nullity solutions is returned. For 3x3, 6x6, 7x7 and 8x8 the matrix is invertible, so every board is solvable; 4x4 has nullity 4 and 9x9 has nullity 8.
 - **Checks** (`tests/test_lightsout.py`). Exhaustive brute force over all 512 boards of 3x3, sampled agreement on the minimum press count for 4x4, and solvability checked against the null-space orthogonality test.
 
+### Endgame tablebases
+
+- **Rules** (`endgame/rules.py`). Squares 0..63, a1 = 0. A position is (white king, white piece, black king, side to move). Legal moves, unmoves (predecessors), attack lines between squares precomputed once, and FEN. The black king taking the piece leaves king against king, so it is a draw and never in the table.
+- **Solver** (`endgame/retro.py`). Checkmates are seeded at distance 0. A FIFO queue processes decided positions in order of distance: a predecessor where the side to move can move into a loss is a win one ply deeper; a predecessor whose every move loses is a loss at the last-resolved move's distance. Whatever is never decided is a draw.
+- **Tables** (`endgame/tablebase.py`). One uint16 per index (side to move included): an odd code is a win in that many plies, an even code a loss, and two sentinels mark draws and illegal tuples. The agent plays the fastest win, the longest defence, or a drawing move.
+- **Checks** (`tests/test_endgame.py`, `python -m endgame build`). The move and unmove generators are exact inverses. Every entry is checked against the definition of distance to mate, and the tests verify the known maxima and optimal-play games.
+
+### Sokoban
+
+- **Rules** (`sokoban/board.py`). A level is a padded grid with flat indices and four offsets. Walking is a BFS around the boxes. A push moves a box one cell when the far side is free floor.
+- **Search** (`sokoban/search.py`). A state is the player's smallest reachable cell plus the sorted box cells, so each state is a box layout and a region. Successors are pushes only. BFS, greedy best-first, and A\* share one loop and differ only in the priority. A\* with matching returns the fewest pushes; the plan's walks are rebuilt by BFS from the parent links.
+- **Dead squares** (`sokoban/tables.py`). A backward BFS from each goal runs the push relation in reverse: a box at y could have come from y - d if the player could stand at y - 2d. Cells no goal reaches are dead.
+- **Frozen boxes** (`sokoban/deadlock.py`). A box with a wall or a frozen box on one side of each axis can never move. The frozen set is the greatest fixed point of that rule, which covers 2x2 blocks. It is sound: it never flags a solvable position, and the tests check this exhaustively on small levels.
+- **Bounds** (`sokoban/heuristics.py`, `sokoban/matching.py`). The simple bound sums each box's push distance to its nearest goal. The matching bound is the cheapest one-to-one pairing of boxes and goals, found with the Hungarian algorithm. Both are admissible because the push distance ignores the other boxes. Pairs with no push path use a Manhattan fallback so the bound stays finite without pruning; that can break consistency, so the search reopens a state reached by a cheaper path.
+- **Checks** (`tests/test_sokoban.py`). The matching is checked against brute force over permutations, the bounds against the remaining pushes of every optimal plan, and every built-in level is solved with its optimal push count and replayed.
+
 ### Sudoku
 
 `sudoku/solver.py` has three solvers behind one interface, each recording a trace of guesses and backtracks for the visualizer. Propagation keeps candidate sets as 9-bit masks and, after every guess, fills cells with one candidate and digits with one possible place in a row, column, or box, until nothing changes.
@@ -247,7 +298,7 @@ On small random maps, a brute-force search over joint positions finds the same o
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -276,6 +327,15 @@ python -m pacman                                                             # p
 python -m pacman benchmark --games 200                                       # win rate and score for each agent
 python -m warehouse                                                          # plan robot routes in the terminal
 python -m warehouse benchmark --layout bottleneck --robots 6 --instances 10  # compare the three planners
+python -m endgame                                                            # KQK: a random winning position, you are the lone king
+python -m endgame --piece R --as strong                                      # KRK: you have the rook; the agent defends and grades your moves
+python -m endgame analyze "8/8/8/5k2/8/8/1Q6/K7 w - - 0 1"                   # every move's distance to mate and the agent's choice
+python -m endgame stats                                                      # counts by result, distance-to-mate histograms, build time
+python -m endgame build                                                      # re-solve, verify, and write endgame/data
+python -m sokoban                                                            # play Sokoban in the terminal (w a s d move and push; u undo, h hint, x solve)
+python -m sokoban watch --level 9                                            # the solver's plan for a level, animated
+python -m sokoban solve --level 12 --algorithm astar --heuristic matching    # one search: nodes expanded and the plan
+python -m sokoban benchmark --out results/sokoban_benchmark                  # every search rule on every level
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

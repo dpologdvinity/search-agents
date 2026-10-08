@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Eleven puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, and Conflict-Based Search.">
+<meta name="description" content="Thirteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, and push search with deadlock pruning.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Eleven puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, and Conflict-Based Search.">
+<meta property="og:description" content="Thirteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, and push search with deadlock pruning.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Eleven games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Thirteen games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -138,6 +138,20 @@
         <canvas class="cab-screen" data-sim="sudoku" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>7</b> guesses per puzzle on average</span>
         <span class="cab-desc">Three solvers race on generated puzzles with unique solutions. Replay every guess and every backtrack.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-purple" href="endgame.html">
+        <span class="cab-marquee">Endgame</span>
+        <canvas class="cab-screen" data-sim="endgame" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>368,452</b> king-and-queen positions, every one solved</span>
+        <span class="cab-desc">Retrograde analysis builds the tables backwards from checkmate, so every distance to mate is exact.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-orange" href="sokoban.html">
+        <span class="cab-marquee">Sokoban</span>
+        <canvas class="cab-screen" data-sim="sokoban" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>154</b> states A* expands to solve all 12 levels</span>
+        <span class="cab-desc">Push boxes onto goals. Some pushes freeze a box for good, so the search skips those dead ends and bounds the rest by matching boxes to goals.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>
