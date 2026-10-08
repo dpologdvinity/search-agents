@@ -1,0 +1,109 @@
+/* Minesweeper page. Loaded after style.css and app.css; the grid size comes from --cols and --cell, which
+   minesweeper.js sets on the board for each preset. Revealed numbers use the neon palette: 1 cyan, 2 green,
+   3 pink, 4 purple, 5 yellow, 6 cyan, 7 white, 8 red. */
+
+.ms-wrap { max-width: 100%; overflow-x: auto; padding: 4px; }
+
+.ms-board {
+  display: grid; grid-template-columns: repeat(var(--cols), var(--cell)); gap: 2px; padding: 10px;
+  border: 2px solid var(--cyan); background: rgba(2,6,16,0.88); width: max-content;
+  box-shadow: 0 0 28px rgba(0,245,255,0.28), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+.ms-board.solved { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45), inset 0 0 40px rgba(0,0,0,0.6); }
+.ms-board.flagging .ms-cell:not(.open) { cursor: crosshair; }
+
+/* A covered cell: glass with a faint cyan edge. Hover lifts it toward pink, like the lights in Lights Out. */
+.ms-cell {
+  position: relative; width: var(--cell); height: var(--cell); padding: 0; cursor: pointer;
+  border: 1px solid rgba(0,245,255,0.22); background: linear-gradient(160deg, rgba(14,30,52,0.95), rgba(5,13,26,0.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 0 rgba(0,0,0,0.45);
+  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+}
+.ms-cell:hover:not(:disabled) { border-color: var(--pink); transform: scale(1.04); }
+.ms-cell:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.ms-cell:disabled { cursor: default; }
+
+/* A revealed cell: flat and dark, so the numbers carry the colour. */
+.ms-cell.open {
+  background: rgba(3,8,18,0.92); border-color: rgba(0,245,255,0.08);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+.ms-cell.open:hover { transform: none; border-color: rgba(0,245,255,0.08); }
+
+.ms-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
+  font-family: var(--orb); font-weight: 900; font-size: var(--num-size); line-height: 1; color: var(--text);
+}
+.ms-num.n1 { color: var(--cyan);   text-shadow: 0 0 8px var(--cyan); }
+.ms-num.n2 { color: var(--green);  text-shadow: 0 0 8px var(--green); }
+.ms-num.n3 { color: var(--pink);   text-shadow: 0 0 8px var(--pink); }
+.ms-num.n4 { color: var(--purple); text-shadow: 0 0 8px var(--purple), 0 0 14px rgba(155,0,255,0.5); }
+.ms-num.n5 { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+.ms-num.n6 { color: #7ff7ff;       text-shadow: 0 0 10px #7ff7ff; }
+.ms-num.n7 { color: #ffffff;       text-shadow: 0 0 8px #ffffff; }
+.ms-num.n8 { color: var(--red);    text-shadow: 0 0 8px var(--red); }
+.ms-num.heat { font-family: var(--mono); font-weight: 700; font-size: calc(var(--num-size) * 0.62); color: #fff; text-shadow: 0 1px 2px #000; }
+
+/* Flags are the player's notes (pink). A proven mine is the agent's fact (green). */
+.ms-cell.flag .ms-num { color: var(--pink); text-shadow: 0 0 8px var(--pink); }
+.ms-cell.proven { border-color: rgba(0,255,136,0.7); box-shadow: 0 0 10px rgba(0,255,136,0.35), inset 0 0 12px rgba(0,255,136,0.12); }
+.ms-cell.proven .ms-num { color: var(--green); text-shadow: 0 0 10px var(--green); }
+
+/* A mine on the end screen, and the one that was hit. */
+.ms-cell.mine .ms-num.bomb { color: #ff3b3b; text-shadow: 0 0 10px #ff3b3b, 0 0 20px #ff3b3b; }
+.ms-cell.mine:not(.boom) { background: rgba(60,0,10,0.6); }
+.ms-cell.boom { background: radial-gradient(circle, #ff3b3b, #3a0010); animation: ms-boom 0.6s ease-out; }
+@keyframes ms-boom { from { transform: scale(1.3); } to { transform: scale(1); } }
+
+/* The next guess the agent made: a pink ring until the cell opens. */
+.ms-cell.guess-next { outline: 3px solid var(--pink); outline-offset: 1px; }
+
+/* Beats of an AI step: a proven safe cell flashes green, a guess flashes pink. */
+.ms-cell.flash-safe { animation: ms-safe 0.7s ease-out; }
+.ms-cell.flash-guess { animation: ms-guess 0.7s ease-out; }
+@keyframes ms-safe {
+  0% { box-shadow: 0 0 0 0 rgba(0,255,136,0.9), inset 0 0 18px rgba(0,255,136,0.7); }
+  100% { box-shadow: 0 0 0 14px rgba(0,255,136,0), inset 0 0 0 rgba(0,255,136,0); }
+}
+@keyframes ms-guess {
+  0% { box-shadow: 0 0 0 0 rgba(255,0,160,0.9), inset 0 0 18px rgba(255,0,160,0.7); }
+  100% { box-shadow: 0 0 0 14px rgba(255,0,160,0), inset 0 0 0 rgba(255,0,160,0); }
+}
+
+/* Constraint components: each covered cell in a component gets a dashed frame in that component's colour. */
+.ms-cell.comp { outline: 2px dashed; outline-offset: -4px; }
+.ms-cell.comp-0 { outline-color: var(--cyan); }
+.ms-cell.comp-1 { outline-color: var(--pink); }
+.ms-cell.comp-2 { outline-color: var(--yellow); }
+.ms-cell.comp-3 { outline-color: var(--green); }
+.ms-cell.comp-4 { outline-color: var(--purple); }
+.ms-cell.comp-5 { outline-color: #ff8a00; }
+.ms-comp { font-family: var(--mono); font-size: 0.7rem; padding: 0.2rem 0.4rem; border-left: 3px solid; margin-bottom: 0.25rem; color: var(--text); }
+.ms-comp.comp-0 { border-color: var(--cyan); }
+.ms-comp.comp-1 { border-color: var(--pink); }
+.ms-comp.comp-2 { border-color: var(--yellow); }
+.ms-comp.comp-3 { border-color: var(--green); }
+.ms-comp.comp-4 { border-color: var(--purple); }
+.ms-comp.comp-5 { border-color: #ff8a00; }
+.ms-comp-list { display: flex; flex-direction: column; }
+
+/* Legend under the analysis panel. */
+.ms-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ms-key { font-family: var(--mono); font-size: 0.66rem; padding: 0.2rem 0.5rem; border: 1px solid; letter-spacing: 0.06em; }
+.ms-key-safe { color: var(--green); border-color: var(--green); }
+.ms-key-mine { color: var(--cyan); border-color: var(--cyan); }
+.ms-key-guess { color: var(--pink); border-color: var(--pink); }
+
+.ms-toggle { display: flex; gap: 0.5rem; align-items: flex-start; font-family: var(--raj); font-size: 0.85rem; color: var(--text); cursor: pointer; }
+.ms-toggle input { margin-top: 0.25rem; accent-color: var(--green); }
+
+@media (max-width: 600px) {
+  .ms-board { padding: 6px; gap: 1px; }
+  .ms-cell { width: min(var(--cell), calc((100vw - 4rem) / var(--cols))); height: min(var(--cell), calc((100vw - 4rem) / var(--cols))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-board { animation: none; }
+  .ms-cell.flash-safe, .ms-cell.flash-guess, .ms-cell.boom { animation: none; }
+}

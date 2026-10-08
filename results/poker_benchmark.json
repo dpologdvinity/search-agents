@@ -1,0 +1,53 @@
+{
+ "game": "leduc",
+ "big_blind_chips": 2,
+ "deals_per_matchup": 100000,
+ "seed": 1,
+ "unit": "milli-big-blinds per hand, from the CFR+ bot's side (positive = the bot wins)",
+ "matchups": [
+  {
+   "opponent": "random",
+   "hands": 200000,
+   "mbb_per_hand": 357.96,
+   "ci95_mbb": [
+    350.22,
+    365.69
+   ],
+   "chips_per_hand": 0.71591,
+   "seconds": 20.6
+  },
+  {
+   "opponent": "always-call",
+   "hands": 200000,
+   "mbb_per_hand": 317.66,
+   "ci95_mbb": [
+    313.15,
+    322.18
+   ],
+   "chips_per_hand": 0.63533,
+   "seconds": 15.2
+  },
+  {
+   "opponent": "hand-strength",
+   "hands": 200000,
+   "mbb_per_hand": 68.2,
+   "ci95_mbb": [
+    63.53,
+    72.87
+   ],
+   "chips_per_hand": 0.1364,
+   "seconds": 20.3
+  },
+  {
+   "opponent": "cfr (self-play)",
+   "hands": 200000,
+   "mbb_per_hand": 3.1,
+   "ci95_mbb": [
+    -1.44,
+    7.64
+   ],
+   "chips_per_hand": 0.0062,
+   "seconds": 13.7
+  }
+ ]
+}

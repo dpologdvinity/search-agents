@@ -1,0 +1,203 @@
+{
+  "seed_base": 10000,
+  "games": {
+    "beginner": 1000,
+    "intermediate": 500,
+    "expert": 200
+  },
+  "boards": {
+    "beginner": {
+      "rows": 9,
+      "cols": 9,
+      "mines": 10
+    },
+    "intermediate": {
+      "rows": 16,
+      "cols": 16,
+      "mines": 40
+    },
+    "expert": {
+      "rows": 16,
+      "cols": 30,
+      "mines": 99
+    }
+  },
+  "agents": {
+    "random": {
+      "beginner": {
+        "games": 1000,
+        "wins": 0,
+        "win_rate": 0.0,
+        "win_ci95": [
+          0.0,
+          0.0038
+        ],
+        "guesses_per_game": 3.36,
+        "guesses_per_win": 0.0,
+        "wins_without_guessing": 0,
+        "reveals_per_game": 4.4,
+        "seconds_per_game": 0.0002
+      },
+      "intermediate": {
+        "games": 500,
+        "wins": 0,
+        "win_rate": 0.0,
+        "win_ci95": [
+          0.0,
+          0.0076
+        ],
+        "guesses_per_game": 4.22,
+        "guesses_per_win": 0.0,
+        "wins_without_guessing": 0,
+        "reveals_per_game": 5.2,
+        "seconds_per_game": 0.0004
+      },
+      "expert": {
+        "games": 200,
+        "wins": 0,
+        "win_rate": 0.0,
+        "win_ci95": [
+          0.0,
+          0.0188
+        ],
+        "guesses_per_game": 4.12,
+        "guesses_per_win": 0.0,
+        "wins_without_guessing": 0,
+        "reveals_per_game": 5.1,
+        "seconds_per_game": 0.0007
+      }
+    },
+    "rules": {
+      "beginner": {
+        "games": 1000,
+        "wins": 798,
+        "win_rate": 0.798,
+        "win_ci95": [
+          0.772,
+          0.8217
+        ],
+        "guesses_per_game": 0.87,
+        "guesses_per_win": 0.58,
+        "wins_without_guessing": 579,
+        "reveals_per_game": 16.7,
+        "seconds_per_game": 0.0064
+      },
+      "intermediate": {
+        "games": 500,
+        "wins": 246,
+        "win_rate": 0.492,
+        "win_ci95": [
+          0.4484,
+          0.5357
+        ],
+        "guesses_per_game": 2.03,
+        "guesses_per_win": 1.39,
+        "wins_without_guessing": 111,
+        "reveals_per_game": 67.8,
+        "seconds_per_game": 0.0501
+      },
+      "expert": {
+        "games": 200,
+        "wins": 3,
+        "win_rate": 0.015,
+        "win_ci95": [
+          0.0051,
+          0.0432
+        ],
+        "guesses_per_game": 3.98,
+        "guesses_per_win": 1.67,
+        "wins_without_guessing": 2,
+        "reveals_per_game": 73.7,
+        "seconds_per_game": 0.1748
+      }
+    },
+    "csp": {
+      "beginner": {
+        "games": 1000,
+        "wins": 961,
+        "win_rate": 0.961,
+        "win_ci95": [
+          0.9471,
+          0.9713
+        ],
+        "guesses_per_game": 0.12,
+        "guesses_per_win": 0.08,
+        "wins_without_guessing": 902,
+        "reveals_per_game": 18.5,
+        "seconds_per_game": 0.0373
+      },
+      "intermediate": {
+        "games": 500,
+        "wins": 427,
+        "win_rate": 0.854,
+        "win_ci95": [
+          0.8204,
+          0.8823
+        ],
+        "guesses_per_game": 0.44,
+        "guesses_per_win": 0.23,
+        "wins_without_guessing": 363,
+        "reveals_per_game": 79.8,
+        "seconds_per_game": 0.2671
+      },
+      "expert": {
+        "games": 200,
+        "wins": 78,
+        "win_rate": 0.39,
+        "win_ci95": [
+          0.3251,
+          0.4591
+        ],
+        "guesses_per_game": 2.29,
+        "guesses_per_win": 1.58,
+        "wins_without_guessing": 33,
+        "reveals_per_game": 164.8,
+        "seconds_per_game": 1.983
+      }
+    },
+    "probability": {
+      "beginner": {
+        "games": 1000,
+        "wins": 975,
+        "win_rate": 0.975,
+        "win_ci95": [
+          0.9634,
+          0.983
+        ],
+        "guesses_per_game": 0.14,
+        "guesses_per_win": 0.12,
+        "wins_without_guessing": 902,
+        "reveals_per_game": 18.7,
+        "seconds_per_game": 0.0128
+      },
+      "intermediate": {
+        "games": 500,
+        "wins": 439,
+        "win_rate": 0.878,
+        "win_ci95": [
+          0.8464,
+          0.9038
+        ],
+        "guesses_per_game": 0.43,
+        "guesses_per_win": 0.27,
+        "wins_without_guessing": 363,
+        "reveals_per_game": 80.9,
+        "seconds_per_game": 0.2419
+      },
+      "expert": {
+        "games": 200,
+        "wins": 97,
+        "win_rate": 0.485,
+        "win_ci95": [
+          0.4167,
+          0.5539
+        ],
+        "guesses_per_game": 2.88,
+        "guesses_per_win": 2.22,
+        "wins_without_guessing": 33,
+        "reveals_per_game": 181.7,
+        "seconds_per_game": 1.2667
+      }
+    }
+  }
+}

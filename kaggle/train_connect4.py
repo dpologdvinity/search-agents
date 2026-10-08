@@ -53,6 +53,14 @@ def find_repo(explicit: str | None) -> Path:
                 shutil.rmtree(RUN_DIR, ignore_errors=True)
                 shutil.copytree(root, RUN_DIR, ignore=shutil.ignore_patterns(".git", "__pycache__"))
             return RUN_DIR
+    # Kaggle may mount a dataset of just the connect4 package at any depth, with or without its folder
+    # (uploaded zips are unpacked, so the files can sit directly in the dataset root). Notebooks without
+    # internet access (accounts that are not phone-verified) can only get the code this way.
+    for trainer in sorted(glob.glob(str(INPUT / "**" / "train_az.py"), recursive=True)):
+        package = Path(trainer).parent
+        shutil.rmtree(RUN_DIR, ignore_errors=True)
+        shutil.copytree(package, RUN_DIR / "connect4", ignore=shutil.ignore_patterns("__pycache__"))
+        return RUN_DIR
     if "__file__" in globals():
         here = Path(__file__).resolve().parent.parent
         if has_trainer(here):

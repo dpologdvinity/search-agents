@@ -1,6 +1,6 @@
 # search-agents
 
-Fourteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Sixteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -18,6 +18,8 @@ Fourteen puzzles and games, each played or solved by a classic AI algorithm: sea
 | **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 13 hand-built features (one is a six-turn survival search over the ghosts' real moves), trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 | **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
 | **Wordle** | Information theory: pick the guess with the most expected bits (entropy of the feedback patterns over the candidates); minimax (smallest worst-case bucket); random consistent word as the baseline | None needed: a guess is scored exactly against every answer, so the search is exhaustive over the allowed guesses | Every candidate's feedback and bucket size, the bits each guess is expected to give against the bits it actually gave, and the remaining words after each guess |
+| **Poker** (Leduc hold'em, imperfect information) | Exact best response and exploitability on the game tree (no search); the Kuhn value is checked against -1/18 | Counterfactual regret minimization by self-play: vanilla CFR and CFR+, with the average strategy as the answer | The bot's probability bars for every decision, a hint with the equilibrium mix for your card, why its bets are bluffs, and exploitability falling over iterations |
+| **Minesweeper** | Constraint satisfaction on the frontier, then exact probabilities: each number is a constraint, components are counted by memoized backtracking, and the global mine count weights every layout | None: the counts are exact, so the agent proves what it can and prices the rest | Which cells are proven safe or mines, the constraint components, and the exact mine probability of every covered cell |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -216,6 +218,44 @@ Best opening word by expected information: TARES (6.23 bits; worst bucket 251, e
 These answers come from SCOWL's common tier, not the official list, so the numbers are not directly comparable
 with published Wordle figures.
 
+### Poker: counterfactual regret minimization on Leduc hold'em
+
+CFR+ with alternating updates, 5000 iterations, on the six-card game with a public card (288 information sets). The committed average strategy is exploitable by 0.05 milli-big-blinds per hand (the best responses are exact, so this is not a sampled estimate), and the game value for the first player is -0.0856 chips, which matches the published value for this game. Vanilla CFR reaches 0.0036 chips after the same 5000 iterations, about 240 times the exploitability, so the CFR+ curve drops much faster (`results/poker_train_log.jsonl`). On Kuhn poker the value is -0.0555556 against the exact -1/18, an error of 4e-9 for CFR+ after 10000 iterations.
+
+Head-to-head, the CFR+ bot against each opponent over 100,000 seeded deals, each played in both seats (200,000 hands; milli-big-blinds per hand, big blind = 2 chips, 95% CI from the spread over deals):
+
+| Opponent | mbb/hand (bot's side) | 95% CI |
+|---|---:|---:|
+| random | +358.0 | [+350.2, +365.7] |
+| always-call | +317.7 | [+313.1, +322.2] |
+| hand-strength (rules on own card and the public card) | +68.2 | [+63.5, +72.9] |
+| the bot against itself | +3.1 | [-1.4, +7.6] |
+
+The self-play row is zero within its interval, as equilibrium requires.
+
+### Minesweeper: proofs first, then the lowest exact odds
+
+Seeds 10000 onward, the same boards for every agent. Win rate has a 95% Wilson interval.
+The first click is free and is not counted as a guess.
+
+| size | agent | win rate (95% CI) | guesses per game | guesses per win | wins with no guess |
+|---|---|---|---|---|---|
+| beginner 9x9, 10 mines (1000 games) | random | 0.0% (0.0%-0.4%) | 3.36 | - | 0 |
+| | rules | 79.8% (77.2%-82.2%) | 0.87 | 0.58 | 579 of 798 |
+| | csp | 96.1% (94.7%-97.1%) | 0.12 | 0.08 | 902 of 961 |
+| | probability | 97.5% (96.3%-98.3%) | 0.14 | 0.12 | 902 of 975 |
+| intermediate 16x16, 40 mines (500 games) | random | 0.0% (0.0%-0.8%) | 4.22 | - | 0 |
+| | rules | 49.2% (44.8%-53.6%) | 2.03 | 1.39 | 111 of 246 |
+| | csp | 85.4% (82.0%-88.2%) | 0.44 | 0.23 | 363 of 427 |
+| | probability | 87.8% (84.6%-90.4%) | 0.43 | 0.27 | 363 of 439 |
+| expert 30x16, 99 mines (200 games) | random | 0.0% (0.0%-1.9%) | 4.12 | - | 0 |
+| | rules | 1.5% (0.5%-4.3%) | 3.98 | 1.67 | 2 of 3 |
+| | csp | 39.0% (32.5%-45.9%) | 2.29 | 1.58 | 33 of 78 |
+| | probability | 48.5% (41.7%-55.4%) | 2.88 | 2.22 | 33 of 97 |
+
+The probability agent wins more expert boards but guesses more per game, because it keeps playing
+longer. The random baseline uses a uniformly random covered cell and no reasoning at all.
+
 ## How it works
 
 ### N-Puzzle
@@ -318,12 +358,30 @@ H = -sum p log2 p, in bits. The entropy strategy plays the guess with the most b
 the smallest largest bucket. The random baseline picks any consistent answer. The feedback table (every guess
 against every answer, one byte each) is precomputed, so scoring a guess is a gather and a bincount.
 
+### Poker
+
+- **Games** (`poker/kuhn.py`, `poker/leduc.py`, `poker/betting.py`). Kuhn is three cards and one bet; Leduc is six cards, a private card each, two betting rounds with bets of 2 and 4 chips, a public card between them, and at most two bets or raises per round. A state is immutable, and each player's information set is its card, the public card once shown, and the betting, so the key is the same for every history the player cannot tell apart.
+- **Tree and exact values** (`poker/tree.py`). The game is built once as explicit arrays (9,451 nodes for Leduc). Expected value is one recursion. Exploitability is exact: a best response is one choice per information set, so it takes two passes (opponent and chance reach forward, then counterfactual values per information set deepest first), and the code is checked against brute force over every pure strategy on Kuhn.
+- **CFR and CFR+** (`poker/cfr.py`). Each seat in turn walks the tree, weighting regrets by the opponent's and chance's reach and the average strategy by the seat's own reach. Regret matching turns regrets into a strategy. CFR+ floors regrets at zero and averages with weight t. The updates alternate between seats, which is the form CFR+ is usually run in: with simultaneous updates Kuhn stalls near 1e-3 instead of 1e-5 at 10000 iterations.
+- **Bots and benchmark** (`poker/bots.py`, `poker/benchmark.py`). The bot samples its move from the average strategy at every decision. Baselines are random, always-call, and a hand-strength rule that reads its own card and the public card only after round 1. Every deal is played in both seats.
+- **Serving** (`server/poker_api.py`). The server holds each hand, so the bot's card reaches the browser only at showdown. A bot move is a lookup in `poker/data/leduc_strategy.json`; nothing trains on the server.
+
+### Minesweeper
+
+- **Rules** (`minesweeper/board.py`). Mines are placed after the first click, which keeps the clicked cell and its neighbours clear. A zero floods outward. Agents see only a `View` of the revealed numbers and the mine count.
+- **Single-cell rules** (`minesweeper/inference.py`, `rule_pass`). A number with as many mines still to place as covered neighbours makes all of them mines. A number whose known mines already satisfy it makes the rest safe. Repeated to a fixpoint.
+- **Components** (`minesweeper/inference.py`). Each number is a constraint "exactly `need` of these covered cells are mines". Constraints sharing a covered cell form a component. Components are independent once the total is fixed, so each is counted on its own.
+- **Counting** (`_count_layouts`). Backtracking assigns cells in row-major order and prunes any constraint whose residual need is negative or larger than its unassigned cells. The memo key is (cell index, residual needs of open constraints), so each state is solved once. The result is the number of layouts with k mines, for each k.
+- **Exact probabilities.** The interior (covered cells touching no number) takes the leftover mines in C(n, k) ways. Combining components by convolution and weighting by C(n, remaining - t) gives the weight of every full layout. A cell's probability is the weight of layouts where it is a mine, over the total. Everything is integer arithmetic until the final division.
+- **Agents** (`minesweeper/agents.py`). Random: a uniformly random covered cell. Rules: level 1, guesses at random when nothing is proven. CSP: level 2 proves the cells whose weight is zero (safe) or total (mine), and guesses at random when nothing is proven. Probability: level 3 guesses the covered cell with the lowest exact probability, breaking ties toward the most covered neighbours.
+- **Checks** (`tests/test_minesweeper.py`). Counts and probabilities match brute-force enumeration of every layout on 60 random small boards. Every proof is checked against the hidden layout on real games. The probabilities sum to the remaining mine count exactly.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -365,6 +423,15 @@ python -m wordle                                                             # y
 python -m wordle solve                                                       # the solver guesses; you type the feedback (gy..g)
 python -m wordle watch --answer crane                                        # the solver plays a secret word and explains each guess
 python -m wordle benchmark                                                   # all answers, all strategies; writes results/wordle_benchmark.*
+python -m poker                                                              # play Leduc hold'em against the CFR+ bot (h = hint)
+python -m poker train --save                                                 # train CFR and CFR+ on Leduc and write the committed files
+python -m poker train --game kuhn                                            # train Kuhn and check the game value against -1/18
+python -m poker exploit                                                      # best responses and exploitability of the committed strategy
+python -m poker benchmark --deals 100000                                     # the bot against each baseline; writes results/poker_benchmark.*
+python -m minesweeper                                                        # beginner 9x9: you play (click reveals, flag mode flags, h hint)
+python -m minesweeper -p expert --seed 7                                     # 30 columns x 16 rows, 99 mines, repeatable
+python -m minesweeper watch --agent probability -p intermediate --seed 3 --delay 0.2
+python -m minesweeper benchmark                                              # rewrites results/minesweeper_benchmark.json and .md (about 10 minutes)
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

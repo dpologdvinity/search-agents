@@ -17,6 +17,8 @@ COPY lightsout ./lightsout
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle
+COPY poker ./poker
+COPY minesweeper ./minesweeper
 COPY routes ./routes
 COPY warehouse ./warehouse
 COPY game2048 ./game2048

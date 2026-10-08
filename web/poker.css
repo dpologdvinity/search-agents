@@ -1,0 +1,116 @@
+/* Poker page. Loaded after style.css and app.css, which it never edits.
+   A neon felt table with two seats, the bot's probability bars, the explainer, and the training chart. */
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+
+.pk-table {
+  position: relative; display: grid; grid-template-rows: auto auto auto; justify-items: center; gap: 0.9rem;
+  padding: 1.4rem 1rem 1.2rem; min-height: 420px; border-radius: 34px; overflow: hidden;
+  border: 2px solid rgba(255,0,160,0.55);
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 45%, rgba(255,0,160,0.14), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0,245,255,0.18), transparent 65%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, #14021f, #080416 60%, #03101c);
+  box-shadow: 0 0 42px rgba(255,0,160,0.22), inset 0 0 70px rgba(0,0,0,0.7), inset 0 0 0 9px rgba(2,6,16,0.55),
+    inset 0 0 0 10px rgba(255,0,160,0.25);
+}
+.pk-seat { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; }
+.pk-label { font-family: var(--orb); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--cyan); }
+.pk-put { font-family: var(--mono); font-size: 0.62rem; color: var(--dim); letter-spacing: 0.04em; }
+.pk-center { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-height: 150px; }
+.pk-public-lbl { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.16em; color: var(--dim); }
+.pk-pot {
+  font-family: var(--orb); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.14em; color: var(--yellow);
+  padding: 0.3rem 0.8rem; border: 1px solid rgba(255,230,0,0.5); border-radius: 999px;
+  background: rgba(20,14,0,0.6); text-shadow: 0 0 8px rgba(255,230,0,0.6);
+  box-shadow: 0 0 14px rgba(255,230,0,0.2);
+}
+.pk-msg {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text); text-align: center; min-height: 2.6em;
+  max-width: 34rem; line-height: 1.5;
+}
+.pk-msg.win { color: var(--green); text-shadow: 0 0 10px rgba(0,255,136,0.5); }
+.pk-msg.lose { color: var(--red); }
+.pk-cards { display: flex; gap: 0.6rem; justify-content: center; min-height: 104px; align-items: center; }
+
+/* ── Cards: a face shows its rank; the back is a cyber grid. */
+.pk-card {
+  width: 70px; height: 100px; border-radius: 9px; position: relative; flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #ffffff, #ffd6ef 55%, #ff9bd6);
+  color: #14021f; border: 1px solid rgba(255,0,160,0.7);
+  box-shadow: 0 0 16px rgba(255,0,160,0.45), 0 8px 18px rgba(0,0,0,0.5);
+  font-family: var(--orb); font-weight: 900; font-size: 1.6rem;
+}
+.pk-card.k { background: linear-gradient(160deg, #ffffff, #fff6b0 55%, #ffe600); border-color: var(--yellow); box-shadow: 0 0 16px rgba(255,230,0,0.5), 0 8px 18px rgba(0,0,0,0.5); }
+.pk-card.q { background: linear-gradient(160deg, #ffffff, #d6f7ff 55%, #9feeff); border-color: var(--cyan); box-shadow: 0 0 16px rgba(0,245,255,0.4), 0 8px 18px rgba(0,0,0,0.5); }
+.pk-card.j { background: linear-gradient(160deg, #ffffff, #e4dcff 55%, #b79cff); border-color: var(--purple); box-shadow: 0 0 16px rgba(155,0,255,0.45), 0 8px 18px rgba(0,0,0,0.5); }
+.pk-card.back {
+  background: repeating-linear-gradient(45deg, #1a0633 0 6px, #2c0b58 6px 12px); border-color: var(--purple);
+  box-shadow: 0 0 16px rgba(155,0,255,0.55), 0 8px 18px rgba(0,0,0,0.5);
+  color: transparent;
+}
+.pk-card.back::after { content: ''; position: absolute; inset: 9px; border: 1px solid rgba(255,0,160,0.65); border-radius: 6px; box-shadow: inset 0 0 10px rgba(255,0,160,0.3); }
+.pk-card.deal { animation: pk-deal 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.pk-card.empty { background: transparent; border: 1px dashed rgba(0,245,255,0.25); box-shadow: none; color: transparent; }
+@keyframes pk-deal {
+  from { transform: translateY(-40px) rotate(-10deg) scale(0.7); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.pk-card .pip { position: absolute; bottom: 6px; font-family: var(--mono); font-size: 0.55rem; color: #4a7a9b; font-weight: 400; }
+
+/* ── Action row and log ───────────────────────────────────────────────── */
+
+.pk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+.pk-actions .cyber-btn:disabled { opacity: 0.3; }
+
+.pk-log {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim); line-height: 1.6;
+  height: 210px; overflow-y: auto; padding: 0.6rem 0.7rem; border: 1px solid rgba(255,0,160,0.3);
+  background: rgba(0,0,0,0.35);
+}
+/* Prefixed pk- because style.css already defines a fixed-width .ln gutter class. */
+.pk-log .pk-ln { display: block; width: auto; text-align: left; padding: 0; user-select: text; font-size: inherit; color: inherit; }
+.pk-log .pk-ln.bot { color: var(--cyan); }
+.pk-log .pk-ln.you { color: var(--text); }
+.pk-log .pk-ln.hand { color: var(--pink); margin-top: 0.3rem; }
+.pk-log .pk-ln.win { color: var(--green); }
+.pk-log .pk-ln.lose { color: var(--red); }
+
+/* ── Panels: the bot's mix, the explainer, the chart ─────────────────── */
+
+.pk-panel { gap: 0.6rem; }
+.pk-bars { display: flex; flex-direction: column; gap: 0.45rem; min-height: 4.5rem; }
+.pk-bar-row { display: grid; grid-template-columns: 6.2rem 1fr 3.4rem; gap: 0.5rem; align-items: center; font-family: var(--mono); font-size: 0.7rem; }
+.pk-bar-name { color: var(--text); letter-spacing: 0.06em; }
+.pk-bar-track { position: relative; height: 16px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+.pk-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); background: linear-gradient(90deg, var(--purple), var(--pink)); box-shadow: 0 0 10px rgba(255,0,160,0.5); }
+.pk-bar-row.chosen .pk-bar-fill { background: linear-gradient(90deg, var(--cyan), var(--green)); box-shadow: 0 0 12px rgba(0,245,255,0.7); }
+.pk-bar-row.chosen .pk-bar-name { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.6); }
+.pk-bar-pct { text-align: right; color: var(--yellow); }
+
+.pk-explain { font-family: var(--raj); font-size: 0.86rem; color: var(--text); line-height: 1.5; }
+.pk-explain b { color: var(--yellow); font-weight: 700; }
+.pk-explain .bluff { color: var(--pink); }
+.pk-explain .value { color: var(--green); }
+.pk-explain table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-family: var(--mono); font-size: 0.7rem; }
+.pk-explain th { text-align: left; color: var(--dim); font-weight: 400; border-bottom: 1px solid var(--border); padding: 0.2rem 0.3rem; }
+.pk-explain td { padding: 0.2rem 0.3rem; border-bottom: 1px solid rgba(0,245,255,0.07); }
+
+.pk-chart { width: 100%; height: auto; display: block; border: 1px solid var(--border); background: rgba(0,0,0,0.35); }
+.pk-legend { font-family: var(--mono); font-size: 0.66rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; }
+.pk-key { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 0.3rem; }
+.pk-key.cfr { background: var(--pink); box-shadow: 0 0 6px var(--pink); }
+.pk-key.plus { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+@media (max-width: 600px) {
+  .pk-card { width: 58px; height: 84px; font-size: 1.3rem; }
+  .pk-table { min-height: 380px; }
+  .pk-bar-row { grid-template-columns: 4.6rem 1fr 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pk-card.deal { animation: none; }
+  .pk-bar-fill { transition: none; }
+}

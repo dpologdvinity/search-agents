@@ -5,3 +5,4 @@ checkpoints/
 .DS_Store
 search_agents.egg-info/
 results/*_stdout.log
+.env

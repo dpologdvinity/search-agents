@@ -881,8 +881,191 @@ function wordleSim(ctx, S) {
   };
 }
 
+// Poker: the bot's opening bet rate for each card, from the committed Leduc strategy (poker/data/leduc_strategy.json).
+// Deals a card, samples the bot's move from its mix (as the server does), and stamps the result.
+function pokerSim(ctx, S) {
+  const MIX = { J: 0.0724, Q: 0.7419, K: 0.752 }; // round 1, first to act: P(bet)
+  const RANKS = ['J', 'Q', 'K'];
+  const bars = { J: 0, Q: 0, K: 0 }; // animated bar lengths, 0..1
+  let card = 'K', hold = 0, phase = 0, move = '', moveAt = 0;
+  const pickCard = () => RANKS[rand(3)];
+  function drawCard(x, y, w, h, label, face) {
+    ctx.fillStyle = face ? '#ffe8f6' : 'rgba(155,0,255,0.25)';
+    ctx.strokeStyle = face ? C.pink : C.purple;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = face ? C.pink : C.purple;
+    ctx.shadowBlur = 10;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+    ctx.shadowBlur = 0;
+    if (face) {
+      ctx.fillStyle = '#14021f';
+      ctx.font = '900 26px Orbitron, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, x + w / 2, y + h / 2 + 9);
+    }
+  }
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.textAlign = 'left';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.dim;
+    ctx.fillText('BOT OPENING BET RATE', 10, 16);
+    // Three bars, one per card: the bet frequency that the bot's strategy assigns to that card.
+    RANKS.forEach((r, i) => {
+      const y = 32 + i * 34;
+      bars[r] += (MIX[r] - bars[r]) * 0.06;
+      ctx.fillStyle = C.dim;
+      ctx.fillText(r, 10, y + 12);
+      ctx.fillStyle = 'rgba(0,245,255,0.08)';
+      ctx.fillRect(28, y, 150, 14);
+      ctx.fillStyle = r === card ? C.yellow : C.pink;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8;
+      ctx.fillRect(28, y, 150 * bars[r], 14);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = C.cyan;
+      ctx.fillText(`${Math.round(MIX[r] * 100)}%`, 186, y + 12);
+    });
+    // Each cycle: show a card, sample the bot's move from its mix, and stamp the result.
+    hold += speed;
+    if (phase === 0 && hold > 120) { card = pickCard(); hold = 0; phase = 1; }
+    if (phase === 1 && hold > 60) {
+      move = Math.random() < MIX[card] ? 'BET' : 'CHECK';
+      moveAt = hold;
+      hold = 0;
+      phase = 2;
+    }
+    if (phase === 2 && hold > 150) { phase = 0; hold = 0; }
+    drawCard(30, 150, 60, 84, card, phase > 0);
+    ctx.fillStyle = C.cyan;
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillText('the bot holds', 100, 170);
+    ctx.fillStyle = phase === 2 ? C.green : C.dim;
+    ctx.font = '900 18px Orbitron, sans-serif';
+    ctx.fillText(phase === 2 ? move : '...', 100, 200);
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.dim;
+    ctx.fillText(moveAt ? 'a sample from its mix' : 'dealing', 100, 218);
+  };
+}
+
+function minesweeperSim(ctx, S) {
+  // 9x9 Minesweeper, the first click cleared around it, 10 mines. Each beat the agent reveals a cell that a
+  // number proves safe, or guesses a covered cell at random when nothing is proven. The cabinet runs the
+  // single-cell rules only, with no server calls. The full counting agent is on the minesweeper page.
+  const n = 9, N = 81, cell = S / n, MINES = 10;
+  const NUM = ['', C.cyan, C.green, C.pink, C.purple, C.yellow, '#7ff7ff', '#ffffff', '#ff3b3b'];
+  // Neighbour list per cell: up to eight cells around it, inside the grid.
+  const nb = [...Array(N)].map((_, i) => {
+    const r = (i / n) | 0, c = i % n, out = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if ((dr || dc) && r + dr >= 0 && r + dr < n && c + dc >= 0 && c + dc < n) out.push((r + dr) * n + c + dc);
+      }
+    }
+    return out;
+  });
+  let mine, val, known, last, kind, hold, done;
+  const count = (i) => nb[i].filter((j) => mine.has(j)).length;
+  // Reveal i. A zero opens its neighbours, and zeros spread the opening.
+  function open(i) {
+    const q = [i];
+    val[i] = count(i);
+    for (let h = 0; h < q.length; h++) {
+      const x = q[h];
+      if (val[x] !== 0) continue;
+      for (const j of nb[x]) {
+        if (val[j] < 0) { val[j] = count(j); q.push(j); }
+      }
+    }
+  }
+  function reset() {
+    mine = new Set(); val = Array(N).fill(-1); known = new Set(); kind = ''; hold = 0; done = false;
+    const first = rand(N), clear = new Set([first, ...nb[first]]);
+    const pool = [...Array(N).keys()].filter((i) => !clear.has(i));
+    for (let k = 0; k < MINES; k++) {
+      const j = k + rand(pool.length - k);
+      [pool[k], pool[j]] = [pool[j], pool[k]];
+      mine.add(pool[k]);
+    }
+    open(first);
+    last = first;
+  }
+  // The single-cell rules over the numbers on screen. Returns the cells proven safe, and marks proven mines.
+  function proven() {
+    const safe = [];
+    for (let i = 0; i < N; i++) {
+      if (val[i] <= 0) continue;
+      const cov = nb[i].filter((j) => val[j] < 0);
+      const open_ = cov.filter((j) => !known.has(j));
+      if (!open_.length) continue;
+      const need = val[i] - cov.filter((j) => known.has(j)).length;
+      if (need === 0) safe.push(...open_);
+      else if (need === open_.length) open_.forEach((j) => known.add(j));
+    }
+    return safe;
+  }
+  reset();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < N; i++) {
+      const x = (i % n) * cell, y = ((i / n) | 0) * cell, v = val[i];
+      ctx.fillStyle = v >= 0 ? 'rgba(3,8,18,0.9)' : 'rgba(0,245,255,0.07)';
+      ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      if (v > 0) {
+        ctx.fillStyle = NUM[v];
+        ctx.font = `bold ${Math.round(cell * 0.55)}px monospace`;
+        ctx.fillText(String(v), x + cell / 2, y + cell / 2 + 1);
+      } else if (v < 0 && known.has(i)) {
+        ctx.fillStyle = C.pink;
+        ctx.fillRect(x + cell * 0.35, y + cell * 0.35, cell * 0.3, cell * 0.3);
+      } else if (done && mine.has(i)) {
+        ctx.fillStyle = '#ff3b3b';
+        ctx.fillRect(x + cell * 0.3, y + cell * 0.3, cell * 0.4, cell * 0.4);
+      }
+      if (i === last) {
+        ctx.strokeStyle = kind === 'certain' ? C.green : C.pink;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 3, y + 3, cell - 6, cell - 6);
+      }
+    }
+    if (done) {
+      if ((hold += speed) > 140) reset();
+      return;
+    }
+    if ((hold += speed) < 18) return;
+    hold = 0;
+    const safe = proven();
+    let pick;
+    if (safe.length) {
+      pick = safe[rand(safe.length)];
+      kind = 'certain';
+    } else {
+      const covered = [...Array(N).keys()].filter((i) => val[i] < 0 && !known.has(i));
+      pick = covered[rand(covered.length)];
+      kind = 'guess';
+    }
+    last = pick;
+    if (mine.has(pick)) {
+      done = true; // the agent hit a mine: show them, then deal a new board
+      hold = 0;
+      return;
+    }
+    open(pick);
+    if (val.filter((v) => v >= 0).length === N - MINES) {
+      done = true; // cleared
+      hold = 0;
+    }
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

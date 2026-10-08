@@ -30,8 +30,10 @@ from . import (
     endgame_api,
     game2048_api,
     lightsout_api,
+    minesweeper_api,
     npuzzle_api,
     pacman_api,
+    poker_api,
     routes_api,
     sokoban_api,
     sudoku_api,
@@ -88,12 +90,14 @@ app.include_router(checkers_api.router)
 app.include_router(pacman_api.router)
 app.include_router(battleship_api.router)
 app.include_router(lightsout_api.router)
+app.include_router(minesweeper_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)
 app.include_router(routes_api.router)
 app.include_router(warehouse_api.router)
 app.include_router(wordle_api.router)
+app.include_router(poker_api.router)
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 

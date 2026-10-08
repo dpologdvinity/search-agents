@@ -9,7 +9,8 @@
   "machine_shape": "NvidiaTeslaT4",
   "enable_internet": true,
   "dataset_sources": [
-    "kaitlynbassford/connect4-az-checkpoint"
+    "kaitlynbassford/connect4-az-checkpoint",
+    "kaitlynbassford/connect4-trainer-src"
   ],
   "competition_sources": [],
   "kernel_sources": [],

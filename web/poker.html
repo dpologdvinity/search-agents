@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POKER // SEARCH AGENTS</title>
+<meta name="description" content="Heads-up Leduc hold'em against a bot that plays a counterfactual regret minimization average strategy. It bluffs at equilibrium frequencies, and the page shows its mix and why.">
+<meta property="og:title" content="POKER // SEARCH AGENTS">
+<meta property="og:description" content="Heads-up Leduc hold'em against a bot that plays a counterfactual regret minimization average strategy. It bluffs at equilibrium frequencies, and the page shows its mix and why.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/poker.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="poker.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">08 // IMPERFECT INFORMATION · COUNTERFACTUAL REGRET MINIMIZATION</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="POKER">POKER</h1>
+      <div class="proj-pg-sub">Heads-up Leduc hold'em against a bot that plays its CFR+ average strategy. It never reads your card, and it bluffs on purpose, at the frequency that keeps you guessing.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip green">NET <span class="val" id="chip-net">0</span></span>
+        <span class="stat-chip">HANDS <span class="val" id="chip-hands">0</span></span>
+        <span class="stat-chip">BOT EXPLOITABILITY <span class="val" id="chip-expl">—</span></span>
+        <span class="stat-chip">GAME VALUE <span class="val" id="chip-value">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="pk-table" id="table" aria-label="Poker table">
+        <div class="pk-seat pk-bot">
+          <div class="pk-label">BOT <span class="pk-put" id="bot-put"></span></div>
+          <div class="pk-cards" id="bot-cards"></div>
+        </div>
+        <div class="pk-center">
+          <div class="pk-public-lbl">PUBLIC CARD</div>
+          <div class="pk-cards" id="public-cards"></div>
+          <div class="pk-pot" id="pot">POT 0</div>
+          <div class="pk-msg" id="msg" role="status" aria-live="polite">Deal a hand to start. You act first in both rounds.</div>
+        </div>
+        <div class="pk-seat pk-you">
+          <div class="pk-cards" id="your-cards"></div>
+          <div class="pk-label">YOU <span class="pk-put" id="you-put"></span></div>
+        </div>
+      </div>
+
+      <div class="pk-actions" id="actions">
+        <button class="cyber-btn pink" id="btn-deal" type="button"><span class="btn-txt">↺ DEAL</span></button>
+        <button class="cyber-btn" id="btn-k" type="button" data-action="k"><span class="btn-txt">CHECK · k</span></button>
+        <button class="cyber-btn pink" id="btn-b" type="button" data-action="b"><span class="btn-txt">BET · b</span></button>
+        <button class="cyber-btn green" id="btn-c" type="button" data-action="c"><span class="btn-txt">CALL · c</span></button>
+        <button class="cyber-btn pink" id="btn-r" type="button" data-action="r"><span class="btn-txt">RAISE · r</span></button>
+        <button class="cyber-btn" id="btn-f" type="button" data-action="f"><span class="btn-txt">FOLD · f</span></button>
+        <button class="cyber-btn green" id="btn-hint" type="button" aria-pressed="false"><span class="btn-txt">✦ HINT · h</span></button>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title pink-ttl">THE HAND LOG</div>
+        <div class="pk-log" id="log" aria-live="off"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title green-ttl">THE BOT'S MIX</div>
+        <div class="viz-panel pk-panel">
+          <div class="viz-title" id="mix-title">Waiting for the bot's first decision.</div>
+          <div class="pk-bars" id="mix-bars"></div>
+          <div class="field-hint" id="mix-note">Each bar is the probability the bot chose that action. It draws its move from this mix, so a bet it could have checked is a sampled choice, not a mistake.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">WHY IT BLUFFED</div>
+        <div class="viz-panel pk-panel">
+          <div class="pk-explain" id="explain">Play a hand. When the bot bets, this panel shows its mix for every card it could hold, and explains the bet once the cards are shown.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title" style="color:var(--yellow)">EXPLOITABILITY OVER ITERATIONS</div>
+        <div class="viz-panel pk-panel">
+          <div class="viz-title">How far a best-responding opponent gains against the bot, in chips per hand, on a log scale. Zero is equilibrium.</div>
+          <canvas id="chart" class="pk-chart" width="520" height="260" role="img" aria-label="Exploitability of CFR and CFR+ against training iterations"></canvas>
+          <div class="pk-legend">
+            <span class="pk-key cfr"></span> CFR (vanilla)
+            <span class="pk-key plus"></span> CFR+ (committed bot)
+          </div>
+          <div class="field-hint" id="chart-note"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">HOW IT THINKS</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">REGRET</div>
+            <div class="field-hint">For every decision it asks: how much better would this action have done than the mix I played? Those gains and losses add up, and it plays each action in proportion to its positive total.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">THE AVERAGE IS THE ANSWER</div>
+            <div class="field-hint">The strategy it plays keeps moving. The average of those strategies over the iterations is the equilibrium, and that average is what the bot samples from.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">IT CANNOT SEE YOUR CARD</div>
+            <div class="field-hint">Its decisions are per information set: its own card and the betting, never yours. Bluffs are how it stays unreadable when it holds the worst card.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/poker.js"></script>
+</body>
+</html>
