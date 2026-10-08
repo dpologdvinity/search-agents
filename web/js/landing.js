@@ -1142,8 +1142,121 @@ function hexgameSim(ctx, S) {
   };
 }
 
+function banditsSim(ctx, S) {
+  // Five slot machines with hidden payout rates. A Thompson agent keeps a Beta posterior per machine,
+  // samples each one and pulls the best sample. Bars show the posterior means, the pulled machine
+  // flashes, and the regret line grows wherever the agent pays for exploring. Cheap: no fetch, and
+  // the bandit loop is a few lines.
+  const K = 5, MAX_PULLS = 300;
+  let p, wins, losses, t, cum, hist, flash, hold;
+  const gauss = () => Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random());
+  function reset() {
+    p = Array.from({ length: K }, () => 0.1 + 0.8 * Math.random());
+    wins = Array(K).fill(0);
+    losses = Array(K).fill(0);
+    t = 0; cum = 0; hist = [0]; flash = -1; hold = 0;
+  }
+  // Thompson choice: a normal approximation to each Beta(1 + wins, 1 + losses), then the largest sample.
+  function choose() {
+    let best = 0, bestSample = -Infinity;
+    for (let i = 0; i < K; i++) {
+      const a = wins[i] + 1, b = losses[i] + 1, n = a + b;
+      const mean = a / n, sd = Math.sqrt(a * b / (n * n * (n + 1)));
+      const s = mean + sd * gauss();
+      if (s > bestSample) { bestSample = s; best = i; }
+    }
+    return best;
+  }
+  function pullOnce() {
+    const arm = choose();
+    const won = rand(1000) / 1000 < p[arm];
+    if (won) wins[arm]++; else losses[arm]++;
+    cum += Math.max(...p) - p[arm];
+    hist.push(cum);
+    flash = arm;
+    t++;
+  }
+  reset();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    hold += speed;
+    if (t >= MAX_PULLS) {
+      if (hold > 90) reset();
+    } else if (hold >= 9) {
+      hold = 0;
+      pullOnce();
+    }
+    // Posterior means as bars across the top half, the true rates as ticks.
+    const colW = (S - 20) / K;
+    for (let i = 0; i < K; i++) {
+      const a = wins[i] + 1, b = losses[i] + 1;
+      const mean = a / (a + b);
+      const x = 10 + i * colW + colW * 0.2, w = colW * 0.6;
+      const barH = mean * 110;
+      ctx.fillStyle = i === flash ? C.yellow : C.cyan;
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = i === flash ? 12 : 0;
+      ctx.fillRect(x, 120 - barH, w, barH);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = C.pink;
+      ctx.fillRect(x - 2, 120 - p[i] * 110, w + 4, 2);
+    }
+    // Regret over pulls, in the bottom half: where the line bends flat, the agent has settled.
+    const top = Math.max(10, cum);
+    ctx.strokeStyle = C.green;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    hist.forEach((v, i) => {
+      const x = 10 + (i / MAX_PULLS) * (S - 20), y = 228 - (v / top) * 96;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = C.dim;
+    ctx.font = '10px monospace';
+    ctx.fillText('THOMPSON  REGRET ' + cum.toFixed(1), 10, 237);
+  };
+}
+
+function cartpoleSim(ctx, S) {
+  // Cart and pole held upright by the hand-tuned PD rule from cartpole/agents.py, with the same physics
+  // as cartpole/env.py. When the pole falls, the screen holds for a moment and then deals a new start.
+  const G = 9.8, MP = 0.1, TM = 1.1, PML = 0.05, HL = 0.5, F = 10, TAU = 0.02, THL = 12 * (Math.PI / 180);
+  let s, hold, down;
+  const reset = () => { s = [0, 0, (Math.random() - 0.5) * 0.1, 0]; hold = 0; down = 0; };
+  const push = (a) => {
+    const [x, xd, th, thd] = s, f = a ? F : -F, c = Math.cos(th), sn = Math.sin(th);
+    const temp = (f + PML * thd * thd * sn) / TM;
+    const tha = (G * sn - c * temp) / (HL * (4 / 3 - MP * c * c / TM));
+    const xa = temp - PML * tha * c / TM;
+    s = [x + TAU * xd, xd + TAU * xa, th + TAU * thd, thd + TAU * tha];
+  };
+  reset();
+  const ppm = S / 6, track = S * 0.72;
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    const [x, , th] = s;
+    const cx = S / 2 + x * ppm, cw = S * 0.14, ch = S * 0.05;
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2; ctx.shadowColor = C.cyan; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(0, track); ctx.lineTo(S, track); ctx.stroke();
+    ctx.fillStyle = C.cyan; ctx.fillRect(cx - cw / 2, track - ch * 2, cw, ch);
+    const tipX = cx + ppm * Math.sin(th), tipY = track - ch * 2 - ppm * Math.cos(th);
+    ctx.strokeStyle = down ? C.dim : C.pink; ctx.shadowColor = C.pink; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, track - ch * 2); ctx.lineTo(tipX, tipY); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(tipX, tipY, S * 0.03, 0, Math.PI * 2); ctx.fill();
+    if (down) { if ((down += speed) > 90) reset(); return; }
+    if (Math.abs(th) > THL || Math.abs(x) > 2.4) { down = 1; return; }
+    if ((hold += speed) < 2) return;
+    hold = 0;
+    const [, xd, , thd] = s;
+    push(30 * th + 6 * thd + 0.1 * x + 0.5 * xd > 0 ? 1 : 0);
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

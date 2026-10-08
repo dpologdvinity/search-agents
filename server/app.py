@@ -23,8 +23,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import (
+    bandits_api,
     battleship_api,
     blackjack_api,
+    cartpole_api,
     checkers_api,
     connect4_api,
     endgame_api,
@@ -93,6 +95,8 @@ app.include_router(battleship_api.router)
 app.include_router(lightsout_api.router)
 app.include_router(minesweeper_api.router)
 app.include_router(hexgame_api.router)
+app.include_router(bandits_api.router)
+app.include_router(cartpole_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)

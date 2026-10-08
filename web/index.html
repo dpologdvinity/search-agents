@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Seventeen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, and Monte Carlo tree search.">
+<meta name="description" content="Nineteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, and policy gradients.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Seventeen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, and Monte Carlo tree search.">
+<meta property="og:description" content="Nineteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, and policy gradients.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Seventeen games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Nineteen games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -180,6 +180,20 @@
         <canvas class="cab-screen" data-sim="hexgame" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>No draws</b> a full board always has exactly one winner</span>
         <span class="cab-desc">Monte Carlo tree search with RAVE: random playouts whose stone statistics are shared between moves. Watch the agent's visit heat map.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-pink" href="bandits.html">
+        <span class="cab-marquee">Bandits</span>
+        <canvas class="cab-screen" data-sim="bandits" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>c ln T</b> the regret no agent can beat on fixed machines</span>
+        <span class="cab-desc">Slot machines with hidden payouts. Greedy locks on early, while UCB1 and Thompson sampling explore just long enough. Play the casino, then race the agents on the same machines.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-yellow" href="cartpole.html">
+        <span class="cab-marquee">Cart Pole</span>
+        <canvas class="cab-screen" data-sim="cartpole" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>500</b> steps balanced by every learned policy, the episode cap</span>
+        <span class="cab-desc">Policy gradients in NumPy, learned from reward alone. Random pushes last about 22 steps; the learned policies hold the pole to the 500-step cap, so the race is about how fast they learn.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>

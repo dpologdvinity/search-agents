@@ -319,3 +319,33 @@ body:not(.landing-page)::before { z-index: 0; }
 .rt-race figcaption { font-family: var(--mono); font-size: 0.68rem; color: var(--dim); text-align: center; }
 #btn-draw[aria-pressed="true"] { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 16px rgba(255,0,160,0.5); }
 @media (max-width: 600px) { .rt-race { grid-template-columns: 1fr; } }
+
+/* ── HOW IT WORKS ──
+   Every game page ends with the same explainer section, below the game and its controls:
+   a lede, one card per algorithm (with a plain-language box for newcomers), a table of
+   heuristics and their values, how those values were chosen, training details, and links
+   to the source files. Markup lives in each page so it is readable without JavaScript. */
+.hiw { position: relative; z-index: 2; padding: 2.2rem 2rem 3rem; border-top: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,245,255,0.03), transparent 40%); }
+.hiw > .section-title { font-size: 0.85rem; }
+.hiw-lede { font-family: var(--raj); font-size: 1.05rem; line-height: 1.55; color: var(--text); max-width: 75ch; margin: 0 0 1.4rem; }
+.hiw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.6rem; }
+.hiw-card { border: 1px solid var(--border); background: rgba(0,0,0,0.3); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.55rem; position: relative; }
+.hiw-card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 18px; height: 18px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+.hiw-card h3 { font-family: var(--orb); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); margin: 0; }
+.hiw-card p, .hiw-card li { font-family: var(--raj); font-size: 0.95rem; line-height: 1.5; color: var(--text); margin: 0; }
+.hiw-card ul, .hiw-card ol { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.hiw-plain { border-left: 2px solid var(--pink); background: rgba(255,0,160,0.06); padding: 0.55rem 0.7rem; }
+.hiw-plain b:first-child { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pink); display: block; margin-bottom: 0.2rem; }
+.hiw-sub { font-family: var(--orb); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--yellow); margin: 1.4rem 0 0.6rem; }
+.hiw-table { max-width: 100%; }
+.hiw-table td:first-child { color: var(--cyan); white-space: nowrap; }
+.hiw-table td { vertical-align: top; }
+.hiw-scroll { overflow-x: auto; }
+.hiw-note { font-family: var(--raj); font-size: 0.95rem; line-height: 1.5; color: var(--text); max-width: 85ch; margin: 0.6rem 0 0; }
+.hiw-note code, .hiw-card code, .hiw-table code { font-family: var(--mono); font-size: 0.8em; color: var(--green); }
+.hiw-src { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.hiw-src a { color: var(--cyan); }
+@media (max-width: 720px) {
+  .hiw { padding: 1.6rem 1rem 2.4rem; }
+  .hiw-table td:first-child { white-space: normal; }
+}

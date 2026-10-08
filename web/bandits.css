@@ -1,0 +1,153 @@
+/* Bandits page. Loaded after style.css and app.css. The casino floor is a row of slot cabinets; each
+   cabinet is a button (the whole cabinet pulls the lever), so touch targets are large at 390px. */
+
+/* ── Floor: marquee, bulbs, and the cabinets ───────────────────────────── */
+.bd-stage {
+  position: relative; padding: 14px 12px 12px; border: 2px solid var(--pink);
+  background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(155,0,255,0.18), rgba(2,6,16,0.92) 70%);
+  box-shadow: 0 0 30px rgba(255,0,160,0.25), inset 0 0 50px rgba(0,0,0,0.6);
+}
+.bd-marquee {
+  display: flex; justify-content: space-around; gap: 8px; margin-bottom: 14px; padding: 8px 6px;
+  font-family: var(--orb); font-size: 0.7rem; letter-spacing: 0.25em; color: var(--yellow);
+  border: 1px solid rgba(255,230,0,0.4); text-shadow: 0 0 10px rgba(255,230,0,0.8);
+  background-image: radial-gradient(circle, rgba(255,230,0,0.55) 1.5px, transparent 2.5px);
+  background-size: 16px 16px; background-position: center; background-color: rgba(20,12,0,0.85);
+  animation: bd-flicker 3s infinite;
+}
+.bd-floor { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 18px; padding: 8px 0 14px; }
+
+/* One cabinet. The bulb ring is a dotted border drawn with a gradient. */
+.bd-machine {
+  --col: var(--cyan);
+  position: relative; width: clamp(96px, 27vw, 132px); min-height: 44px; padding: 10px 8px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  border: 2px solid var(--col); background: linear-gradient(180deg, #14082a 0%, #06030f 100%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--col) 45%, transparent), inset 0 0 22px rgba(0,0,0,0.7);
+  color: var(--text); font: inherit; transition: transform 0.12s, box-shadow 0.2s;
+}
+.bd-machine::before {
+  content: ""; position: absolute; inset: -7px; pointer-events: none; border: 0;
+  background: radial-gradient(circle, var(--yellow) 2px, transparent 3px) 0 0 / 14px 14px;
+  opacity: 0.55; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; padding: 7px;
+}
+.bd-machine:hover { transform: translateY(-2px); }
+.bd-machine:focus-visible { outline: 2px solid var(--yellow); outline-offset: 6px; }
+.bd-machine.best-hint { --col: var(--green); }
+.bd-machine.paid { --col: var(--yellow); }
+.bd-machine.missed { --col: var(--red); }
+.bd-machine.revealed.is-best { --col: var(--green); box-shadow: 0 0 26px rgba(0,255,136,0.6), inset 0 0 22px rgba(0,0,0,0.7); }
+.bd-machine:disabled { cursor: default; transform: none; }
+
+.bd-name { font-family: var(--orb); font-size: 0.8rem; color: var(--col); text-shadow: 0 0 8px var(--col); }
+.bd-key { font-family: var(--mono); font-size: 0.6rem; color: var(--dim); }
+
+/* The screen holds three reels and a result line. */
+.bd-screen {
+  display: flex; gap: 4px; justify-content: center; padding: 6px 4px; width: 100%;
+  border: 1px solid rgba(0,245,255,0.3); background: rgba(0,0,0,0.6);
+}
+.bd-reel {
+  width: 26px; height: 32px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,0,160,0.35); background: #040210; font-family: var(--mono); font-size: 0.95rem;
+  color: var(--pink);
+}
+.bd-reel span { display: block; }
+.bd-machine.spin .bd-reel span { animation: bd-reel-spin 0.5s steps(4) 1; }
+.bd-machine.paid .bd-reel { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+.bd-machine.missed .bd-reel { color: var(--dim); text-shadow: none; }
+.bd-result { font-family: var(--mono); font-size: 0.68rem; color: var(--dim); min-height: 1.1em; }
+.bd-machine.paid .bd-result { color: var(--yellow); }
+
+/* The lever: a stem with a ball on the right edge of the cabinet. It swings down when pulled. */
+.bd-lever {
+  position: absolute; right: -15px; top: 34%; width: 10px; height: 56px; transform-origin: 50% 100%;
+  background: linear-gradient(90deg, #666, #ddd 50%, #666); border-radius: 4px;
+  transform: rotate(-18deg);
+}
+.bd-lever::after {
+  content: ""; position: absolute; top: -10px; left: 50%; width: 20px; height: 20px; margin-left: -10px;
+  border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--pink) 45%, #5a0030 100%);
+  box-shadow: 0 0 10px rgba(255,0,160,0.8);
+}
+.bd-machine.pulling .bd-lever { animation: bd-lever-pull 0.55s ease-in-out 1; }
+
+/* Coins and the amount shown over a cabinet are placed by fx.pop; this only styles the jackpot glow. */
+.bd-machine.jackpot { animation: bd-jackpot 0.6s ease-in-out 3; }
+
+/* ── Controls under the floor ─────────────────────────────────────────── */
+.bd-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
+.bd-actions .cyber-btn, .bd-seed .cyber-btn, #btn-run { min-height: 44px; }
+
+/* max-width and min-width: 0 stop a canvas's intrinsic size from widening its grid track on small screens. */
+.bd-canvas { display: block; width: 100%; max-width: 100%; min-width: 0; height: auto; background: rgba(2,6,16,0.85); border: 1px solid var(--border); }
+.proj-game-col, .proj-ctrl-col, .bd-panels > * { min-width: 0; max-width: 100%; }
+.bd-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; font-family: var(--mono); font-size: 0.7rem; color: var(--text); }
+.bd-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bd-swatch { width: 14px; height: 4px; display: inline-block; }
+
+.bd-panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+
+.bd-think { max-height: 240px; }
+.bd-think .bd-row { padding: 4px 0; border-bottom: 1px dashed rgba(0,245,255,0.15); font-family: var(--mono); font-size: 0.72rem; }
+.bd-think .bd-row b { font-family: var(--orb); font-weight: 400; font-size: 0.65rem; }
+
+.bd-reveal { margin-top: 1.6rem; }
+.bd-odds { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+.bd-odds span {
+  font-family: var(--mono); font-size: 0.75rem; padding: 6px 10px; border: 1px solid var(--border);
+  background: rgba(0,245,255,0.04);
+}
+.bd-odds span.best { border-color: var(--green); color: var(--green); box-shadow: 0 0 12px rgba(0,255,136,0.35); }
+
+.bd-table-wrap { overflow-x: auto; }
+.bd-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.7rem; margin: 6px 0; }
+.bd-table th {
+  font-family: var(--orb); font-weight: 400; font-size: 0.6rem; color: var(--cyan); text-align: left;
+  padding: 6px 8px; border-bottom: 1px solid var(--borderb); white-space: nowrap;
+}
+.bd-table td { padding: 6px 8px; border-bottom: 1px solid rgba(0,245,255,0.1); white-space: nowrap; }
+.bd-table td.num { text-align: right; }
+.bd-table tr.player td { color: var(--yellow); }
+
+/* ── Setup and agent toggles ─────────────────────────────────────────── */
+.bd-seed { display: flex; gap: 8px; align-items: stretch; }
+.bd-seed .cyber-input { flex: 1; min-width: 0; min-height: 44px; }
+.bd-agents { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.bd-agent {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; cursor: pointer;
+  border: 1px solid var(--border); background: rgba(0,245,255,0.03); font-family: var(--raj); font-size: 0.95rem;
+}
+.bd-agent input { width: 18px; height: 18px; accent-color: var(--col, var(--cyan)); flex: none; }
+.bd-agent .bd-swatch { width: 16px; height: 4px; flex: none; }
+.bd-range { width: 100%; min-height: 44px; accent-color: var(--green); }
+
+/* ── Small screens: stack the panels, keep the cabinets tappable ─────── */
+@media (max-width: 700px) {
+  .bd-panels { grid-template-columns: minmax(0, 1fr); }
+  .bd-marquee { font-size: 0.55rem; letter-spacing: 0.12em; }
+  .bd-floor { gap: 24px 12px; }
+  .bd-machine { width: clamp(92px, 36vw, 120px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bd-marquee, .bd-machine, .bd-machine.spin .bd-reel span, .bd-machine.pulling .bd-lever,
+  .bd-machine.jackpot { animation: none !important; transition: none !important; }
+}
+
+@keyframes bd-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 1; } 50% { opacity: 0.7; } 53% { opacity: 1; } }
+@keyframes bd-reel-spin {
+  0% { transform: translateY(-100%); opacity: 0.2; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes bd-lever-pull {
+  0% { transform: rotate(-18deg); }
+  35% { transform: rotate(40deg); }
+  60% { transform: rotate(36deg); }
+  100% { transform: rotate(-18deg); }
+}
+@keyframes bd-jackpot {
+  0%, 100% { box-shadow: 0 0 18px rgba(255,230,0,0.4); }
+  50% { box-shadow: 0 0 44px rgba(255,230,0,0.9); }
+}

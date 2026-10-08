@@ -14,6 +14,8 @@ COPY pacman ./pacman
 COPY battleship ./battleship
 COPY blackjack ./blackjack
 COPY lightsout ./lightsout
+COPY bandits ./bandits
+COPY cartpole ./cartpole
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle
@@ -26,6 +28,7 @@ COPY game2048 ./game2048
 COPY sudoku ./sudoku
 COPY server ./server
 COPY web ./web
+COPY results/bandits_benchmark.json ./results/bandits_benchmark.json
 
 RUN useradd --create-home app
 USER app

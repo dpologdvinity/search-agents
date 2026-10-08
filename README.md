@@ -1,6 +1,6 @@
 # search-agents
 
-Seventeen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Nineteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -21,6 +21,8 @@ Seventeen puzzles and games, each played or solved by a classic AI algorithm: se
 | **Poker** (Leduc hold'em, imperfect information) | Exact best response and exploitability on the game tree (no search); the Kuhn value is checked against -1/18 | Counterfactual regret minimization by self-play: vanilla CFR and CFR+, with the average strategy as the answer | The bot's probability bars for every decision, a hint with the equilibrium mix for your card, why its bets are bluffs, and exploitability falling over iterations |
 | **Minesweeper** | Constraint satisfaction on the frontier, then exact probabilities: each number is a constraint, components are counted by memoized backtracking, and the global mine count weights every layout | None: the counts are exact, so the agent proves what it can and prices the rest | Which cells are proven safe or mines, the constraint components, and the exact mine probability of every covered cell |
 | **Hex** | Monte Carlo tree search with RAVE: UCT statistics blended with all-moves-as-first statistics, beta = sqrt(k / (3n + k)); shortest-path and random baselines | None: every playout is a random fill, so nothing is learned | The agent's visit heat map and principal variation, a hint with visits and win rates, and agent-versus-agent games |
+| **Bandits** (slot machines) | Greedy, epsilon-greedy (fixed and decaying), UCB1, and Thompson sampling with Beta posteriors; EXP3 and sliding-window UCB for drifting payouts | None: each agent learns only from the rewards it sees, and Thompson's posteriors narrow as it pulls | Each agent's regret curve and best-machine share, Thompson's Beta posteriors and UCB bars per machine, and your own regret ranked against the agents on the same machines |
+| **CartPole** | Policy gradients in pure NumPy: REINFORCE with a baseline, actor-critic with a learned value baseline trained on Monte Carlo returns, and a cross-entropy search over linear policies | None: the policies are learned from reward alone. The PD controller is hand-tuned, not learned | The pole's angle and the cart's position as the policy's probabilities and the critic's value change, and the learning curves across seeds |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -129,6 +131,54 @@ For reference, plain MCTS with 1,000 random-rollout simulations scores 32-2-16 a
 ### Lights Out: exact linear algebra over GF(2)
 
 Pressing a light is addition mod 2, so a board is a linear system A x = b with a 25x25 matrix of rank 23. That splits the boards: only 1 in 4 can be cleared at all, and every solvable 5x5 board has exactly 4 solutions. Over 3,000 random solvable boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. Solving a 5x5 board takes about 3 ms in Python.
+
+### Bandits: exploration vs exploitation
+
+Five slot machines with hidden payout probabilities, 100 seeds per casino, 10,000 pulls. Cumulative regret is the expected reward lost against the best machine; the table gives the mean with a 95% band (the half-width after ±). `python -m bandits benchmark` regenerates `results/bandits_benchmark.md` and `.json`.
+
+| Casino | Agent | Regret at T=1,000 | Regret at T=10,000 | % best machine, last 1,000 pulls |
+|---|---|---:|---:|---:|
+| Bernoulli | greedy | 70.3 ± 23.4 | 679.9 ± 236.0 | 63.0% |
+| Bernoulli | epsilon-greedy 0.1 | 44.6 ± 4.7 | 309.9 ± 19.5 | 91.2% |
+| Bernoulli | epsilon-greedy decaying | 26.4 ± 7.2 | 161.2 ± 75.3 | 86.0% |
+| Bernoulli | UCB1 | 78.6 ± 2.2 | 197.2 ± 9.5 | 95.4% |
+| Bernoulli | Thompson sampling | 23.1 ± 2.4 | 35.6 ± 4.1 | 99.6% |
+| Gaussian (sigma 0.2) | greedy | 22.4 ± 8.8 | 202.5 ± 87.1 | 80.0% |
+| Gaussian | epsilon-greedy 0.1 | 32.3 ± 2.0 | 282.5 ± 16.7 | 92.1% |
+| Gaussian | epsilon-greedy decaying | 15.2 ± 4.1 | 58.9 ± 36.3 | 94.0% |
+| Gaussian | UCB1 | 8.5 ± 0.6 | 13.0 ± 1.1 | 99.9% |
+| Gaussian | Thompson sampling | 6.5 ± 0.8 | 9.0 ± 0.8 | 99.9% |
+| Drifting (redrawn every 500 pulls) | greedy | 169.6 ± 25.4 | 2640.1 ± 96.4 | 26.8% |
+| Drifting | epsilon-greedy 0.1 | 123.3 ± 14.0 | 2316.1 ± 70.2 | 24.9% |
+| Drifting | epsilon-greedy decaying | 134.2 ± 18.9 | 2456.0 ± 93.1 | 26.7% |
+| Drifting | UCB1 | 86.6 ± 5.3 | 978.3 ± 51.8 | 58.5% |
+| Drifting | Thompson sampling | 91.6 ± 11.1 | 2058.8 ± 72.4 | 27.3% |
+| Drifting | EXP3 | 241.2 ± 10.8 | 2558.0 ± 64.1 | 25.4% |
+| Drifting | sliding-window UCB (W = 200) | 92.6 ± 2.2 | 950.5 ± 8.4 | 63.3% |
+
+The Lai-Robbins floor (the asymptotic lower bound for fixed machines, averaged over the machine sets) is 7.34 ln t for Bernoulli (67.6 at T = 10,000) and 1.45 ln t for Gaussian (13.3 at T = 10,000). The bound is a limit statement, not a guarantee at a given T: Thompson and UCB1 on Gaussian machines, and Thompson on Bernoulli machines, finish below the curve at these horizons, which is consistent with the theorem. Thompson sampling is the most efficient on stationary casinos, and UCB1's forced early bonus costs it early regret (78.6 at T = 1,000 on Bernoulli). With drifting payouts, Thompson's posteriors never forget, so it falls to the level of greedy; the windowed and the optimistic agents follow the drift.
+
+### CartPole: policy gradients in NumPy
+
+Benchmark: 200 seeded episodes per agent (seeds 10000-10199, none used in training), 500-step cap. Learned policies act greedily.
+
+| Agent | Mean steps | 95% CI | Reached 500 |
+|---|---:|---:|---:|
+| Random | 22.5 | ±1.6 | 0.0% |
+| PD controller (hand-tuned) | 500.0 | ±0.0 | 100.0% |
+| REINFORCE + baseline | 500.0 | ±0.0 | 100.0% |
+| Actor-critic (learned value baseline, Monte Carlo returns) | 500.0 | ±0.0 | 100.0% |
+| Cross-entropy search (linear policy) | 500.0 | ±0.0 | 100.0% |
+
+The benchmark saturates: every learned agent balances all 200 episodes, so it does not separate them. Learning speed does. Training used seeds 0-4 for 1,500 episodes each. The trailing-100 mean first reaches 475 at these episodes:
+
+| Agent | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 |
+|---|---:|---:|---:|---:|---:|
+| REINFORCE + baseline | 376 | 384 | 408 | 478 | 377 |
+| Actor-critic | 344 | 381 | 370 | 347 | 382 |
+| Cross-entropy search | 391 | 388 | 528 | 299 | 329 |
+
+REINFORCE reaches 475 in 376 to 478 episodes, actor-critic in 344 to 382, and cross-entropy in 299 to 528. The shipped policy for each agent is the seed with the best last 50 episodes (`results/cartpole_learning.md`).
 
 ### Endgame tablebases: exact distance to mate
 
@@ -411,12 +461,27 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 - **Baselines** (`hexgame/agents.py`, `hexgame/heuristic.py`). Random picks a legal cell. The shortest-path agent is a one-ply race heuristic, not a full two-distance model.
 - **Checks** (`tests/test_hexgame.py`). Rules, search, baselines, the CLI, the benchmark writer, and the router, with the two hexgame test files passing.
 
+### Bandits
+
+- **Casino** (`bandits/env.py`). Machine means come from a seeded generator, redrawn until the best leads the second best by 0.05. Outcomes are rolled once per seed for every pull and machine, so all agents face the same luck. Regret is expected: the best mean minus the mean of the machine pulled.
+- **Agents** (`bandits/agents.py`). Greedy and epsilon-greedy use the empirical means; UCB1 adds sqrt(2 ln t / n) to each mean; Thompson samples Beta(1 + wins, 1 + losses) per machine and pulls the largest sample; EXP3 keeps exponential weights with importance-weighted rewards and mixing gamma; sliding-window UCB uses the last 200 pulls only, with xi = 0.6 in its bonus.
+- **Lai-Robbins** (`bandits/env.py`). For fixed Bernoulli machines the bound is sum over suboptimal arms of gap / KL(p_i || p*) times ln t; for Gaussian machines with known variance it is sum of 2 sigma^2 / gap.
+- **Portable randomness** (`bandits/rng.py`). mulberry32 uniforms, Marsaglia polar normals, and Marsaglia-Tsang gammas, so the page's JavaScript port reproduces the Python arm sequences (checked for all 15 agent and casino pairs at seeds 0 to 4).
+- **Checks** (`tests/test_bandits.py`, `tests/test_server_bandits.py`). RNG moments, the Lai-Robbins constant against a hand calculation, agent invariants (forced first round, distribution floors, the window forgetting old rewards), regret consistency between a run and scoring its arms, the benchmark shape, and the CLI.
+
+### CartPole
+
+- **Physics** (`cartpole/env.py`). The standard cart-pole equations, integrated by explicit Euler at 0.02 s. The episode ends when |theta| > 12 degrees or |x| > 2.4 m, and is truncated at 500 steps. Reward is 1 per step, so the return equals the balance length.
+- **Policies** (`cartpole/nets.py`, `cartpole/train.py`). A one-hidden-layer tanh MLP with a softmax over left and right, trained with hand-written backprop and Adam. REINFORCE uses the batch-mean return as its baseline. The actor-critic uses a learned value network as its baseline, trained on Monte Carlo returns. A TD(0) critic that bootstraps from its own estimate did not learn reliably in the pilot runs, so the shipped actor-critic uses Monte Carlo returns.
+- **Cross-entropy search** (`cartpole/train.py`). Samples five-number linear policies, keeps the best quarter, and refits the sampling distribution.
+- **Checks** (`tests/test_cartpole.py`). Backprop is compared with finite differences for the policy and the critic, and the physics against the equations worked by hand. The browser port is checked step by step against the Python physics (`/api/cartpole/rollout`).
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -471,6 +536,13 @@ python -m hexgame                                                            # 7
 python -m hexgame play -n 9 --you across --swap                              # swap rule on, you are ACROSS
 python -m hexgame watch --red rave --blue uct                                # two agents, one game
 python -m hexgame benchmark --write                                          # the full run in results/hexgame_benchmark.*
+python -m bandits play --pulls 200                                           # pull the slot machines yourself, then rank against the agents
+python -m bandits watch --agent thompson --pulls 60 --delay 0.2              # watch one agent learn, with its reason for each pull
+python -m bandits benchmark                                                  # every agent on every casino, 100 seeds; writes results/bandits_benchmark.*
+python -m cartpole watch --agent reinforce --seed 3                          # ASCII animation of one episode
+python -m cartpole play                                                      # you push: a (left) and d (right), then Enter
+python -m cartpole train --algo reinforce --seeds 0 1 2 3 4 --episodes 1500
+python -m cartpole benchmark --episodes 200
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

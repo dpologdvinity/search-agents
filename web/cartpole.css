@@ -1,0 +1,68 @@
+/* CartPole page. Loaded after style.css and app.css. The stage is a canvas drawn by js/cartpole.js,
+   so its size comes from the box, and the drawing reads clientWidth and clientHeight. */
+
+/* The stage: a neon track with a glowing cart. The aspect ratio keeps it short on phones. */
+.cp-stage-wrap { position: relative; width: 100%; }
+.cp-stage {
+  display: block; width: 100%; aspect-ratio: 2 / 1; height: auto;
+  border: 2px solid var(--cyan); background: #020610;
+  box-shadow: 0 0 28px rgba(0,245,255,0.3), inset 0 0 60px rgba(0,0,0,0.6);
+}
+.cp-banner {
+  position: absolute; left: 12px; bottom: 10px; max-width: calc(100% - 24px);
+  font-family: var(--mono); font-size: 0.7rem; color: var(--yellow);
+  text-shadow: 0 0 8px rgba(255,230,0,0.6); pointer-events: none;
+}
+
+.cp-controls { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
+.cp-mode, .cp-buttons, .cp-touch { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.cp-touch .cyber-btn { flex: 1 1 140px; }
+.cp-controls .field-hint { text-align: center; }
+
+/* Mind panel: bars for the policy's probabilities (or a signed bar for the controllers), a sparkline, narration. */
+.cp-mind { margin-top: 1.6rem; }
+.cp-mind-panel { gap: 0.6rem; }
+.cp-bars { display: flex; flex-direction: column; gap: 0.45rem; min-height: 2.2rem; }
+.cp-bar { display: grid; grid-template-columns: 4.2rem 1fr 3rem; gap: 0.5rem; align-items: center;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
+.cp-bar b { color: var(--text); font-weight: 400; text-align: right; }
+.cp-track { position: relative; height: 12px; background: rgba(0,245,255,0.08); border: 1px solid var(--border); overflow: hidden; }
+.cp-track i { position: absolute; top: 0; bottom: 0; left: 0; transition: width 0.12s linear; }
+.cp-track.cp-centre::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--dim); }
+.cp-track.cp-centre i { transition: left 0.12s linear, width 0.12s linear; }
+.cp-spark { width: 100%; height: 60px; display: block; border: 1px solid var(--border); background: rgba(0,0,0,0.35); }
+.cp-narration { font-family: var(--raj); font-size: 1rem; line-height: 1.45; color: var(--text); min-height: 3.2rem; }
+
+/* Learning curves. */
+.cp-legend { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+.cp-chip {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em; cursor: pointer;
+  padding: 0.3rem 0.6rem; background: transparent; color: var(--dim);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+}
+.cp-chip[aria-pressed="true"] { color: var(--c); border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.cp-chip:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.cp-curves { width: 100%; height: 260px; display: block; border: 1px solid var(--border); background: rgba(0,0,0,0.35); }
+.cp-learn { margin-top: 1.6rem; }
+.cp-learn-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-top: 0.6rem; }
+.cp-learn-controls .cyber-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* Benchmark table. */
+.cp-bench { margin-top: 1.6rem; }
+.cp-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.72rem; }
+.cp-table th, .cp-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.cp-table th { color: var(--dim); font-weight: 400; letter-spacing: 0.08em; }
+.cp-table td:not(:first-child), .cp-table th:not(:first-child) { text-align: right; }
+
+.cp-log-wrap { margin-top: 1.6rem; }
+
+@media (max-width: 600px) {
+  .cp-stage { aspect-ratio: 16 / 9; }
+  .cp-curves { height: 200px; }
+  .cp-bar { grid-template-columns: 3.4rem 1fr 2.6rem; }
+  .cp-table th, .cp-table td { padding: 0.35rem 0.25rem; font-size: 0.64rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-track i, .cp-track.cp-centre i { transition: none; }
+}
