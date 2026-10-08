@@ -1,26 +1,29 @@
 {
+ "games_per_opponent": 50,
+ "simulations": 200,
+ "seed": 0,
  "alphazero_vs_minimax_d2": {
-  "win": 7,
-  "draw": 0,
-  "loss": 13
+  "win": 30,
+  "draw": 4,
+  "loss": 16
  },
  "alphazero_vs_minimax_d4": {
-  "win": 9,
-  "draw": 2,
+  "win": 36,
+  "draw": 5,
   "loss": 9
  },
  "alphazero_vs_minimax_d6": {
-  "win": 2,
-  "draw": 6,
-  "loss": 12
+  "win": 18,
+  "draw": 8,
+  "loss": 24
  },
  "mcts1000_vs_minimax_d4": {
-  "win": 5,
-  "draw": 0,
-  "loss": 5
+  "win": 32,
+  "draw": 2,
+  "loss": 16
  },
  "training": {
-  "iteration": 13,
-  "games": 1664
+  "iteration": 19,
+  "games": 2432
  }
 }

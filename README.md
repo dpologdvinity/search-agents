@@ -1,6 +1,6 @@
 # search-agents
 
-Agents that solve puzzles and play games by search, each paired with a stronger guide than the textbook version: hand-built heuristics, precomputed pattern databases, and models trained from self-generated data. Every search runs in Python and streams to a browser frontend.
+Eleven puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -109,15 +109,15 @@ Tuning the hand-crafted evaluation's six weights with the cross-entropy method r
 
 ### Connect Four: AlphaZero-style self-play
 
-Training is in progress on a laptop CPU. After 1,664 self-play games (iteration 13), with 200 simulations per move over 20 games per opponent:
+Trained only by self-play on a laptop CPU: 2,432 games (19 iterations). The served network with 200 PUCT simulations per move, 50 games per opponent, colours alternating and two random opening moves per game (`python -m connect4.evaluate`):
 
-| Opponent | AlphaZero wins | Draws | Losses |
-|---|---|---|---|
-| Alpha-beta minimax, depth 2 | 7 | 0 | 13 |
-| Alpha-beta minimax, depth 4 | 9 | 2 | 9 |
-| Alpha-beta minimax, depth 6 | 2 | 6 | 12 |
+| Opponent | AlphaZero wins | Draws | Losses | Score |
+|---|---|---|---|---|
+| Alpha-beta minimax, depth 2 | 30 | 4 | 16 | 64% |
+| Alpha-beta minimax, depth 4 | 36 | 5 | 9 | 77% |
+| Alpha-beta minimax, depth 6 | 18 | 8 | 24 | 44% |
 
-For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against depth-4 minimax. AlphaZero implementations typically need tens of thousands of self-play games on Connect Four; these numbers will be updated as training continues.
+For reference, plain MCTS with 1,000 random-rollout simulations scores 32-2-16 against depth-4 minimax. AlphaZero implementations typically train on tens of thousands of self-play games for Connect Four; this one has seen 2,432.
 
 
 ### Lights Out: exact linear algebra over GF(2)
@@ -288,6 +288,7 @@ Training (CPU is enough; times are for a laptop i7):
 python -m npuzzle.pdb                              # pattern database, ~40 s
 python -m npuzzle.train --minutes 45               # neural heuristic
 python -m connect4.train_az --hours 3              # AlphaZero self-play
+python -m connect4.evaluate                        # AlphaZero vs minimax at depths 2, 4, 6
 python -m game2048.train_td --minutes 90           # n-tuple network
 ```
 
