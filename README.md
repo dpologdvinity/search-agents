@@ -289,7 +289,7 @@ Training (CPU is enough; times are for a laptop i7):
 ```bash
 python -m npuzzle.pdb                              # pattern database, ~40 s
 python -m npuzzle.train --minutes 45               # neural heuristic
-python -m connect4.train_az --hours 3              # AlphaZero self-play
+python -m connect4.train_az --hours 3              # AlphaZero self-play (--resume continues; --device cuda --amp on a GPU)
 python -m connect4.evaluate                        # AlphaZero vs minimax at depths 2, 4, 6
 python -m game2048.train_td --minutes 90           # n-tuple network
 ```

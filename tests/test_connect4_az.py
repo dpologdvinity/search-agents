@@ -1,3 +1,6 @@
+import json
+from collections import deque
+
 import numpy as np
 import pytest
 
@@ -81,3 +84,81 @@ def test_self_play_rows_are_consistent():
         assert z in (-1.0, 0.0, 1.0)
         assert np.isclose(pi.sum(), 1.0)
         assert all(pi[c] == 0 for c in range(COLS) if not board.can_play(c))
+
+
+def test_resolve_device_and_cpu_evaluator():
+    from connect4.train_az import AZNet, resolve_device, torch_evaluator
+
+    assert resolve_device("cpu").type == "cpu"
+    if not torch.cuda.is_available():
+        assert resolve_device("auto").type == "cpu"
+        with pytest.raises(RuntimeError):
+            resolve_device("cuda")
+    # amp is a no-op on CPU, so the evaluator still returns normalized priors.
+    priors, values = torch_evaluator(AZNet(channels=8, blocks=1), amp=True)([Board(), Board.from_moves("4")])
+    assert priors.shape == (2, COLS) and values.shape == (2,)
+    assert np.allclose(priors.sum(axis=1), 1.0)
+
+
+def test_checkpoint_round_trip_with_buffer(tmp_path):
+    from connect4.net import PolicyValueNet
+    from connect4.train_az import (
+        AZNet,
+        export,
+        load_buffer,
+        load_checkpoint,
+        save_buffer,
+        save_checkpoint,
+        self_play,
+        train_step,
+    )
+
+    model = AZNet(channels=8, blocks=1)
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    rows, _ = self_play(model, games=1, simulations=2, rng=np.random.default_rng(0))
+    train_step(model, opt, rows[:8])  # gives the optimizer state to save
+
+    ckpt, buf = tmp_path / "az.pt", tmp_path / "az.buffer.npz"
+    save_checkpoint(ckpt, model, opt, iteration=7, games=14)
+    save_buffer(buf, deque(rows, maxlen=len(rows)))
+
+    model2 = AZNet(channels=8, blocks=1)
+    opt2 = torch.optim.AdamW(model2.parameters(), lr=1e-3)
+    assert load_checkpoint(ckpt, model2, opt2, "cpu") == (7, 14)
+    for a, b in zip(model.state_dict().values(), model2.state_dict().values()):
+        assert torch.equal(a, b)
+    assert torch.equal(opt.state_dict()["state"][0]["exp_avg"], opt2.state_dict()["state"][0]["exp_avg"])
+
+    restored = load_buffer(buf, maxlen=len(rows))
+    assert len(restored) == len(rows)
+    for (board, pi, z), (board2, pi2, z2) in zip(rows, restored):
+        assert board == board2 and board.moves == board2.moves
+        assert np.array_equal(pi, pi2) and z == z2
+    assert len(load_buffer(buf, maxlen=5)) == 5  # a smaller maxlen keeps the newest rows
+
+    # export runs on a model that has gradients and optimizer state (detach keeps it off the graph).
+    export(model, tmp_path / "sub" / "az.npz")
+    assert PolicyValueNet(tmp_path / "sub" / "az.npz").blocks == 1
+
+
+def test_cpu_short_run_resumes_without_losing_progress(tmp_path):
+    from connect4.train_az import main
+
+    ckpt, npz, log = tmp_path / "az.pt", tmp_path / "az.npz", tmp_path / "log.jsonl"
+    common = ["--device", "cpu", "--threads", "1", "--games", "2", "--simulations", "4", "--steps", "1",
+              "--batch", "16", "--channels", "8", "--blocks", "1", "--eval-every", "0", "--save-buffer",
+              "--checkpoint", str(ckpt), "--weights-out", str(npz), "--log", str(log)]
+    main(["--iterations", "1", *common])
+    assert ckpt.exists() and (tmp_path / "az.buffer.npz").exists() and npz.exists()
+    # Resume from the same checkpoint: counters continue and the buffer is reloaded, not reset.
+    main(["--resume", "--amp", "--iterations", "1", *common])
+
+    state = torch.load(ckpt, weights_only=False)
+    assert state["iteration"] == 2 and state["games"] == 4
+    first, second = (json.loads(line) for line in log.read_text().splitlines())
+    assert (first["iteration"], second["iteration"]) == (1, 2)
+    assert second["buffer"] > first["buffer"] and second["device"] == "cpu" and second["amp"] is False
+
+    with pytest.raises(SystemExit):  # --resume with no checkpoint must not silently start over
+        main(["--resume", "--iterations", "1", "--device", "cpu",
+              "--checkpoint", str(tmp_path / "missing.pt"), "--log", str(log)])
