@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLACKJACK // SEARCH AGENTS</title>
+<meta name="description" content="Blackjack solved exactly as a Markov decision process: the full basic-strategy table, the expected value of every move, and a Monte Carlo learner converging on the same table.">
+<meta property="og:title" content="BLACKJACK // SEARCH AGENTS">
+<meta property="og:description" content="Blackjack solved exactly as a Markov decision process, with a Monte Carlo learner converging on the same basic strategy.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/blackjack.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="blackjack.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+    <li><a href="npuzzle.html">N-PUZZLE</a></li>
+    <li><a href="connect4.html">CONNECT FOUR</a></li>
+    <li><a href="checkers.html">CHECKERS</a></li>
+    <li><a href="routes.html">ROUTES</a></li>
+    <li><a href="2048.html">2048</a></li>
+    <li><a href="sudoku.html">SUDOKU</a></li>
+    <li><a href="lightsout.html">LIGHTS OUT</a></li>
+    <li><a href="blackjack.html" class="act">BLACKJACK</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page bj-page">
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">06 // MARKOV DECISION PROCESS · DYNAMIC PROGRAMMING</div>
+      <h1 class="proj-pg-title neon-green glitch" data-text="BLACKJACK">BLACKJACK</h1>
+      <div class="proj-pg-sub">The rules are fixed, so the best play is an exact answer: dynamic programming over every hand the player can reach. The table below is that answer.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip green">BANKROLL <span class="val" id="chip-bankroll">500</span></span>
+        <span class="stat-chip pink">HOUSE EDGE <span class="val" id="chip-edge">—</span></span>
+        <span class="stat-chip">RECORD <span class="val" id="chip-record">0 · 0 · 0</span></span>
+        <span class="stat-chip purple">NET <span class="val" id="chip-net">0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+
+      <div class="bj-table" id="table">
+        <div class="bj-shoe" aria-hidden="true">
+          <div class="bj-shoe-stack"></div>
+          <div class="bj-shoe-count"><span id="shoe-left">0</span> cards left · 6 decks</div>
+        </div>
+        <div class="bj-seat">
+          <div class="bj-seat-label">DEALER <b id="dealer-total"></b></div>
+          <div class="bj-cards" id="dealer-cards"></div>
+        </div>
+        <div class="bj-msg" id="msg" role="status">Choose a bet and deal.</div>
+        <div class="bj-seat">
+          <div class="bj-seat-label">YOU</div>
+          <div class="bj-hands" id="hands"></div>
+        </div>
+      </div>
+
+      <div class="bj-controls">
+        <div class="bj-chips" role="group" aria-label="Bet size">
+          <button class="bj-bet" type="button" data-bet="5">5</button>
+          <button class="bj-bet" type="button" data-bet="10">10</button>
+          <button class="bj-bet" type="button" data-bet="25">25</button>
+          <button class="bj-bet" type="button" data-bet="50">50</button>
+          <button class="bj-bet" type="button" data-bet="100">100</button>
+        </div>
+        <div class="bj-actions">
+          <button class="cyber-btn pink" id="btn-deal" type="button"><span class="btn-txt">▶ DEAL</span></button>
+          <button class="cyber-btn" id="btn-hit" type="button" title="Take a card (t)"><span class="btn-txt">+ HIT</span></button>
+          <button class="cyber-btn green" id="btn-stand" type="button" title="Stand (s)"><span class="btn-txt">■ STAND</span></button>
+          <button class="cyber-btn purple" id="btn-double" type="button" title="Double (d)"><span class="btn-txt">×2 DOUBLE</span></button>
+          <button class="cyber-btn pink" id="btn-split" type="button" title="Split a pair (p)"><span class="btn-txt">⑂ SPLIT</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" title="Show the advice again (h)"><span class="btn-txt">✦ HINT</span></button>
+        </div>
+        <div class="field-hint" id="keys-hint">Keys: t hit · s stand · d double · p split · h hint · enter deal</div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">BASIC STRATEGY · EXACT</div>
+        <div class="viz-panel">
+          <div class="viz-title">Best move for each hand (rows) against each dealer upcard (columns). Brightness shows the expected value of the best move. The outlined cell is your hand.</div>
+          <div class="bj-legend">
+            <span><i class="sw S"></i>Stand</span><span><i class="sw H"></i>Hit</span>
+            <span><i class="sw D"></i>Double</span><span><i class="sw P"></i>Split</span>
+          </div>
+          <div class="bj-grid" id="strategy-grid" role="table" aria-label="Basic strategy table"></div>
+          <div class="field-hint" id="strategy-note">Solving the table…</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">MONTE CARLO LEARNER</div>
+        <div class="viz-panel">
+          <div class="viz-title">Nothing is solved here. The learner plays simulated hands, tries actions, and averages what each one paid. Its greedy table goes green where it matches the exact table.</div>
+          <div class="bj-learn-controls">
+            <select class="cyber-select" id="learn-hands" aria-label="Hands to play">
+              <option value="10000">10,000 hands</option>
+              <option value="40000" selected>40,000 hands</option>
+              <option value="100000">100,000 hands</option>
+            </select>
+            <button class="cyber-btn pink" id="btn-learn" type="button"><span class="btn-txt">▶ LEARN</span></button>
+            <div class="bj-learn-stats">
+              <span>HANDS <b id="learn-episodes">0</b></span>
+              <span>AGREEMENT <b id="learn-agree">—</b></span>
+              <span>VALUE LOST <b id="learn-loss">—</b></span>
+            </div>
+          </div>
+          <canvas class="bj-chart" id="learn-chart" aria-label="Agreement with the exact table over hands played"></canvas>
+          <div class="bj-grid learn" id="learn-grid" role="table" aria-label="Learned table"></div>
+          <div class="field-hint" id="learn-status">Agreement counts the cells where the exact best move is clear (a margin of at least 0.01 of a bet).</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title green-ttl">ADVISOR</div>
+        <div class="viz-panel bj-advisor">
+          <div class="viz-title" id="advice-best">Deal to see the expected value of each move.</div>
+          <div class="bj-advice-list" id="advice-list"></div>
+          <div class="field-hint" id="advice-note">Expected chips include the dealer's blackjack check when the upcard is an ace or ten.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">TABLE RULES</div>
+        <div class="stack">
+          <div class="row-stat"><span class="lbl">DECKS</span><span class="val">6 · reshuffle at 75%</span></div>
+          <div class="row-stat"><span class="lbl">DEALER</span><span class="val pink">stands on all 17s</span></div>
+          <div class="row-stat"><span class="lbl">BLACKJACK</span><span class="val yellow">pays 3:2</span></div>
+          <div class="row-stat"><span class="lbl">SPLIT / DOUBLE</span><span class="val green">one split · double any two</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">HOW IT IS SOLVED</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">THE DEALER</div>
+            <div class="field-hint">Dealer probabilities come from a recursion on the dealer's next card. Every final total, 17 to 21 or bust, gets an exact probability for each upcard.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">THE PLAYER</div>
+            <div class="field-hint">Each hand is a state: hard total, ace, and whether it is still two cards. Hitting always adds a card, so each state depends only on larger totals. Backward induction then gives each move's exact value.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">THE LEARNER</div>
+            <div class="field-hint">Monte Carlo control never reads the probabilities. It plays hands, keeps a running average of what each move paid, and mostly takes the best move so far, with some exploration.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title purple-ttl">GAME LOG</div>
+        <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(155,0,255,0.35)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module" src="js/blackjack.js"></script>
+</body>
+</html>

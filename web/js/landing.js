@@ -505,8 +505,35 @@ function lightsoutSim(ctx, S) {
   };
 }
 
+function blackjackSim(ctx, S) {
+  // Hard totals 8-17 against upcards 2-A, from the exact table. A cursor sweeps one upcard column at a time.
+  const TABLE = ['HHHHHHHHHH', 'HDDDDHHHHH', 'DDDDDDDDHH', 'DDDDDDDDDH', 'HHSSSHHHHH',
+                 'SSSSSHHHHH', 'SSSSSHHHHH', 'SSSSSHHHHH', 'SSSSSHHHHH', 'SSSSSSSSSS'];
+  const COL = { S: C.cyan, H: C.green, D: C.yellow, P: C.pink };
+  const pad = 22, cw = (S - pad - 6) / 10, ch = (S - pad - 6) / TABLE.length;
+  let t = 0;
+  return (speed) => {
+    t += 0.02 * speed;
+    const col = Math.floor(t) % 10;
+    ctx.clearRect(0, 0, S, S);
+    ctx.font = '600 10px JetBrains Mono, monospace';
+    TABLE.forEach((row, r) => {
+      for (let c = 0; c < 10; c++) {
+        const letter = row[c], x = pad + c * cw, y = 6 + r * ch;
+        ctx.globalAlpha = c === col ? 1 : 0.35;
+        ctx.fillStyle = COL[letter];
+        ctx.shadowColor = COL[letter]; ctx.shadowBlur = c === col ? 12 : 0;
+        ctx.fillRect(x + 1, y + 1, cw - 2, ch - 2);
+        ctx.fillStyle = C.bg;
+        ctx.fillText(letter, x + cw / 2 - 3, y + ch / 2 + 3);
+      }
+    });
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

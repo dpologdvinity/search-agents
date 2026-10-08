@@ -7,6 +7,7 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 | **N-Puzzle** | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\* | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
 | **Connect Four** | Alpha-beta negamax, UCT Monte Carlo tree search | AlphaZero-style PUCT with a policy-value ResNet trained only by self-play | The network's prior vs search visits per column, and its win probability |
 | **Checkers** | Plain minimax, alpha-beta with iterative deepening, a transposition table, and move ordering | Hand-built evaluation (material, advancement, home row, centre) | How many positions it searched and how many branches pruning cut, with every candidate move's score |
+| **Blackjack** | Exact dynamic programming over the dealer's and player's hands (a Markov decision process), plus Monte Carlo control | None needed: the values are exact for the infinite-deck model | The full basic-strategy table, the expected value of each move for your hand, and a learner converging on the same table |
 | **Route planner** (traveling salesman) | Nearest neighbour + 2-opt; exact Held-Karp dynamic programming up to 12 cities | Simulated annealing and a genetic algorithm (order crossover, inversion mutation, elitism) | Each route untangling live, length and temperature charts, a three-way race, and drawing your own route to compare |
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
@@ -55,6 +56,12 @@ Both agents assume the opponent always answers with its best reply. On a positio
 | 6 | 92,608 | 3,566 | 26x |
 
 The move generator matches the published perft counts from the opening (7, 49, 302, 1,469, 7,361 positions at depths 1-5).
+
+### Blackjack: exact basic strategy and a learner that finds it
+
+- **House edge** with perfect basic strategy, solved exactly (infinite deck, dealer stands on soft 17, dealer peek, 3:2 blackjack, double on any two cards, one split with doubling after it): **0.570%** of each bet.
+- **Measured** through a 6-deck shoe over 200,000 rounds with the same table: **-0.66% ± 0.26%** per unit bet, consistent with the exact figure (a finite shoe is not the infinite-deck model).
+- **Monte Carlo control** (exploring starts, every-visit averages, seed 1), agreement with the exact table on the 321 decisive cells: **73%** after 40,000 hands (mean value lost per cell 0.039) and **78%** after 100,000 hands (0.023). Near-tied cells need far more hands, so agreement rises slowly.
 
 ### 2048: TD-learned n-tuple network
 
@@ -124,6 +131,13 @@ Pressing a light is addition mod 2, so a board is a linear system A x = b with a
 - **Rules** (`checkers/board.py`). The 32 dark squares as a tuple; mandatory captures, multi-jumps (a captured piece stays on the board until the move ends, so it cannot be jumped twice), and crowning, which ends the move. Verified against published perft counts.
 - **Search** (`checkers/search.py`). Negamax, so each side maximizes its own score and the opponent's reply is assumed to be the one worst for it. Alpha-beta skips a move as soon as one reply proves it worse than an alternative already found; iterative deepening, a transposition table, and trying the previous best move first make those cutoffs come early. Positions with a capture pending are searched one level deeper rather than scored mid-exchange.
 
+### Blackjack
+
+- **Dealer** (`blackjack/solver.py`). A recursion on the dealer's next card gives, for every hard total and ace flag, the probability of each final total (17 to 21, or bust). The dealer peeks for blackjack under an ace or a ten, so the player's decisions are made on the hole cards conditioned on "no blackjack".
+- **Player** (`blackjack/solver.py`). Each hand is a state: hard total, whether an ace is in it, and whether it is still two cards. Hitting always adds a card, so each state depends only on states with larger totals, and memoised recursion is exact backward induction. A pair splits into two independent hands under the infinite deck, so the split is twice the average over the second card of one hand's best play.
+- **Learner** (`blackjack/learner.py`). Monte Carlo control with no model: exploring starts from every table cell, every-visit sample averages, and epsilon-greedy choices. Stand, hit, and double share statistics by hard total and ace flag, since their future does not depend on card count. It is compared with the exact table, not trained on it.
+- **Game** (`blackjack/game.py`, `python -m blackjack`). A 6-deck shoe with reshuffles at 75%, the table's rules, and the same basic strategy for `simulate`. The advice on the page and in the terminal is the exact table, not the learner's.
+
 ### Route planner
 
 - **Solvers** (`routes/tsp.py`). All share one move, 2-opt: reverse a segment of the route, which removes a crossing whenever two roads cross. Its effect on length depends on four edges only, so it costs O(1) to evaluate.
@@ -147,7 +161,7 @@ Pressing a light is addition mod 2, so a board is a linear system A x = b with a
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -168,6 +182,8 @@ python -m connect4                                 # play Connect Four against A
 python -m game2048                                 # play 2048 with w/a/s/d
 python -m checkers --agent minimax --level 3       # play checkers against alpha-beta or minimax
 python -m lightsout --solve 110/011/101            # the fewest presses that clear a 3x3 board
+python -m blackjack                                # play blackjack against the dealer
+python -m blackjack simulate --hands 100000        # measured return of basic strategy through a 6-deck shoe
 python -m routes --compare --cities 12             # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1          # any algorithm by name
 python -m npuzzle.benchmark 8puzzle               # results/npuzzle_8puzzle.md

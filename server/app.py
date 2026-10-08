@@ -19,7 +19,16 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from . import checkers_api, connect4_api, game2048_api, lightsout_api, npuzzle_api, routes_api, sudoku_api
+from . import (
+    blackjack_api,
+    checkers_api,
+    connect4_api,
+    game2048_api,
+    lightsout_api,
+    npuzzle_api,
+    routes_api,
+    sudoku_api,
+)
 from .limits import Busy, RateLimiter, SearchSlots
 
 ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
@@ -62,6 +71,7 @@ app.include_router(game2048_api.router)
 app.include_router(sudoku_api.router)
 app.include_router(checkers_api.router)
 app.include_router(lightsout_api.router)
+app.include_router(blackjack_api.router)
 app.include_router(routes_api.router)
 
 WEB = Path(__file__).resolve().parent.parent / "web"
