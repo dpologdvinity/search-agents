@@ -647,8 +647,52 @@ function pacmanSim(ctx, S) {
   };
 }
 
+function warehouseSim(ctx, S) {
+  // Replays precomputed Conflict-Based Search plans on small warehouses. Each robot glides along its
+  // path; the plans were found by splitting on collisions, so no two robots share a cell or swap places.
+  const PLANS = [
+    { rows: ["...........", ".###...###.", ".###...###.", "...........", ".....#.....", "...........", ".###...###.", ".###...###.", "..........."], paths: [[82,71,60,59,58,57],[46,35,36,37,26,27],[92,81,70,71,60,61]] },
+    { rows: [".............", ".###.###.###.", ".............", "#####.#######", ".............", ".###.###.###.", "............."], paths: [[8,21,34,33,32,31,30,30,31,44,57,56,55,54,53,52,65,78],[57,44,31,30,17,4],[84,83,82,69,56,57,44,31,32,33,34,35,36,37,38,25],[81,82,69,56,57,44,31,32,33,34,21,8,7]] },
+  ];
+  let k = 0, t = 0, prog = 0, hold = 0;
+  const COLORS = ['#00f5ff', '#ff00a0', '#ffe600', '#00ff88'];
+  return (speed) => {
+    const plan = PLANS[k], W = plan.rows[0].length, H = plan.rows.length;
+    const span = Math.max(...plan.paths.map((p) => p.length - 1));  // the plan's makespan
+    const cell = Math.min(S / W, S / H), ox = (S - W * cell) / 2, oy = (S - H * cell) / 2;
+    const at = (path, step) => path[Math.min(step, path.length - 1)];
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    // Shelves are neon blocks; floor cells stay dark.
+    ctx.save(); ctx.fillStyle = 'rgba(155,0,255,0.45)'; ctx.shadowColor = '#9b00ff'; ctx.shadowBlur = 6;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+      if (plan.rows[y][x] === '#') ctx.fillRect(ox + x * cell + 1, oy + y * cell + 1, cell - 2, cell - 2);
+    ctx.restore();
+    // Goals are hollow squares in each robot's colour.
+    plan.paths.forEach((path, i) => {
+      const g = path[path.length - 1], x = g % W, y = (g / W) | 0;
+      ctx.strokeStyle = COLORS[i % COLORS.length]; ctx.lineWidth = 1.5;
+      ctx.strokeRect(ox + x * cell + 3, oy + y * cell + 3, cell - 6, cell - 6);
+    });
+    // Robots sit between their cell at step t and step t+1, so motion looks continuous.
+    plan.paths.forEach((path, i) => {
+      const a = at(path, t), b = at(path, t + 1), col = COLORS[i % COLORS.length];
+      const ax = a % W, ay = (a / W) | 0, bx = b % W, by = (b / W) | 0;
+      const x = (ax + (bx - ax) * prog + 0.5) * cell + ox;
+      const y = (ay + (by - ay) * prog + 0.5) * cell + oy;
+      ctx.beginPath(); ctx.arc(x, y, cell * 0.33, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+    });
+    // About 8 frames per time step at speed 1. The final positions are held, then the next plan starts.
+    if ((prog += speed / 8) < 1) return;
+    prog = 0;
+    if (t < span) { t++; return; }
+    if ((hold += speed) < 90) return;
+    hold = 0; t = 0; k = (k + 1) % PLANS.length;
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

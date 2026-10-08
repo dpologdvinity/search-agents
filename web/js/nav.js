@@ -12,6 +12,7 @@ const GAMES = [
   { href: 'blackjack.html', label: 'BLACKJACK' },
   { href: 'battleship.html', label: 'BATTLESHIP' },
   { href: 'pacman.html', label: 'PAC-MAN' },
+  { href: 'warehouse.html', label: 'WAREHOUSE' },
 ];
 
 const list = document.getElementById('nav-links');

@@ -32,6 +32,7 @@ from . import (
     pacman_api,
     routes_api,
     sudoku_api,
+    warehouse_api,
 )
 from .limits import Busy, RateLimiter, SearchSlots
 
@@ -79,6 +80,7 @@ app.include_router(battleship_api.router)
 app.include_router(lightsout_api.router)
 app.include_router(blackjack_api.router)
 app.include_router(routes_api.router)
+app.include_router(warehouse_api.router)
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 

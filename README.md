@@ -14,6 +14,7 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 | **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
 | **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities; random and greedy reflex baselines | Approximate Q-learning over 12 hand-built features, trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
+| **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -140,6 +141,28 @@ Training: 3000 self-play games, seed 1, alternating the two mazes; step size 0.0
 to 0.001, discount 0.9, exploration 0.3 falling to 0.02. Over the final 25 training games
 (exploration 0.02) it averaged 600 points and won 1 in 25.
 
+### Warehouse robots: optimal cost without collisions
+
+Bottleneck map, 6 robots, 10 random instances (`python -m warehouse benchmark --layout bottleneck --robots 6 --instances 10`):
+
+| Planner | Solved | Mean sum of costs | Mean makespan | Mean collisions | Mean CBS nodes | Mean seconds |
+|---|---|---|---|---|---|---|
+| **Conflict-Based Search** | **10/10** | **52.9** | **15.5** | **0.00** | 693.6 | 0.19 |
+| Prioritized planning | 10/10 | 55.9 | 15.7 | 0.00 | - | 0.0008 |
+| Independent A\* | 0/10 | 47.7 | 14.3 | 3.80 | - | 0.0002 |
+
+Prioritized planning was suboptimal on 5 of the 10 instances (mean extra cost 3.0). Independent A* is cheapest only because its paths collide: its cost is not a valid plan.
+
+Shelf aisles, 8 robots, 10 instances (`--layout aisles --robots 8 --instances 10`):
+
+| Planner | Solved | Mean sum of costs | Mean makespan | Mean collisions | Mean CBS nodes | Mean seconds |
+|---|---|---|---|---|---|---|
+| **Conflict-Based Search** | **10/10** | **75.7** | 17.4 | **0.00** | 135.0 | 0.04 |
+| Prioritized planning | 10/10 | 79.5 | 17.1 | 0.00 | - | 0.0004 |
+| Independent A\* | 0/10 | 72.9 | 17.0 | 3.50 | - | 0.003 |
+
+Prioritized planning was suboptimal on 9 of 10 (mean extra cost 3.8).
+
 ## How it works
 
 ### N-Puzzle
@@ -207,12 +230,22 @@ Ghosts plan with A* (`pacman/search.py`, Manhattan heuristic, unit steps). The c
 
 The learned agent scores each legal move as `Q(s, a) = w · f(s, a)`, where `f` holds twelve hand-built features of the position after the move: pellet and power-pellet eating, distances to the nearest pellet and power pellet (linear, so far targets still produce a gradient), active ghosts within six cells and one step away, a fatal move, scared ghosts within eight cells, eating a scared ghost, the openness of the destination, and an interaction term for a ghost closing in on a dead end. Each turn it applies the Q-learning update `w += α (r + γ max Q(s', ·) − Q(s, a)) f(s, a)`, with a per-turn cost and a large penalty for being caught. The weights come from self-play (`python -m pacman train`). The server runs the same Python code, and the page shows each move's Q-value and each feature's contribution.
 
+### Warehouse robots
+
+Each robot moves one cell or waits per time step, and must not share a cell with another robot or swap places with it. Independent A* plans each robot alone and so ignores these rules; the paths it returns can collide.
+
+Prioritized planning plans robots in turn. Each new robot runs space-time A* around the paths of the robots already planned, including their goal cells, which stay occupied. Every plan it returns is collision-free, but early robots can take routes that cost later ones, and a later robot can be boxed in.
+
+Conflict-Based Search (Sharon et al., 2012) is optimal for sum of costs. The root plans every robot alone. If the plan collides, the first collision between robots i and j splits the search into two children: one forbids i from that cell (or that move) at that time, the other forbids j. Only the constrained robot is replanned. Nodes are expanded cheapest first, so the first collision-free plan has the minimum total arrival time. The low level is space-time A* over (cell, time) states with the static walking distance as heuristic; it is optimal for one robot under constraints. The search is capped by node and time budgets and reports why it stopped.
+
+On small random maps, a brute-force search over joint positions finds the same optimal cost as CBS; the tests check this for two robots.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -229,21 +262,23 @@ python -m pytest -q
 Command-line tools:
 
 ```bash
-python -m connect4                                   # play Connect Four against AlphaZero
-python -m game2048                                   # play 2048 with w/a/s/d
-python -m checkers --agent minimax --level 3         # play checkers against alpha-beta or minimax
-python -m lightsout --solve 110/011/101              # the fewest presses that clear a 3x3 board
-python -m blackjack                                  # play blackjack against the dealer
-python -m blackjack simulate --hands 100000          # measured return of basic strategy through a 6-deck shoe
-python -m battleship                                 # play Battleship in the terminal
-python -m battleship benchmark --games 100 --seed 1  # shots to sink a random fleet, per agent
-python -m pacman                                     # play Pac-Man in the terminal
-python -m pacman benchmark --games 200               # win rate and score for each agent
-python -m routes --compare --cities 12               # compare the TSP solvers on a random map
-python -m npuzzle astar 7,2,4,5,0,6,8,3,1            # any algorithm by name
-python -m npuzzle.benchmark 8puzzle                  # results/npuzzle_8puzzle.md
-python -m sudoku.generate --count 200                # unique-solution puzzles
-python -m sudoku solve 009000000160004023000009...   # or: python -m sudoku benchmark
+python -m connect4                                                           # play Connect Four against AlphaZero
+python -m game2048                                                           # play 2048 with w/a/s/d
+python -m checkers --agent minimax --level 3                                 # play checkers against alpha-beta or minimax
+python -m lightsout --solve 110/011/101                                      # the fewest presses that clear a 3x3 board
+python -m blackjack                                                          # play blackjack against the dealer
+python -m blackjack simulate --hands 100000                                  # measured return of basic strategy through a 6-deck shoe
+python -m battleship                                                         # play Battleship in the terminal
+python -m battleship benchmark --games 100 --seed 1                          # shots to sink a random fleet, per agent
+python -m pacman                                                             # play Pac-Man in the terminal
+python -m pacman benchmark --games 200                                       # win rate and score for each agent
+python -m warehouse                                                          # plan robot routes in the terminal
+python -m warehouse benchmark --layout bottleneck --robots 6 --instances 10  # compare the three planners
+python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
+python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
+python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md
+python -m sudoku.generate --count 200                                        # unique-solution puzzles
+python -m sudoku solve 009000000160004023000009...                           # or: python -m sudoku benchmark
 python -m game2048.benchmark greedy --games 1000
 ```
 

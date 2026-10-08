@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Ten games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Eleven games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -110,6 +110,13 @@
         <canvas class="cab-screen" data-sim="pacman" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>Q-learning</b> from self-play, 12 features</span>
         <span class="cab-desc">Ghosts plan shortest routes with A*. The agent scores every move with weights it learned by playing itself.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-orange" href="warehouse.html">
+        <span class="cab-marquee">Warehouse</span>
+        <canvas class="cab-screen" data-sim="warehouse" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>3.8</b> collisions per plan with no coordination</span>
+        <span class="cab-desc">Robots that must not bump or swap. Conflict-Based Search branches on each collision until the plan is clean and cheapest.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-green" href="routes.html">

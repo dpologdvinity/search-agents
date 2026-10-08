@@ -47,6 +47,7 @@
 .cabinet.c-cyan { --c: var(--cyan); }
 .cabinet.c-purple { --c: var(--purple); }
 .cabinet.c-green { --c: var(--green); }
+.cabinet.c-orange { --c: #ff8a00; }
 .cabinet.c-yellow { --c: var(--yellow); }
 .cabinet:hover, .cabinet:focus-visible { box-shadow: 0 0 34px var(--c), inset 0 0 30px rgba(0,0,0,0.5); outline: none; }
 .cabinet:focus-visible { transform: translateY(-3px); }

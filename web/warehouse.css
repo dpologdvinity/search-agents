@@ -1,0 +1,96 @@
+/* Warehouse page: neon floor plan, glowing robots, and the constraint tree.
+   Base layout, buttons, and panels come from style.css and app.css; this file adds the
+   warehouse-specific look only. */
+
+.wh-page .proj-game-col { min-width: 0; }
+
+/* The notice above the map is shown and hidden by the script. A hidden element normally drops out of
+   the layout, which pushes the map up and makes clicks land on the wrong cell. Keep its box in place
+   and only hide it visually. */
+.wh-page #banner { min-height: 2.6rem; }
+.wh-page #banner[hidden] { display: block; visibility: hidden; }
+
+/* ── Map stage ───────────────────────────────────────────────────────── */
+.wh-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+.wh-map-wrap {
+  width: 100%; max-width: 680px; display: flex; justify-content: center;
+  position: relative; padding: 6px; border: 2px solid var(--cyan);
+  background: #02040b; box-shadow: 0 0 30px rgba(0,245,255,0.25), inset 0 0 40px rgba(0,0,0,0.7);
+}
+/* Faint scanlines over the floor: a cheap CRT touch. Purely decorative. */
+.wh-map-wrap::after {
+  content: ''; position: absolute; inset: 6px; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 3px);
+}
+.wh-map { display: block; cursor: crosshair; max-width: 100%; }
+.wh-map.wh-readonly { cursor: default; }
+
+.wh-playback {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center;
+  width: 100%; max-width: 680px;
+}
+.wh-playback input[type=range] { flex: 1 1 160px; min-width: 120px; }
+.wh-time { font-family: var(--orb); font-size: 0.7rem; color: var(--cyan); min-width: 6.5em; text-shadow: 0 0 8px var(--cyan); }
+.wh-playback .cyber-select { width: auto; }
+
+/* ── Mode buttons ────────────────────────────────────────────────────── */
+.wh-mode { flex: 1 1 auto; }
+.wh-mode.on { background: rgba(255,0,160,0.14); box-shadow: 0 0 16px rgba(255,0,160,0.5), inset 0 0 14px rgba(255,0,160,0.15); color: #fff; }
+.wh-mode.on[data-mode=start] { background: rgba(0,245,255,0.14); box-shadow: 0 0 16px rgba(0,245,255,0.5); }
+.wh-mode.on[data-mode=goal] { background: rgba(0,255,136,0.12); box-shadow: 0 0 16px rgba(0,255,136,0.45); }
+
+/* ── Collisions list ─────────────────────────────────────────────────── */
+.wh-conflicts { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.72rem; }
+.wh-conflicts li { color: var(--red); text-shadow: 0 0 6px rgba(255,59,59,0.5); cursor: pointer; padding: 0.15rem 0.3rem; border-left: 2px solid var(--red); }
+.wh-conflicts li:hover, .wh-conflicts li.now { background: rgba(255,59,59,0.12); }
+.wh-conflicts li.none { color: var(--green); text-shadow: none; border-left-color: var(--green); cursor: default; }
+
+/* ── Constraint tree ─────────────────────────────────────────────────── */
+.wh-tree-wrap {
+  overflow: auto; max-height: 420px; min-height: 160px; border: 1px solid rgba(155,0,255,0.35);
+  background: radial-gradient(ellipse at top, rgba(155,0,255,0.12), rgba(0,0,0,0.35) 70%);
+}
+.wh-tree { display: block; }
+.wh-tree .wh-edge { stroke: rgba(155,0,255,0.55); stroke-width: 1.5; fill: none; }
+.wh-tree .wh-edge.dead { stroke: rgba(74,122,155,0.5); stroke-dasharray: 4 4; }
+.wh-tree .wh-edge-lbl { font-family: var(--mono); font-size: 10px; fill: var(--yellow); }
+.wh-tree .wh-node { cursor: pointer; }
+.wh-tree .wh-node rect { fill: rgba(2,6,16,0.92); stroke: var(--cyan); stroke-width: 1.5; }
+.wh-tree .wh-node.expanded rect { stroke: var(--purple); }
+.wh-tree .wh-node.dead rect { stroke: var(--dim); stroke-dasharray: 4 3; }
+.wh-tree .wh-node.dead { opacity: 0.45; }
+.wh-tree .wh-node.solution rect { stroke: var(--green); stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(0,255,136,0.7)); }
+.wh-tree .wh-node.now rect { stroke: var(--pink); stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(255,0,160,0.8)); }
+.wh-tree .wh-node.selected rect { stroke: #fff; }
+.wh-tree .wh-node text { font-family: var(--mono); fill: var(--text); font-size: 11px; pointer-events: none; }
+.wh-tree .wh-node .wh-title { fill: #fff; font-size: 12px; }
+.wh-tree .wh-node.solution .wh-title { fill: var(--green); }
+.wh-node-enter { animation: wh-pop 0.35s ease-out; }
+@keyframes wh-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+.wh-detail { min-height: 2.4em; white-space: pre-line; }
+
+/* ── Race ────────────────────────────────────────────────────────────── */
+.wh-race { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
+.wh-race figure { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.wh-race canvas { width: 100%; aspect-ratio: 1; border: 1px solid var(--border); background: #02040b; }
+.wh-race figcaption { font-family: var(--mono); font-size: 0.68rem; color: var(--dim); text-align: center; }
+.wh-race figure.best canvas { border-color: var(--green); box-shadow: 0 0 16px rgba(0,255,136,0.35); }
+.cmp-table tr.best td { color: var(--green); }
+/* Numeric columns: right-align the headers too, so they sit over their values. */
+.cmp-table th.num { text-align: right; }
+.cmp-table tr.bad td { color: var(--red); }
+
+/* ── Status text colours (used by the status chip and banners) ───────── */
+.wh-ok { color: var(--green); }
+.wh-warn { color: var(--yellow); }
+.wh-bad { color: var(--red); }
+
+@media (max-width: 1100px) {
+  .wh-race { grid-template-columns: 1fr; }
+  .wh-race canvas { max-width: 320px; margin: 0 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wh-node-enter { animation: none; }
+  .wh-map-wrap::after { display: none; }
+}

@@ -15,6 +15,7 @@ COPY battleship ./battleship
 COPY blackjack ./blackjack
 COPY lightsout ./lightsout
 COPY routes ./routes
+COPY warehouse ./warehouse
 COPY game2048 ./game2048
 COPY sudoku ./sudoku
 COPY server ./server
