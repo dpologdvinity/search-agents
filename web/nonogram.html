@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NONOGRAM // SEARCH AGENTS</title>
+<meta name="description" content="Picture logic puzzles. Row and column clues give runs of filled cells. The solver deduces cells line by line, then encodes the whole grid as CNF and runs DPLL with unit propagation.">
+<meta property="og:title" content="NONOGRAM // SEARCH AGENTS">
+<meta property="og:description" content="Picture logic puzzles. Row and column clues give runs of filled cells. The solver deduces cells line by line, then encodes the whole grid as CNF and runs DPLL with unit propagation.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/nonogram.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="nonogram.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">08 // BOOLEAN SATISFIABILITY · LINE SOLVING · DPLL</div>
+      <h1 class="proj-pg-title neon-cyan glitch" data-text="NONOGRAM">NONOGRAM</h1>
+      <div class="proj-pg-sub">Row and column clues give runs of filled cells. Lines are solved by dynamic programming, and the whole grid is encoded as CNF and solved by DPLL.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip">SIZE <span class="val" id="chip-size">—</span></span>
+        <span class="stat-chip green">MARKED <span class="val" id="chip-marked">0</span></span>
+        <span class="stat-chip">LINES MET <span class="val" id="chip-lines">0/0</span></span>
+        <span class="stat-chip">METHOD <span class="val" id="chip-method">HYBRID</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="nono-stage">
+        <div class="nono-wrap" id="nono-wrap">
+          <div id="nono" class="nono-board" role="grid" aria-label="Nonogram grid"></div>
+        </div>
+        <div class="field-hint" id="nono-note">Click or drag to fill. Right-click, shift-click or CROSS mode marks a cell as empty.</div>
+        <div class="inline" style="justify-content:center;flex-wrap:wrap">
+          <button class="cyber-btn" id="btn-mode" type="button" aria-pressed="false"><span class="btn-txt">◧ FILL</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-apply" type="button" disabled><span class="btn-txt">✔ APPLY HINT</span></button>
+          <button class="cyber-btn pink" id="btn-solve" type="button"><span class="btn-txt">◉ SOLVE</span></button>
+          <button class="cyber-btn" id="btn-deduce" type="button"><span class="btn-txt">▶ DEDUCE</span></button>
+          <button class="cyber-btn" id="btn-ghost" type="button" disabled><span class="btn-txt">◌ SECOND ANSWER</span></button>
+          <button class="cyber-btn" id="btn-reset" type="button"><span class="btn-txt">⟲ CLEAR MARKS</span></button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">LINE SOLVING</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="ded-title">DEDUCE runs the line solver one line at a time. Green cells are the ones it can prove.</div>
+          <div class="nono-ded-bar" aria-hidden="true"><div class="nono-ded-fill" id="ded-fill"></div></div>
+          <div class="inline" style="flex-wrap:wrap;gap:0.6rem">
+            <span class="field-hint" id="ded-count">no deduction yet</span>
+            <button class="cyber-btn" id="btn-ded-clear" type="button" disabled><span class="btn-txt">× CLEAR DEDUCTION</span></button>
+          </div>
+          <div class="field-hint" id="ded-note"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">SEARCH VIEW · SAT / DPLL</div>
+        <div class="viz-panel" id="sat-panel">
+          <div class="viz-title" id="sat-title">Solve with SAT or HYBRID to see the search. The replay is of a recorded run, not a live stream.</div>
+          <div class="nono-counters">
+            <div class="nono-counter"><span class="field-lbl">VARIABLES</span><span class="val" id="ct-vars">—</span></div>
+            <div class="nono-counter"><span class="field-lbl">CLAUSES</span><span class="val" id="ct-clauses">—</span></div>
+            <div class="nono-counter"><span class="field-lbl">DECISIONS</span><span class="val" id="ct-dec">0</span></div>
+            <div class="nono-counter"><span class="field-lbl">CONFLICTS</span><span class="val" id="ct-conf">0</span></div>
+            <div class="nono-counter"><span class="field-lbl">BACKTRACKS</span><span class="val" id="ct-back">0</span></div>
+            <div class="nono-counter"><span class="field-lbl">PROPAGATIONS</span><span class="val" id="ct-prop">0</span></div>
+          </div>
+          <div class="field-hint" id="sat-note"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">GAME LOG</div>
+        <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">PUZZLE</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PICK A PICTURE</div>
+            <select class="cyber-select" id="puzzle" style="width:100%" aria-label="Puzzle"></select>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title green-ttl">RANDOM PICTURE</div>
+        <div class="stack">
+          <div class="inline" style="gap:0.5rem">
+            <div style="flex:1">
+              <div class="field-lbl">ROWS</div>
+              <select class="cyber-select" id="rand-rows" style="width:100%" aria-label="Rows"></select>
+            </div>
+            <div style="flex:1">
+              <div class="field-lbl">COLUMNS</div>
+              <select class="cyber-select" id="rand-cols" style="width:100%" aria-label="Columns"></select>
+            </div>
+          </div>
+          <button class="cyber-btn green" id="btn-random" type="button" style="width:100%"><span class="btn-txt">↺ RANDOM</span></button>
+          <div class="field-hint">Random pictures are kept only when their solution is unique. This can take a few seconds on large sizes.</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">SOLVER</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">SOLVE METHOD</div>
+            <select class="cyber-select" id="method" style="width:100%" aria-label="Solve method">
+              <option value="hybrid" selected>Hybrid: lines plus guessing</option>
+              <option value="sat">SAT: CNF plus DPLL</option>
+              <option value="line">Line solving only</option>
+            </select>
+          </div>
+          <div class="field-hint">Solving runs on the server, so it is rate limited. Hints and deductions are cheap.</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title pink-ttl">HOW IT PLAYS</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">A LINE IS A REGULAR LANGUAGE</div>
+            <div class="field-hint">Each clue is a finite automaton over 0 and 1. Forward and backward passes over the cells say which cells a line can still take.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">ONE BOOLEAN PER CELL</div>
+            <div class="field-hint">The whole grid becomes clauses over one variable per cell. Unit propagation and conflicts drive the DPLL search.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">UNIQUE OR NOT</div>
+            <div class="field-hint">A puzzle is well posed when exactly one picture fits. The solver looks for a second picture after finding the first.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="hiw" id="how-it-works">
+    <div class="section-title">HOW IT WORKS</div>
+    <p class="hiw-lede">A nonogram gives one clue per row and one per column: the lengths of the runs of filled cells, in order. The search has to find the grid whose runs match every clue. This page runs three methods. Line solving reads one row or column at a time and proves the cells it can. SAT turns the whole grid into clauses and runs DPLL. Hybrid combines the two: propagate lines, guess a cell, and backtrack.</p>
+
+    <div class="hiw-grid">
+      <div class="hiw-card">
+        <h3>1. Line solving</h3>
+        <p class="hiw-plain"><b>New to this?</b> A clue such as <code>3 1</code> says the row has a run of three filled cells, a gap, and then one filled cell. The solver lists every way the clue can be placed on the cells, throws out placements that clash with what is already known, and keeps the cells that every surviving placement agrees on.</p>
+        <p>Each clue is a regular language. It is a finite automaton over 0 and 1 with states: <code>k runs done, no run open</code>, <code>inside run k with j cells</code>, and <code>run just ended, gap required</code>. A forward pass marks the states reachable from the start while reading the known cells. A backward pass marks the states that can still reach an accepting end. A cell can be 1 if some reachable transition on a 1 leads to a co-reachable state, and it can be 0 by the same test. Both passes are dynamic programming over positions, so one line costs O(length × runs).</p>
+        <p>The solver sweeps all rows, then all columns, and repeats until nothing changes. This is a fixed point: the cells proved so far are the only ones the lines can force.</p>
+      </div>
+
+      <div class="hiw-card">
+        <h3>2. SAT encoding</h3>
+        <p class="hiw-plain"><b>New to this?</b> SAT asks whether some true-or-false assignment to the variables makes every clause true. Here one variable says whether a cell is filled, and the clauses say that each line's clue holds.</p>
+        <p>Per line, the automaton from method 1 is unrolled over positions. A state variable <code>s[i][q]</code> means "after reading i cells the automaton is in state q". Only states that are both reachable and co-reachable get a variable, which keeps the encoding small. A transition variable ties each state to the next cell, and a biconditional clause set makes each transition variable equal the cell value that triggers it. The clue holds exactly when the automaton ends in an accepting state, which is one unit clause. Every variable and clause is counted, and the counts are reported live.</p>
+        <p>The encoding is clause-by-clause: a line of length L with S live states gives about L × S variables and a constant number of clauses per position.</p>
+      </div>
+
+      <div class="hiw-card">
+        <h3>3. DPLL with unit propagation</h3>
+        <p class="hiw-plain"><b>New to this?</b> DPLL picks a variable, guesses a value, and follows the consequences. If a clause becomes empty, the guess was wrong and the solver undoes it, then tries the other value. Unit propagation is the rule that when a clause has only one unassigned literal left, that literal must be true, so it costs nothing to set.</p>
+        <p>The solver first removes pure literals, which are variables that appear with only one sign and can be set to that sign safely. It then searches with two watched literals per clause, so propagation only visits clauses whose watch became false. Branching uses VSIDS-lite: each variable has an activity score, bumped when it takes part in a conflict and decayed after every conflict. Cell variables start with activity 1.0, so the search decides cells before the automaton helpers. Phase saving reuses the last value a variable had. Backtracking is chronological: no clause learning, so a conflict undoes the most recent guess and nothing else.</p>
+      </div>
+
+      <div class="hiw-card">
+        <h3>4. Hybrid</h3>
+        <p class="hiw-plain"><b>New to this?</b> Hybrid is the middle ground. It uses the cheap line rules as often as possible and only guesses when they stall. A guess that breaks a line is caught right away, so the search tree stays small.</p>
+        <p>Propagation runs line solving to a fixed point. If cells are still unknown, the solver picks the first unknown cell of the line with the fewest unknowns, tries 1 and then 0, and recurses. Each branch re-runs propagation, and a line with no placement left is a contradiction that undoes the guess. A node budget stops the search, and the answer is then reported as undecided rather than guessed.</p>
+      </div>
+
+      <div class="hiw-card">
+        <h3>5. Uniqueness</h3>
+        <p class="hiw-plain"><b>New to this?</b> A good puzzle has exactly one picture that fits the clues. To check, the solver finds one picture, then searches for a second one that differs in at least one cell. If none exists, the puzzle is unique.</p>
+        <p>SAT adds a blocking clause that forbids the cell values of the first picture, then solves again. If that is unsatisfiable, there is no second picture. Hybrid counts solutions instead, and stops at two. Random pictures are kept only when this check passes within its node budget.</p>
+      </div>
+    </div>
+
+    <div class="hiw-sub">HEURISTICS AND PARAMETERS</div>
+    <div class="hiw-scroll">
+      <table class="hiw-table">
+        <thead>
+          <tr><th>PARAMETER</th><th>VALUE</th><th>USED BY</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>VSIDS decay</td><td>0.95 per conflict</td><td>DPLL branching (SAT)</td></tr>
+          <tr><td>Initial activity</td><td>1.0 for cell variables, 0 for automaton helpers</td><td>DPLL branching (SAT)</td></tr>
+          <tr><td>Default phase</td><td>false, then phase saving</td><td>DPLL (SAT)</td></tr>
+          <tr><td>Propagation budget, server SAT</td><td>600,000 propagations</td><td>SAT solve endpoint</td></tr>
+          <tr><td>Propagation budget, benchmark</td><td>5,000,000 propagations</td><td>benchmark runs</td></tr>
+          <tr><td>Guess budget, server hybrid</td><td>2,000 search nodes</td><td>hybrid solve endpoint</td></tr>
+          <tr><td>Event cap</td><td>4,000 recorded events</td><td>search replay on this page</td></tr>
+          <tr><td>Random picture noise</td><td>3x3 random blobs, bilinear upscale, threshold 0.5</td><td>random generator</td></tr>
+          <tr><td>Random picture density</td><td>30% to 70% filled</td><td>random generator</td></tr>
+          <tr><td>Random attempts</td><td>up to 40 pictures</td><td>random generator</td></tr>
+          <tr><td>Uniqueness node budget</td><td>300 nodes per check</td><td>random generator</td></tr>
+          <tr><td>Sizes</td><td>5 to 20 per side (server maximum 25)</td><td>picker and random generator</td></tr>
+          <tr><td>Solve rate</td><td>30 requests per minute per client</td><td>solve endpoint</td></tr>
+          <tr><td>Hint rate</td><td>120 requests per minute per client</td><td>hint endpoint</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hiw-note">The budgets and thresholds were chosen by measuring the solver on the benchmark puzzles, with the server's 1 GB, shared-CPU limits in mind. They were not tuned to make a particular puzzle pass. A budget that is hit is reported as undecided, so a slow case never returns a wrong answer. The decay and the activity boost follow common SAT practice rather than a search over values. Run <code>python -m nonogram benchmark</code> to see the counts for the puzzles shipped here.</p>
+
+    <div class="hiw-src">
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/automaton.py">nonogram/automaton.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/lines.py">nonogram/lines.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/cnf.py">nonogram/cnf.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/dpll.py">nonogram/dpll.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py">nonogram/solvers.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/puzzle.py">nonogram/puzzle.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/library.py">nonogram/library.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/nonogram_api.py">server/nonogram_api.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nonogram.js">web/js/nonogram.js</a>
+    </div>
+  </section>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/nonogram.js"></script>
+</body>
+</html>

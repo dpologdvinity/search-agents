@@ -34,6 +34,7 @@ from . import (
     hexgame_api,
     lightsout_api,
     minesweeper_api,
+    nonogram_api,
     npuzzle_api,
     pacman_api,
     poker_api,
@@ -105,6 +106,7 @@ app.include_router(queens_api.router)
 app.include_router(snake_api.router)
 app.include_router(rover_api.router)
 app.include_router(tetris_api.router)
+app.include_router(nonogram_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)

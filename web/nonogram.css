@@ -1,0 +1,161 @@
+/* Nonogram page. Loaded after style.css and app.css. The board sets --rows and --cols on
+   .nono-board from nonogram.js; --cell is the square size of one cell, which shrinks on narrow
+   screens so a 20-column grid still fits 390 px wide (the wrapper scrolls if it cannot). */
+
+.nono-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; min-width: 0; }
+
+/* The frame around the board: a neon border with a faint scanline texture. */
+.nono-wrap {
+  max-width: 100%; overflow: auto; padding: 14px; border: 2px solid var(--cyan);
+  background: rgba(2,6,16,0.88);
+  background-image: repeating-linear-gradient(0deg, rgba(0,245,255,0.035) 0 1px, transparent 1px 3px);
+  box-shadow: 0 0 28px rgba(0,245,255,0.28), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite;
+}
+
+/* One CSS grid holds the corner, the column clues, the row clues and the cells. Row 1 is the column
+   clue strip and column 1 is the row clue strip, so each clue lines up with its line of cells. */
+.nono-board {
+  --cell: max(14px, min(30px, calc((100vw - 150px) / var(--cols))));
+  display: grid;
+  grid-template-columns: auto repeat(var(--cols), var(--cell));
+  grid-template-rows: auto repeat(var(--rows), var(--cell));
+  gap: 0;
+  width: max-content;
+  font-family: var(--mono);
+}
+
+/* Column clues stack from the bottom of the strip, so the number nearest the grid is the last run. */
+.nono-ccol {
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  padding: 0 1px 6px; font-size: clamp(0.5rem, 1.2vw, 0.66rem); line-height: 1.15; color: var(--dim);
+  font-variant-numeric: tabular-nums; white-space: nowrap; min-width: var(--cell);
+}
+.nono-ccol span { display: block; }
+
+/* Row clues sit to the left of their line, right-aligned, runs separated by a space. */
+.nono-rclue {
+  display: flex; justify-content: flex-end; align-items: center; gap: 0.35rem; padding-right: 8px;
+  font-size: clamp(0.5rem, 1.2vw, 0.66rem); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.nono-rclue span { display: inline-block; }
+
+/* A clue whose line matches the player's marks gets a green tick and turns green. */
+.nono-ccol.done, .nono-rclue.done { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.6); }
+.nono-ccol.done::before { content: "✓"; display: block; text-align: center; }
+.nono-rclue.done::before { content: "✓"; margin-right: 2px; }
+
+/* A clue whose line was just flashed by the line solver or the hint. */
+.nono-ccol.lit, .nono-rclue.lit { color: var(--yellow); text-shadow: 0 0 8px rgba(255,230,0,0.7); }
+
+/* Cells. Each cell is a button so the keyboard works; the state is a class, set by nonogram.js. */
+.nono-cell {
+  position: relative; width: var(--cell); height: var(--cell); padding: 0; margin: 0; cursor: pointer;
+  border: 1px solid rgba(0,245,255,0.14); background: rgba(5,13,26,0.95);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  transition: background 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+/* Every fifth line is brighter, so the eye can count to a cell. */
+.nono-cell.e-r { border-right-color: rgba(0,245,255,0.45); }
+.nono-cell.e-b { border-bottom-color: rgba(0,245,255,0.45); }
+.nono-cell:hover { border-color: var(--pink); }
+.nono-cell:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; z-index: 1; }
+
+/* Filled by the player: a glowing cyan light. */
+.nono-cell.f {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #9feeff 35%, var(--cyan) 75%, #0a7d8a);
+  box-shadow: 0 0 12px rgba(0,245,255,0.75), inset 0 -3px 0 rgba(0,0,0,0.25);
+  border-color: rgba(0,245,255,0.9);
+}
+/* Crossed by the player: two red strokes, the usual nonogram mark for "empty". */
+.nono-cell.x::before, .nono-cell.x::after {
+  content: ""; position: absolute; left: 18%; right: 18%; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--red, #ff3b3b); box-shadow: 0 0 6px rgba(255,59,59,0.7);
+}
+.nono-cell.x::before { transform: rotate(45deg); }
+.nono-cell.x::after { transform: rotate(-45deg); }
+
+/* The line solver's deductions, drawn over the player's marks so they never overwrite progress. */
+.nono-cell.dd1 { box-shadow: inset 0 0 0 3px rgba(0,255,136,0.85), 0 0 10px rgba(0,255,136,0.6); }
+.nono-cell.dd1::after {
+  content: ""; position: absolute; inset: 22%; background: var(--green); box-shadow: 0 0 8px var(--green);
+  opacity: 0.85;
+}
+.nono-cell.dd0::after {
+  content: ""; position: absolute; left: 30%; right: 30%; top: 30%; bottom: 30%;
+  border: 1px solid rgba(0,255,136,0.7); background: transparent; opacity: 0.8;
+}
+
+/* The solution after SOLVE: each filled cell flickers in, staggered by its row (see --d). */
+.nono-cell.sol { animation: nono-reveal 0.55s steps(4, end) both; animation-delay: var(--d, 0ms); }
+.nono-cell.sol.f { box-shadow: 0 0 14px var(--pink), inset 0 0 8px rgba(255,255,255,0.5); }
+.nono-cell.sol:not(.f) {
+  background: rgba(255,0,160,0.55); border-color: var(--pink); box-shadow: 0 0 10px rgba(255,0,160,0.8);
+}
+@keyframes nono-reveal {
+  0% { opacity: 0; filter: hue-rotate(0deg) brightness(2); transform: scale(0.6); }
+  25% { opacity: 1; transform: translateX(-2px); }
+  50% { transform: translateX(2px); filter: hue-rotate(120deg) brightness(1.6); }
+  75% { transform: translateX(-1px); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+/* The second answer when the picture is not unique: dashed yellow outline. */
+.nono-cell.ghost { outline: 2px dashed var(--yellow); outline-offset: -4px; }
+
+/* The hint: a yellow cell that pulses. */
+.nono-cell.hint { animation: nono-pulse 0.9s ease-in-out infinite; border-color: var(--yellow); }
+@keyframes nono-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,230,0,0.9), inset 0 0 6px rgba(255,230,0,0.4); }
+  50% { box-shadow: 0 0 16px 4px rgba(255,230,0,0.9), inset 0 0 10px rgba(255,230,0,0.6); }
+}
+
+/* Lines flashed by DEDUCE or a contradicting hint: the whole row or column brightens briefly. */
+.nono-cell.lineflash { animation: nono-lineflash 0.5s ease-out; }
+@keyframes nono-lineflash {
+  0% { background: rgba(255,230,0,0.45); }
+  100% { background: rgba(5,13,26,0.95); }
+}
+.nono-cell.bad { animation: nono-bad 0.6s ease-out 2; }
+@keyframes nono-bad {
+  0%, 100% { background: rgba(5,13,26,0.95); }
+  50% { background: rgba(255,59,59,0.55); }
+}
+
+/* A decision in the SAT replay: the cell flashes its value (cyan for 1, pink for 0). */
+.nono-cell.dec-1 { animation: nono-dec1 0.35s ease-out; }
+.nono-cell.dec-0 { animation: nono-dec0 0.35s ease-out; }
+@keyframes nono-dec1 { 0% { background: rgba(0,245,255,0.9); } 100% { background: rgba(5,13,26,0.95); } }
+@keyframes nono-dec0 { 0% { background: rgba(255,0,160,0.8); } 100% { background: rgba(5,13,26,0.95); } }
+
+/* Deduction progress bar. */
+.nono-ded-bar { height: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.4); overflow: hidden; }
+.nono-ded-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--cyan)); box-shadow: 0 0 10px var(--green); transition: width 0.12s linear; }
+
+/* The search counters: a grid of big numbers that bump when they change. */
+.nono-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.nono-counter { border: 1px solid var(--border); background: rgba(0,0,0,0.35); padding: 0.45rem 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.nono-counter .val { font-family: var(--orb); font-size: 1.05rem; color: var(--cyan); font-variant-numeric: tabular-nums; }
+.nono-counter .val.bump { animation: nono-bump 0.25s ease-out; }
+.nono-counter.conflict .val { color: var(--red, #ff3b3b); }
+@keyframes nono-bump { 0% { transform: scale(1.35); color: var(--yellow); } 100% { transform: none; } }
+
+/* The method toggle is lit while it is in CROSS mode. */
+#btn-mode[aria-pressed="true"] { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 16px rgba(255,0,160,0.5); }
+#btn-ghost[aria-pressed="true"] { border-color: var(--yellow); color: var(--yellow); }
+.cyber-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Log lines that the page writes, coloured like the other game logs. */
+#log { font-family: var(--mono); font-size: 0.78rem; line-height: 1.45; }
+#log div { margin: 0 0 0.15rem; }
+
+@media (max-width: 720px) {
+  .nono-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nono-wrap { padding: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nono-wrap, .nono-cell.sol, .nono-cell.hint, .nono-cell.dec-1, .nono-cell.dec-0,
+  .nono-cell.lineflash, .nono-cell.bad { animation: none; }
+  .nono-ded-fill { transition: none; }
+}

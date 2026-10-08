@@ -1577,8 +1577,83 @@ function tetrisSim(ctx, S) {
   };
 }
 
+function nonogramSim(ctx, S) {
+  // A 10x10 hand-drawn picture. Its clues are computed from the picture, then the rows are revealed one at a
+  // time, as the line solver fixes whole lines. A yellow scan bar marks the row being solved, and the picture
+  // mirrors on each loop. Cheap: no server calls, and the clues are only recomputed when the picture changes.
+  const n = 10, M = S * 0.2, cell = (S - M) / n;
+  const ART = ['..#....#..', '...#..#...', '..######..', '.##.##.##.', '##########',
+               '#.######.#', '#.#....#.#', '...##.##..', '..........', '..........'];
+  const runs = (vals) => {
+    const out = []; let k = 0;
+    for (const v of vals) { if (v) k++; else if (k) { out.push(k); k = 0; } }
+    if (k) out.push(k);
+    return out.length ? out : [0];
+  };
+  let pic, rowClues, colClues, flip = false;
+  const setPic = () => {
+    pic = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const ch = ART[r][flip ? n - 1 - c : c];
+      pic.push(ch === '#' ? 1 : 0);
+    }
+    rowClues = [...Array(n)].map((_, r) => runs(pic.slice(r * n, r * n + n)));
+    colClues = [...Array(n)].map((_, c) => runs([...Array(n)].map((_, r) => pic[r * n + c])));
+  };
+  setPic();
+  const shown = new Uint8Array(n * n);
+  let row = -1, hold = 0, phase = 'reveal';
+  ctx.font = '9px JetBrains Mono, monospace';
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const i = r * n + c, on = shown[i];
+      const x = M + c * cell, y = M + r * cell;
+      ctx.fillStyle = on ? C.cyan : 'rgba(0,245,255,0.06)';
+      ctx.shadowColor = C.cyan;
+      ctx.shadowBlur = on ? 10 : 0;
+      ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+    }
+    ctx.shadowBlur = 0;
+    // Clues: a row that is revealed turns green; the others stay dim.
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let r = 0; r < n; r++) {
+      ctx.fillStyle = r <= row ? C.green : C.dim;
+      ctx.fillText(rowClues[r].join(' '), M - 4, M + r * cell + cell / 2);
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    for (let c = 0; c < n; c++) {
+      ctx.fillStyle = C.dim;
+      colClues[c].forEach((v, k) => {
+        const off = colClues[c].length - k;
+        ctx.fillText(String(v), M + c * cell + cell / 2, M - 3 - (off - 1) * 9);
+      });
+    }
+    if (row >= 0 && row < n) {
+      ctx.fillStyle = C.yellow;
+      ctx.fillRect(M, M + row * cell, S - M, 2);
+    }
+    // Advance: a row every 18 ticks, a hold after the last row, then restart on the mirrored picture.
+    if (phase === 'reveal') {
+      if ((hold += speed) < 18) return;
+      hold = 0;
+      row++;
+      if (row < n) for (let c = 0; c < n; c++) shown[row * n + c] = pic[row * n + c];
+      else phase = 'hold';
+    } else if ((hold += speed) > 140) {
+      shown.fill(0);
+      row = -1; hold = 0; phase = 'reveal';
+      flip = !flip;
+      setPic();
+    }
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim, nonogram: nonogramSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

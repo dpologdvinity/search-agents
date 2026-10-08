@@ -1,6 +1,6 @@
 # search-agents
 
-Twenty-three puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Twenty-four puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -27,6 +27,7 @@ Twenty-three puzzles and games, each played or solved by a classic AI algorithm:
 | **Snake** | Genetic algorithm evolving a 339-weight net (no gradients): tournament selection, uniform crossover, Gaussian mutation, elitism, fresh boards each generation | BFS path planner to the food with a tail-chasing safety check, as the classic baseline | The net's decision in each frame: senses (including room to move), hidden units lit, and the output probabilities |
 | **Rover** (D* Lite on a map learned from a sensor) | D* Lite incremental replanning, which repairs only the cells a new wall affects, against A* replanned from scratch | None: the rover learns the map from its sensor, not from training | The learned map, the planned route and its replans, and the expansion counts of both planners |
 | **Tetris** (placement search) | Placement search over every rotation and column, scored by nine board features; a genetic algorithm tunes the weights | None for play: the hand-picked weights are the default. The GA-tuned weights are a comparison, and they do worse on held-out games | The chosen placement as a ghost, the nine feature values, and the GA's weight history |
+| **Nonogram** | Line solving by automaton reachability (the clue as a finite automaton, forward and backward sweeps over the cells), then DPLL SAT or a guess-and-propagate search where line solving stops | None: the answer is exact once the search finishes, and the solver counts solutions to prove uniqueness | Each row and column's forced cells, the DP over positions, the SAT search counters, and the hint's reason for each cell |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -286,6 +287,22 @@ The GA was trained on 10-row games capped at 2,500 pieces, with 6 games per geno
 At 2,000 pieces every surviving strategy sits at the ceiling: a steady stack clears 4 cells per piece over 10 cells per line, so 2,000 pieces allow at most 800 lines. The table cannot tell them apart. Supplementary run, not committed: greedy only, 20,000-piece cap, 12 games, hand-picked 7,998.0 mean lines (12 of 12 hit the cap); v1 GA-tuned 7,413.6 (11 of 12 hit the cap; one game topped out at piece 2,536).
 
 The page plays the 10x20 game, but the committed GA weights come from the 10-row tuning. The page's GA panel says plainly that the hand-picked weights do better on held-out games. Each slider shows its live value and the GA value beside it.
+
+### Nonogram: how far line solving gets, and what search costs
+
+Twelve hand-drawn pictures (5x5 to 20x20) plus ten seeded random pictures each of 10x10, 15x15 and 20x20, all with exactly one solution. From `results/nonogram_benchmark.md`:
+
+| Group | Puzzles | Line solving alone finishes | Hybrid median / max (s) | SAT median / max (s) |
+|---|---:|---:|---:|---:|
+| Library | 12 | 10 | 0.010 / 0.11 | 0.12 / 3.4 |
+| Random 10x10 | 10 | 10 | 0.004 / 0.008 | 0.046 / 0.13 |
+| Random 15x15 | 10 | 10 | 0.013 / 0.075 | 0.28 / 0.56 |
+| Random 20x20 | 10 | 9 | 0.055 / 0.54 | 1.4 / 6.3 |
+| All | 42 | 39 | 0.012 / 0.54 | 0.20 / 6.3 |
+
+Line solving alone finishes 39 of 42 puzzles. The three it cannot finish are the smiley (8x8), the rocket (17x15 in the table's rows-by-columns order), and one random 20x20. The hybrid needs 6 to 32 guesses on those three, and SAT needs 0.04 to 3.4 s.
+
+**The SAT solver is slower than the hybrid on 41 of the 42 puzzles, not all of them.** It has no clause learning (this is DPLL, not CDCL), and every decision re-propagates the whole formula. The exception is the smiley, where SAT takes 0.041 s and the hybrid takes 0.047 s, because the hybrid needs 14 guesses there. The random pictures are mostly line-solvable because the generator draws smooth blobs, which a line reads easily; the search methods are therefore exercised mainly by the library pictures. Times are from one run at a time on the development laptop (WSL2, cores pinned with taskset), so they are a relative guide.
 
 ### Endgame tablebases: exact distance to mate
 
@@ -610,12 +627,20 @@ The snake senses its surroundings in its own frame: danger, free run, food and t
 - **Genetic tuning** (`tetris/evolve.py`). Population, games per genome, and generations are the CLI defaults (16, 6, 16). Each generation draws fresh seeds, shared by the whole generation, so the weights are not tuned to one fixed set of games.
 - **Checks** (`tests/test_tetris.py`, `tests/test_server_tetris.py`). Features, line clears and placements, and a node parity test of the JavaScript engine against the Python search.
 
+### Nonogram
+
+- **Clue automaton** (`nonogram/automaton.py`). A clue such as (3, 1) is a regular language over empty and filled cells, and a small deterministic automaton recognises the lines that satisfy it.
+- **Line solving** (`nonogram/lines.py`). For one line, a forward sweep marks the automaton states reachable after each prefix and a backward sweep marks the states from which the rest can still complete. A cell's value is forced when only one value survives both sweeps; the answer is exact without listing the arrangements.
+- **Hybrid search** (`nonogram/solvers.py`). Line passes until nothing changes, then a guess on the most constrained line's first unknown cell, with backtracking. Uniqueness is checked by counting solutions up to a limit.
+- **SAT** (`nonogram/cnf.py`, `nonogram/dpll.py`). The whole puzzle becomes a CNF formula over the cells and the automaton states, solved by DPLL with unit propagation, phase saving and chronological backtracking. No clause learning.
+- **Checks** (`tests/test_nonogram.py`, `tests/test_server_nonogram.py`). Solver and encoding agreement, library uniqueness, the CLI, and the router.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/ rover/ tetris/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/ rover/ tetris/ nonogram/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -693,6 +718,12 @@ python -m tetris play [--seed N]                                             # t
 python -m tetris watch --pieces 300                                          # the agent plays a seeded game
 python -m tetris evolve                                                      # GA on the 10-row board; writes tetris/tuned.json and results/tetris_train_log.jsonl
 python -m tetris benchmark --height 10 --cap 100000 --no-lookahead --out results/tetris_benchmark_hard
+python -m nonogram                                  # play the first library picture (rows and columns counted from 1)
+python -m nonogram play --puzzle rocket             # a library picture: f r c fills, x r c crosses, h hints, s shows the solution
+python -m nonogram play --random 12x12 --seed 7     # a random picture with a unique solution
+python -m nonogram solve --puzzle cat --method sat --stats   # line, hybrid, or sat; prints the search counters
+python -m nonogram random 10x10 --seed 3 --solve    # clues of a random unique picture
+python -m nonogram benchmark --write                # the full run in results/nonogram_benchmark.*
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

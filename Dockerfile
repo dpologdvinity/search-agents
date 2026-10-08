@@ -20,6 +20,7 @@ COPY queens ./queens
 COPY snake ./snake
 COPY rover ./rover
 COPY tetris ./tetris
+COPY nonogram ./nonogram
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle

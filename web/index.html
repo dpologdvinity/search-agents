@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Twenty-three puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, and placement search.">
+<meta name="description" content="Twenty-four puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, and DPLL SAT solving.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Twenty-three puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, and placement search.">
+<meta property="og:description" content="Twenty-four puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, and DPLL SAT solving.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Twenty-three games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Twenty-four games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -222,6 +222,13 @@
         <canvas class="cab-screen" data-sim="tetris" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>0.4</b> lines per piece is the most a stack can clear in steady state</span>
         <span class="cab-desc">Every rotation and column is scored by nine board features. Hand-picked weights do the playing; the genetic algorithm's weights are there to compare, and you can drag the sliders yourself.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-orange" href="nonogram.html">
+        <span class="cab-marquee">Nonogram</span>
+        <canvas class="cab-screen" data-sim="nonogram" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>Unique</b> random pictures are kept only when exactly one solution fits</span>
+        <span class="cab-desc">Each clue is a regular language. Line solving proves cells row by row, and the whole grid goes to DPLL when the lines stall.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>

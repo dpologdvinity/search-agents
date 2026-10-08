@@ -25,6 +25,7 @@ const GAMES = [
   { href: 'snake.html', label: 'SNAKE' },
   { href: 'rover.html', label: 'ROVER' },
   { href: 'tetris.html', label: 'TETRIS' },
+  { href: 'nonogram.html', label: 'NONOGRAM' },
 ];
 
 const list = document.getElementById('nav-links');
