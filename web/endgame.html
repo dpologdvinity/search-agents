@@ -129,6 +129,67 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The agent never searches. Every legal move is looked up in a complete table of king and queen (or rook) against a lone king, which was solved offline by retrograde analysis: working backwards from checkmate, each position gets its exact distance to mate, or is marked a draw. The agent plays the fastest win when it is winning and the longest defence when it is losing.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Retrograde analysis</h3>
+      <p class="hiw-plain"><b>New to this?</b> Most search starts where you are and asks what follows. Retrograde analysis starts at the end and asks what leads to it. Mark the exit of a maze, then every square one step from the exit, then every square one step from those. The whole maze is labelled in one pass, without walking any route through it.</p>
+      <p>The solver in <code>endgame/retro.py</code> seeds every checkmate with distance 0 and queues it. It pops positions in order of distance and visits each one's predecessors, the positions one quiet move earlier. If the popped position is a loss for the side to move, its predecessor is a win one ply deeper. If it is a win, the move into it is bad for the predecessor, so that position's count of legal moves drops by one. When the count reaches zero, every move loses, and the predecessor is a loss one ply deeper than the last reply decided.</p>
+      <ul>
+        <li>Positions that are never decided are draws.</li>
+        <li>A capture never decrements a count: taking the piece leaves king against king, which is a draw.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Distance to mate</h3>
+      <p class="hiw-plain"><b>New to this?</b> Distance to mate is the number of moves left before checkmate if both sides play perfectly. Picture a countdown to a finish line. The side that is winning wants the number small. The side that is losing wants it large, because that is how long it can hold out.</p>
+      <p>The table counts plies (half-moves). An odd code means the side to move wins in that many plies. An even code means it is being mated, and 0 means already checkmated.</p>
+      <ul>
+        <li>65534 marks a draw and 65535 an illegal tuple.</li>
+        <li>65533 appears only while the solver runs, and every one is replaced by a draw before the table is saved.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Table lookup</h3>
+      <p class="hiw-plain"><b>New to this?</b> The agent does not work the answer out. It reads it from an answer key. For each legal move it reads the stored result of the position that move creates, from its own side's point of view, and picks the best entry.</p>
+      <p><code>best_move</code> in <code>endgame/tablebase.py</code> ranks each move with a key. A win beats a draw, and a draw beats a loss. Among wins the fewest plies is best. Among losses the most plies is best. The lone king and the side with the piece use the same key, so one rule gives the fast mate and the longest defence. Ties go to the move generated first.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Checking the table</h3>
+      <p class="hiw-plain"><b>New to this?</b> A proofreader checks each entry against the rules without trusting whoever wrote it. A winning entry needs a move into a loss one ply shallower, and no faster win. A losing entry needs only winning replies, and the slowest of them must be exactly one ply shorter.</p>
+      <p><code>check_positions</code> in <code>endgame/retro.py</code> applies that definition to every legal position, without calling the solver. <code>python -m endgame build</code> runs it after every rebuild.</p>
+      <ul>
+        <li>KQK: 0 problems in 368,452 entries. KRK: 0 problems in 399,112 entries.</li>
+        <li>As a test of the checker, 20 corrupted entries in a copy of the table produced 51 reported problems.</li>
+      </ul>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Rules and parameters</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>What it means</th><th class="num">Value</th></tr></thead><tbody>
+    <tr><td>Squares</td><td>Numbered a1 = 0, b1 = 1, through h8 = 63</td><td class="num">64</td></tr>
+    <tr><td>Table index</td><td>(white king × 64 + piece) × 64 + black king, then × 2 + side to move</td><td class="num">524,288 entries, 1 MiB as uint16</td></tr>
+    <tr><td>Legal positions</td><td>Tuples that can occur in a game</td><td class="num">KQK 368,452 (70%) · KRK 399,112 (76%)</td></tr>
+    <tr><td>Longest win</td><td>Mate for the side to move, in plies</td><td class="num">KQK 19 (10 moves) · KRK 31 (16 moves)</td></tr>
+    <tr><td>Longest defence</td><td>Mated for the lone king, in plies</td><td class="num">KQK 20 (10 moves) · KRK 32 (16 moves)</td></tr>
+    <tr><td>Stored file</td><td>Compressed table committed to the repo</td><td class="num">kqk.npz 145 KB · krk.npz 153 KB</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Rules: the pieces move as in chess (king, queen, rook), with no pawns, so no promotion or castling. A black king that takes the piece ends in king against king, a draw. The 50-move rule is not applied, so every distance is pure distance to mate.</p>
+
+  <h3 class="hiw-sub">Outcome counts</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Positions</th><th class="num">KQK</th><th class="num">KRK</th></tr></thead><tbody>
+    <tr><td>White to move, won</td><td class="num">144,508</td><td class="num">175,168</td></tr>
+    <tr><td>Black to move, lost</td><td class="num">200,896</td><td class="num">201,700</td></tr>
+    <tr><td>Black to move, drawn</td><td class="num">23,048</td><td class="num">22,244</td></tr>
+  </tbody></table></div>
+
+  <p class="hiw-note"><b>How these were chosen:</b> nothing is tuned or learned. The moves are the chess rules for these pieces, and the sentinel codes sit at the top of the uint16 range so no real distance can collide with them. The solver is exact, so there is no training. Solve times were 4.9 s (KQK) and 4.4 s (KRK) on a quiet laptop, and 25.0 s and 34.3 s on a shared one. The solver was the same in both runs.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py">endgame/retro.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py">endgame/tablebase.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py">endgame/rules.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md">results/endgame_stats.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.json">results/endgame_stats.json</a></p>
+</section>
 </div>
 </div>
 

@@ -149,6 +149,81 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Pac-Man steps first each turn, then every ghost steps. The ghosts plan routes with A* search. The learned agent scores each legal move as a weighted sum of 13 hand-designed features, with weights learned from 3000 self-play games.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>A* route search (the ghosts)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A* finds a shortest path by always trying the road that looks shortest so far, with a rough guess of how far is left. The guess steers it toward the goal, so it checks far fewer routes than trying every one.</p>
+      <p>Each ghost picks a target cell every turn and runs A* to it, with Manhattan distance (ignoring walls) as the guess. Targets by personality:</p>
+      <ul>
+        <li><b>Chaser</b>: Pac-Man's cell.</li>
+        <li><b>Ambusher</b>: 4 cells ahead of Pac-Man in his last direction, stopping at a wall.</li>
+        <li><b>Scatter</b>: Pac-Man's cell, until he is within 4 Manhattan cells; then its corner.</li>
+      </ul>
+      <p>Neon Lanes has three ghosts (chaser, ambusher, scatter). Vault adds a second chaser as the fourth. A scared ghost plans nothing and steps to the neighbour farthest from Pac-Man.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Approximate Q-learning</h3>
+      <p class="hiw-plain"><b>New to this?</b> Rate each move with a checklist ("eats a pellet, +7", "ghost close, -20"). After each turn, compare the score you expected with what happened, and nudge the numbers to shrink the gap. Over thousands of games they settle into ratings that pick good moves.</p>
+      <p>For each legal move the agent computes Q(s, a) = w · f(s, a): f is the 13-feature vector after that move, w the weights. It takes the highest Q, breaking exact ties at random, and in training sometimes moves at random instead (epsilon-greedy). After each turn:</p>
+      <ul>
+        <li>target = r + γ · max Q(s′, ·), or just r if the game ended</li>
+        <li>δ = target − Q(s, a)</li>
+        <li>w<sub>i</sub> += α · δ · f<sub>i</sub>(s, a)</li>
+      </ul>
+      <p>The max uses the best move from the next position, not the one exploration picked (Watkins' off-policy form). Training reward: points this turn, minus 1, minus 300 if caught.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Survival lookahead (one feature)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A lookahead plays the game forward in imagination to see where a move leads, the way a chess player follows a few replies before moving.</p>
+      <p>For each legal move, the survival feature replays the game with the real ghost logic and counts how many of the next 6 turns Pac-Man survives under his best survival play. Results are cached, so one search serves every move in a turn. It is exact for the ghost AI, except a scared ghost's random tie-break uses a fixed seed.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Reflex rule (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A reflex is a fixed rule of thumb, like "if the car ahead brakes, brake." It reacts to the current turn and does not plan ahead.</p>
+      <p>Each move is scored and the highest wins: onto an active ghost, -1000; one step from an active ghost, -80; two steps, -40; onto a scared ghost, +50; otherwise minus the walking distance to the nearest pellet. These values were hand-written, not tuned.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Random (floor)</h3>
+      <p class="hiw-plain"><b>New to this?</b> It rolls a die at each junction. It sets the floor any real strategy should beat.</p>
+      <p>Picks uniformly among legal moves.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Features and learned weights</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>bias</td><td>Constant 1. Learns the typical value of a turn.</td><td class="num">-235.120829</td></tr>
+    <tr><td>pellet</td><td>1 if the move eats a pellet.</td><td class="num">7.756391</td></tr>
+    <tr><td>power</td><td>1 if the move eats a power pellet.</td><td class="num">44.070686</td></tr>
+    <tr><td>food</td><td>Walking distance to the nearest pellet, / 10 (0 when none remains or none is reachable).</td><td class="num">-70.833204</td></tr>
+    <tr><td>capsule</td><td>Walking distance to the nearest power pellet, / 10 (0 when none remains or none is reachable).</td><td class="num">-21.920583</td></tr>
+    <tr><td>ghost_near</td><td>Sum over active ghosts of max(0, 1 - d / 6), d = walking distance from the move.</td><td class="num">-19.740337</td></tr>
+    <tr><td>ghost_adjacent</td><td>1 if an active ghost is one step from the move.</td><td class="num">2.239702</td></tr>
+    <tr><td>caught</td><td>1 if an active ghost stands on the destination (fatal).</td><td class="num">-8.093631</td></tr>
+    <tr><td>scared_near</td><td>Sum over scared ghosts of max(0, 1 - d / 8), for d at least 1.</td><td class="num">9.086833</td></tr>
+    <tr><td>eat_ghost</td><td>1 if the move lands on a scared ghost.</td><td class="num">132.440589</td></tr>
+    <tr><td>openness</td><td>Open neighbours of the destination, / 4. Low values are dead ends.</td><td class="num">6.309821</td></tr>
+    <tr><td>trap</td><td>ghost_near × (1 - openness): a ghost closing in on a dead end.</td><td class="num">10.416065</td></tr>
+    <tr><td>survival</td><td>Turns Pac-Man survives after the move (up to 6), / 6.</td><td class="num">319.341411</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The features and their scales (ranges of 6 and 8 cells, distance divided by 10, openness by 4, survival by 6) were designed by hand; distance is linear so far targets keep a gradient. The weights were not set by hand: training started from zeros and learned all 13. The reward constants (1 per turn, 300 for being caught) are hand-set, and the point values come from the game rules. No tuning sweep over any of these is committed. Features overlap, so read weights together: survival's 319.34 is about 53 per extra surviving turn (319.34 / 6).</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">Self-play alternates between Neon Lanes and Vault for 3000 games, trainer seed 1, starting from zero weights. Step size α falls linearly from 0.01 to 0.001 over the run. Discount γ is 0.9. Exploration ε falls linearly from 0.3 to 0.02 over the first 2400 games, then stays at 0.02. Games stop at 300 turns. These are the trainer's defaults, and the trained block in weights.json records the same settings. The last 25 training games, at ε = 0.02, averaged 852 points and 5 wins. Those are training games, not the benchmark.</p>
+
+  <h3 class="hiw-sub">Results on fixed seeds</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Win rate</th><th class="num">Mean score</th><th class="num">Mean turns</th></tr></thead><tbody>
+    <tr class="best"><td>Q-learning</td><td class="num">64.2%</td><td class="num">1350.3</td><td class="num">193.9</td></tr>
+    <tr><td>Reflex</td><td class="num">0.5%</td><td class="num">157.5</td><td class="num">22.8</td></tr>
+    <tr><td>Random</td><td class="num">0.0%</td><td class="num">45.5</td><td class="num">8.9</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">200 games per maze (400 per agent), seeds 10000 to 10199, chosen apart from the trainer's own game seeds. Q-learning wins 43.5% on Neon Lanes and 85.0% on Vault.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py">pacman/features.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py">pacman/qlearning.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py">pacman/lookahead.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py">pacman/ghosts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py">pacman/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py">pacman/engine.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py">pacman/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/data/weights.json">pacman/data/weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_benchmark.md">results/pacman_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_train_log.jsonl">results/pacman_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 

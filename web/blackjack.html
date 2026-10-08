@@ -164,6 +164,47 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Two methods, both on the same rules. The advisor and the basic-strategy table come from an exact solver: dynamic programming over every hand the player can reach, in an infinite-deck model. The Monte Carlo learner starts knowing nothing. It plays simulated hands and averages what each action paid, and its table is then compared with the exact one. It is never trained on that table.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Dynamic programming (exact)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture a maze solved from the exit backwards. Once you know the value of every spot next to the exit, each earlier choice is a simple comparison. Blackjack fits this shape: a hit always adds a card, so every hand you can reach depends only on hands with a higher total. The solver fills in values from the end of the game back to the first two cards.</p>
+      <p>The dealer's final-total probabilities come from a recursion on the dealer's next card, for each upcard. For each player state (hard total, whether it holds an ace, two cards or more) the solver computes stand, hit and double, and for pairs also split. The table has 33 rows (hard 5 to 19, soft A,2 to A,9, and ten pairs) by 10 upcards, 330 cells. The advisor uses the same values.</p>
+      <ul>
+        <li>The dealer's blackjack peek is applied last. With p the chance of a dealer blackjack, each value becomes -p + (1 - p) × v. That map is increasing, so the best action does not change.</li>
+        <li>Split is exact because the infinite deck makes the two hands independent: its value is twice the average of one hand's best play.</li>
+        <li>Under this model, perfect basic strategy has a house edge of 0.570% of each bet.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Monte Carlo control (the learner)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Say you are new to a city and want the best restaurant. You try a few, keep a running average of how each meal went, and mostly go back to the highest average while sometimes trying something new. You never look up a guide. You learn from results alone, and the occasional new try keeps you from missing a better option.</p>
+      <p>LEARN plays simulated rounds on the server with a fresh random seed. It never reads the probabilities or the solver. Each round starts from a random table cell, so rare starts still get played. The learner credits each decision with what the hands it affected paid, and keeps a plain average per action. Stand, hit and double share estimates by upcard, hard total and ace flag. Split has one estimate per pair.</p>
+      <ul>
+        <li>No discounting. The only reward arrives when a round settles.</li>
+        <li>Only the first decision of a round is chosen uniformly among legal actions. Later decisions are epsilon-greedy, and an untried action counts as worth 0.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Rules and parameters</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Rule or parameter</th><th>What it means</th><th class="num">Value</th></tr></thead><tbody>
+    <tr><td>Decks</td><td>Shoe used for play and simulation</td><td class="num">6 decks, reshuffled after 75% is dealt</td></tr>
+    <tr><td>Dealer</td><td>Stands on every total of 17 or more, soft 17 included (S17)</td><td class="num">DEALER_STAND = 17</td></tr>
+    <tr><td>Dealer peek</td><td>Checks for blackjack under an ace or a ten, before the player acts</td><td class="num">dealer blackjack ends the round</td></tr>
+    <tr><td>Blackjack</td><td>Natural pays on the bet; a player natural against a dealer natural pushes</td><td class="num">3:2 (1.5 per unit)</td></tr>
+    <tr><td>Double</td><td>Doubles the bet and takes exactly one card</td><td class="num">any two cards</td></tr>
+    <tr><td>Split</td><td>Two hands from a pair; split aces take one card each and stop; doubling after a split is allowed</td><td class="num">one split (MAX_HANDS = 2)</td></tr>
+    <tr><td>Exploration rate</td><td>Learner's epsilon after a number of hands</td><td class="num">0.2 / (1 + hands / 2000), floor 0.01</td></tr>
+    <tr><td>Hands per run</td><td>Choices on the page, and the server cap</td><td class="num">10,000, 40,000, 100,000 (cap 100,000)</td></tr>
+    <tr><td>Decisive cell</td><td>Cell counted in agreement only if the best action beats the runner-up by this much</td><td class="num">0.01 of a bet (321 of 330 cells)</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> the rules are fixed choices, not learned, set to match the TABLE RULES panel. The 6-deck shoe and 75% reshuffle point are the defaults of the shoe class. The exploration constants (start 0.2, floor 0.01, the 2,000-hand scale) and the 0.01 decisive margin were set by hand. The repository has no sweep over them. The exact solver assumes an infinite deck, so the table is basic strategy for that model, and the shoe is where the measured result departs from it.</p>
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">Training is simulation only. Each run starts with empty statistics and no stored model. The page takes 16 snapshots during a run. With seed 1, after 40,000 hands the learner agrees with the exact table on 72.6% of the 321 decisive cells (mean value lost per cell 0.039). After 100,000 hands it agrees on 78.2% (0.023 lost). Agreement rises slowly as hands increase. Simulating exact basic strategy through the 6-deck shoe for 200,000 rounds (seed 1) gives -0.66% ± 0.26% per unit bet, close to the 0.570% infinite-deck edge. No committed result file covers Blackjack, so these figures come from re-running the code.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py">blackjack/solver.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py">blackjack/learner.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py">blackjack/rules.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py">blackjack/game.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/blackjack_api.py">server/blackjack_api.py</a></p>
+</section>
 </div>
 </div>
 

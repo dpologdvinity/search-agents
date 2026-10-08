@@ -116,6 +116,40 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The sudoku solvers are search programs, not learners. Each one fills the grid one square at a time, guessing a digit and backtracking when a digit leads to a contradiction; the three differ in which square they fill next and how much they deduce before guessing. A guess is one digit tried in one square, so the guess count is the measure of wasted work.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Plain backtracking</h3>
+      <p class="hiw-plain"><b>New to this?</b> Fill the empty squares in reading order, trying 1 to 9 in each. When no digit fits, step back to the previous square and try its next digit. It always finds an answer, but it can wander far down a dead end before noticing.</p>
+      <p>Row-major order, and each digit is checked only against its row, column and box. There is no ordering and no lookahead. With the benchmark's 2,000,000-guess cap, it solved 198 of 200 generated puzzles, averaging 119,468 guesses.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>MRV + forward checking</h3>
+      <p class="hiw-plain"><b>New to this?</b> Before guessing, look at every empty square and pick the one with the fewest candidate digits. That square is the most likely to be a dead end, so testing it first exposes mistakes sooner.</p>
+      <p>MRV (minimum remaining values) picks the empty square with the fewest legal digits, stopping early when it finds one with a single digit. Forward checking undoes a digit placement at once if any empty square in its row, column or box is left with no legal digit. This is the page's default.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Constraint propagation</h3>
+      <p class="hiw-plain"><b>New to this?</b> Some squares have only one possible digit, and filling them can force more squares. Keep making the forced moves until nothing new follows, and only then take a guess.</p>
+      <p>Candidate digits are stored as 9-bit masks. Naked singles (a square with one candidate) and hidden singles (a digit with one possible square in a row, column or box) are applied to a fixed point, then MRV branching takes over. Forced fills are not counted as guesses. Averaged 7 guesses over the 200 generated puzzles.</p>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>MRV</td><td>Number of legal digits left in each empty square. The square with the fewest is chosen next.</td><td class="num">None. It is a rule for picking the next square, not a score.</td></tr>
+    <tr><td>Forward checking</td><td>Whether every empty square in a unit still has a legal digit after an assignment.</td><td class="num">None. Pass or undo.</td></tr>
+    <tr><td>Naked single</td><td>A square with only one candidate digit.</td><td class="num">None. The digit is forced.</td></tr>
+    <tr><td>Hidden single</td><td>A digit that fits in only one square of a row, column or box.</td><td class="num">None. The digit is forced there.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> these are standard constraint-satisfaction techniques, fixed by design, with no numbers to tune. The puzzles come from <code>sudoku/generate.py</code>: a random solved grid, then clues removed in random order, keeping each removal only if the puzzle still has exactly one solution (checked with the propagation solver). Difficulty is the number of guesses the propagation solver needs. The 200 committed puzzles use seed 0. The four hard puzzles in the benchmark are published examples from the literature.</p>
+
+  <p class="hiw-note"><b>Benchmark</b> (<code>results/sudoku.md</code>): on 200 generated puzzles, plain backtracking had a mean of 119,468 guesses (198 solved), MRV + forward checking 364 (200 solved), and constraint propagation 7 (200 solved). On the four hard puzzles, plain backtracking solved 3 of 4 (mean 781,593 guesses), MRV + forward checking 4 of 4 (865), and constraint propagation 4 of 4 (44). The server stops any solver at 200,000 guesses, so plain backtracking can fail on hard puzzles here.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py">sudoku/solver.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py">sudoku/generate.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py">server/sudoku_api.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/sudoku.md">results/sudoku.md</a></p>
+</section>
 </div>
 </div>
 

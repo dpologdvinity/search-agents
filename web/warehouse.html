@@ -190,6 +190,55 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Robots move one cell or wait each time step, and may never share a cell or swap places. The page compares three planners on one instance: Conflict-Based Search (optimal), prioritized planning, and independent A*. CBS plans every robot alone, finds the first collision, and adds a rule only for the robots involved.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Conflict-Based Search (CBS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture delivery drivers who each know their fastest route, but two of those routes cross at the same corner at the same moment. At the first crash, split into two plans: in one, the first driver is barred from that corner at that moment; in the other, the second driver is. Always work on the cheapest open plan until one has no crashes.</p>
+      <p>The high level is a constraint tree. The root plans every robot alone, so its total cost is a lower bound on every later node. The earliest collision between robots i and j creates two children, each adding one constraint to one of the two robots. Only that robot is replanned. Nodes are expanded cheapest first by sum of costs, so the first collision-free node is optimal: every collision must be resolved by one of its two children.</p>
+      <ul>
+        <li>Vertex conflict: two robots on one cell at one step. Edge conflict: two robots swap cells in one step.</li>
+        <li>Budget: 2,000 nodes and 2.0 s on the page. If either runs out, the page reports the status and shows no plan.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Space-time A* (the planner inside CBS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A* is a route-finding method. It always expands the option with the lowest score: distance travelled so far plus a guess of what remains, the same idea as a road map app. Here time is part of the map too, because a robot can wait, so a cell at time 3 is a different state from the same cell at time 4.</p>
+      <p>Each state is a (cell, time) pair. Moves go to a free neighbour or stay put. Forbidden states come from a reservation table: a vertex block keeps a robot off a cell at a time, and an edge block stops a swap. The guess is the shortest walking distance to the goal, ignoring other robots. It never overestimates, so the first valid goal state popped arrives earliest. A goal state is valid only if the robot can stay there afterwards.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Prioritized planning</h3>
+      <p class="hiw-plain"><b>New to this?</b> Think of people leaving a building through one hallway. The first person picks a path, and each later person walks around the people already committed. It is quick, but the last person can find every route blocked.</p>
+      <p>Robots are planned in index order, robot 0 first. After each one, its whole path, including the cell it parks on, goes into the reservation table, and the next robot plans against it. Every returned plan is collision-free by construction. If a robot has no route, the status is <code>failed</code> and no plan is shown.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Independent A* (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Every driver takes the shortest route on the map and ignores everyone else. It is the fastest answer, but nothing stops two drivers reaching the same cell at the same moment.</p>
+      <p>Each robot runs space-time A* with an empty reservation table. The paths are then checked for collisions. The page reports the status as collisions, not a plan, and flashes each collision on the step it happens. Its sum of costs looks lowest only because the plan it describes is invalid.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Rules and parameters</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Rule or budget</th><th>What it controls</th><th>Value</th></tr></thead><tbody>
+    <tr><td>Moves per step</td><td>Options for each robot in each time step</td><td>Up, down, left, right, or wait</td></tr>
+    <tr><td>Conflicts</td><td>What the planners forbid</td><td>Two robots on one cell; two robots swapping cells</td></tr>
+    <tr><td>A* heuristic</td><td>Distance guess to the goal</td><td>Shortest walking distance on the map, ignoring other robots (breadth-first search)</td></tr>
+    <tr><td>A* horizon</td><td>Latest time a search may reach</td><td>Last blocked time + number of cells + 1</td></tr>
+    <tr><td>Page SOLVE budget (CBS)</td><td>Nodes and seconds per solve</td><td class="num">2000 nodes, 2.0 s</td></tr>
+    <tr><td>Server defaults and caps</td><td>Limits the web API accepts</td><td>Default 1500 nodes, 2.0 s; cap 3000 nodes, 3.0 s</td></tr>
+    <tr><td>Core CBS defaults</td><td>CLI and benchmark solves</td><td>2000 nodes, 5.0 s; trace keeps up to 200 nodes (the page gets 120)</td></tr>
+    <tr><td>RANDOMIZE check</td><td>CBS run on each candidate start/goal set</td><td>10 candidates at 800 nodes and 0.4 s each; the page tries up to 3 seeds</td></tr>
+    <tr><td>Benchmark generation</td><td>CBS check on each random instance</td><td>Up to 30 attempts; the benchmark passes 2000 nodes and 5.0 s</td></tr>
+    <tr><td>Robot and map caps</td><td>Web API limits</td><td>1 to 8 robots; maps 3 to 24 wide and 2 to 16 high</td></tr>
+    <tr><td>Built-in maps</td><td>Layouts on the page</td><td>Shelf aisles 16 × 10; crossroads 11 × 9; bottleneck 13 × 7</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> Nothing here is learned, and nothing is tuned: the repo has no tuning or sweep code for these values. The heuristic is the exact shortest-walk distance, so there was no value to pick. The budgets are constants set by hand. The server comments give the reasoning: a RANDOMIZE draw costs at most 10 × 0.4 s, about 4 s, and the page's solve budget is 2 s. The map and robot caps exist because the planners bound time but not size.</p>
+  <p class="hiw-note"><b>Benchmark (README):</b> bottleneck map, 6 robots, 10 instances: CBS averages a sum of costs of 52.9 with no collisions. Prioritized averages 55.9 and is suboptimal on 5 of 10. Independent A* averages 47.7 but leaves 3.80 collisions per instance. On shelf aisles with 8 robots: CBS 75.7, prioritized 79.5, independent 72.9 with 3.50 collisions. Rerunning both benchmarks matched these costs, collision counts, and solved counts.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py">warehouse/cbs.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py">warehouse/space_time.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py">warehouse/planners.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/grid.py">warehouse/grid.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/instances.py">warehouse/instances.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/warehouse_api.py">server/warehouse_api.py</a></p>
+</section>
 </div>
 </div>
 

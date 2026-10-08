@@ -129,6 +129,42 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">There is no search and no learning here. Pressing a light is addition mod 2 (1 + 1 = 0), so a board is a linear system with one equation per light. Gaussian elimination solves that system exactly. The solver says whether a board can be cleared at all, and if it can, returns the press set with the fewest presses. HINT shows the first press of that set and SOLVE shows all of it.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Gaussian elimination mod 2</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture a grid of clues, where each clue says whether an odd number of the switches touching one light are on. Gaussian elimination is the standard recipe for a set of clues like this. It combines clues, drops the ones that repeat, and reads off the answer one unknown at a time. Over mod 2 the only numbers are 0 and 1, so combining two clues is XOR and pressing the same light twice cancels.</p>
+      <p>The solver builds the matrix A, where row i is the cell i and its orthogonal neighbours, and writes the board as a column b. It reduces [A | b] to reduced row echelon form. Each row operation is one integer XOR. A row that reads 0 = 1 proves the board unreachable.</p>
+      <ul>
+        <li>The ELIMINATION panel replays the reduction for boards up to 7x7 (the trace is cut off above that).</li>
+        <li>The answer is exact, so there is no tolerance or approximation to tune.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Null space and the fewest presses</h3>
+      <p class="hiw-plain"><b>New to this?</b> Some combinations of presses cancel out completely and change nothing. Those combinations are the null space. If you know one valid answer and the list of do-nothing combinations, you can produce every valid answer. It is like having several routes to the same place and taking the one with the fewest turns.</p>
+      <p>The solver sets the free variables to 0 to get one particular solution, then XORs in every combination of the null-space basis. A solvable 5x5 board has nullity 2, so 4 solutions, and the lightest one is returned. HINT and SOLVE both use that minimum set.</p>
+      <ul>
+        <li>The number of solutions is 2 to the power of the nullity.</li>
+        <li>Brute force would have to try all 2^25 (about 33 million) press sets on 5x5. The solver never does.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Board sizes and solution counts</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Board</th><th>What it measures</th><th class="num">Value</th></tr></thead><tbody>
+    <tr><td>3x3</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 9 of 9, nullity 0, all boards solvable, 1 solution</td></tr>
+    <tr><td>4x4</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 12 of 16, nullity 4, 1 in 16 boards solvable, 16 solutions</td></tr>
+    <tr><td>5x5 (default)</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 23 of 25, nullity 2, 1 in 4 boards solvable, 4 solutions</td></tr>
+    <tr><td>6x6, 7x7, 8x8</td><td>Rank of A, nullity, solvable share</td><td class="num">full rank, nullity 0, all boards solvable, 1 solution</td></tr>
+    <tr><td>9x9</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 73 of 81, nullity 8, 1 in 256 boards solvable, 256 solutions</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> nothing here is tuned or learned. The ranks and nullities are computed by the solver for each size. The board sizes (3 to 9, default 5) are limits set in <code>lightsout/board.py</code>. In solvable mode a board is made by pressing each cell with probability one half from a dark board, so it is solvable by construction. In any mode every light is drawn independently, and most of those boards cannot be cleared.</p>
+  <p class="hiw-note"><b>Measured:</b> over 3,000 random solvable 5x5 boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. A re-run with seed 1 gives 9.89 and 5.19. No committed result file covers Lights Out, so these come from re-running the code.</p>
+  <p class="hiw-note"><b>Checks:</b> the tests compare the solver with brute force on all 512 boards of 3x3, and on 1,500 random 4x4 boards.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py">lightsout/solver.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py">lightsout/board.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/lightsout_api.py">server/lightsout_api.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_lightsout.py">tests/test_lightsout.py</a></p>
+</section>
 </div>
 </div>
 

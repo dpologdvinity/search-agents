@@ -144,6 +144,38 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The route planner looks for a short closed tour through the cities, where the length is the sum of straight-line distances. Three heuristic agents search over tours, and for up to 12 cities an exact method provides the true optimum to compare against. Trying every tour is hopeless at this size: 20 cities give about 6 × 10<sup>16</sup> distinct closed tours.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Simulated annealing</h3>
+      <p class="hiw-plain"><b>New to this?</b> A blacksmith heats metal and cools it slowly so it settles into a strong shape. Early on the search accepts some worse routes to escape traps, and it accepts fewer as the temperature drops.</p>
+      <p>Starts from a random tour. Each step reverses a random stretch of the tour (a 2-opt move). A shorter tour is always accepted; a longer one is accepted with probability exp(−Δ/T). The best tour seen is kept, and a 2-opt descent polishes it at the end.</p>
+      <ul><li>60,000 iterations by default; the start temperature is set so that about 80% of uphill moves are accepted at first</li><li>Auto cooling brings the temperature down to 0.1% of its start; the slider sets a fixed rate between 0.99901 and 0.99999 per step</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Genetic algorithm</h3>
+      <p class="hiw-plain"><b>New to this?</b> Breed a population of routes. Shorter routes get more chances to parent children, children inherit stretches from both parents, and small random changes keep the population varied. Over the generations the routes get shorter.</p>
+      <p>Each child is made by order crossover (OX1) of two parents, chosen by tournament selection. Inversion mutation is applied to a child with probability equal to the mutation rate.</p>
+      <ul><li>Population 120 and 300 generations by default; mutation rate 0.3</li><li>The 4 best tours are copied unchanged into every generation; tournaments of 3</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy + 2-opt</h3>
+      <p class="hiw-plain"><b>New to this?</b> Start in one town and always drive to the nearest town not yet visited. That is quick, but it leaves long jumps at the end. Then undo any pair of roads that cross, until no such fix shortens the route.</p>
+      <p>A nearest-neighbour tour from city 0, followed by 2-opt descent: reverse a stretch whenever that shortens the tour, repeating for at most 50 passes. This is the fast baseline.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Held-Karp (exact, up to 12 cities)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Instead of trying every route, remember the shortest way to reach each group of towns ending at each town. Reusing those answers finds the true shortest tour, but the work grows exponentially with every added town.</p>
+      <p>Dynamic programming over subsets of cities, with cost O(n²·2ⁿ). Computed on the server only when the map has 12 cities or fewer, and used as the reference for the optimality gap.</p>
+    </article>
+  </div>
+  <p class="hiw-note"><b>How these were chosen:</b> the defaults (60,000 iterations, population 120, 300 generations, mutation rate 0.3, 4 elite tours, tournament size 3) are fixed in <code>routes/tsp.py</code>. No tuning run is committed. The start temperature is not a constant: it is computed from the average uphill move on the current map, so it adapts to the scale of the distances. The 0.1% end temperature and the 80% acceptance target are design choices in the code.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py">routes/tsp.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/routes_api.py">server/routes_api.py</a></p>
+</section>
 </div>
 </div>
 

@@ -123,6 +123,37 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The checkers agent looks ahead through the game tree and scores each position at the end of a line with a hand-written evaluation. It has two modes: alpha-beta search, which skips lines that cannot change its decision and searches as deep as its time budget allows, and plain minimax, which searches a fixed depth without skipping anything. Both assume the opponent always finds the best reply.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Alpha-beta search</h3>
+      <p class="hiw-plain"><b>New to this?</b> While planning, once you find a line that is already worse than an option you have, stop looking at that line. You never needed to know how bad it was, so the same planning finishes sooner.</p>
+      <p>Negamax with alpha-beta pruning, searched one ply deeper each round (iterative deepening) until the time budget runs out. The best move from the deepest finished round is played. Each round tries the previous best move first, and a transposition table reuses results for positions reached by different move orders.</p>
+      <ul><li>Time budget 0.2 s, 0.8 s or 2.0 s at Fast, Normal and Strong</li><li>When a capture is pending, the search keeps going past its depth limit until the captures run out</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Plain minimax</h3>
+      <p class="hiw-plain"><b>New to this?</b> Plan a fixed number of moves for both sides, assume each side makes its best reply, score the position at the end, and pick the first move that leads to the best result. It is simple, but every extra move of planning multiplies the work.</p>
+      <p>Negamax with no pruning, searching to a fixed depth. At the same depth, alpha-beta returns the same score with less work.</p>
+      <ul><li>Depth 2, 4 and 5 plies at Fast, Normal and Strong</li><li>Fixed depth because, without pruning, each extra ply multiplies the work by about 8, the typical number of moves</li></ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Man</td><td>A regular piece on the board.</td><td class="num">100 points</td></tr>
+    <tr><td>Advancement</td><td>How far a man has moved toward the crowning row.</td><td class="num">+3 per row (0 on its home row, 7 on the crowning row)</td></tr>
+    <tr><td>Home-row guard</td><td>A man still on its own back row, which keeps the opponent from crowning there.</td><td class="num">+8</td></tr>
+    <tr><td>King</td><td>A crowned piece. No position term.</td><td class="num">165 points</td></tr>
+    <tr><td>Centre</td><td>A man or king on one of the eight central squares 9, 10, 13, 14, 17, 18, 21, 22.</td><td class="num">+6</td></tr>
+    <tr><td>Win</td><td>Terminal position for either side.</td><td class="num">100,000</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The constants are fixed in <code>checkers/search.py</code>, and no tuning run or results file is committed for them. The evaluation has no mobility term. The score is always from the side to move's point of view, with each side's pieces summed.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py">checkers/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py">checkers/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py">checkers/board.py</a></p>
+</section>
 </div>
 </div>
 

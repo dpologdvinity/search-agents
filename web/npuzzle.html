@@ -31,7 +31,7 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">01 // STATE-SPACE SEARCH · PYTHON BACKEND</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="N-PUZZLE AGENTS">N-PUZZLE AGENTS</h1>
-      <div class="proj-pg-sub">9 algorithms · 4 heuristics, including a pattern database and a learned neural heuristic · streamed live from Python</div>
+      <div class="proj-pg-sub">10 algorithms · 4 heuristics, including a pattern database and a learned neural heuristic · streamed live from Python</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -207,6 +207,76 @@
     </div>
 
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Each agent searches the space of board positions. A move slides one tile into the blank square, and the agent looks for a shortest sequence of slides to the solved board. The ten methods differ in which board they explore next; the informed ones use a heuristic, an estimate of the moves still needed.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Breadth-first search (BFS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Check every spot one step from the start, then every spot two steps away, and so on. The first arrival at the goal is always by the fewest steps.</p>
+      <p>Expands every board k slides away before any board k+1 away. Always shortest; on deep 15-puzzle scrambles it hits the node limit.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Depth-first search (DFS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Explore a maze by taking the first unexplored corridor and turning back only at dead ends. It remembers little, but the route is often far longer than the shortest.</p>
+      <p>Follows one line of slides as far as it goes. On the 8-puzzle benchmark no DFS path was optimal (0 of 50), with a mean of 43,671.8 moves against 21.8.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Iterative deepening search (IDS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Search one step deep, then two, then three, starting over each time. The repeats are cheap, so you keep breadth-first's guarantee with little memory.</p>
+      <p>Depth-first search with a depth limit that grows each round. Optimal. Only the current path is kept, so it may expand up to 3 million boards.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Uniform-cost search (UCS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Like breadth-first search, but always extend the cheapest route so far, in case roads differ in length.</p>
+      <p>Orders the frontier by path cost g. Every slide costs 1 here, so it returns the same lengths as BFS with more bookkeeping.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Bidirectional BFS</h3>
+      <p class="hiw-plain"><b>New to this?</b> Two walkers start at opposite ends of a trail and meet in the middle, covering far less ground than one walker.</p>
+      <p>Runs BFS from both boards until the frontiers meet. Optimal on all 50 benchmark boards, expanding a mean of 1,941 boards against 73,756 for BFS.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy best-first search</h3>
+      <p class="hiw-plain"><b>New to this?</b> At each fork take the road that looks closest to the destination by a rough estimate, ignoring the distance already driven. It is quick, but the estimate can lead into dead ends.</p>
+      <p>Orders the frontier by h alone. Only 5 of 50 paths were optimal on the 8-puzzle benchmark, with a mean of 40.7 moves against 21.8.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>A* search</h3>
+      <p class="hiw-plain"><b>New to this?</b> Pick the route with the smallest total of distance travelled plus an estimate of distance left. If the estimate never overshoots, the first arrival is by a shortest route.</p>
+      <p>Orders boards by f = g + h. Optimal when h never overestimates. On the 8-puzzle benchmark it expanded a mean of 771 boards with Manhattan and 404 with linear conflict, optimal in every case.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Weighted A*</h3>
+      <p class="hiw-plain"><b>New to this?</b> Give the estimate more say than the distance travelled. You reach the goal sooner, at the price of a route that may be a little longer.</p>
+      <p>Orders boards by f = g + w·h, with w = 2 by default (slider 1 to 5). With an admissible heuristic the answer is at most w times optimal. At w = 2 on the benchmark: 313 boards expanded, 20 of 50 optimal, mean gap 8.7%.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>IDA* search</h3>
+      <p class="hiw-plain"><b>New to this?</b> A depth-first search that refuses to go past a cost limit. If it fails, raise the limit to the smallest cost it cut off and retry. You get A*'s answers with very little memory, at the price of repeated early work.</p>
+      <p>A* with iterative deepening on f. Optimal with an admissible heuristic. On the 40-board 15-puzzle run with the pattern database, the median was 598,988.5 boards expanded.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Batch weighted A* (BWAS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Ask the neural network about a whole tray of boards in one call instead of one at a time. That avoids most of the per-call overhead.</p>
+      <p>Weighted A* with f = g_weight·g + h, g_weight = 0.8 by default, popping up to 100 boards per step. Paths are not guaranteed optimal. Built for the neural heuristic.</p>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Manhattan</td><td>Row and column steps from each tile to its goal square, summed. The blank is not counted.</td><td class="num">Exact sum, no weight. Never overestimates.</td></tr>
+    <tr><td>Linear conflict</td><td>Manhattan, plus 2 for each tile that must leave its row or column so a tile belonging there can pass.</td><td class="num">+2 per removed tile (the rule's constant)</td></tr>
+    <tr><td>5-5-5 pattern database (4×4)</td><td>Exact moves to place three groups of five tiles, ignoring the others: (1,2,3,6,7), (4,5,8,9,12), (10,11,13,14,15). The three costs are added.</td><td class="num">Tables of 16⁵ = 1,048,576 entries per group, built by a 0-1 breadth-first search from the goal; stored in npuzzle/data/pdb_555.npz</td></tr>
+    <tr><td>Neural correction (4×4)</td><td>h = PDB + softplus(MLP(board)). Not admissible.</td><td class="num">Learned. Output weights start at zero and the output bias at −4, so h starts near the pattern database.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> Manhattan and linear conflict are standard rules, not tuned. The pattern-database groups are fixed in <code>npuzzle/pdb.py</code>; the repo does not record why this split was picked. The network size (input 256, two residual blocks of 512 units) and training settings are defaults in <code>npuzzle/train.py</code>; no sweep is recorded.</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">Trained by approximate value iteration (the method behind DeepCubeA), with no solver labels. Each round samples 50,000 boards by random walks of up to 200 moves from the goal, sets each target to 1 plus the smallest child value under a frozen copy of the network (0 at the goal), and fits the network with Adam (learning rate 0.001, minibatches of 1,000). The committed log has 172 rounds over 42.3 minutes. At round 170, on 100 held-out 15-puzzle states, the mean absolute error was 2.84 against 12.22 for the pattern database; it overestimated on 46% of states.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py">npuzzle/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py">npuzzle/iterative.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py">npuzzle/batched.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py">npuzzle/heuristics.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py">npuzzle/pdb.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py">npuzzle/neural.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py">npuzzle/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md">results/npuzzle_8puzzle.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_train_log.jsonl">results/npuzzle_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 

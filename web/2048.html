@@ -98,7 +98,7 @@
         <div class="stack">
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--purple);margin-bottom:0.3rem">HAND-TUNED VS LEARNED</div>
-            <div class="field-hint">The hand-crafted agent scores boards with six features (empty cells, monotonicity, corner, merges, smoothness, max tile), with weights found by an automated search over simulated games. The n-tuple network learned its own scoring from hundreds of thousands of self-played games.</div>
+            <div class="field-hint">The hand-crafted agent scores boards with six features (empty cells, monotonicity, corner, merges, smoothness, max tile), with weights found by an automated search over simulated games. The n-tuple network learned its own scoring from 42,980 self-played games.</div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CHANCE NODES</div>
@@ -108,6 +108,43 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The agents look a few moves ahead, averaging over the random tile that appears after each slide. One scores positions with six hand-chosen features whose weights were found by an automated search. The other is an n-tuple network: a table of values for small patches of the board, learned by playing games. The third combines the table with the same look-ahead.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Expectimax (tuned features)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Planning a route when some roads may be closed at random: for each choice, weigh every way the randomness could turn out by how likely it is, and pick the choice with the best average result.</p>
+      <p>Alternates player nodes, which choose a slide, with chance nodes, where a 2 (probability 0.9) or a 4 (probability 0.1) appears in each empty cell with equal chance. Iterative deepening runs up to depth 20 within 0.1 s per move. Leaves are scored by the tuned evaluation below.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>N-tuple network (no search)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A cheat sheet that lists a score for every small patch of a board. To judge a position, look up each patch and add the scores, with no planning at all.</p>
+      <p>Six 5-cell patterns, each with its own table of 16⁵ = 1,048,576 values. Each pattern is read under the 8 board symmetries, so a position costs 48 lookups. The move chosen maximises points gained plus the value of the resulting board. Trained by TD(0), below.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>N-tuple + expectimax</h3>
+      <p class="hiw-plain"><b>New to this?</b> Use the cheat sheet to judge positions at the end of a short look-ahead, so the planning and the table work together.</p>
+      <p>The expectimax search above, with the n-tuple value plus points gained along the line used as the leaf score. It is the default when the table is available.</p>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Tuned weight</th></tr></thead><tbody>
+    <tr><td>empty</td><td>log2 of (empty cells + 1)</td><td class="num">0.7204</td></tr>
+    <tr><td>monotonic</td><td>How far rows and columns break a sorted order, in tile exponents (a penalty, zero or below). The better direction is taken for rows and for columns separately.</td><td class="num">1.0</td></tr>
+    <tr><td>smooth</td><td>Negative sum of exponent differences between neighbouring tiles in rows and columns (zero or below)</td><td class="num">−0.129</td></tr>
+    <tr><td>corner</td><td>Exponent of the largest tile if it sits in a corner, otherwise 0</td><td class="num">0.9022</td></tr>
+    <tr><td>merges</td><td>Count of equal neighbouring pairs in rows and columns</td><td class="num">0.2986</td></tr>
+    <tr><td>max_tile</td><td>Exponent of the largest tile</td><td class="num">0.8174</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> tuned automatically with the cross-entropy method (<code>game2048/tune.py</code>). Each generation draws candidate weight vectors from a Gaussian, scores each by the mean final score of greedy one-move-lookahead games on shared seeds, keeps the best elite, and refits the Gaussian to them. The starting Gaussian has mean 1 and standard deviation 2 per feature. The committed run has 20 generations (the default is 15); its population, elite count, and games per candidate are not recorded, and the defaults are 16, 4, and 200. Final weights are rescaled so the largest is 1.0. Greedy play with them averaged 7,140.94 points. <b>Sign note:</b> smooth is stored as a non-positive number with a negative weight, so the term adds 0.129 per unit of total exponent difference and the search rewards rougher boards on that term. The tuner produced this sign; the other features dominate.</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">The n-tuple network is trained by TD(0) on afterstates (<code>game2048/train_td.py</code>), with 1,000 games advancing in lockstep. After each move, the value of the previous afterstate moves toward the reward plus the value of the new one, with target 0 at game end. The learning rate is 0.1, split across the 48 lookups of each position, and updates are averaged per weight within a batch. The committed log ends at 64.1 minutes with 42,980 games, a mean score of 43,929, 2048 reached in 84% of games and 4096 in 32%. In the committed network, patterns 5 and 6 are transposes of patterns 3 and 4, and the symmetry sum already includes transposes, so each pair scores every board identically. In effect the table uses four distinct shapes.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py">game2048/expectimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py">game2048/tune.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json">game2048/data/heuristic_weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py">game2048/ntuple.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py">game2048/train_td.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py">game2048/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log.jsonl">results/game2048_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 

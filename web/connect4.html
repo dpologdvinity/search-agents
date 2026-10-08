@@ -141,6 +141,44 @@
     </div>
 
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The AlphaZero agent is a neural network that learned to play by playing itself, combined with a tree search that uses the network to choose moves. Two classic baselines sit beside it: minimax with alpha-beta pruning, which looks a fixed number of moves ahead with a hand-written score, and Monte Carlo tree search, which judges positions by random games.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>AlphaZero (PUCT search with a network)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A chess player looks at a few candidate moves, pictures how each might go, and trusts a sense of who is winning. Here the network supplies the sense and the search does the picturing. Each game it plays against itself sharpens both.</p>
+      <p>PUCT tree search. At each node it picks the move that maximises Q + U, where U = c_puct · P · √(N+1) / (1 + N(move)), P is the network's prior for the move, and N counts visits. The move played is the most visited one.</p>
+      <ul><li>c_puct = 2.0</li><li>50, 200 or 800 simulations per move at Fast, Normal and Strong</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Minimax with alpha-beta pruning</h3>
+      <p class="hiw-plain"><b>New to this?</b> Plan a few moves ahead, assume each side picks its best reply, and score the position at the end. Alpha-beta skips branches that cannot change the final choice, so the same look-ahead costs less.</p>
+      <p>Negamax with alpha-beta pruning, a transposition table, and iterative deepening: each depth finishes before the next starts, and an unfinished depth is thrown away. Columns are tried centre-first (3, 2, 4, 1, 5, 0, 6), so good moves prune more.</p>
+      <ul><li>Time budget 0.1 s, 0.5 s or 2.0 s at Fast, Normal and Strong; maximum depth 42</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Monte Carlo tree search (MCTS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> To judge a position, play many random games from it and count how often you win. Each round spends more effort on moves that have looked good so far, and less on the rest.</p>
+      <p>UCT tree search with random rollouts to the end of the game and no neural network. The move chosen is the child visited most often.</p>
+      <ul><li>UCB1 exploration constant c = 1.4</li><li>300, 1,500 or 5,000 simulations, capped at 3 seconds</li></ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Win</td><td>A four in a row for the side to move, or against it.</td><td class="num">1,000,000 minus the ply, so faster wins score higher</td></tr>
+    <tr><td>Open windows</td><td>Each of the 69 four-cell lines that holds stones of only one player scores for that player: 1 stone, 2 stones, 3 stones.</td><td class="num">1, 8 and 64 points (4 stones is a win, scored separately)</td></tr>
+    <tr><td>Centre column</td><td>Stones in the middle column, for each side.</td><td class="num">+3 per own stone, −3 per opponent stone</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The numbers are fixed in <code>connect4/minimax.py</code> and no tuning run is recorded. The code describes the evaluation as a standard hand-built one but cites no source. The MCTS constant and the PUCT constant were also set by hand; no sweep is recorded.</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">The network learns from self-play only: no human games, no opening book, and no positions labelled by another engine. The architecture is a residual network with 4 blocks of 32 channels, a policy head that scores the 7 columns, and a value head that predicts the result from the side to move. Each iteration plays 128 games at once and trains on a replay buffer with mirrored positions. The loss is value mean squared error plus policy cross-entropy against the search's visit counts. During self-play, the root gets Dirichlet noise (alpha 1.0, weight 0.25), and the first 8 moves of each game are sampled from the visit counts.</p>
+  <p class="hiw-note">The training doc gives the run as 64 simulations per move and 100 training steps per iteration (the training script's current defaults are 100 and 400). On one shared laptop CPU (Intel Core i7-1265U, no GPU), it played 4,480 games over 35 iterations, about 2 hours 40 minutes of compute. The weights served on this page are the snapshot after iteration 19 (2,432 games), before the later phases. Against alpha-beta minimax at depths 2, 4 and 6 (50 games each, 200 simulations per move), that snapshot scored 64%, 77% and 44%. Plain MCTS with 1,000 simulations scored 32 wins, 2 draws, 16 losses against depth 4. The full run is in <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a>.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py">connect4/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py">connect4/puct.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py">connect4/net.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py">connect4/train_az.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py">connect4/minimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py">connect4/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/evaluate.py">connect4/evaluate.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/connect4_eval.json">results/connect4_eval.json</a></p>
+</section>
 </div>
 </div>
 

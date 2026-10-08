@@ -115,6 +115,7 @@
 /* ── Advisor ──────────────────────────────────────────────────────────── */
 
 .bj-advice-list { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.4rem 0; }
+.bj-page .proj-game-col { min-width: 0; }
 .bj-advice-row { display: grid; grid-template-columns: 5.4rem 1fr 5rem; gap: 0.5rem; align-items: center; font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
 .bj-advice-row .bar { height: 8px; background: rgba(255,255,255,0.06); }
 .bj-advice-row .bar i { display: block; height: 100%; }

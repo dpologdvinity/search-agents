@@ -125,6 +125,60 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The agent fires at your fleet, and you fire at its fleet. Before each shot it counts the fleet layouts that still fit what it has seen, then fires at the square that most of them cover.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Bayesian probability targeting</h3>
+      <p class="hiw-plain"><b>New to this?</b> Bayesian reasoning means updating a guess as evidence comes in. Picture drawing marbles from a bag one at a time: each one changes which colour mix still seems likely. Each miss and hit here rules out some fleet layouts, and the agent bets on the square most surviving layouts agree on.</p>
+      <p>The agent is the only one on this page. It keeps every legal placement of the ships still afloat that fits the evidence, and sets P(ship) = (kept layouts covering the cell) / (all kept layouts). It fires at the highest value; ties are broken at random.</p>
+      <ul>
+        <li>A layout is kept only if no ship covers a miss or a sunk ship, every open hit is covered, and no two ships overlap.</li>
+        <li>Every legal fleet is equally likely to start with, so each kept layout counts the same. The page's random fleets are drawn the same way.</li>
+        <li>Neighbours of an open hit rise on their own, because the ship through that hit must cover one of them.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Exact counting</h3>
+      <p class="hiw-plain"><b>New to this?</b> Counting every possibility looks hopeless, but a systematic search can skip most of them. It is like seating dinner guests one at a time and abandoning any arrangement where the remaining chairs cannot seat the people still waiting.</p>
+      <p>A depth-first search places the remaining ships one by one and drops a branch when the open hits still uncovered outnumber the cells the remaining ships can cover. Exact counting is tried only when the placements, ignoring overlaps, number 30,000 or fewer, and is abandoned past 60,000 candidate checks. While both 3-cell ships are afloat, the search treats them as ordered, so each layout counts twice; the odds are unaffected.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Importance sampling</h3>
+      <p class="hiw-plain"><b>New to this?</b> When a full list is too big, estimate from a random sample and weight each sample by how likely it was to be drawn. A pollster who surveys only one train station can correct for that by weighting answers by the station's traffic.</p>
+      <p>Early on there are too many layouts to count, so the agent draws 1,000 at random. Each ship goes uniformly on a placement that avoids used cells, and the sample's weight is multiplied by the number of options at each step. Samples that leave an open hit uncovered get weight 0. P(cell) is the weighted share of samples covering it.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Hunt and target (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> This is how most people play by hand: search a pattern until something is hit, then chase the wounded ship.</p>
+      <p>Used only by the benchmark, not the page. It fires on cells where row + column is even until it scores a hit. Every ship of length 2 or more covers an even cell, so one colour is always hit. After a hit it fires at unknown neighbours, and once two open hits share a row or column, only along that line.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Random (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Like drawing from a shuffled deck: every card left is equally likely, and the cards already drawn do not change the odds of the next one. It is the floor any real strategy should beat.</p>
+      <p>Fires at a uniformly random unknown cell. It ignores every hit.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Rules and parameters</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Fleet</td><td>Ship lengths, straight and not overlapping (may touch)</td><td class="num">5, 4, 3, 3, 2 (17 cells) on a 10 × 10 grid</td></tr>
+    <tr><td>SAMPLES</td><td>Layouts drawn when exact counting is too large</td><td class="num">1,000</td></tr>
+    <tr><td>EXACT_BUDGET</td><td>Candidate checks the exact search may spend</td><td class="num">60,000</td></tr>
+    <tr><td>Exact gate</td><td>Exact counting is tried only if the unpruned placement product fits</td><td class="num">≤ 30,000 (half the budget)</td></tr>
+    <tr><td>Tie tolerance</td><td>Probabilities this close count as tied</td><td class="num">1e-12</td></tr>
+    <tr><td>Known cells</td><td>Probability assigned to a cell already shot: a hit, or a miss</td><td class="num">1.0 and 0.0</td></tr>
+    <tr><td>Checkerboard</td><td>Hunt baseline's search pattern</td><td class="num">(row + col) even</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> nothing is learned or tuned. The probabilities follow from the rules as a count under a uniform prior. SAMPLES and EXACT_BUDGET are hand-picked constants; the repository has no sweep that justifies them. The 30,000 gate is half the budget, so an exact attempt can finish before it runs out. The checkerboard follows from the ship lengths, not from a search.</p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note">100 random fleets, seed 1, the same fleets for every agent. Mean shots to sink the fleet: random 95.4, hunt and target 51.9, Bayesian 45.9 (median 45.5, worst 64). The Bayesian agent needed fewer shots than hunt and target on 67 of 100 fleets, and 6.0 fewer on average (95% interval 3.7 to 8.2), at a much higher cost per shot.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py">battleship/probability.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py">battleship/agents.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py">battleship/board.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/battleship_api.py">server/battleship_api.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/benchmark.py">battleship/benchmark.py</a></p>
+</section>
 </div>
 </div>
 
