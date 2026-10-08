@@ -115,3 +115,135 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
 .s-cell.assign { background: rgba(0,245,255,0.25); }
 .s-cell.propagate { color: var(--purple); }
 .s-cell.undo { background: rgba(255,59,59,0.35); }
+
+/* Phones: shrink the game boards so they fit a 360-400px viewport. */
+@media (max-width: 600px) {
+  .c4-board { grid-template-columns: repeat(7, 40px); gap: 4px; padding: 6px; }
+  .c4-col { grid-template-rows: repeat(6, 40px); gap: 4px; padding: 0; }
+  .g-board { grid-template-columns: repeat(4, 70px); gap: 6px; padding: 8px; }
+  .g-cell { width: 70px; height: 70px; }
+  .s-board { grid-template-columns: repeat(9, 34px); }
+  .s-cell { width: 34px; height: 34px; font-size: 0.9rem; }
+  .c4-bars { gap: 4px; }
+  .c4-bar { width: 9px; }
+}
+
+/* Phones: a one-line nav. The logo drops its subtitle and the links scroll sideways. */
+@media (max-width: 600px) {
+  .nav-logo span { display: none; }
+  .nav-links { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a { padding-left: 0.6rem; padding-right: 0.6rem; font-size: 0.6rem; }
+}
+
+/* ── Game pages: maximalist layer ─────────────────────────────────────── */
+
+/* Perspective neon floor behind every game page. */
+body:not(.landing-page)::before { z-index: 0; }
+.proj-page { position: relative; z-index: 2; }
+.proj-page::before {
+  content: ''; position: fixed; left: -50%; right: -50%; bottom: -10vh; height: 60vh; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,0,160,0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.28) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(420px) rotateX(62deg);
+  transform-origin: center top;
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent 85%);
+  animation: floor 6s linear infinite;
+}
+@keyframes floor { to { background-position: 0 64px, 0 0; } }
+
+/* Glitching titles (shared with the landing page). */
+.glitch {
+  position: relative; font-family: var(--orb); font-weight: 900; font-size: clamp(2.6rem, 8vw, 6.2rem);
+  line-height: 0.95; letter-spacing: -0.02em; color: #fff;
+  text-shadow: 0 0 18px var(--cyan), 0 0 44px rgba(0,245,255,0.5);
+}
+.glitch::before, .glitch::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+}
+.glitch::before { color: var(--pink); transform: translate(3px, 0); clip-path: inset(0 0 55% 0); animation: glitch-a 3.2s infinite steps(1); }
+.glitch::after { color: var(--cyan); transform: translate(-3px, 0); clip-path: inset(55% 0 0 0); animation: glitch-b 2.6s infinite steps(1); }
+@keyframes glitch-a { 0%, 86%, 100% { transform: translate(3px,0); } 88% { transform: translate(-7px,-2px); } 92% { transform: translate(9px,1px); } }
+@keyframes glitch-b { 0%, 80%, 100% { transform: translate(-3px,0); } 83% { transform: translate(8px,2px); } 89% { transform: translate(-10px,-1px); } }
+.proj-pg-title.glitch { font-size: clamp(2rem, 5vw, 3.4rem); }
+
+/* HUD corner brackets on panels. */
+.viz-panel, .heuristic-card { position: relative; }
+.viz-panel::before, .viz-panel::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border-color: var(--cyan); border-style: solid; filter: drop-shadow(0 0 4px var(--cyan));
+}
+.viz-panel::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.viz-panel::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+/* CRT flicker on the boards. */
+.np-grid, .c4-board, .g-board, .s-board { animation: crt 7s infinite; }
+@keyframes crt { 0%, 96%, 100% { filter: none; } 97% { filter: brightness(1.35) saturate(1.4); } 98% { filter: brightness(0.85) hue-rotate(12deg); } }
+
+/* Effects (fx.js). */
+.fx-layer { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
+.fx-shake { animation: shake 0.28s; }
+.fx-shake-big { animation: shake-big 0.5s; }
+@keyframes shake { 25% { transform: translate(-3px, 2px); } 50% { transform: translate(3px, -2px); } 75% { transform: translate(-2px, -1px); } }
+@keyframes shake-big { 15% { transform: translate(-8px, 4px) rotate(-0.6deg); } 35% { transform: translate(8px, -5px) rotate(0.6deg); }
+  55% { transform: translate(-6px, 3px); } 75% { transform: translate(5px, -2px); } }
+.fx-pop { position: fixed; z-index: 61; pointer-events: none; transform: translate(-50%, -50%);
+  font-family: var(--orb); font-weight: 900; font-size: 1.3rem; text-shadow: 0 0 10px currentColor; animation: pop 0.9s ease-out forwards; }
+@keyframes pop { from { opacity: 1; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 0; transform: translate(-50%, -160%) scale(1.25); } }
+.fx-banner { position: fixed; left: 0; right: 0; top: 38%; z-index: 62; pointer-events: none; text-align: center; padding: 1.1rem 1rem;
+  background: linear-gradient(90deg, transparent, rgba(2,6,16,0.92) 15%, rgba(2,6,16,0.92) 85%, transparent);
+  border-top: 2px solid var(--fx-c); border-bottom: 2px solid var(--fx-c); box-shadow: 0 0 40px color-mix(in srgb, var(--fx-c) 50%, transparent);
+  animation: banner-in 0.35s cubic-bezier(.2,1.4,.4,1); }
+.fx-banner.fx-out { opacity: 0; transition: opacity 0.6s; }
+.fx-banner-main { display: block; font-family: var(--orb); font-weight: 900; font-size: clamp(1.8rem, 6vw, 3.6rem); color: #fff;
+  text-shadow: 0 0 12px var(--fx-c), 0 0 32px var(--fx-c); letter-spacing: 0.04em; }
+.fx-banner-sub { display: block; font-family: var(--mono); font-size: 0.85rem; color: var(--fx-c); margin-top: 0.3rem; }
+@keyframes banner-in { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .proj-page::before, .np-grid, .c4-board, .g-board, .s-board { animation: none; }
+  .fx-banner { animation: none; }
+}
+
+/* Checkers */
+.ck-board { display: grid; grid-template-columns: repeat(8, 58px); border: 2px solid var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.35), inset 0 0 40px rgba(0,0,0,0.6); }
+.ck-cell { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; position: relative; }
+.ck-cell.light { background: rgba(155,0,255,0.07); }
+.ck-cell.dark { background: rgba(2,6,16,0.95); box-shadow: inset 0 0 0 1px rgba(255,0,160,0.12); }
+.ck-cell.trail { background: rgba(0,245,255,0.14); }
+.ck-cell.hint { background: rgba(0,255,136,0.22); box-shadow: inset 0 0 0 2px var(--green); }
+.ck-cell.target { cursor: pointer; }
+.ck-cell.target::after { content: ''; width: 34%; height: 34%; border: 2px solid var(--green); transform: rotate(45deg); box-shadow: 0 0 12px var(--green); animation: target 0.9s ease-in-out infinite alternate; }
+@keyframes target { to { transform: rotate(45deg) scale(1.25); } }
+.ck-piece { width: 76%; height: 76%; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+.ck-piece.red { background: radial-gradient(circle at 35% 30%, #ff6ad0, var(--pink) 55%, #8a0058); box-shadow: 0 0 14px rgba(255,0,160,0.7), inset 0 -4px 0 rgba(0,0,0,0.35); }
+.ck-piece.white { background: radial-gradient(circle at 35% 30%, #ffffff, #9feeff 50%, #2b7f99); box-shadow: 0 0 14px rgba(0,245,255,0.6), inset 0 -4px 0 rgba(0,0,0,0.3); }
+.ck-piece.king::after { content: '♛'; font-size: 1.35rem; color: var(--yellow); text-shadow: 0 0 8px var(--yellow), 0 1px 0 #000; }
+.ck-piece.movable { cursor: pointer; outline: none; }
+.ck-piece.movable:hover, .ck-piece.movable:focus-visible { transform: scale(1.1); }
+.ck-piece.movable:focus-visible { box-shadow: 0 0 0 3px var(--yellow), 0 0 18px var(--yellow); }
+.ck-piece.selected { transform: scale(1.12); box-shadow: 0 0 0 3px var(--yellow), 0 0 22px var(--yellow); }
+
+.prune-meter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
+.prune-meter[hidden] { display: none; }
+.prune-row { border: 1px solid var(--border); background: rgba(0,0,0,0.3); padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.prune-row span { font-family: var(--mono); font-size: 0.62rem; color: var(--dim); }
+.prune-row b { font-family: var(--orb); font-size: 1.1rem; color: var(--pink); text-shadow: 0 0 10px var(--pink); }
+.prune-row:nth-child(2) b { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+.prune-row:nth-child(3) b { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+.ck-root { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+.ck-root li { display: grid; grid-template-columns: 6.5rem 1fr 6rem; gap: 0.6rem; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--dim); }
+.ck-root .bar { height: 8px; background: rgba(255,255,255,0.05); }
+.ck-root .bar i { display: block; height: 100%; background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+.ck-root li.chosen { color: var(--green); }
+.ck-root li.chosen .bar i { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.ck-root .sc { text-align: right; }
+
+@media (max-width: 600px) {
+  .ck-board { grid-template-columns: repeat(8, 40px); }
+  .ck-cell { width: 40px; height: 40px; }
+  .ck-piece.king::after { font-size: 1rem; }
+  .prune-meter { grid-template-columns: 1fr; }
+}

@@ -4,6 +4,7 @@
 // backend needs. Red always moves first.
 
 import { getJSON, postJSON } from './api.js';
+import { banner, burst, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const ROWS = 6, COLS = 7;
@@ -167,9 +168,16 @@ function humanTurn() {
 
 function afterMove(col, who) {
   render(col);
+  shake($('c4'));
   const g = grid(state.moves);
   if (winningCells(g)) {
     state.over = true;
+    const human = who === 'you';
+    const lost = !human && $('mode').value === 'human';
+    shake($('c4'), 'big');
+    burst($('c4'), { count: 140, colors: lost ? ['#ff3b3b', '#ff00a0', '#ffe600'] : undefined });
+    banner(human ? 'YOU WIN' : lost ? 'AI WINS' : `${who.toUpperCase()} WINS`,
+           `four in a row after ${state.moves.length} moves`, lost ? '#ff3b3b' : '#00ff88');
     setStatus(`${who.toUpperCase()} WINS`);
     log(`★ ${who} wins in ${state.moves.length} moves.`, 'log-best');
   } else if (state.moves.length === ROWS * COLS) {

@@ -6,6 +6,7 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 |---|---|---|---|
 | **N-Puzzle** | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\* | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
 | **Connect Four** | Alpha-beta negamax, UCT Monte Carlo tree search | AlphaZero-style PUCT with a policy-value ResNet trained only by self-play | The network's prior vs search visits per column, and its win probability |
+| **Checkers** | Plain minimax, alpha-beta with iterative deepening, a transposition table, and move ordering | Hand-built evaluation (material, advancement, home row, centre) | How many positions it searched and how many branches pruning cut, with every candidate move's score |
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 
@@ -25,7 +26,33 @@ Agents that solve puzzles and play games by search, each paired with a stronger 
 
 The learned heuristic expands about 120x fewer nodes than optimal search, at the cost of paths 3.3% longer on average. Deployed on a shared 1 GB machine, it solves a random 15-puzzle in under a second.
 
+All algorithms on 50 uniformly random 8-puzzles (mean optimal solution 21.8 moves; IDS is omitted because it exceeds the time limit at this depth):
+
+| Algorithm | Mean nodes expanded | Mean path length | Optimal paths |
+|---|---|---|---|
+| BFS | 73,756 | 21.8 | 50/50 |
+| Uniform-cost search | 88,444 | 21.8 | 50/50 |
+| DFS | 79,209 | 43,672 | 0/50 |
+| Bidirectional BFS | 1,941 | 21.8 | 50/50 |
+| Greedy best-first (Manhattan) | 267 | 40.7 | 5/50 |
+| Weighted A\* (w = 2) | 313 | 23.6 | 20/50 |
+| A\* (Manhattan) | 771 | 21.8 | 50/50 |
+| A\* (linear conflict) | 404 | 21.8 | 50/50 |
+| IDA\* (Manhattan) | 2,090 | 21.8 | 50/50 |
+
 Heuristic strength for IDA\* on 15 random 60-move scrambles: Manhattan distance 12.8M nodes, linear conflict 2.8M, pattern database 416K. The neural heuristic's average error against true optimal costs is 2.8 moves, vs 12.2 for the pattern database alone.
+
+### Checkers: what alpha-beta pruning saves
+
+Both agents assume the opponent always answers with its best reply. On a position 8 moves into a game, searched to a fixed depth, they choose the same move with the same score:
+
+| Depth (half-moves) | Minimax positions | Alpha-beta positions | Fewer by |
+|---|---|---|---|
+| 4 | 2,962 | 618 | 4.8x |
+| 5 | 16,845 | 1,252 | 13x |
+| 6 | 92,608 | 3,566 | 26x |
+
+The move generator matches the published perft counts from the opening (7, 49, 302, 1,469, 7,361 positions at depths 1-5).
 
 ### 2048: TD-learned n-tuple network
 
@@ -86,6 +113,11 @@ For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against
 - **Expectimax** (`game2048/expectimax.py`). Six hand-crafted features (empty cells, monotonicity, smoothness, max tile in a corner, mergeable neighbours, max tile) come from per-row lookup tables. Their weights are found automatically by the cross-entropy method over batches of simulated games (`game2048/tune.py`). A transposition table and a cutoff for unlikely tile spawns let the search go deeper in the same time.
 - **N-tuple network** (`game2048/ntuple.py`, `game2048/train_td.py`). Six 5-cell patterns, each applied in all 8 board symmetries with a shared table: 48 lookups per evaluation. Trained by TD(0) on afterstates with 1,000 games in lockstep in NumPy. Batched TD updates are averaged per weight; summing them made shared weights take batch-sized steps and diverge.
 
+### Checkers
+
+- **Rules** (`checkers/board.py`). The 32 dark squares as a tuple; mandatory captures, multi-jumps (a captured piece stays on the board until the move ends, so it cannot be jumped twice), and crowning, which ends the move. Verified against published perft counts.
+- **Search** (`checkers/search.py`). Negamax, so each side maximizes its own score and the opponent's reply is assumed to be the one worst for it. Alpha-beta skips a move as soon as one reply proves it worse than an alternative already found; iterative deepening, a transposition table, and trying the previous best move first make those cutoffs come early. Positions with a capture pending are searched one level deeper rather than scored mid-exchange.
+
 ### Sudoku
 
 `sudoku/solver.py` has three solvers behind one interface, each recording a trace of guesses and backtracks for the visualizer. Propagation keeps candidate sets as 9-bit masks and, after every guess, fills cells with one candidate and digits with one possible place in a row, column, or box, until nothing changes.
@@ -95,7 +127,7 @@ For reference, plain MCTS with 1,000 random-rollout simulations goes 5-5 against
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ game2048/ sudoku/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ game2048/ sudoku/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.

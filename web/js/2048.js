@@ -1,6 +1,7 @@
 // 2048 page: the game runs in the browser; each AI move is one request to the Python agents.
 
 import { getJSON, postJSON } from './api.js';
+import { banner, burst, pop, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const DIRS = ['Up', 'Down', 'Left', 'Right'];
@@ -131,16 +132,25 @@ function showValues(result) {
 function apply(dir, who) {
   const res = moveGrid(state.grid, dir);
   if (!res) return false;
+  const before = Math.max(...state.grid.flat());
   [state.grid] = res;
   state.score += res[1];
   state.moves++;
   state.fresh = spawn(state.grid);
   render();
+  const board = $('g2048'), best = Math.max(...state.grid.flat());
+  if (res[1] >= 8) pop(board, `+${res[1]}`, res[1] >= 256 ? '#ff00a0' : '#ffe600');
+  if (best > before && best >= 128) {
+    burst(board, { count: Math.min(30 + Math.log2(best) * 10, 160) });
+    if (best >= 512) { shake(board, 'big'); banner(`${best}`, `new highest tile at move ${state.moves}`, '#9b00ff'); }
+  }
   if (!canMove(state.grid)) {
     state.playing = false;
     $('chip-status').textContent = 'GAME OVER';
     $('btn-play').querySelector('.btn-txt').textContent = '▶ AI PLAY';
     log(`■ Game over: score ${state.score.toLocaleString()}, best tile ${Math.max(...state.grid.flat())} (${who}).`, 'log-best');
+    shake($('g2048'), 'big');
+    banner('GAME OVER', `score ${state.score.toLocaleString()} · best tile ${Math.max(...state.grid.flat())}`, '#ff00a0');
   }
   return true;
 }

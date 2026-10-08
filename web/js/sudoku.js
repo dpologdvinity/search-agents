@@ -1,6 +1,7 @@
 // Sudoku page: solve on the server, then replay every guess, forced fill, and backtrack.
 
 import { getJSON, postJSON } from './api.js';
+import { banner, burst, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const NAMES = { plain: 'Plain backtracking', mrv_fc: 'MRV + forward checking', propagate: 'Constraint propagation' };
@@ -58,6 +59,7 @@ function stop() {
 function applyStep(k) {
   const [kind, cell, value] = state.trace[k];
   if (kind === 'undo') {
+    if (Math.random() < 0.15) shake($('sboard'));
     state.cells[cell] = 0;
     state.marks[cell] = '';
   } else {
@@ -75,6 +77,14 @@ function finish() {
     render();
   }
   $('chip-status').textContent = r.status.toUpperCase();
+  if (r.status === 'solved') {
+    burst($('sboard'), { count: 120 });
+    banner('SOLVED', `${NAMES[r.solver]} · ${r.nodes.toLocaleString()} guesses · ${r.backtracks.toLocaleString()} backtracks`, '#00ff88');
+  } else {
+    shake($('sboard'), 'big');
+    banner(r.status === 'limit' ? 'GAVE UP' : 'NO SOLUTION',
+           r.status === 'limit' ? `${r.nodes.toLocaleString()} guesses hit the limit` : 'this puzzle has no valid solution', '#ff3b3b');
+  }
 }
 
 async function solveAndReplay() {

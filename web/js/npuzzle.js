@@ -4,6 +4,7 @@
 // goal = [0, 1, ..., n*n - 1]. Actions name the direction the blank moves.
 
 import { SearchSocket, formatNumber, formatSeconds, getJSON } from './api.js';
+import { banner, burst, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const socket = new SearchSocket('/ws/npuzzle');
@@ -313,6 +314,8 @@ function playerMove(index) {
   renderBoard(blank);
   if (isGoal(next)) {
     log(`★ Solved by hand in ${state.yourMoves} moves.`, 'log-best');
+    burst($('board'), { count: 160 });
+    banner('SOLVED BY HAND', `${state.yourMoves} moves`, '#ffe600');
     setChip('chip-status', 'SOLVED');
   }
 }
@@ -378,6 +381,7 @@ function showResult(req, r) {
     const why = { limit: 'hit the server time or memory limit', unsolvable: 'this board cannot reach the goal',
                   cancelled: 'stopped', exhausted: 'searched everything without reaching the goal' }[r.status];
     log(`■ ${label(req)}: ${why} after ${formatNumber(r.expanded)} nodes.`, 'log-adv');
+    if (r.status !== 'cancelled') { shake($('board'), 'big'); banner(r.status === 'unsolvable' ? 'UNSOLVABLE' : 'OUT OF BUDGET', why, '#ff3b3b'); }
     return;
   }
   $('st-path').textContent = String(r.cost);
@@ -388,6 +392,8 @@ function showResult(req, r) {
   state.step = 0;
   updatePlayback();
   log(`✓ ${label(req)}: ${r.cost} moves, ${formatNumber(r.expanded)} nodes, ${formatSeconds(r.seconds)}.`, 'log-best');
+  burst($('board'), { count: 90 });
+  banner('SOLVED', `${label(req)} · ${r.cost} moves · ${formatNumber(r.expanded)} nodes expanded`, '#00ff88');
 }
 
 // ── Playback ─────────────────────────────────────────────────────────────
@@ -441,6 +447,7 @@ function togglePlay() {
       stopPlayback();
       updatePlayback();
       renderBoard();
+      burst($('board'), { count: 120 });
       return;
     }
     goToStep(state.step + 1);

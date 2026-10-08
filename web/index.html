@@ -4,20 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
+<meta name="description" content="Search agents for N-Puzzle, Connect Four, 2048, and Sudoku: classic search paired with learned guidance (neural heuristics, AlphaZero-style self-play, TD learning), running live on a Python backend.">
+<meta property="og:title" content="SEARCH AGENTS // KB">
+<meta property="og:description" content="Search agents for N-Puzzle, Connect Four, 2048, and Sudoku: classic search paired with learned guidance (neural heuristics, AlphaZero-style self-play, TD learning), running live on a Python backend.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/">
+<meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
-<style>
-  .landing { max-width: 1100px; margin: 0 auto; padding: 90px 2rem 3rem; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 2rem; }
-  .card { border: 1px solid var(--border); background: var(--panel); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; transition: border-color 0.2s, box-shadow 0.2s; }
-  a.card:hover { border-color: var(--pink); box-shadow: 0 0 18px rgba(255,0,160,0.3); }
-  .card .tag { font-family: var(--mono); font-size: 0.62rem; color: var(--dim); letter-spacing: 0.15em; }
-  .card .name { font-family: var(--orb); font-weight: 900; font-size: 1.1rem; }
-  .card .soon { font-family: var(--mono); font-size: 0.62rem; color: var(--yellow); }
-</style>
+<link rel="stylesheet" href="landing.css">
 </head>
-<body>
+<body class="landing-page">
 
 <nav id="nav">
   <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
@@ -25,43 +23,102 @@
     <li><a href="index.html" class="act">MAIN</a></li>
     <li><a href="npuzzle.html">N-PUZZLE</a></li>
     <li><a href="connect4.html">CONNECT FOUR</a></li>
+    <li><a href="checkers.html">CHECKERS</a></li>
     <li><a href="2048.html">2048</a></li>
     <li><a href="sudoku.html">SUDOKU</a></li>
   </ul>
 </nav>
 
-<div class="landing">
-  <div class="proj-pg-tag">CLASSIC SEARCH · LEARNED GUIDANCE · PYTHON BACKEND</div>
-  <div class="proj-pg-title neon-cyan">SEARCH AGENTS</div>
-  <div class="proj-pg-sub" style="max-width:720px">
-    Agents that solve puzzles and play games by search. Each one pairs a classic algorithm with a
-    stronger guide: hand-built heuristics, precomputed pattern databases, and neural networks trained
-    from self-generated data. Every search runs live in Python and streams to your browser.
+<main>
+  <!-- Hero: live A* across a neon city grid, chasing the pointer -->
+  <section class="hero" aria-labelledby="hero-title">
+    <canvas id="city" aria-hidden="true"></canvas>
+    <div class="hero-copy">
+      <pre class="boot" id="boot" aria-hidden="true"></pre>
+      <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
+      <p class="hero-sub">Five agents that solve puzzles and play games by search, each guided by something learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <div class="hud" role="status" aria-live="off">
+        <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
+        <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
+        <span class="hud-item"><b id="hud-path">0</b> steps in the path</span>
+        <button class="cyber-btn hud-btn" id="city-reset" type="button"><span class="btn-txt">Clear buildings</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ticker: real results from the benchmarks -->
+  <div class="ticker" aria-label="Benchmark results">
+    <div class="ticker-track">
+      <span>15-puzzle nodes expanded: <b>598,989</b> by optimal IDA* <i>vs</i> <b>5,009</b> with the learned heuristic</span>
+      <span>2048 tile reached in <b>81%</b> of games with no search</span>
+      <span>Sudoku: <b>7</b> guesses with propagation <i>vs</i> <b>119,468</b> by plain backtracking</span>
+      <span>Pattern database IDA*: <b>31x</b> fewer nodes than Manhattan distance</span>
+      <span>Checkers alpha-beta: same move as minimax, <b>26x</b> fewer positions at depth 6</span>
+      <span>Every search runs live in Python and streams to your browser</span>
+      <span aria-hidden="true">15-puzzle nodes expanded: <b>598,989</b> by optimal IDA* <i>vs</i> <b>5,009</b> with the learned heuristic</span>
+      <span aria-hidden="true">2048 tile reached in <b>81%</b> of games with no search</span>
+      <span aria-hidden="true">Sudoku: <b>7</b> guesses with propagation <i>vs</i> <b>119,468</b> by plain backtracking</span>
+      <span aria-hidden="true">Pattern database IDA*: <b>31x</b> fewer nodes than Manhattan distance</span>
+      <span aria-hidden="true">Checkers alpha-beta: same move as minimax, <b>26x</b> fewer positions at depth 6</span>
+      <span aria-hidden="true">Every search runs live in Python and streams to your browser</span>
+    </div>
   </div>
 
-  <div class="cards">
-    <a class="card" href="npuzzle.html">
-      <span class="tag">01 // STATE-SPACE SEARCH</span>
-      <span class="name neon-pink">N-PUZZLE</span>
-      <span class="field-hint">BFS to IDA*, linear conflict, a 5-5-5 pattern database, and a neural heuristic trained by value iteration.</span>
-    </a>
-    <a class="card" href="connect4.html">
-      <span class="tag">02 // ADVERSARIAL SEARCH</span>
-      <span class="name neon-cyan">CONNECT FOUR</span>
-      <span class="field-hint">Play against AlphaZero-style search with a policy-value network trained only by self-play, or watch it face alpha-beta minimax.</span>
-    </a>
-    <a class="card" href="2048.html">
-      <span class="tag">03 // STOCHASTIC SEARCH</span>
-      <span class="name neon-purple">2048</span>
-      <span class="field-hint">Expectiminimax with a hand-tuned evaluation vs an n-tuple network learned by temporal-difference learning.</span>
-    </a>
-    <a class="card" href="sudoku.html">
-      <span class="tag">04 // CONSTRAINT SATISFACTION</span>
-      <span class="name neon-green">SUDOKU</span>
-      <span class="field-hint">Plain backtracking, MRV with forward checking, and full constraint propagation, with every guess and backtrack replayed.</span>
-    </a>
-  </div>
-</div>
+  <!-- Arcade: one cabinet per agent, each screen running that agent's mechanism -->
+  <section class="arcade" aria-labelledby="arcade-title">
+    <h2 id="arcade-title" class="arcade-title">Pick a machine</h2>
+    <div class="cabinets">
+      <a class="cabinet c-pink" href="npuzzle.html">
+        <span class="cab-marquee">N-Puzzle</span>
+        <canvas class="cab-screen" data-sim="npuzzle" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>120x</b> fewer nodes than optimal search</span>
+        <span class="cab-desc">Nine search algorithms, a pattern database, and a neural heuristic trained by value iteration. Watch every expansion stream in.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-cyan" href="connect4.html">
+        <span class="cab-marquee">Connect Four</span>
+        <canvas class="cab-screen" data-sim="connect4" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>0</b> human games in its training data</span>
+        <span class="cab-desc">An AlphaZero-style agent that learned only by playing itself. See its instinct and its search side by side, then try to beat it.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-yellow" href="checkers.html">
+        <span class="cab-marquee">Checkers</span>
+        <canvas class="cab-screen" data-sim="checkers" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>26x</b> fewer positions with alpha-beta</span>
+        <span class="cab-desc">An agent that assumes you always find your best reply, and prunes every line it can rule out. See how much it skipped.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-purple" href="2048.html">
+        <span class="cab-marquee">2048</span>
+        <canvas class="cab-screen" data-sim="g2048" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>81%</b> of games reach the 2048 tile</span>
+        <span class="cab-desc">An n-tuple network learned from 40,000 self-played games. Let it play, or take the keys yourself.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-green" href="sudoku.html">
+        <span class="cab-marquee">Sudoku</span>
+        <canvas class="cab-screen" data-sim="sudoku" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>7</b> guesses per puzzle on average</span>
+        <span class="cab-desc">Three solvers race on generated puzzles with unique solutions. Replay every guess and every backtrack.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+    </div>
+  </section>
 
+  <!-- Terminal: where the code lives -->
+  <section class="terminal" aria-labelledby="term-title">
+    <h2 id="term-title" class="sr-only">Source code</h2>
+    <div class="term-window">
+      <div class="term-bar"><span></span><span></span><span></span><em>kb@search-agents: ~</em></div>
+      <p><span class="prompt">$</span> git clone https://github.com/dpologdvinity/search-agents</p>
+      <p><span class="prompt">$</span> open <a href="https://github.com/dpologdvinity/search-agents">the repository</a>, <a href="https://github.com/dpologdvinity/search-agents#results">the results</a>, or <a href="https://github.com/dpologdvinity/search-agents#how-it-works">how it works</a></p>
+      <p class="term-out">Python, PyTorch, NumPy, FastAPI. Trained models run in NumPy, so this server needs no PyTorch.</p>
+      <p><span class="prompt">$</span> <span class="cursor"></span></p>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/landing.js"></script>
 </body>
 </html>

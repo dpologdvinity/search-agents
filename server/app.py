@@ -6,7 +6,7 @@ Environment:
   ALLOWED_ORIGINS  comma-separated origins allowed to call the API (default: any)
   SEARCH_SLOTS     searches allowed to run at once (default 2)
   SOLVES_PER_MIN   N-Puzzle solves per client per minute (default 30)
-  MOVES_PER_MIN    Connect Four moves per client per minute (default 120)
+  MOVES_PER_MIN    game moves per client per minute (default 120)
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from . import connect4_api, game2048_api, npuzzle_api, sudoku_api
+from . import checkers_api, connect4_api, game2048_api, npuzzle_api, sudoku_api
 from .limits import Busy, RateLimiter, SearchSlots
 
 ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
@@ -60,6 +60,7 @@ app.include_router(npuzzle_api.router)
 app.include_router(connect4_api.router)
 app.include_router(game2048_api.router)
 app.include_router(sudoku_api.router)
+app.include_router(checkers_api.router)
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 
