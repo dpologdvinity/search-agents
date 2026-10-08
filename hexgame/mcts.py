@@ -31,7 +31,7 @@ import time
 from .board import EMPTY, connect, fill_playout, other
 
 EXPLORE = 0.6  # exploration constant for win rates in [0, 1]
-RAVE_K = 300.0  # the equivalence parameter k; beta falls to 1/2 near 100 visits with this value
+RAVE_K = 300.0  # the equivalence parameter k; beta = sqrt(k / (3n + k)) is 1/2 at n = k = 300 visits
 
 
 class _Node:

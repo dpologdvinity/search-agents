@@ -131,6 +131,49 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The solver keeps every answer that fits the clues so far. For each allowed guess it asks how the remaining answers would split across the 243 possible feedback patterns, then plays the guess that tells it the most. Each guess is scored from a precomputed table, so a turn is one lookup and one count per guess.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Entropy (default)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Imagine finding a hidden number with yes-or-no questions. A question that is nearly always "no" tells you little, while one that splits the possibilities evenly tells you a lot. Entropy measures the average information a guess gives, in bits.</p>
+      <p>Each candidate answer would produce one of 243 feedback patterns for a guess. If a pattern's bucket holds a share P of the candidates, the guess is worth H = -sum P log2 P bits. The solver plays the guess with the largest H.</p>
+      <ul>
+        <li>Mean 3.627 guesses over all 3,568 answers, with no game lost in six guesses.</li>
+        <li>Best opener when every answer is possible: TARES, 6.230 bits.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Minimax</h3>
+      <p class="hiw-plain"><b>New to this?</b> A cautious player plans for the worst case, like picking the route whose longest possible delay is shortest. Minimax picks the guess that leaves the largest group of remaining words as small as it can.</p>
+      <p>It ranks guesses by the size of the largest bucket, the worst case after the guess. Ties go to the smaller expected bucket. It optimises a different target from entropy, not a blend of the two.</p>
+      <ul>
+        <li>Mean 3.739 guesses, no failures. On average it takes a little longer than entropy.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Random consistent word</h3>
+      <p class="hiw-plain"><b>New to this?</b> Guess any word the clues still allow, chosen at random. It uses every clue, but it never asks which guess would teach the most. It is the yardstick the other two are measured against.</p>
+      <p>The pick is drawn from the answers still possible, not from the full guess list.</p>
+      <ul>
+        <li>Mean 4.412 guesses. 246 of 3,568 games (6.89%) ran past six guesses.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Expected information</td><td>Bits of feedback information, averaged over the candidates</td><td class="num">-sum P log2 P; entropy maximises it</td></tr>
+    <tr><td>Worst bucket</td><td>Largest group of candidates left after the guess</td><td class="num">Integer count; minimax minimises it</td></tr>
+    <tr><td>Expected left</td><td>Average size of the bucket a random answer falls into, sum(bucket^2) / candidates</td><td class="num">Minimax's tie-break</td></tr>
+    <tr><td>Tile values</td><td>Gray, yellow and green for each of five letters</td><td class="num">0, 1, 2 in base 3: 243 patterns</td></tr>
+    <tr><td>Candidate preference</td><td>A guess that could be the answer, so it can win this turn</td><td class="num">Wins ties</td></tr>
+    <tr><td>List order</td><td>Position in the alphabetical guess list</td><td class="num">Final tie-break</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> none is tuned or learned. Each score is the objective its strategy names, and the feedback rule is fixed by the game. The tie-break order was picked so that results repeat exactly and so a guess that can win now is preferred. Bits are rounded to nine decimal places before comparing, so floating-point noise cannot reorder ties. The word lists come from the SCOWL word lists: 3,568 common answers (the small tier) and 6,748 allowed guesses. The official Wordle lists are not used, so these numbers are not directly comparable with published Wordle results.</p>
+  <p class="hiw-note"><b>Results:</b> entropy and minimax lose no game in six guesses, and random loses 6.89%. The best opener that could itself be the answer is TALES (6.138 bits). TARES, the top opener, is not in the answer list.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py">wordle/solver.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py">wordle/feedback.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py">wordle/lexicon.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/build_lists.py">wordle/build_lists.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md">results/wordle_benchmark.md</a></p>
+</section>
 </div>
 </div>
 

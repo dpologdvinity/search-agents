@@ -166,6 +166,54 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The agent is Monte Carlo tree search. From the current position it plays many random games to the end, keeps score of which first moves win, and plays the move it has visited most often. The default, RAVE, also counts a move's results from random games where that move came later, so it learns faster when the budget is small.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>RAVE-MCTS (default)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Judging a dish from a few tasting plates is slow if you only count a dish when it is served first. RAVE also counts it whenever it turns up later in the meal, so every dish gets feedback sooner. The estimate is noisy, so as a dish is tasted more, its own record takes over.</p>
+      <p>Each simulation selects down the tree by score, adds one new move, finishes the game at random, and adds the result to every node on the path. A child's score blends its win rate with its RAVE rate: Q = (1 - beta) Q_uct + beta Q_rave, with beta = sqrt(k / (3n + k)), k = 300, and exploration constant c = 0.6. Expansion tries the untried move with the best RAVE rate first.</p>
+      <ul>
+        <li>With the swap rule on, the agent's first turn as the second player runs two searches, one for staying and one for swapping, and swaps when its win chance is higher after swapping.</li>
+        <li>The move it plays is the most-visited child of the root.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Plain UCT</h3>
+      <p class="hiw-plain"><b>New to this?</b> UCT is the rule "try the best option, but also check the ones you have barely tried". Each move's score is its win rate plus a bonus that is large for moves with few visits, so the search explores instead of fixating on an early favourite.</p>
+      <p>Its score is the win rate plus c * sqrt(ln N / n), with c = 0.6, where N is the parent's visits and n the child's. Untried moves are expanded in random order, and it uses no RAVE statistics.</p>
+      <ul>
+        <li>On the 7×7 benchmark at 400 simulations per move, it wins 13 of 40 games against the shortest-path race.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Shortest-path race (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Hex is a race to connect. Count how many empty cells each side still needs to finish its chain, the way you would count the bricks left in a wall. Then play the cell that slows the opponent the most while speeding you up.</p>
+      <p>Distance is a 0-1 breadth-first search: your stones cost 0, empty cells cost 1, and opponent stones are walls. A move scores the opponent's distance minus your own, with random tie-breaks. It looks one move ahead only.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Random (baseline)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A random empty cell, chosen without any thought. It sets the floor for the others.</p>
+      <ul>
+        <li>RAVE and UCT both beat it in all 40 benchmark games.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Exploration c</td><td>Bonus for moves with few visits, in UCT and RAVE</td><td class="num">0.6</td></tr>
+    <tr><td>Equivalence k</td><td>How many visits before a child's own win rate outweighs its RAVE rate</td><td class="num">300</td></tr>
+    <tr><td>beta</td><td>Weight on the RAVE rate for a child with n visits</td><td class="num">sqrt(k / (3n + k)); 0.5 at n = 300</td></tr>
+    <tr><td>Level 1 budget</td><td>Simulations or seconds per move, whichever ends first</td><td class="num">300 or 0.4 s</td></tr>
+    <tr><td>Level 2 budget (default)</td><td>Same rule, the page's standard setting</td><td class="num">1,000 or 0.9 s</td></tr>
+    <tr><td>Level 3 budget</td><td>Same rule, the deep setting</td><td class="num">3,000 or 1.8 s</td></tr>
+    <tr><td>Board size</td><td>Side of the rhombus of hexagons</td><td class="num">5 to 11; the page starts at 7</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> c = 0.6 and k = 300 are constants in <code>hexgame/mcts.py</code>, set by hand and not tuned: the repository has no sweep over either. The beta formula is the RAVE blend from Gelly and Silver, as the code cites. Each level's budget caps the work per move at a simulation count or a time, whichever comes first, so one request stays bounded.</p>
+  <p class="hiw-note"><b>Results</b> (7×7, 400 simulations per move, 40 seeded games per matchup, 95% Wilson intervals): RAVE beats UCT in 40 of 40 games, and it beats the shortest-path race in 39 of 40. UCT wins 13 of 40 against the race. Speed on an empty board, single core, pure Python: RAVE 5,811 simulations per second, UCT 5,783, random playouts 10,739 per second. A check at 1,000 simulations (20 games, recorded in the README but not in <code>results/</code>) has RAVE winning 18 of 20 against UCT, so the gap narrows with budget. That is not a measured reversal.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py">hexgame/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py">hexgame/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py">hexgame/heuristic.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py">hexgame/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/benchmark.py">hexgame/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/hexgame_benchmark.md">results/hexgame_benchmark.md</a></p>
+</section>
 </div>
 </div>
 

@@ -160,7 +160,7 @@
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">FROZEN BOXES</div>
-            <div class="field-hint">A box with a wall or another frozen box on both sides of one axis cannot slide along it. Frozen off-goal means a deadlock, including the 2x2 block.</div>
+            <div class="field-hint">A box blocked (by a wall or another frozen box) on at least one side horizontally and at least one side vertically can never be pushed again. Frozen off-goal means a deadlock, including the 2x2 block.</div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">MATCHING BOUND</div>
@@ -170,6 +170,76 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The solver searches over pushes, not steps, because walking is free. One search loop runs three ways (A*, greedy, breadth-first), and two lower bounds on the pushes still needed, plus deadlock checks, keep it away from positions that cannot be finished.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>A* search</h3>
+      <p class="hiw-plain"><b>New to this?</b> A* plans like a driver who adds the miles already driven to a guess of the miles still to go, and always tries the route with the smallest total first. If the guess never overstates the distance left, the first destination reached is by the shortest route.</p>
+      <p>Each state is a box layout, and its priority is g + h: pushes so far plus the bound. The page's default is A* with the matching bound and pruning on. Those controls drive HINT and SOLVE, and COMPARE runs both pruning settings.</p>
+      <ul>
+        <li>The bound never overestimates, so the first goal taken off the queue has the fewest pushes.</li>
+        <li>Across all 12 levels, matching with pruning expands 154 nodes; without pruning, 269.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy best-first</h3>
+      <p class="hiw-plain"><b>New to this?</b> Greedy search is A* without the distance already travelled. It always heads for whichever option looks closest to done. That makes it quick, but a path that looks close can be a dead end, so the plan it returns can be longer than the best one.</p>
+      <p>Its priority is h alone, with g only breaking ties. The benchmark pairs it with the matching bound.</p>
+      <ul>
+        <li>It solves all 12 levels with pruning on and off, but 11 of the 12 plans are optimal.</li>
+        <li>On the Aisle level it returns a 29-push plan where the optimum is 18.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Breadth-first search</h3>
+      <p class="hiw-plain"><b>New to this?</b> Breadth-first search checks every position one push away, then every position two pushes away, like ripples from a dropped stone. It always finds the fewest pushes, but it never looks toward the goal.</p>
+      <p>Its priority is the push count g alone, with no heuristic. It is the baseline for the node counts.</p>
+      <ul>
+        <li>With a 20,000-node budget it solves 8 of 12 levels with pruning off and 10 of 12 with pruning on.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Matching bound (Hungarian)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Suppose five people each need one of five chairs, and every person walks a different distance to every chair. The Hungarian algorithm finds the seating with the least total walking exactly, without trying every seating.</p>
+      <p>h is the minimum total push distance over all one-to-one pairings of boxes and goals, so no two boxes can claim the same goal. It runs in O(n&sup3;) for n boxes.</p>
+      <ul>
+        <li>It never exceeds the pushes really left, so A* stays optimal.</li>
+        <li>tests/test_sokoban.py checks it against brute force over every permutation.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Simple bound (nearest goal)</h3>
+      <p class="hiw-plain"><b>New to this?</b> It is like estimating a delivery round by adding up each parcel's distance to its nearest drop-off. The sum is easy to get, but two parcels may pick the same drop-off, so the total can come out too low.</p>
+      <p>h is the sum over boxes of the push distance to the nearest goal. It is admissible but weaker than the matching bound.</p>
+      <ul>
+        <li>A* with it expands 10,907 nodes across all 12 levels with pruning on, against 154 with the matching bound.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Deadlock pruning</h3>
+      <p class="hiw-plain"><b>New to this?</b> Some positions are lost before the search goes further. A sofa carried into a room corner, against two walls, can never be pulled back out. Spotting such positions early means the search never explores the hopeless branch below them.</p>
+      <p>Dead squares come from a backward search from each goal: a box on any other square can never reach a goal. A frozen box has a wall or frozen box on one horizontal side and one vertical side, so it can never move; off a goal, that is a deadlock. Pruning drops such a successor before it is stored.</p>
+      <ul>
+        <li>Pruning never removes a solvable state, so the optimal push count is the same either way.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Push distance</td><td>Fewest pushes to move one box to one goal, ignoring the other boxes</td><td class="num">Integer, weight 1; a backward BFS per goal</td></tr>
+    <tr><td>Manhattan fallback</td><td>Row and column distance, used only when no push path joins a box and a goal</td><td class="num">|row gap| + |column gap|, weight 1</td></tr>
+    <tr><td>Simple bound</td><td>Sum over boxes of the push distance to the nearest goal</td><td class="num">One integer term per box</td></tr>
+    <tr><td>Matching bound</td><td>Cheapest one-to-one pairing of boxes and goals</td><td class="num">One integer total per state</td></tr>
+    <tr><td>Dead square</td><td>A square no push sequence can bring a box to a goal from</td><td class="num">1 dead, 0 live</td></tr>
+    <tr><td>Frozen box</td><td>A box that no push can ever move again</td><td class="num">Deadlock when off a goal</td></tr>
+    <tr><td>Node budget</td><td>States expanded per run</td><td class="num">20,000 (page default and server cap)</td></tr>
+    <tr><td>Time limit</td><td>Wall-clock seconds per run</td><td class="num">5 s on the server, 10 s in the benchmark</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> none is tuned or learned. The push distances, dead squares and frozen-box test follow from the push rule, and the matching total is the exact minimum for its relaxation. The Manhattan fallback is a deliberate choice that keeps the bound finite when pruning is off; it can break consistency, so the search reopens a state that a cheaper path reaches later. The 20,000-node and 5 s caps bound CPU per request on the shared server (<code>server/sokoban_api.py</code>). Levels 1 to 7 are hand-drawn; levels 8 to 12 were generated, keeping the scramble with the most optimal pushes among 40 seeds.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py">sokoban/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py">sokoban/heuristics.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/matching.py">sokoban/matching.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py">sokoban/tables.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/deadlock.py">sokoban/deadlock.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/levels.py">sokoban/levels.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/sokoban_benchmark.md">results/sokoban_benchmark.md</a></p>
+</section>
 </div>
 </div>
 

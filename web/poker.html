@@ -129,6 +129,53 @@
       </div>
     </div>
   </div>
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The bot plays a near-equilibrium strategy for Leduc hold'em, a six-card poker game with one shared card. The strategy was trained offline with counterfactual regret minimization (CFR) and its faster variant CFR+. The server only looks up the trained probabilities, so no search runs during play.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>CFR+ (the bot)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture a player who, after each hand, asks "would I have done better always betting here, or always checking?" and shifts future play toward the moves they wish they had made more often. Repeated over thousands of hands, the average of all that play is hard to beat.</p>
+      <p>Each information set (the bot's card, the public card once shown, and the betting so far) keeps one regret per action. Regret matching plays each action in proportion to its positive regret. CFR+ floors regrets at zero, and its average strategy weights iteration t by t. The bot samples each move from that average.</p>
+      <ul>
+        <li>Leduc: six cards (two each of J, Q, K), an ante of 1, bets of 2 and 4 chips, at most two bets or raises per round, and one public card between the rounds. The game has 288 information sets.</li>
+        <li>Committed run: 5,000 iterations. Exploitability of the saved table: 0.00010694 chips per hand.</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Vanilla CFR (comparison)</h3>
+      <p class="hiw-plain"><b>New to this?</b> It is the same regret idea with a slower habit. It keeps every regret, positive or negative, and gives every past iteration the same weight. It still converges, just more slowly.</p>
+      <p>The training page charts it next to CFR+ on the same game and the same iteration counts.</p>
+      <ul>
+        <li>After 5,000 iterations its exploitability is 0.00358651 chips, against 0.0000148 for CFR+ (the unrounded log values).</li>
+      </ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Baselines: random, always-call, hand-strength</h3>
+      <p class="hiw-plain"><b>New to this?</b> These are the opponents you would meet at a casual table: one plays at random, one calls every bet, and one follows a few rules about its own card. They are yardsticks, not proof of skill, so the benchmark also plays the bot against itself.</p>
+      <p>Win rates for the bot, in milli-big-blinds per hand (big blind 2 chips), over 200,000 hands each:</p>
+      <ul>
+        <li>Random +358.0 (95% CI +350.2 to +365.7); always-call +317.7; hand-strength +68.2.</li>
+        <li>Self-play +3.1 (CI -1.4 to +7.6), which contains zero as equilibrium play requires.</li>
+      </ul>
+    </article>
+  </div>
+  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+    <tr><td>Pair with the public card</td><td>Strongest hand: a pair made with the public card</td><td class="num">Bet when unbet; facing a bet, raise if legal, else call</td></tr>
+    <tr><td>King, no pair</td><td>Second strongest rank</td><td class="num">Bet; call a bet</td></tr>
+    <tr><td>Queen, no pair</td><td>Middle rank</td><td class="num">Check; call a bet</td></tr>
+    <tr><td>Jack, no pair</td><td>Weakest rank</td><td class="num">Check; fold to a bet</td></tr>
+    <tr><td>Ante</td><td>Chips each seat puts in at the deal</td><td class="num">1 chip</td></tr>
+    <tr><td>Bet sizes</td><td>Chips per bet in round 1 and round 2</td><td class="num">2 and 4 chips</td></tr>
+    <tr><td>Raise cap</td><td>Bets plus raises allowed per round</td><td class="num">2</td></tr>
+    <tr><td>Probability rounding</td><td>Precision of the saved strategy</td><td class="num">4 decimals, then renormalised</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> the hand-strength rules are hand-picked, a plain reading of the card ranks, and they are not tuned. The ante, bet sizes and raise cap are the Leduc rules as coded. CFR+ and the 5,000-iteration run were chosen, not swept: the repository has no sweep over iterations or game settings. Probabilities are rounded to four decimals to keep the file small, and the exploitability in the file is measured on the rounded table, so it matches what the bot plays.</p>
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">Trained offline with <code>python -m poker train --save --iterations 5000</code>, which runs CFR and CFR+ on Leduc for 5,000 iterations each. Without <code>--iterations</code> the command runs 10,000. Exploitability is computed exactly by best response, not sampled, at about 40 checkpoints spaced logarithmically (37 distinct iterations in the log). The committed run took 230.6 s. Its game value for the first seat is -0.085606 chips. The best responses are -0.08552004 and 0.08573392, so the exploitability is 0.00010694 chips. On Kuhn poker, where the exact value is -1/18, 10,000 iterations give a value error of 3.6e-9 for CFR+ and 8.0e-6 for vanilla CFR.</p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py">poker/cfr.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py">poker/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py">poker/tree.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py">poker/bots.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py">poker/leduc.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py">poker/strategy.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_strategy.json">poker/data/leduc_strategy.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_benchmark.md">results/poker_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_train_log.jsonl">results/poker_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 
