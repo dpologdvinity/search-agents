@@ -1,0 +1,65 @@
+/* Tetris page. Loaded after style.css and app.css. The playfield is a canvas sized by tetris.js
+   (state.cell px per block); everything else is laid out here. */
+
+[hidden] { display: none !important; }
+
+/* Stage: playfield and the next-piece box side by side; they stack on phones. */
+.tt-stage { display: flex; gap: 1.2rem; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+.tt-board-wrap { position: relative; }
+.tt-board {
+  display: block; border: 2px solid var(--pink); background: rgba(2,6,16,0.9);
+  box-shadow: 0 0 30px rgba(255,0,160,0.35), 0 0 70px rgba(155,0,255,0.15), inset 0 0 40px rgba(0,0,0,0.6);
+  animation: crt 7s infinite; max-width: 100%;
+}
+.tt-side { display: flex; flex-direction: column; gap: 0.5rem; width: 150px; }
+.tt-next {
+  width: 84px; height: 56px; border: 1px solid var(--border); background: rgba(5,13,26,0.8);
+}
+
+/* Game over sits over the board. */
+.tt-over {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.8rem; background: rgba(2,6,16,0.82); border: 2px solid var(--red);
+  font-family: var(--orb); text-align: center; padding: 1rem;
+}
+.tt-over-title { font-size: 1.4rem; font-weight: 900; color: var(--red); text-shadow: 0 0 14px var(--red); }
+.tt-over-text { font-family: var(--mono); font-size: 0.8rem; color: var(--text); }
+
+/* Button rows. */
+.tt-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; justify-content: center; margin-top: 1rem; }
+.tt-speed-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+.tt-speed-wrap .cyber-select { min-width: 110px; }
+.tt-mobile { display: none; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.8rem; }
+.tt-mobile .cyber-btn { min-width: 3.4rem; touch-action: manipulation; }
+
+/* Agent explanation: the one-line summary, then a bar per feature. */
+.tt-why-panel .viz-title { margin-bottom: 0.6rem; }
+.tt-why { display: flex; flex-direction: column; gap: 0.35rem; min-height: 120px; }
+.tt-bar { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.2rem 0.6rem; align-items: center; font-family: var(--mono); font-size: 0.7rem; }
+.tt-bar span:first-child { color: var(--dim); }
+.tt-bar-track { height: 8px; background: rgba(0,245,255,0.08); border: 1px solid var(--border); display: block; }
+.tt-bar-track > span { display: block; height: 100%; box-shadow: 0 0 8px currentColor; }
+.tt-bar-val { grid-column: 2; color: var(--text); }
+
+/* Weight sliders. */
+.tt-presets { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+.tt-sliders { display: flex; flex-direction: column; gap: 0.6rem; }
+.tt-slider { padding: 0.55rem 0.7rem; border: 1px solid var(--border); background: var(--panel); }
+.tt-slider-head { display: flex; justify-content: space-between; font-family: var(--orb); font-size: 0.66rem; color: var(--cyan); letter-spacing: 0.04em; }
+.tt-slider-head output { font-family: var(--mono); color: var(--yellow); }
+.tt-tuned { font-family: var(--mono); font-size: 0.65rem; color: var(--green); margin-left: auto; margin-right: 0.6rem; }
+.tt-slider input[type=range] { width: 100%; accent-color: var(--pink); margin: 0.35rem 0; }
+.tt-slider-hint { font-family: var(--raj); font-size: 0.8rem; color: var(--dim); }
+
+.tt-fitness { display: block; width: 100%; height: 180px; margin: 0.6rem 0 0.3rem; border: 1px solid var(--border); }
+
+@media (max-width: 600px) {
+  .tt-side { width: auto; flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .tt-side .field-hint { flex-basis: 100%; text-align: center; }
+  .tt-mobile { display: flex; }
+  .tt-bar { grid-template-columns: 6.5rem 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-board { animation: none; }
+}

@@ -18,6 +18,8 @@ COPY bandits ./bandits
 COPY cartpole ./cartpole
 COPY queens ./queens
 COPY snake ./snake
+COPY rover ./rover
+COPY tetris ./tetris
 COPY endgame ./endgame
 COPY sokoban ./sokoban
 COPY wordle ./wordle

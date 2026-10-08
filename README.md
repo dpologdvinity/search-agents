@@ -1,6 +1,6 @@
 # search-agents
 
-Twenty-one puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Twenty-three puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -25,6 +25,8 @@ Twenty-one puzzles and games, each played or solved by a classic AI algorithm: s
 | **CartPole** | Policy gradients in pure NumPy: REINFORCE with a baseline, actor-critic with a learned value baseline trained on Monte Carlo returns, and a cross-entropy search over linear policies | None: the policies are learned from reward alone. The PD controller is hand-tuned, not learned | The pole's angle and the cart's position as the policy's probabilities and the critic's value change, and the learning curves across seeds |
 | **N-Queens** | Backtracking with column and diagonal bitmasks (exhaustive, so it proves infeasibility), steepest-ascent hill climbing with restarts, simulated annealing on the conflict count, min-conflicts from a greedy start | None: local search over one-queen-per-row boards, with no learned component | Four agents on one board: backtracking blowing up past 32 queens, hill climbing stalling on plateaus, and min-conflicts solving a live pixel board of a thousand queens |
 | **Snake** | Genetic algorithm evolving a 339-weight net (no gradients): tournament selection, uniform crossover, Gaussian mutation, elitism, fresh boards each generation | BFS path planner to the food with a tail-chasing safety check, as the classic baseline | The net's decision in each frame: senses (including room to move), hidden units lit, and the output probabilities |
+| **Rover** (D* Lite on a map learned from a sensor) | D* Lite incremental replanning, which repairs only the cells a new wall affects, against A* replanned from scratch | None: the rover learns the map from its sensor, not from training | The learned map, the planned route and its replans, and the expansion counts of both planners |
+| **Tetris** (placement search) | Placement search over every rotation and column, scored by nine board features; a genetic algorithm tunes the weights | None for play: the hand-picked weights are the default. The GA-tuned weights are a comparison, and they do worse on held-out games | The chosen placement as a ghost, the nine feature values, and the GA's weight history |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -235,6 +237,55 @@ A 339-weight network (17 senses, 16 tanh hidden units, 3 turn outputs) is evolve
 | v2: fresh boards per generation, 8 games, starvation penalty, room senses, 17 senses, 339 weights, 80 generations | 13.69 | 13 | 26 | 38.5% | 123 | 457.9 | `results/snake_benchmark.*`, `results/snake_train_log.jsonl` |
 
 The baselines are the same in both rows; only the evolved agent changed. The champion's training metric was 12.7 apples per game on the boards it trained on (`train_apples` in `snake/data/champion.json`), close to its 13.7 on the benchmark boards, so the benchmark score is not a lucky draw of boards. The net is still far from the planner, and the next step is a stronger training signal, not more generations of the same setup.
+
+### Rover: D* Lite vs A* replanned from scratch
+
+Sensor radius 2, five seeded maps per row, 4-connected grid, start top-left, goal bottom-right. Both planners drive the same routes. The columns are node expansions (the work measure); "total" is everything the planner expanded over the whole run, and the ratio is D* Lite over A*.
+
+| Size | Walls | Steps | Replans | D* initial | D* replans | A* initial | A* replans | D* total / A* total | D* ms | A* ms |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 21x21 | 10% | 45 | 15.6 | 441 | 32 | 41 | 384 | 473 / 425 (1.11x) | 14 | 2 |
+| 21x21 | 20% | 47 | 24.4 | 441 | 57 | 41 | 551 | 498 / 592 (0.84x) | 7 | 2 |
+| 21x21 | 30% | 46 | 30.2 | 441 | 59 | 41 | 718 | 500 / 759 (0.66x) | 6 | 2 |
+| 41x41 | 10% | 87 | 29.6 | 1681 | 55 | 81 | 1279 | 1736 / 1360 (1.28x) | 46 | 9 |
+| 41x41 | 20% | 100 | 56.4 | 1681 | 169 | 81 | 2353 | 1850 / 2434 (0.76x) | 41 | 8 |
+| 41x41 | 30% | 127 | 86.4 | 1681 | 467 | 81 | 3920 | 2148 / 4001 (0.54x) | 63 | 22 |
+| 61x61 | 10% | 135 | 47.0 | 3721 | 100 | 121 | 3030 | 3821 / 3151 (1.21x) | 88 | 25 |
+| 61x61 | 20% | 147 | 82.2 | 3721 | 241 | 121 | 5076 | 3962 / 5197 (0.76x) | 93 | 23 |
+| 61x61 | 30% | 196 | 131.2 | 3721 | 696 | 121 | 8154 | 4417 / 8275 (0.53x) | 182 | 68 |
+
+**D* Lite's initial plan costs more than A*'s, so it wins on total expansions only from about 20% walls.** On an open map its first search runs from the goal over the whole start-goal box (441 expansions at 21x21 against 41 for A*; 3,721 against 121 at 61x61). Its replans are much cheaper, about 10 to 30 times cheaper than A*'s in every row. At 10% walls D* Lite spends 1.11x to 1.28x as many expansions as A*. At 20% and 30% walls it spends 0.84x down to 0.53x. The timings are one-off Python numbers on one core.
+
+Cost check: the two planners agreed on the cost from the rover's cell at every replan (0 disagreements over 2,515 replans on 45 maps).
+
+### Tetris: hand-picked weights beat the GA-tuned weights on held-out games
+
+The AI places each piece by trying every rotation and column, dropping the piece straight down, and scoring the result with nine board features (landing height, eroded piece cells, row and column transitions, holes, cumulative wells, aggregate height, bumpiness, completed lines). The score is a weighted sum. A genetic algorithm tunes the nine weights. The default AI uses the hand-picked weights.
+
+**On the harder benchmark (10-row board, 30 held-out seeds, games run to game over), the hand-picked weights beat the GA-tuned weights: 2,128.5 lines against 388.9.** The GA does not beat the hand-picked weights on held-out games, and the README does not claim it does.
+
+`results/tetris_benchmark_hard.md`: 10-row board, 30 held-out seeds (50000-50029), piece cap 100,000. Every game ended on its own; none hit the cap.
+
+| Strategy | Mean lines | 95% CI | Median | Min-max | Mean pieces |
+|---|---:|---:|---:|---:|---:|
+| Random placement | 0.0 | ± 0.1 | 0 | 0-1 | 14 |
+| Hand-picked weights | 2,128.5 | ± 895.6 | 867 | 80-8,743 | 5,342 |
+| GA-tuned weights | 388.9 | ± 109.0 | 311 | 38-1,009 | 993 |
+
+The GA was trained on 10-row games capped at 2,500 pieces, with 6 games per genome, population 16, and 16 generations, using fresh seeds each generation. Its best genome scored 804.5 mean lines on its generation's seeds, which is an optimistic training figure. The GA rewards survival within the 2,500-piece cap, but held-out games run to game over (5,342 pieces on average for the hand-picked weights), so the shorter training horizon is the likely cause. A longer training cap and more games is the next thing to try; it was outside the time budget for this run.
+
+**Note: the old 10x20 table is saturated and does not separate the strategies.** `results/tetris_benchmark.md`: 10x20 board, 30 held-out seeds, piece cap 2,000.
+
+| Strategy | Mean lines | Hit cap | Topped out |
+|---|---:|---:|---:|
+| Random placement | 0.2 | 0 / 30 | 30 |
+| Hand-picked weights | 797.6 | 30 / 30 | 0 |
+| GA-tuned weights (v1, trained on 300-piece games) | 797.2 | 30 / 30 | 0 |
+| GA-tuned + 1-piece lookahead (v1) | 798.3 | 30 / 30 | 0 |
+
+At 2,000 pieces every surviving strategy sits at the ceiling: a steady stack clears 4 cells per piece over 10 cells per line, so 2,000 pieces allow at most 800 lines. The table cannot tell them apart. Supplementary run, not committed: greedy only, 20,000-piece cap, 12 games, hand-picked 7,998.0 mean lines (12 of 12 hit the cap); v1 GA-tuned 7,413.6 (11 of 12 hit the cap; one game topped out at piece 2,536).
+
+The page plays the 10x20 game, but the committed GA weights come from the 10-row tuning. The page's GA panel says plainly that the hand-picked weights do better on held-out games. Each slider shows its live value and the GA value beside it.
 
 ### Endgame tablebases: exact distance to mate
 
@@ -544,12 +595,27 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 
 The snake senses its surroundings in its own frame: danger, free run, food and tail offsets, its heading, and how much room it has to move ahead, left and right (a capped flood fill). A one-hidden-layer tanh network maps the 17 senses to left, straight, or right. Its 339 weights are bred by a genetic algorithm: each generation plays on fresh boards, the top genomes are kept, parents are chosen by tournament, children mix weights uniformly, and about one weight in ten is nudged by a small Gaussian. Starving is penalised in fitness. The planner baseline paths to the food with BFS and takes that path only if the snake could still reach its tail after eating.
 
+### Rover
+
+- **Map and sensor** (`rover/world.py`, `rover/explorer.py`). A seeded grid with random walls, start top-left, goal bottom-right. The rover senses a square window (radius 2 by default) and learns those cells as it sees them. Unknown cells are planned as free, so a route can be wrong until the rover senses the wall.
+- **D\* Lite** (`rover/dstar.py`). Searches backwards from the goal. Each cell keeps g (its believed cost to the goal) and rhs (a one-step lookahead). A new wall makes some rhs values wrong; only those cells are repaired, instead of replanning the whole map.
+- **A\*** (`rover/astar.py`). The baseline runs a fresh A* search from the rover's cell each time the map changes.
+- **Checks** (`tests/test_rover.py`, `tests/test_rover_parity.py`, `tests/test_server_rover.py`). The parity test runs the page's JavaScript planner (`web/js/rover_core.js`) under node and compares it with the Python planner.
+
+### Tetris
+
+- **Board and pieces** (`tetris/board.py`, `tetris/pieces.py`, `tetris/game.py`). Board rows are bitmasks, so a line clear is a mask test and a drop is a few shifts. Each piece has every distinct rotation as row masks.
+- **Placement search** (`tetris/search.py`). For each rotation and column the piece drops until it lands, and the result is scored after the lock and line clear. Optional one-piece lookahead uses the preview.
+- **Features and weights** (`tetris/features.py`, `tetris/tuned.py`). The nine features are listed under the results above. The hand-picked weights are the default; the GA-tuned weights are in `tetris/tuned.json`.
+- **Genetic tuning** (`tetris/evolve.py`). Population, games per genome, and generations are the CLI defaults (16, 6, 16). Each generation draws fresh seeds, shared by the whole generation, so the weights are not tuned to one fixed set of games.
+- **Checks** (`tests/test_tetris.py`, `tests/test_server_tetris.py`). Features, line clears and placements, and a node parity test of the JavaScript engine against the Python search.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/ rover/ tetris/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -620,6 +686,13 @@ python -m snake play --delay 0.15                # timed play
 python -m snake watch --agent planner --seed 3   # watch an agent (random, greedy, planner, evolved)
 python -m snake evolve                           # the committed run (about 10 minutes, 2 workers)
 python -m snake benchmark --games 200 --write    # results/snake_benchmark.{json,md}
+python -m rover                                  # 21x21, 20% walls, D* Lite drives, animated
+python -m rover --driver astar --density 0.3     # steer with A* replanned from scratch
+python -m rover benchmark                        # the seeded comparison in results/rover_benchmark.md
+python -m tetris play [--seed N]                                             # turn-based; h shows the agent's placement
+python -m tetris watch --pieces 300                                          # the agent plays a seeded game
+python -m tetris evolve                                                      # GA on the 10-row board; writes tetris/tuned.json and results/tetris_train_log.jsonl
+python -m tetris benchmark --height 10 --cap 100000 --no-lookahead --out results/tetris_benchmark_hard
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

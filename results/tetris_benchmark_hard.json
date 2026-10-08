@@ -1,0 +1,905 @@
+{
+ "games": 30,
+ "piece_cap": 100000,
+ "board_height": 10,
+ "seeds": [
+  50000,
+  50001,
+  50002,
+  50003,
+  50004,
+  50005,
+  50006,
+  50007,
+  50008,
+  50009,
+  50010,
+  50011,
+  50012,
+  50013,
+  50014,
+  50015,
+  50016,
+  50017,
+  50018,
+  50019,
+  50020,
+  50021,
+  50022,
+  50023,
+  50024,
+  50025,
+  50026,
+  50027,
+  50028,
+  50029
+ ],
+ "ga_weights": [
+  -0.3466,
+  -0.7809,
+  0.1253,
+  -0.984,
+  -1.1847,
+  -0.1618,
+  -0.9153,
+  -0.4355,
+  0.7549
+ ],
+ "lookahead_top_k": 6,
+ "summaries": [
+  {
+   "strategy": "random",
+   "games": 30,
+   "mean_lines": 0.03333333333333333,
+   "stderr": 0.03333333333333333,
+   "ci95": 0.06816666666666667,
+   "median_lines": 0.0,
+   "min_lines": 0,
+   "max_lines": 1,
+   "capped": 0,
+   "topped_out": 30,
+   "mean_pieces": 14.133333333333333,
+   "seconds_per_game": 0.010600749651590984
+  },
+  {
+   "strategy": "hand",
+   "games": 30,
+   "mean_lines": 2128.5,
+   "stderr": 437.9561064186973,
+   "ci95": 895.620237626236,
+   "median_lines": 867.0,
+   "min_lines": 80,
+   "max_lines": 8743,
+   "capped": 0,
+   "topped_out": 30,
+   "mean_pieces": 5342.066666666667,
+   "seconds_per_game": 4.033050258954366
+  },
+  {
+   "strategy": "ga",
+   "games": 30,
+   "mean_lines": 388.93333333333334,
+   "stderr": 53.319378921573865,
+   "ci95": 109.03812989461855,
+   "median_lines": 311.0,
+   "min_lines": 38,
+   "max_lines": 1009,
+   "capped": 0,
+   "topped_out": 30,
+   "mean_pieces": 993.0333333333333,
+   "seconds_per_game": 0.6747283379236857
+  }
+ ],
+ "rows": [
+  {
+   "strategy": "random",
+   "seed": 50000,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.0072174072265625
+  },
+  {
+   "strategy": "random",
+   "seed": 50001,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.009524106979370117
+  },
+  {
+   "strategy": "random",
+   "seed": 50002,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.005335569381713867
+  },
+  {
+   "strategy": "random",
+   "seed": 50003,
+   "lines": 0,
+   "pieces": 15,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.008057594299316406
+  },
+  {
+   "strategy": "random",
+   "seed": 50004,
+   "lines": 0,
+   "pieces": 16,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.005148649215698242
+  },
+  {
+   "strategy": "random",
+   "seed": 50005,
+   "lines": 0,
+   "pieces": 17,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.010592937469482422
+  },
+  {
+   "strategy": "random",
+   "seed": 50006,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.03156757354736328
+  },
+  {
+   "strategy": "random",
+   "seed": 50007,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.00676274299621582
+  },
+  {
+   "strategy": "random",
+   "seed": 50008,
+   "lines": 0,
+   "pieces": 12,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.004895210266113281
+  },
+  {
+   "strategy": "random",
+   "seed": 50009,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.006300210952758789
+  },
+  {
+   "strategy": "random",
+   "seed": 50010,
+   "lines": 0,
+   "pieces": 11,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.004771232604980469
+  },
+  {
+   "strategy": "random",
+   "seed": 50011,
+   "lines": 0,
+   "pieces": 16,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.010243892669677734
+  },
+  {
+   "strategy": "random",
+   "seed": 50012,
+   "lines": 0,
+   "pieces": 16,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.018131017684936523
+  },
+  {
+   "strategy": "random",
+   "seed": 50013,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.004543781280517578
+  },
+  {
+   "strategy": "random",
+   "seed": 50014,
+   "lines": 0,
+   "pieces": 16,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.018580913543701172
+  },
+  {
+   "strategy": "random",
+   "seed": 50015,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.00452423095703125
+  },
+  {
+   "strategy": "random",
+   "seed": 50016,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.05787825584411621
+  },
+  {
+   "strategy": "random",
+   "seed": 50017,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.005387544631958008
+  },
+  {
+   "strategy": "random",
+   "seed": 50018,
+   "lines": 0,
+   "pieces": 11,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.006268501281738281
+  },
+  {
+   "strategy": "random",
+   "seed": 50019,
+   "lines": 0,
+   "pieces": 17,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.008052825927734375
+  },
+  {
+   "strategy": "random",
+   "seed": 50020,
+   "lines": 0,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.0042226314544677734
+  },
+  {
+   "strategy": "random",
+   "seed": 50021,
+   "lines": 1,
+   "pieces": 13,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.00528717041015625
+  },
+  {
+   "strategy": "random",
+   "seed": 50022,
+   "lines": 0,
+   "pieces": 11,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.00621795654296875
+  },
+  {
+   "strategy": "random",
+   "seed": 50023,
+   "lines": 0,
+   "pieces": 15,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.009471416473388672
+  },
+  {
+   "strategy": "random",
+   "seed": 50024,
+   "lines": 0,
+   "pieces": 18,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.006525278091430664
+  },
+  {
+   "strategy": "random",
+   "seed": 50025,
+   "lines": 0,
+   "pieces": 16,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.012839078903198242
+  },
+  {
+   "strategy": "random",
+   "seed": 50026,
+   "lines": 0,
+   "pieces": 15,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.015096664428710938
+  },
+  {
+   "strategy": "random",
+   "seed": 50027,
+   "lines": 0,
+   "pieces": 12,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.011066436767578125
+  },
+  {
+   "strategy": "random",
+   "seed": 50028,
+   "lines": 0,
+   "pieces": 14,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.004003763198852539
+  },
+  {
+   "strategy": "random",
+   "seed": 50029,
+   "lines": 0,
+   "pieces": 15,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.009507894515991211
+  },
+  {
+   "strategy": "hand",
+   "seed": 50000,
+   "lines": 377,
+   "pieces": 963,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.8502190113067627
+  },
+  {
+   "strategy": "hand",
+   "seed": 50001,
+   "lines": 5012,
+   "pieces": 12551,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 9.380040407180786
+  },
+  {
+   "strategy": "hand",
+   "seed": 50002,
+   "lines": 8743,
+   "pieces": 21879,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 16.036503791809082
+  },
+  {
+   "strategy": "hand",
+   "seed": 50003,
+   "lines": 883,
+   "pieces": 2229,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.3145980834960938
+  },
+  {
+   "strategy": "hand",
+   "seed": 50004,
+   "lines": 769,
+   "pieces": 1944,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.3158116340637207
+  },
+  {
+   "strategy": "hand",
+   "seed": 50005,
+   "lines": 1415,
+   "pieces": 3559,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 3.393235683441162
+  },
+  {
+   "strategy": "hand",
+   "seed": 50006,
+   "lines": 5814,
+   "pieces": 14556,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 15.100587129592896
+  },
+  {
+   "strategy": "hand",
+   "seed": 50007,
+   "lines": 4064,
+   "pieces": 10181,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 9.559715986251831
+  },
+  {
+   "strategy": "hand",
+   "seed": 50008,
+   "lines": 80,
+   "pieces": 221,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.45583295822143555
+  },
+  {
+   "strategy": "hand",
+   "seed": 50009,
+   "lines": 851,
+   "pieces": 2148,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 2.461439609527588
+  },
+  {
+   "strategy": "hand",
+   "seed": 50010,
+   "lines": 1339,
+   "pieces": 3368,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 3.23948073387146
+  },
+  {
+   "strategy": "hand",
+   "seed": 50011,
+   "lines": 350,
+   "pieces": 897,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.7963216304779053
+  },
+  {
+   "strategy": "hand",
+   "seed": 50012,
+   "lines": 82,
+   "pieces": 225,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.19500231742858887
+  },
+  {
+   "strategy": "hand",
+   "seed": 50013,
+   "lines": 7631,
+   "pieces": 19099,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 12.475403070449829
+  },
+  {
+   "strategy": "hand",
+   "seed": 50014,
+   "lines": 253,
+   "pieces": 653,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.5579884052276611
+  },
+  {
+   "strategy": "hand",
+   "seed": 50015,
+   "lines": 387,
+   "pieces": 989,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.22123265266418457
+  },
+  {
+   "strategy": "hand",
+   "seed": 50016,
+   "lines": 537,
+   "pieces": 1363,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.0160317420959473
+  },
+  {
+   "strategy": "hand",
+   "seed": 50017,
+   "lines": 4942,
+   "pieces": 12377,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 6.364108562469482
+  },
+  {
+   "strategy": "hand",
+   "seed": 50018,
+   "lines": 568,
+   "pieces": 1440,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.2491824626922607
+  },
+  {
+   "strategy": "hand",
+   "seed": 50019,
+   "lines": 2682,
+   "pieces": 6725,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 4.791123628616333
+  },
+  {
+   "strategy": "hand",
+   "seed": 50020,
+   "lines": 777,
+   "pieces": 1963,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.397921085357666
+  },
+  {
+   "strategy": "hand",
+   "seed": 50021,
+   "lines": 355,
+   "pieces": 907,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.41518497467041016
+  },
+  {
+   "strategy": "hand",
+   "seed": 50022,
+   "lines": 3880,
+   "pieces": 9720,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 7.073045015335083
+  },
+  {
+   "strategy": "hand",
+   "seed": 50023,
+   "lines": 2984,
+   "pieces": 7480,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 5.615299224853516
+  },
+  {
+   "strategy": "hand",
+   "seed": 50024,
+   "lines": 586,
+   "pieces": 1485,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.8022308349609375
+  },
+  {
+   "strategy": "hand",
+   "seed": 50025,
+   "lines": 937,
+   "pieces": 2363,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.4326369762420654
+  },
+  {
+   "strategy": "hand",
+   "seed": 50026,
+   "lines": 349,
+   "pieces": 894,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.6950230598449707
+  },
+  {
+   "strategy": "hand",
+   "seed": 50027,
+   "lines": 1331,
+   "pieces": 3347,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 2.2032899856567383
+  },
+  {
+   "strategy": "hand",
+   "seed": 50028,
+   "lines": 818,
+   "pieces": 2067,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.2590219974517822
+  },
+  {
+   "strategy": "hand",
+   "seed": 50029,
+   "lines": 5059,
+   "pieces": 12669,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 9.323995113372803
+  },
+  {
+   "strategy": "ga",
+   "seed": 50000,
+   "lines": 74,
+   "pieces": 205,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.12090086936950684
+  },
+  {
+   "strategy": "ga",
+   "seed": 50001,
+   "lines": 109,
+   "pieces": 293,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.315171480178833
+  },
+  {
+   "strategy": "ga",
+   "seed": 50002,
+   "lines": 519,
+   "pieces": 1318,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.1902239322662354
+  },
+  {
+   "strategy": "ga",
+   "seed": 50003,
+   "lines": 868,
+   "pieces": 2191,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.6833949089050293
+  },
+  {
+   "strategy": "ga",
+   "seed": 50004,
+   "lines": 874,
+   "pieces": 2207,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.2949764728546143
+  },
+  {
+   "strategy": "ga",
+   "seed": 50005,
+   "lines": 707,
+   "pieces": 1788,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.4547410011291504
+  },
+  {
+   "strategy": "ga",
+   "seed": 50006,
+   "lines": 1009,
+   "pieces": 2543,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.8531911373138428
+  },
+  {
+   "strategy": "ga",
+   "seed": 50007,
+   "lines": 203,
+   "pieces": 528,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.4333674907684326
+  },
+  {
+   "strategy": "ga",
+   "seed": 50008,
+   "lines": 256,
+   "pieces": 660,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.34596776962280273
+  },
+  {
+   "strategy": "ga",
+   "seed": 50009,
+   "lines": 528,
+   "pieces": 1342,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.3939797878265381
+  },
+  {
+   "strategy": "ga",
+   "seed": 50010,
+   "lines": 307,
+   "pieces": 788,
+   "topped_out": true,
+   "capped": false,
+   "seconds": -0.16674113273620605
+  },
+  {
+   "strategy": "ga",
+   "seed": 50011,
+   "lines": 156,
+   "pieces": 410,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.31348514556884766
+  },
+  {
+   "strategy": "ga",
+   "seed": 50012,
+   "lines": 132,
+   "pieces": 351,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.2557799816131592
+  },
+  {
+   "strategy": "ga",
+   "seed": 50013,
+   "lines": 357,
+   "pieces": 913,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.7759957313537598
+  },
+  {
+   "strategy": "ga",
+   "seed": 50014,
+   "lines": 482,
+   "pieces": 1226,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.0005309581756592
+  },
+  {
+   "strategy": "ga",
+   "seed": 50015,
+   "lines": 876,
+   "pieces": 2210,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.4002974033355713
+  },
+  {
+   "strategy": "ga",
+   "seed": 50016,
+   "lines": 698,
+   "pieces": 1766,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.12703275680542
+  },
+  {
+   "strategy": "ga",
+   "seed": 50017,
+   "lines": 83,
+   "pieces": 227,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.10971641540527344
+  },
+  {
+   "strategy": "ga",
+   "seed": 50018,
+   "lines": 717,
+   "pieces": 1813,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.1353847980499268
+  },
+  {
+   "strategy": "ga",
+   "seed": 50019,
+   "lines": 49,
+   "pieces": 145,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.11613965034484863
+  },
+  {
+   "strategy": "ga",
+   "seed": 50020,
+   "lines": 437,
+   "pieces": 1114,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.7012317180633545
+  },
+  {
+   "strategy": "ga",
+   "seed": 50021,
+   "lines": 60,
+   "pieces": 171,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.06545162200927734
+  },
+  {
+   "strategy": "ga",
+   "seed": 50022,
+   "lines": 356,
+   "pieces": 910,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.5479052066802979
+  },
+  {
+   "strategy": "ga",
+   "seed": 50023,
+   "lines": 315,
+   "pieces": 809,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.5064897537231445
+  },
+  {
+   "strategy": "ga",
+   "seed": 50024,
+   "lines": 75,
+   "pieces": 209,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.2321326732635498
+  },
+  {
+   "strategy": "ga",
+   "seed": 50025,
+   "lines": 649,
+   "pieces": 1644,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 1.4196436405181885
+  },
+  {
+   "strategy": "ga",
+   "seed": 50026,
+   "lines": 250,
+   "pieces": 647,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.6703264713287354
+  },
+  {
+   "strategy": "ga",
+   "seed": 50027,
+   "lines": 38,
+   "pieces": 114,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.1347954273223877
+  },
+  {
+   "strategy": "ga",
+   "seed": 50028,
+   "lines": 272,
+   "pieces": 699,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.549243688583374
+  },
+  {
+   "strategy": "ga",
+   "seed": 50029,
+   "lines": 212,
+   "pieces": 550,
+   "topped_out": true,
+   "capped": false,
+   "seconds": 0.2610933780670166
+  }
+ ]
+}

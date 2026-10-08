@@ -1388,8 +1388,197 @@ function snakeSim(ctx, S) {
   };
 }
 
+function roverSim(ctx, S) {
+  // 9x9 maze with a 3x3 sensor. The rover learns walls as it goes and re-plans with breadth-first search over
+  // what it knows (unseen cells count as free). A cheap stand-in for the page's D* Lite: the cabinet only
+  // needs to show the discovery and the replan, not the algorithm.
+  const n = 9, N = n * n, cs = S / n;
+  let walls, seen, belief, pos, route, hold, steps;
+  const nb = (c) => {
+    const r = (c / n) | 0, k = c % n, out = [];
+    if (r > 0) out.push(c - n);
+    if (k < n - 1) out.push(c + 1);
+    if (r < n - 1) out.push(c + n);
+    if (k > 0) out.push(c - 1);
+    return out;
+  };
+  // Shortest route from `from` to the goal over the believed map, as a list of cells (empty if none).
+  function plan(from) {
+    const prev = new Int16Array(N).fill(-2);
+    prev[from] = -1;
+    const q = [from];
+    for (let qi = 0; qi < q.length; qi++) {
+      const u = q[qi];
+      if (u === N - 1) break;
+      for (const v of nb(u)) if (!belief[v] && prev[v] === -2) { prev[v] = u; q.push(v); }
+    }
+    if (prev[N - 1] === -2) return [];
+    const out = [];
+    for (let c = N - 1; c !== -1; c = prev[c]) out.push(c);
+    return out.reverse();
+  }
+  function sense() {
+    const r = (pos / n) | 0, k = pos % n;
+    let changed = false;
+    for (let dr = -1; dr <= 1; dr++) for (let dk = -1; dk <= 1; dk++) {
+      const rr = r + dr, kk = k + dk;
+      if (rr < 0 || rr >= n || kk < 0 || kk >= n) continue;
+      const c = rr * n + kk;
+      seen[c] = 1;
+      if (belief[c] !== walls[c]) { belief[c] = walls[c]; changed = true; }
+    }
+    return changed;
+  }
+  function deal() {
+    walls = new Uint8Array(N);
+    for (let i = 1; i < N - 1; i++) walls[i] = Math.random() < 0.28 ? 1 : 0;
+    belief = new Uint8Array(N); seen = new Uint8Array(N);
+    pos = 0; hold = 0; steps = 0;
+    sense();
+    route = plan(pos);
+    // Keep only mazes with a route, so the cabinet never sits waiting on an impossible one.
+    if (!route.length) return deal();
+  }
+  deal();
+  return (speed) => {
+    if (hold > 0) { hold -= speed; if (hold <= 0) deal(); }
+    else {
+      if (sense()) route = plan(pos);
+      if (pos === N - 1) hold = 90;
+      else if (route.length > 1) { pos = route[1]; route = route.slice(1); steps++; }
+    }
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < N; i++) {
+      const r = (i / n) | 0, k = i % n;
+      if (belief[i]) { ctx.fillStyle = C.pink; ctx.shadowColor = C.pink; ctx.shadowBlur = 6; }
+      else if (seen[i]) { ctx.fillStyle = 'rgba(0,245,255,0.12)'; ctx.shadowBlur = 0; }
+      else { ctx.fillStyle = 'rgba(0,245,255,0.04)'; ctx.shadowBlur = 0; }
+      ctx.fillRect(k * cs + 1, r * cs + 1, cs - 2, cs - 2);
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = C.cyan;
+    for (const c of route.slice(1)) {
+      ctx.beginPath(); ctx.arc(((c % n) + 0.5) * cs, (((c / n) | 0) + 0.5) * cs, cs * 0.12, 0, 6.283); ctx.fill();
+    }
+    ctx.fillStyle = C.green;
+    ctx.fillRect((n - 1) * cs + cs * 0.25, (n - 1) * cs + cs * 0.25, cs * 0.5, cs * 0.5);
+    ctx.shadowColor = C.yellow; ctx.shadowBlur = 10;
+    ctx.fillStyle = C.yellow;
+    ctx.beginPath(); ctx.arc(((pos % n) + 0.5) * cs, (((pos / n) | 0) + 0.5) * cs, cs * 0.3, 0, 6.283); ctx.fill();
+    ctx.shadowBlur = 0;
+  };
+}
+
+function tetrisSim(ctx, S) {
+  // Tetris on a 10x20 board. A tiny version of the placement search: each rotation and column of the falling
+  // piece is dropped and scored (aggregate height, holes, bumpiness, lines), the best one is drawn as a ghost,
+  // then locked. Board rows are bitmasks, as in tetris/board.py. No server calls.
+  const W = 10, H = 20, FULL = (1 << W) - 1, cell = Math.floor(S / H), ox = (S - W * cell) / 2;
+  const SHAPES = { I: [[0, 0], [1, 0], [2, 0], [3, 0]], O: [[0, 0], [1, 0], [0, 1], [1, 1]], T: [[0, 0], [1, 0], [2, 0], [1, 1]],
+    S: [[1, 0], [2, 0], [0, 1], [1, 1]], Z: [[0, 0], [1, 0], [1, 1], [2, 1]], J: [[0, 0], [0, 1], [1, 1], [2, 1]],
+    L: [[2, 0], [0, 1], [1, 1], [2, 1]] };
+  const COLOURS = { I: C.cyan, O: C.yellow, T: C.purple, S: C.green, Z: C.pink, J: '#3d7bff', L: '#ff8a00' };
+  // Every distinct orientation of each piece as row masks (bottom row first) and its size.
+  const states = {};
+  for (const name of Object.keys(SHAPES)) {
+    const seen = new Set(), list = [];
+    let cells = SHAPES[name];
+    for (let k = 0; k < 4; k++) {
+      const mx = Math.min(...cells.map((c) => c[0])), my = Math.min(...cells.map((c) => c[1]));
+      cells = cells.map(([x, y]) => [x - mx, y - my]);
+      const key = JSON.stringify(cells.slice().sort());
+      if (!seen.has(key)) {
+        seen.add(key);
+        const h = Math.max(...cells.map((c) => c[1])) + 1, w = Math.max(...cells.map((c) => c[0])) + 1;
+        const masks = [...Array(h)].map((_, r) => cells.reduce((m, [x, y]) => (y === r ? m | (1 << x) : m), 0));
+        list.push({ masks, w, h });
+      }
+      cells = cells.map(([x, y]) => [y, -x]);
+    }
+    states[name] = list;
+  }
+  const names = Object.keys(SHAPES);
+  const pop = (n) => { let c = 0; for (; n; n &= n - 1) c++; return c; };
+  // Hand-picked weights for this demo: stack height and holes hurt, bumpiness hurts a little, lines help.
+  const score = (rows, lines) => {
+    let top = 0, holes = 0, agg = 0, bump = 0, seen = 0;
+    const heights = Array(W).fill(0);
+    for (let r = H - 1; r >= 0; r--) if (rows[r]) { top = r + 1; break; }
+    for (let r = top - 1; r >= 0; r--) {
+      holes += pop(seen & ~rows[r] & FULL);
+      for (let c = 0; c < W; c++) if (((rows[r] & ~seen) >> c) & 1) heights[c] = r + 1;
+      seen |= rows[r];
+      agg += pop(seen);
+    }
+    for (let c = 0; c < W - 1; c++) bump += Math.abs(heights[c] - heights[c + 1]);
+    return -0.5 * agg - 0.4 * holes - 0.2 * bump + 0.8 * lines;
+  };
+  // Best placement of `name` on `rows`, or null if the piece cannot spawn.
+  function best(rows, name) {
+    let pick = null;
+    for (const st of states[name]) {
+      for (let px = 0; px + st.w <= W; px++) {
+        let py = H - st.h;
+        const fits = (y) => st.masks.every((m, i) => y + i >= H || !(rows[y + i] & (m << px)));
+        if (!fits(py)) continue;
+        while (py > 0 && fits(py - 1)) py--;
+        const next = rows.slice();
+        st.masks.forEach((m, i) => { if (py + i < H) next[py + i] |= m << px; });
+        let lines = 0;
+        const kept = next.filter((r) => (r === FULL ? (lines++, false) : true));
+        while (kept.length < H) kept.push(0);
+        const s = score(kept, lines);
+        if (!pick || s > pick.s) pick = { s, st, px, py, rows: kept, lines };
+      }
+    }
+    return pick;
+  }
+  let rows = Array(H).fill(0), piece = names[rand(names.length)], plan = null, lines = 0, hold = 0, pieces = 0;
+  const draw = () => {
+    ctx.clearRect(0, 0, S, S);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = 'rgba(0,245,255,0.08)';
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) ctx.strokeRect(ox + c * cell, (H - 1 - r) * cell, cell, cell);
+    rows.forEach((row, r) => {
+      for (let c = 0; c < W; c++) if ((row >> c) & 1) {
+        ctx.fillStyle = `hsl(${185 + (r / H) * 150},100%,58%)`;
+        ctx.fillRect(ox + c * cell + 1, (H - 1 - r) * cell + 1, cell - 2, cell - 2);
+      }
+    });
+    if (plan) {
+      ctx.strokeStyle = COLOURS[piece]; ctx.lineWidth = 2;
+      plan.st.masks.forEach((m, i) => { for (let c = 0; c < plan.st.w; c++) if ((m >> c) & 1) {
+        ctx.strokeRect(ox + (plan.px + c) * cell + 1, (H - 1 - (plan.py + i)) * cell + 1, cell - 2, cell - 2);
+      } });
+    }
+    ctx.fillStyle = C.cyan; ctx.font = '10px monospace';
+    ctx.fillText(`LINES ${lines}`, 6, 12);
+    ctx.fillText(`PIECES ${pieces}`, 6, 24);
+  };
+  draw();
+  return (speed) => {
+    hold += speed;
+    if (hold < 16) return;
+    hold = 0;
+    if (!plan) {
+      plan = best(rows, piece);
+      if (!plan) { rows = Array(H).fill(0); lines = 0; pieces = 0; }
+      draw();
+      return;
+    }
+    // The agent drops the piece it chose: lock it and bring in the next piece.
+    lines += plan.lines;
+    rows = plan.rows;
+    pieces++;
+    piece = names[rand(names.length)];
+    plan = null;
+    draw();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

@@ -23,6 +23,8 @@ const GAMES = [
   { href: 'cartpole.html', label: 'CART POLE' },
   { href: 'queens.html', label: 'N-QUEENS' },
   { href: 'snake.html', label: 'SNAKE' },
+  { href: 'rover.html', label: 'ROVER' },
+  { href: 'tetris.html', label: 'TETRIS' },
 ];
 
 const list = document.getElementById('nav-links');
