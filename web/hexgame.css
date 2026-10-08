@@ -1,0 +1,72 @@
+/* Hex page. Loaded after style.css and app.css. The board is one SVG; hexgame.js draws the cells and
+   sets the classes below, so the look lives here. */
+
+.hx-pink { color: var(--pink); text-shadow: 0 0 8px rgba(255,0,160,0.6); }
+.hx-cyan { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.6); }
+
+/* Board frame: the two side labels sit above and below the board, in the colour of their goal. */
+.hx-stage { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.hx-side-tag { font-family: var(--orb); font-size: 0.62rem; letter-spacing: 0.12em; }
+.hx-board {
+  width: min(640px, 100%); height: auto; display: block;
+  border: 2px solid rgba(0,245,255,0.35); background: rgba(2,6,16,0.85);
+  box-shadow: 0 0 28px rgba(0,245,255,0.25), inset 0 0 40px rgba(0,0,0,0.6);
+  padding: 6px;
+}
+
+/* Cells. An empty cell is a dark hexagon with a faint outline; a stone is filled and glows. */
+.hx-cell { fill: rgba(5,13,26,0.95); stroke: rgba(0,245,255,0.22); stroke-width: 1.4; cursor: pointer;
+  transition: fill 0.18s, stroke 0.18s; }
+.hx-cell:hover, .hx-cell:focus-visible { stroke: var(--yellow); fill: rgba(255,230,0,0.08); outline: none; }
+.hx-cell.down { fill: url(#hx-grad-down); stroke: #ff7ad0; filter: url(#hx-glow-pink); cursor: default; }
+.hx-cell.across { fill: url(#hx-grad-across); stroke: #9feeff; filter: url(#hx-glow-cyan); cursor: default; }
+.hx-cell.locked { cursor: default; }
+.hx-cell.last { stroke: #fff; stroke-width: 2.6; }
+.hx-cell.hint { stroke: var(--green); stroke-width: 3; animation: hx-hint 0.9s ease-in-out infinite alternate; }
+@keyframes hx-hint { from { stroke-opacity: 0.4; } to { stroke-opacity: 1; } }
+
+/* Edges that define each goal. DOWN's sides are pink; ACROSS's are cyan. */
+.hx-edge { fill: none; stroke-width: 5; stroke-linecap: round; opacity: 0.95; }
+.hx-edge.down { stroke: var(--pink); filter: drop-shadow(0 0 6px rgba(255,0,160,0.9)); }
+.hx-edge.across { stroke: var(--cyan); filter: drop-shadow(0 0 6px rgba(0,245,255,0.9)); }
+
+/* The search's view, drawn on top of empty cells: a fill whose opacity follows the heat value. */
+.hx-heat { pointer-events: none; }
+.hx-heat-lbl { font-family: var(--mono); font-size: 10px; fill: #fff; pointer-events: none; text-anchor: middle; }
+.hx-pv-num { font-family: var(--orb); font-weight: 900; font-size: 13px; fill: #fff; text-anchor: middle;
+  pointer-events: none; paint-order: stroke; stroke: #000; stroke-width: 3px; }
+
+/* Winning chain: each stone lights up in turn along the chain. */
+.hx-cell.chain { animation: hx-chain 0.9s ease-in-out infinite alternate; }
+@keyframes hx-chain {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.9) drop-shadow(0 0 10px #fff); }
+}
+.hx-board.won { border-color: var(--green); box-shadow: 0 0 36px rgba(0,255,136,0.45), inset 0 0 40px rgba(0,0,0,0.6); }
+
+/* Win chance gauge: pink for DOWN, cyan for ACROSS, split at the search's estimate. */
+.hx-gauge { display: flex; flex-direction: column; gap: 0.3rem; }
+.hx-gauge-bar { display: flex; height: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.4); overflow: hidden; }
+.hx-gauge-bar i { display: block; height: 100%; transition: width 0.4s ease; }
+#gauge-down { background: linear-gradient(90deg, #8a0058, var(--pink)); box-shadow: 0 0 8px var(--pink); width: 50%; }
+#gauge-across { background: linear-gradient(90deg, var(--cyan), #0a7d8a); box-shadow: 0 0 8px var(--cyan); width: 50%; flex: 1; }
+.hx-gauge-lbl { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.66rem; }
+
+.hx-table-wrap { max-height: 240px; overflow-y: auto; }
+.hx-table td .bar { height: 6px; background: rgba(255,255,255,0.05); min-width: 60px; }
+.hx-table td .bar i { display: block; height: 100%; background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+.hx-table tr.top td { color: var(--green); }
+.hx-table tr.top td .bar i { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.hx-toggle { display: flex; gap: 0.4rem; }
+.hx-toggle .cyber-btn[aria-pressed="true"] { background: rgba(0,255,136,0.12); }
+.hx-note-line { font-family: var(--mono); font-size: 0.7rem; color: var(--text); }
+
+@media (max-width: 600px) {
+  .hx-board { padding: 3px; }
+  .hx-toggle .cyber-btn { padding: 0.35rem 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-cell.chain, .hx-cell.hint { animation: none; }
+  .hx-gauge-bar i { transition: none; }
+}

@@ -29,6 +29,7 @@ from . import (
     connect4_api,
     endgame_api,
     game2048_api,
+    hexgame_api,
     lightsout_api,
     minesweeper_api,
     npuzzle_api,
@@ -91,6 +92,7 @@ app.include_router(pacman_api.router)
 app.include_router(battleship_api.router)
 app.include_router(lightsout_api.router)
 app.include_router(minesweeper_api.router)
+app.include_router(hexgame_api.router)
 app.include_router(endgame_api.router)
 app.include_router(sokoban_api.router)
 app.include_router(blackjack_api.router)

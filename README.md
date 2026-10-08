@@ -1,6 +1,6 @@
 # search-agents
 
-Sixteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Seventeen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
@@ -20,6 +20,7 @@ Sixteen puzzles and games, each played or solved by a classic AI algorithm: sear
 | **Wordle** | Information theory: pick the guess with the most expected bits (entropy of the feedback patterns over the candidates); minimax (smallest worst-case bucket); random consistent word as the baseline | None needed: a guess is scored exactly against every answer, so the search is exhaustive over the allowed guesses | Every candidate's feedback and bucket size, the bits each guess is expected to give against the bits it actually gave, and the remaining words after each guess |
 | **Poker** (Leduc hold'em, imperfect information) | Exact best response and exploitability on the game tree (no search); the Kuhn value is checked against -1/18 | Counterfactual regret minimization by self-play: vanilla CFR and CFR+, with the average strategy as the answer | The bot's probability bars for every decision, a hint with the equilibrium mix for your card, why its bets are bluffs, and exploitability falling over iterations |
 | **Minesweeper** | Constraint satisfaction on the frontier, then exact probabilities: each number is a constraint, components are counted by memoized backtracking, and the global mine count weights every layout | None: the counts are exact, so the agent proves what it can and prices the rest | Which cells are proven safe or mines, the constraint components, and the exact mine probability of every covered cell |
+| **Hex** | Monte Carlo tree search with RAVE: UCT statistics blended with all-moves-as-first statistics, beta = sqrt(k / (3n + k)); shortest-path and random baselines | None: every playout is a random fill, so nothing is learned | The agent's visit heat map and principal variation, a hint with visits and win rates, and agent-versus-agent games |
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -256,6 +257,32 @@ The first click is free and is not counted as a guess.
 The probability agent wins more expert boards but guesses more per game, because it keeps playing
 longer. The random baseline uses a uniformly random covered cell and no reasoning at all.
 
+### Hex: RAVE vs UCT, and how the gap moves with budget
+
+Hex 7x7, 400 simulations per move, 40 seeded games per matchup (colours alternate). Win rate is for the first agent, with a 95% Wilson interval. From `results/hexgame_benchmark.md`:
+
+| matchup | first agent win rate (95% CI) | wins as DOWN | wins as ACROSS | mean moves |
+|---|---|---|---|---|
+| RAVE vs UCT | 100.0% (91.2%-100.0%) | 20/20 | 20/20 | 15.9 |
+| RAVE vs shortest-path | 97.5% (87.1%-99.6%) | 19/20 | 20/20 | 16.8 |
+| UCT vs shortest-path | 32.5% (20.1%-48.0%) | 6/20 | 7/20 | 18.7 |
+| RAVE vs random | 100.0% (91.2%-100.0%) | 20/20 | 20/20 | 14.8 |
+| UCT vs random | 100.0% (91.2%-100.0%) | 20/20 | 20/20 | 25.5 |
+
+Speed on an empty 7x7 board, single core, pure Python: RAVE 5811 simulations/s, UCT 5783 simulations/s, random fill playouts 10739/s.
+
+RAVE beats UCT 40 of 40 games at 400 simulations per move, but the gap narrows with budget. A budget check, run with `python -m hexgame benchmark --sims 1000 --games 20` (not written to `results/`, about 3.5 minutes on one core):
+
+| matchup | first agent win rate (95% CI) | wins as DOWN | wins as ACROSS | mean moves |
+|---|---|---|---|---|
+| RAVE vs UCT | 90.0% (69.9%-97.2%) | 10/10 | 8/10 | 15.6 |
+| RAVE vs shortest-path | 90.0% (69.9%-97.2%) | 9/10 | 9/10 | 17.0 |
+| UCT vs shortest-path | 55.0% (34.2%-74.2%) | 7/10 | 4/10 | 19.2 |
+| RAVE vs random | 100.0% (83.9%-100.0%) | 10/10 | 10/10 | 14.0 |
+| UCT vs random | 100.0% (83.9%-100.0%) | 10/10 | 10/10 | 19.1 |
+
+At 1,000 simulations RAVE wins 18 of 20 against UCT. With 20 games the interval is wide (69.9%-97.2%), so this shows the advantage shrinking, not a measured reversal.
+
 ## How it works
 
 ### N-Puzzle
@@ -376,12 +403,20 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 - **Agents** (`minesweeper/agents.py`). Random: a uniformly random covered cell. Rules: level 1, guesses at random when nothing is proven. CSP: level 2 proves the cells whose weight is zero (safe) or total (mine), and guesses at random when nothing is proven. Probability: level 3 guesses the covered cell with the lowest exact probability, breaking ties toward the most covered neighbours.
 - **Checks** (`tests/test_minesweeper.py`). Counts and probabilities match brute-force enumeration of every layout on 60 random small boards. Every proof is checked against the hidden layout on real games. The probabilities sum to the remaining mine count exactly.
 
+### Hex
+
+- **Rules** (`hexgame/board.py`). An n x n rhombus (7x7 by default, 5 to 11 allowed). DOWN connects top to bottom and ACROSS connects left to right; Hex has no draws, so a full board has exactly one winner. The optional swap rule lets the second player take the first move.
+- **Playouts** (`hexgame/mcts.py`). A playout fills the empty cells in a random order and checks the winner once, with one connectivity search at the end. That is far cheaper than playing to a result move by move. The fill also credits moves played after the game was already decided, which is the standard approximation for fill playouts.
+- **Search** (`hexgame/mcts.py`). UCT with one node added per iteration, using win rate plus an exploration term with c = 0.6. RAVE keeps all-moves-as-first counts in each node and blends them with the UCT value by beta = sqrt(k / (3n + k)), with k = 300. Both constants were chosen, not tuned.
+- **Baselines** (`hexgame/agents.py`, `hexgame/heuristic.py`). Random picks a legal cell. The shortest-path agent is a one-ply race heuristic, not a full two-distance model.
+- **Checks** (`tests/test_hexgame.py`). Rules, search, baselines, the CLI, the benchmark writer, and the router, with the two hexgame test files passing.
+
 ## Architecture
 
 ```
 web/            static HTML/CSS/JS, no build step
 server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/   search code, training scripts, data files
+npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/   search code, training scripts, data files
 ```
 
 - Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
@@ -432,6 +467,10 @@ python -m minesweeper                                                        # b
 python -m minesweeper -p expert --seed 7                                     # 30 columns x 16 rows, 99 mines, repeatable
 python -m minesweeper watch --agent probability -p intermediate --seed 3 --delay 0.2
 python -m minesweeper benchmark                                              # rewrites results/minesweeper_benchmark.json and .md (about 10 minutes)
+python -m hexgame                                                            # 7x7, you are DOWN, against RAVE-MCTS
+python -m hexgame play -n 9 --you across --swap                              # swap rule on, you are ACROSS
+python -m hexgame watch --red rave --blue uct                                # two agents, one game
+python -m hexgame benchmark --write                                          # the full run in results/hexgame_benchmark.*
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md

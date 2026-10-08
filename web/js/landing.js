@@ -1064,8 +1064,86 @@ function minesweeperSim(ctx, S) {
   };
 }
 
+function hexgameSim(ctx, S) {
+  // 5x5 Hex on a canvas. Each game fills the board in a random order and the colours alternate, which is
+  // what the agent's playouts do. Hex has no draws, so the full board has exactly one winner: find its
+  // chain by breadth-first search, then light the chain. No server calls.
+  const n = 5, N = 25, R = S / 12.5, w = Math.sqrt(3) * R;
+  const ox = S * 0.12, oy = S * 0.2;
+  const X = (r, c) => ox + w / 2 + (c + r / 2) * w;
+  const Y = (r) => oy + R + r * 1.5 * R;
+  // Neighbours of each cell: left, right, up, down, up-right, down-left.
+  const NB = [...Array(N)].map((_, i) => {
+    const r = (i / n) | 0, c = i % n;
+    return [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, 1], [1, -1]]
+      .map(([dr, dc]) => [r + dr, c + dc])
+      .filter(([rr, cc]) => rr >= 0 && rr < n && cc >= 0 && cc < n)
+      .map(([rr, cc]) => rr * n + cc);
+  });
+  // Shortest chain of player p (1 = top to bottom, 2 = left to right), as a list of cells, or null.
+  function chain(cells, p) {
+    const starts = p === 1 ? [0, 1, 2, 3, 4] : [0, 5, 10, 15, 20];
+    const goal = p === 1 ? (i) => i >= 20 : (i) => i % 5 === 4;
+    const from = new Array(N).fill(-2);
+    const queue = [];
+    for (const s of starts) if (cells[s] === p) { from[s] = -1; queue.push(s); }
+    for (let h = 0; h < queue.length; h++) {
+      const u = queue[h];
+      if (goal(u)) {
+        const path = [];
+        for (let x = u; x !== -1; x = from[x]) path.push(x);
+        return path.reverse();
+      }
+      for (const v of NB[u]) if (from[v] === -2 && cells[v] === p) { from[v] = u; queue.push(v); }
+    }
+    return null;
+  }
+  let order, cells, k, hold, path;
+  function deal() {
+    order = [...Array(N).keys()];
+    for (let i = N - 1; i > 0; i--) { const j = rand(i + 1); [order[i], order[j]] = [order[j], order[i]]; }
+    cells = new Array(N).fill(0);
+    k = 0; hold = 0; path = null;
+  }
+  deal();
+  function hexPath(x, y) {
+    ctx.beginPath();
+    for (let j = 0; j < 6; j++) {
+      const a = ((-90 + 60 * j) * Math.PI) / 180;
+      const px = x + (R - 2) * Math.cos(a), py = y + (R - 2) * Math.sin(a);
+      if (j) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+  }
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const i = r * n + c, v = cells[i];
+        hexPath(X(r, c), Y(r));
+        ctx.fillStyle = v === 1 ? C.pink : v === 2 ? C.cyan : 'rgba(0,245,255,0.06)';
+        ctx.shadowColor = v === 1 ? C.pink : C.cyan;
+        ctx.shadowBlur = v ? 12 : 0;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        if (path && path.includes(i)) { ctx.strokeStyle = C.yellow; ctx.lineWidth = 2; ctx.stroke(); }
+      }
+    }
+    if (k < N) {
+      if ((hold += speed) < 18) return;
+      hold = 0;
+      cells[order[k]] = k % 2 ? 2 : 1; // DOWN (1) moves first
+      k++;
+      if (k === N) path = chain(cells, chain(cells, 1) ? 1 : 2);
+      return;
+    }
+    if ((hold += speed) > 200) deal();
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

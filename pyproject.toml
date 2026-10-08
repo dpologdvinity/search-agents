@@ -22,7 +22,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.setuptools]
-packages = ["npuzzle", "connect4", "checkers", "routes", "game2048", "sudoku", "server", "lightsout", "blackjack", "battleship", "pacman", "warehouse", "endgame", "sokoban", "wordle", "poker", "minesweeper"]
+packages = ["npuzzle", "connect4", "checkers", "routes", "game2048", "sudoku", "server", "lightsout", "blackjack", "battleship", "pacman", "warehouse", "endgame", "sokoban", "wordle", "poker", "minesweeper", "hexgame"]
 
 [tool.setuptools.package-data]
 npuzzle = ["data/*.npz", "data/*.json"]

@@ -1,0 +1,99 @@
+{
+  "size": 7,
+  "sims_per_move": 400,
+  "games_per_matchup": 40,
+  "seed_base": 1000,
+  "speed": {
+    "rave": {
+      "sims": 2000,
+      "seconds": 0.344,
+      "sims_per_second": 5811,
+      "nodes": 2001
+    },
+    "uct": {
+      "sims": 2000,
+      "seconds": 0.346,
+      "sims_per_second": 5783,
+      "nodes": 2001
+    },
+    "playouts_per_second": 10739
+  },
+  "matchups": [
+    {
+      "a": "rave",
+      "b": "uct",
+      "games": 40,
+      "a_wins": 40,
+      "a_rate": 1.0,
+      "ci95": [
+        0.9124,
+        1.0
+      ],
+      "a_as_down": "20/20",
+      "a_as_across": "20/20",
+      "mean_moves": 15.9,
+      "seconds": 40.5
+    },
+    {
+      "a": "rave",
+      "b": "shortest",
+      "games": 40,
+      "a_wins": 39,
+      "a_rate": 0.975,
+      "ci95": [
+        0.8712,
+        0.9956
+      ],
+      "a_as_down": "19/20",
+      "a_as_across": "20/20",
+      "mean_moves": 16.8,
+      "seconds": 26.4
+    },
+    {
+      "a": "uct",
+      "b": "shortest",
+      "games": 40,
+      "a_wins": 13,
+      "a_rate": 0.325,
+      "ci95": [
+        0.2008,
+        0.4798
+      ],
+      "a_as_down": "6/20",
+      "a_as_across": "7/20",
+      "mean_moves": 18.7,
+      "seconds": 16.3
+    },
+    {
+      "a": "rave",
+      "b": "random",
+      "games": 40,
+      "a_wins": 40,
+      "a_rate": 1.0,
+      "ci95": [
+        0.9124,
+        1.0
+      ],
+      "a_as_down": "20/20",
+      "a_as_across": "20/20",
+      "mean_moves": 14.8,
+      "seconds": 19.6
+    },
+    {
+      "a": "uct",
+      "b": "random",
+      "games": 40,
+      "a_wins": 40,
+      "a_rate": 1.0,
+      "ci95": [
+        0.9124,
+        1.0
+      ],
+      "a_as_down": "20/20",
+      "a_as_across": "20/20",
+      "mean_moves": 25.5,
+      "seconds": 17.6
+    }
+  ],
+  "seconds": 121.2
+}

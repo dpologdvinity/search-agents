@@ -18,6 +18,7 @@ const GAMES = [
   { href: 'wordle.html', label: 'WORDLE' },
   { href: 'poker.html', label: 'POKER' },
   { href: 'minesweeper.html', label: 'MINESWEEPER' },
+  { href: 'hexgame.html', label: 'HEX' },
 ];
 
 const list = document.getElementById('nav-links');
