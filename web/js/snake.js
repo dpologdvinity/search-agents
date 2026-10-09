@@ -1,17 +1,21 @@
 // Snake page.
 //
-// The evolved champion runs in this browser: the weights come from /api/snake/champion and
-// snake-core.js does the same arithmetic as snake/net.py, so the page plays exactly the net that
-// the benchmark measured (up to the 4-decimal rounding of the weights). The server is only asked
-// for the planner's hint, which is a BFS and a tail-chasing check.
+// Two learned agents run in this browser, and the page switches between them:
+//   * the evaluation function (the default): eight weights over hand-built features of each move,
+//     from /api/snake/evaluator, scored by snake-core.js moveTable and chooseEval;
+//   * the neural net: 339 weights evolved by a genetic algorithm, from /api/snake/champion, run by
+//     snake-core.js decide.
+// Both do the arithmetic the benchmark measured (the weights are committed at four decimals). The
+// server is only asked for the planner's hint, which is a BFS and a tail-chasing check.
 //
-// Three views of one decision: the board (where the snake goes), the network (which units fire),
-// and the explanation (which senses pushed the chosen turn, and by how much).
+// Three views of one decision: the board (where the snake goes), the explanation (which senses or
+// features pushed the chosen turn, and by how much), and, for the net, the network (which units fire).
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
 import {
-  ACTION_NAMES, HEADING_NAMES, INPUT_NAMES, LEFT, RIGHT, STRAIGHT, alive, decide, newGame, step, wouldDie,
+  ACTION_NAMES, EVAL_FEATURES, INPUT_NAMES, LEFT, RIGHT, STRAIGHT, alive, chooseEval, decide, moveTable,
+  newGame, step,
 } from './snake-core.js';
 
 const $ = (id) => document.getElementById(id);
@@ -27,23 +31,46 @@ const SHORT = ['danger ahead', 'danger left', 'danger right', 'free ahead', 'fre
   'room ahead', 'room left', 'room right'];
 // Key -> absolute heading (w north, d east, s south, a west). Arrow keys are the same directions.
 const KEYS = { w: 0, d: 1, s: 2, a: 3, arrowup: 0, arrowright: 1, arrowdown: 2, arrowleft: 3 };
+// The three-step learning loop, as the page describes each learned agent.
+const LOOP = {
+  eval: [
+    ['1 · SAMPLE', 'Each candidate is a set of eight weights, drawn from a Gaussian around the elite mean. Every candidate plays the same seeded boards.'],
+    ['2 · KEEP THE ELITE', 'The best 12 of 48 candidates are kept, and the Gaussian is refit to them. Its spread is floored, so the search keeps exploring.'],
+    ['3 · REPEAT ON NEW BOARDS', 'Each generation draws fresh boards, so no candidate can memorise one fixed set. Starving counts as a death.'],
+  ],
+  net: [
+    ['1 · PLAY', 'Each genome plays the same seeded boards. Fitness is apples eaten, plus a small bonus for surviving, which only breaks ties.'],
+    ['2 · KEEP THE BEST', 'The top genomes are copied unchanged, so the best result never gets lost. Tournament selection picks parents from random groups of three.'],
+    ['3 · CROSS AND MUTATE', 'Uniform crossover takes each weight from one parent or the other. Then about one weight in ten moves by a small Gaussian nudge.'],
+  ],
+};
 
 const state = {
   net: null,            // { w1, b1, w2, b2 } from the champion JSON
-  champion: null,       // metadata: generation, training numbers, settings
-  history: [],          // one record per generation
+  netMeta: null,        // the net's champion metadata: generation, training numbers, settings
+  netHistory: [],       // the net's one record per generation
+  evalW: null,          // the evaluation function's eight weights, in EVAL_FEATURES order
+  evalMeta: null,       // its metadata: settings, best generation, validation numbers
+  evalHistory: [],      // its one record per generation
+  agent: 'eval',        // which learned agent steers: 'eval' (the default) or 'net'
   game: null,
-  control: 'net',       // 'net' (the network steers) or 'you' (keyboard or touch steers)
+  control: 'agent',     // 'agent' (the learned agent steers) or 'you' (keyboard or touch steers)
   running: false,       // the timer is ticking
   timer: 0,
   tickMs: 120,
   desired: 1,           // play mode: the heading the snake is asked to take
   hintPath: null,       // planner route to draw, as cells starting at the head
-  decision: null,       // the last decision, for the network view and explanation
+  decision: null,       // the last decision, for the explanation and the network view
   games: 0,
   bestApples: 0,
   lastCause: null,
 };
+
+// The learned agent in use, its metadata and its history.
+const agentReady = () => (state.agent === 'eval' ? state.evalW !== null : state.net !== null);
+const activeMeta = () => (state.agent === 'eval' ? state.evalMeta : state.netMeta);
+const activeHistory = () => (state.agent === 'eval' ? state.evalHistory : state.netHistory);
+const agentName = () => (state.agent === 'eval' ? 'The evaluation function' : 'The evolved net');
 
 // ── Chips, log, notes ───────────────────────────────────────────────────
 
@@ -68,10 +95,12 @@ function log(text, cls = 'log-info') {
 }
 
 function setButtons() {
-  $('btn-watch').setAttribute('aria-pressed', String(state.running && state.control === 'net'));
-  $('btn-watch').querySelector('.btn-txt').textContent = state.running && state.control === 'net' ? '❚❚ PAUSE' : '▶ WATCH THE NET';
-  $('btn-play').setAttribute('aria-pressed', String(state.running && state.control === 'you'));
-  $('btn-play').querySelector('.btn-txt').textContent = state.running && state.control === 'you' ? '❚❚ PAUSE' : '✎ PLAY YOURSELF';
+  const watching = state.running && state.control === 'agent';
+  const playing = state.running && state.control === 'you';
+  $('btn-watch').setAttribute('aria-pressed', String(watching));
+  $('btn-watch').querySelector('.btn-txt').textContent = watching ? '❚❚ PAUSE' : '▶ WATCH THE AGENT';
+  $('btn-play').setAttribute('aria-pressed', String(playing));
+  $('btn-play').querySelector('.btn-txt').textContent = playing ? '❚❚ PAUSE' : '✎ PLAY YOURSELF';
 }
 
 // ── Board ───────────────────────────────────────────────────────────────
@@ -195,10 +224,11 @@ function resizeNet() {
   canvas.style.height = netH + 'px';
 }
 
+// The network view only exists for the neural net: the evaluation function has no hidden units.
 function drawNet() {
-  if (!netCtx || !state.net) return;
+  if (!netCtx || !state.net || state.agent !== 'net') return;
   const ctx = netCtx, W = netW, H = netH, net = state.net;
-  const d = state.decision;
+  const d = state.decision && state.decision.kind === 'net' ? state.decision : null;
   ctx.clearRect(0, 0, W, H);
   const narrow = W < 420;
   const left = narrow ? 92 : 118, right = narrow ? 64 : 84;
@@ -275,10 +305,26 @@ function glowNode(ctx, x, y, r, v, color) {
   ctx.restore();
 }
 
+// ── Decisions ───────────────────────────────────────────────────────────
+
+// The decision for the current position under the chosen agent. For the evaluation function, `rows`
+// holds every move with its features and score, `safe` the moves that do not end the game, and `x`
+// the features of the chosen move.
+function decideNow(g) {
+  if (state.agent === 'eval') {
+    const rows = moveTable(g, state.evalW);
+    const action = chooseEval(state.evalW, g);
+    const chosen = rows.find((r) => r.action === action);
+    return { kind: 'eval', action, rows, safe: rows.filter((r) => !r.dies), x: chosen.features };
+  }
+  return { kind: 'net', ...decide(state.net, g) };
+}
+
 // ── Explanation panel ───────────────────────────────────────────────────
 
-// Reads the decision in words: what the snake senses, what the net weighs, and what it does.
+// Reads the net's decision in words: what the snake senses, what the net weighs, and what it does.
 function explain(d, action, who) {
+  if (d.kind === 'eval') return explainEval(d, action, who);
   const g = state.game;
   const chosen = ACTION_NAMES[action];
   const probs = d.probs;
@@ -299,10 +345,50 @@ function explain(d, action, who) {
   renderBars(d);
 }
 
+// Reads the evaluation function's choice: the move's weighted terms, and the runner-up it beat.
+function explainEval(d, action, who) {
+  const chosen = d.rows.find((r) => r.action === action);
+  const title = who === 'you'
+    ? `You turn ${ACTION_NAMES[action]}. The evaluator would turn ${ACTION_NAMES[d.action]}.`
+    : `The evaluator turns ${ACTION_NAMES[action]}.`;
+  if (d.safe.length === 0) {
+    $('think-title').textContent = title;
+    $('think-text').textContent = 'Every turn ends the game, so it goes straight.';
+    renderBars(d);
+    return;
+  }
+  // You steered into a deadly cell: that move has no score, so explain it and stop.
+  if (chosen.dies) {
+    $('think-title').textContent = title;
+    $('think-text').textContent = `Turning ${ACTION_NAMES[action]} ends the game, so the evaluator gives it no score.`;
+    renderBars(d);
+    return;
+  }
+  // Each term is the weight times the feature: the largest terms are the reasons for the score.
+  const terms = chosen.features.map((v, i) => state.evalW[i] * v);
+  const order = [...terms.keys()].sort((a, b) => Math.abs(terms[b]) - Math.abs(terms[a])).slice(0, 3);
+  const pieces = order.filter((i) => Math.abs(terms[i]) > 0.02).map((i) => {
+    const verb = terms[i] >= 0 ? 'adds' : 'takes away';
+    return `${EVAL_FEATURES[i]} (${verb} ${Math.abs(terms[i]).toFixed(2)})`;
+  });
+  let body = pieces.length ? `Biggest terms in its score: ${pieces.join('; ')}.` : 'No single term dominates.';
+  const runnerUp = d.safe.filter((r) => r.action !== action).sort((a, b) => b.score - a.score)[0];
+  if (runnerUp) {
+    body += ` Next best is turn ${ACTION_NAMES[runnerUp.action]} at ${runnerUp.score.toFixed(2)}, against ${chosen.score.toFixed(2)}.`;
+  } else {
+    body += ' It is the only safe turn.';
+  }
+  if (chosen.features[0] === 1) body += ' It eats.';
+  $('think-title').textContent = title;
+  $('think-text').textContent = body;
+  renderBars(d);
+}
+
 function renderBars(d) {
   const inputs = $('think-inputs');
   inputs.innerHTML = '';
-  INPUT_NAMES.forEach((name, i) => {
+  const names = d.kind === 'eval' ? EVAL_FEATURES : INPUT_NAMES;
+  names.forEach((name, i) => {
     const v = d.x[i];
     const row = document.createElement('div');
     row.className = 'sn-bar';
@@ -317,6 +403,29 @@ function renderBars(d) {
   });
   const outputs = $('think-outputs');
   outputs.innerHTML = '';
+  if (d.kind === 'eval') {
+    // Each move's score, scaled between the lowest and highest safe score so the gap is visible.
+    const scores = d.safe.map((r) => r.score);
+    const lo = scores.length ? Math.min(...scores) : 0, hi = scores.length ? Math.max(...scores) : 0;
+    [LEFT, STRAIGHT, RIGHT].forEach((k) => {
+      const r = d.rows.find((x) => x.action === k);
+      const row = document.createElement('div');
+      row.className = 'sn-bar sn-bar-out' + (d.action === k ? ' chosen' : '');
+      row.innerHTML = `<span class="sn-bar-name"></span><span class="sn-bar-track"><span class="sn-bar-fill"></span></span><span class="sn-bar-val"></span>`;
+      row.querySelector('.sn-bar-name').textContent = `turn ${ACTION_NAMES[k]}`;
+      const fill = row.querySelector('.sn-bar-fill');
+      const val = row.querySelector('.sn-bar-val');
+      if (r.dies) {
+        fill.style.width = '0%';
+        val.textContent = 'ends game';
+      } else {
+        fill.style.width = `${Math.round(hi > lo ? 10 + (90 * (r.score - lo)) / (hi - lo) : 100)}%`;
+        val.textContent = r.score.toFixed(2);
+      }
+      outputs.appendChild(row);
+    });
+    return;
+  }
   ['left', 'straight', 'right'].forEach((name, k) => {
     const row = document.createElement('div');
     row.className = 'sn-bar sn-bar-out' + (d.action === k ? ' chosen' : '');
@@ -353,11 +462,11 @@ function actionFromDesired() {
 function tick() {
   const g = state.game;
   if (!alive(g)) return;
-  const d = decide(state.net, g);
+  const d = decideNow(g);
   state.decision = d;
   const action = state.control === 'you' ? actionFromDesired() : d.action;
   const apples = g.apples;
-  explain(d, action, state.control === 'you' ? 'you' : 'net');
+  explain(d, action, state.control === 'you' ? 'you' : 'agent');
   state.hintPath = null;
   step(g, action);
   if (g.apples > apples) {
@@ -379,8 +488,8 @@ function endRound() {
   shake($('sn-board'), 'small');
   if (g.cause === 'full') banner('BOARD FILLED', `${g.apples} apples`, C.green);
   setStatus(g.cause === 'full' ? 'FULL BOARD' : 'GAME OVER', C.pink);
-  if (state.running && state.control === 'net') {
-    // Watching the net: start the next game after a short pause, so the end is visible.
+  if (state.running && state.control === 'agent') {
+    // Watching the agent: start the next game after a short pause, so the end is visible.
     clearTimeout(state.timer);
     state.timer = setTimeout(() => { newRound(); schedule(); }, REDUCED ? 300 : 1200);
   } else {
@@ -401,7 +510,7 @@ function schedule() {
 }
 
 function start(control) {
-  if (!state.net) return;
+  if (!agentReady()) return;
   if (state.running && state.control === control) {
     state.running = false;
     clearTimeout(state.timer);
@@ -412,8 +521,8 @@ function start(control) {
     if (!alive(state.game)) newRound();
     setStatus(control === 'you' ? 'YOUR TURN' : 'WATCHING', control === 'you' ? C.pink : C.green);
     $('sn-note').textContent = control === 'you'
-      ? 'W A S D or the arrow keys steer. The net shows what it would have done.'
-      : 'The evolved net is steering. Pause, step, or take the wheel at any time.';
+      ? 'W A S D or the arrow keys steer. The agent shows what it would have done.'
+      : `${agentName()} is steering. Pause, step, or take the wheel at any time.`;
     schedule();
   }
   setButtons();
@@ -434,7 +543,7 @@ async function hint() {
 }
 
 function steer(dir) {
-  if (!state.game) return;
+  if (!state.game || !agentReady()) return;
   if (!alive(state.game)) newRound(); // a key after a finished game starts a new one
   const g = state.game;
   if ((dir + 2) % 4 === g.heading) return; // a reversal is not allowed
@@ -448,7 +557,31 @@ function steer(dir) {
   }
 }
 
-// ── Chart and champion card ─────────────────────────────────────────────
+// ── Agent switch, chart and champion card ───────────────────────────────
+
+// Switches the learned agent that steers. The game in progress carries on with the new agent.
+function setAgent(name) {
+  state.agent = name;
+  state.decision = null;
+  setAgentUI();
+  drawNet();
+}
+
+function setAgentUI() {
+  const isEval = state.agent === 'eval';
+  $('btn-agent-eval').setAttribute('aria-pressed', String(isEval));
+  $('btn-agent-net').setAttribute('aria-pressed', String(!isEval));
+  $('net-panel').hidden = isEval;
+  $('think-section-title').textContent = isEval ? 'WHAT THE AGENT IS THINKING' : 'WHAT THE NET IS THINKING';
+  $('loop-section-title').textContent = isEval ? 'THE LEARNING LOOP: CROSS-ENTROPY' : 'THE LEARNING LOOP: GENETIC ALGORITHM';
+  LOOP[state.agent].forEach(([title, text], i) => {
+    $(`loop-t-${i + 1}`).textContent = title;
+    $(`loop-x-${i + 1}`).textContent = text;
+  });
+  renderChampion();
+  drawChart();
+  setButtons();
+}
 
 function drawChart() {
   const canvas = $('sn-chart');
@@ -457,7 +590,7 @@ function drawChart() {
   const ctx = sizeCanvas(canvas, w, h);
   canvas.style.height = h + 'px';
   ctx.clearRect(0, 0, w, h);
-  const hist = state.history;
+  const hist = activeHistory();
   if (!hist.length) return;
   const pad = { l: 36, r: 12, t: 12, b: 24 };
   const xs = (g) => pad.l + ((g - 1) / Math.max(1, hist.length - 1)) * (w - pad.l - pad.r);
@@ -480,7 +613,7 @@ function drawChart() {
   };
   line('mean_apples', C.pink, 1.5);
   line('best_apples', C.green, 2.2);
-  const gen = state.champion && state.champion.best_generation;
+  const gen = activeMeta() && activeMeta().best_generation;
   if (gen) {
     ctx.strokeStyle = C.yellow; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(xs(gen), pad.t); ctx.lineTo(xs(gen), h - pad.b); ctx.stroke();
@@ -492,9 +625,25 @@ function drawChart() {
   $('chart-title').textContent = `Gen ${last.generation}: best ${last.best_apples.toFixed(2)} apples per game, population mean ${last.mean_apples.toFixed(2)}.`;
 }
 
-function renderChampion(meta) {
+// The champion card for the active agent: its generation, its numbers, and for the evaluator its weights.
+function renderChampion() {
+  const meta = activeMeta() || {};
   const s = meta.settings || {};
   $('chip-gen').textContent = meta.best_generation ?? '—';
+  if (state.agent === 'eval') {
+    const weights = state.evalW
+      ? EVAL_FEATURES.map((name, i) => `<div class="sn-champ-row"><span>${name}</span><b>${state.evalW[i].toFixed(3)}</b></div>`).join('')
+      : '';
+    $('champ').innerHTML = `
+    <div class="sn-champ-row"><span>generation</span><b>${meta.best_generation ?? '—'} of ${s.generations ?? '—'}</b></div>
+    <div class="sn-champ-row"><span>validation apples per game</span><b>${Number(meta.validation_apples ?? 0).toFixed(2)}</b></div>
+    <div class="sn-champ-row"><span>candidates x games</span><b>${s.pop ?? '—'} x ${s.games ?? '—'}</b></div>
+    <div class="sn-champ-row"><span>elites kept</span><b>${s.elites ?? '—'}</b></div>
+    <div class="field-hint" style="margin-top:0.6rem">The eight weights. Each term is its weight times its feature.</div>
+    ${weights}
+    <div class="field-hint">Trained on seeds 1000 to 39,999. Chosen on seeds 40,000 to 40,031. The benchmark uses 50,000 and up.</div>`;
+    return;
+  }
   $('champ').innerHTML = `
     <div class="sn-champ-row"><span>generation</span><b>${meta.best_generation ?? '—'} of ${s.generations ?? '—'}</b></div>
     <div class="sn-champ-row"><span>training apples per game</span><b>${Number(meta.train_apples ?? 0).toFixed(2)}</b></div>
@@ -520,10 +669,12 @@ function renderPlayers(agents) {
 // ── Wiring ──────────────────────────────────────────────────────────────
 
 function bind() {
-  $('btn-watch').addEventListener('click', () => start('net'));
+  $('btn-watch').addEventListener('click', () => start('agent'));
   $('btn-play').addEventListener('click', () => start('you'));
+  $('btn-agent-eval').addEventListener('click', () => setAgent('eval'));
+  $('btn-agent-net').addEventListener('click', () => setAgent('net'));
   $('btn-step').addEventListener('click', () => {
-    if (!state.net) return;
+    if (!agentReady()) return;
     if (!alive(state.game)) newRound();
     state.running = false; clearTimeout(state.timer); setButtons();
     tick();
@@ -579,24 +730,27 @@ async function load() {
   resizeNet();
   newRound();
   try {
-    const [meta, champ, hist] = await Promise.all([
+    const [meta, champ, hist, ev] = await Promise.all([
       getJSON('/api/snake/meta'),
       getJSON('/api/snake/champion'),
       getJSON('/api/snake/history'),
+      getJSON('/api/snake/evaluator'),
     ]);
     state.net = { w1: champ.w1, b1: champ.b1, w2: champ.w2, b2: champ.b2 };
-    state.champion = champ;
-    state.history = hist.history;
+    state.netMeta = champ;
+    state.netHistory = hist.history;
+    state.evalW = ev.weights;
+    state.evalMeta = ev;
+    state.evalHistory = ev.history;
     state.size = meta.board;
-    renderChampion(champ);
     renderPlayers(meta.agents);
-    drawChart();
+    setAgentUI();
     newRound();
     setStatus('READY', C.green);
-    start('net');
+    start('agent');
   } catch (err) {
     setStatus('OFFLINE', '#ff3b3b');
-    $('sn-note').textContent = `The champion could not be loaded: ${err.message}`;
+    $('sn-note').textContent = `The learned agents could not be loaded: ${err.message}`;
   }
 }
 

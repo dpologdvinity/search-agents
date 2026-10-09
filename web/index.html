@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Twenty-four puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, and DPLL SAT solving.">
+<meta name="description" content="Twenty-six puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, DPLL SAT solving, and hidden Markov model filtering with Viterbi.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Twenty-four puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, and DPLL SAT solving.">
+<meta property="og:description" content="Twenty-six puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, DPLL SAT solving, and hidden Markov model filtering with Viterbi.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Twenty-four games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Twenty-six games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -45,13 +45,13 @@
   <div class="ticker" aria-label="Benchmark results">
     <div class="ticker-track">
       <span>15-puzzle nodes expanded: <b>598,989</b> by optimal IDA* <i>vs</i> <b>5,009</b> with the learned heuristic</span>
-      <span>2048 tile reached in <b>81%</b> of games with no search</span>
+      <span>2048 tile reached in <b>88%</b> of games with no search</span>
       <span>Sudoku: <b>7</b> guesses with propagation <i>vs</i> <b>119,468</b> by plain backtracking</span>
       <span>Pattern database IDA*: <b>31x</b> fewer nodes than Manhattan distance</span>
       <span>Checkers alpha-beta: same move as minimax, <b>26x</b> fewer positions at depth 6</span>
       <span>Every search runs live in Python and streams to your browser</span>
       <span aria-hidden="true">15-puzzle nodes expanded: <b>598,989</b> by optimal IDA* <i>vs</i> <b>5,009</b> with the learned heuristic</span>
-      <span aria-hidden="true">2048 tile reached in <b>81%</b> of games with no search</span>
+      <span aria-hidden="true">2048 tile reached in <b>88%</b> of games with no search</span>
       <span aria-hidden="true">Sudoku: <b>7</b> guesses with propagation <i>vs</i> <b>119,468</b> by plain backtracking</span>
       <span aria-hidden="true">Pattern database IDA*: <b>31x</b> fewer nodes than Manhattan distance</span>
       <span aria-hidden="true">Checkers alpha-beta: same move as minimax, <b>26x</b> fewer positions at depth 6</span>
@@ -129,7 +129,7 @@
       <a class="cabinet c-purple" href="2048.html">
         <span class="cab-marquee">2048</span>
         <canvas class="cab-screen" data-sim="g2048" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>81%</b> of games reach the 2048 tile</span>
+        <span class="cab-stat"><b>88%</b> of games reach the 2048 tile</span>
         <span class="cab-desc">An n-tuple network learned from 40,000 self-played games. Let it play, or take the keys yourself.</span>
         <span class="cab-coin">Play</span>
       </a>
@@ -206,8 +206,8 @@
       <a class="cabinet c-pink" href="snake.html">
         <span class="cab-marquee">Snake</span>
         <canvas class="cab-screen" data-sim="snake" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>13.7</b> apples for the evolved net, against <b>20</b> for greedy and <b>56</b> for the BFS planner</span>
-        <span class="cab-desc">A 339-weight network bred by a genetic algorithm: mutate, cross over, keep the fittest. The planner still wins, and the page shows what the net sees.</span>
+        <span class="cab-stat"><b>90.1</b> apples per game, against 20.1 for greedy and 56.1 for the BFS planner</span>
+        <span class="cab-desc">Eight weights score each move, tuned by the cross-entropy method. The score wins on apples, but every game ends with the snake stalled, not dead.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-yellow" href="rover.html">
@@ -217,11 +217,18 @@
         <span class="cab-desc">The rover learns walls as its sensor sees them. D* Lite repairs its route after each one; A* starts over.</span>
         <span class="cab-coin">Play</span>
       </a>
+      <a class="cabinet c-cyan" href="ghosthunt.html">
+        <span class="cab-marquee">Ghost Hunt</span>
+        <canvas class="cab-screen" data-sim="ghosthunt" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>95</b> turns to bust both ghosts with the exact belief at medium sonar noise (12 games)</span>
+        <span class="cab-desc">Invisible ghosts drift through a maze. Noisy sonar reports only distances, and a hidden Markov model keeps a belief about each ghost.</span>
+        <span class="cab-coin">Play</span>
+      </a>
       <a class="cabinet c-purple" href="tetris.html">
         <span class="cab-marquee">Tetris</span>
         <canvas class="cab-screen" data-sim="tetris" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>0.4</b> lines per piece is the most a stack can clear in steady state</span>
-        <span class="cab-desc">Every rotation and column is scored by nine board features. Hand-picked weights do the playing; the genetic algorithm's weights are there to compare, and you can drag the sliders yourself.</span>
+        <span class="cab-desc">Every rotation and column is scored by nine board features. Weights found by a cross-entropy search do the playing and clear 6,702 lines on held-out games; the hand-picked set is one button away.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-orange" href="nonogram.html">
@@ -229,6 +236,84 @@
         <canvas class="cab-screen" data-sim="nonogram" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>Unique</b> random pictures are kept only when exactly one solution fits</span>
         <span class="cab-desc">Each clue is a regular language. Line solving proves cells row by row, and the whole grid goes to DPLL when the lines stall.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-pink" href="localize.html">
+        <span class="cab-marquee">Lost Robot</span>
+        <canvas class="cab-screen" data-sim="localize" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>15 of 16</b> seeded trials hold within 0.5 m with 2000 particles</span>
+        <span class="cab-desc">A robot on a known floor plan does not know where it is. Its beams and wheels narrow the belief until the particles collapse onto it.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Labs: playgrounds where you change the inputs and watch the algorithm respond. Not games, so not counted. -->
+  <section class="arcade labs" aria-labelledby="labs-title">
+    <h2 id="labs-title" class="arcade-title">Labs</h2>
+    <p class="labs-lede">Playgrounds where you poke at the algorithms: change the inputs, then watch the method respond.</p>
+    <div class="cabinets">
+      <a class="cabinet c-cyan" href="clusters.html">
+        <span class="cab-marquee">Cluster Lab</span>
+        <canvas class="cab-screen" data-sim="clusters" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>k-means</b> alternates two steps: assign each point to its nearest centroid, then move each centroid to the mean of its points</span>
+        <span class="cab-desc">Paint points, then watch k-means, DBSCAN and a Gaussian mixture fitted by EM find the groups. Inertia, silhouette and an elbow chart run live.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-pink" href="nnlab.html">
+        <span class="cab-marquee">Neural Net</span>
+        <canvas class="cab-screen" data-sim="nnlab" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>curves</b> that no straight line can separate</span>
+        <span class="cab-desc">Drop pink and cyan points and watch a small multilayer perceptron learn to separate them. Backprop, the loss, and each neuron's own heat map update live in the browser.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-green" href="pathfind.html">
+        <span class="cab-marquee">Pathfind</span>
+        <canvas class="cab-screen" data-sim="pathfind" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>7</b> searches race one map, from breadth-first to bidirectional</span>
+        <span class="cab-desc">Draw walls and swamps, generate a maze, and watch each frontier spread. Every path is checked against the optimal cost.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-cyan" href="mdplab.html">
+        <span class="cab-marquee">MDP Lab</span>
+        <canvas class="cab-screen" data-sim="mdplab" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>3</b> ways to solve one slippery grid: two planners and a learner</span>
+        <span class="cab-desc">Paint walls, rewards and pits, then watch value iteration spread heat from the goal, policy iteration settle and flip, and a Q-learning agent walk the grid to the same policy.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-yellow" href="optlab.html">
+        <span class="cab-marquee">Optimizer Race</span>
+        <canvas class="cab-screen" data-sim="optlab" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>3</b> optimizers, one curved valley, one start point</span>
+        <span class="cab-desc">Gradient descent, momentum and Adam race from one point down Rosenbrock's banana-shaped valley, with their trails drawn over the loss heat map. The page races six optimizers and lets you paint your own landscape.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-cyan" href="treelab.html">
+        <span class="cab-marquee">Tree Lab</span>
+        <canvas class="cab-screen" data-sim="treelab" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>Gini</b> impurity picks each cut; a forest of bootstrap trees averages the votes</span>
+        <span class="cab-desc">Paint the plane and watch a CART decision tree carve it split by split, one laser per cut. Then a random forest of bootstrap trees averages into a smooth boundary, scored on its out-of-bag rows.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-orange" href="markov.html">
+        <span class="cab-marquee">Markov text</span>
+        <canvas class="cab-screen" data-sim="markov" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>Four</b> public-domain texts, counted once, then sampled one token at a time</span>
+        <span class="cab-desc">A chain that only remembers the last few words. Watch the next-token odds, the context window, and how much of the output is copied verbatim.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-pink" href="regression.html">
+        <span class="cab-marquee">Regression</span>
+        <canvas class="cab-screen" data-sim="regression" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>min Σ r²</b> the squares' total area is the loss</span>
+        <span class="cab-desc">Drag points and watch the best-fit curve snap to them. Squared errors are squares; gradient descent creeps toward the same answer, and too high a degree overfits. Logistic regression draws the boundary too.</span>
+        <span class="cab-coin">Play</span>
+      </a>
+      <a class="cabinet c-purple" href="walkers.html">
+        <span class="cab-marquee">Walkers</span>
+        <canvas class="cab-screen" data-sim="walkers" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>15.3</b> m in 10 seconds for the best flat walker, bred from random soft bodies</span>
+        <span class="cab-desc">Point masses, springs and pulsing muscles. Nobody codes a gait: a genetic algorithm keeps the creatures that travel farthest. Crawlers and inchworms appear; no hopper has yet.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>

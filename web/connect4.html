@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CONNECT FOUR // SEARCH AGENTS</title>
-<meta name="description" content="Play Connect Four against an AlphaZero-style agent trained by self-play, alpha-beta minimax, or Monte Carlo tree search, and see how each one decides.">
+<meta name="description" content="Play Connect Four against an AlphaZero-style agent trained by self-play, alpha-beta minimax, Monte Carlo tree search, or a chance player that picks columns from fixed odds, and see how each one decides.">
 <meta property="og:title" content="CONNECT FOUR // SEARCH AGENTS">
-<meta property="og:description" content="Play Connect Four against an AlphaZero-style agent trained by self-play, alpha-beta minimax, or Monte Carlo tree search, and see how each one decides.">
+<meta property="og:description" content="Play Connect Four against an AlphaZero-style agent trained by self-play, alpha-beta minimax, Monte Carlo tree search, or a chance player that picks columns from fixed odds, and see how each one decides.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/connect4.html">
 <meta name="twitter:card" content="summary">
@@ -25,13 +25,14 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">02 // ADVERSARIAL SEARCH · SELF-PLAY LEARNING</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="CONNECT FOUR">CONNECT FOUR</h1>
-      <div class="proj-pg-sub">AlphaZero-style PUCT + policy-value network trained by self-play · alpha-beta minimax · Monte Carlo tree search</div>
+      <div class="proj-pg-sub">AlphaZero-style PUCT + policy-value network trained by self-play · alpha-beta minimax · Monte Carlo tree search · chance (fixed odds)</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -107,12 +108,19 @@
               <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
             </select>
           </div>
+          <div id="side-wrap" class="hidden">
+            <div class="field-lbl">AI A PLAYS</div>
+            <select class="cyber-select" id="side-a" style="width:100%">
+              <option value="red" selected>Red (moves first)</option>
+              <option value="yellow">Yellow (moves second)</option>
+            </select>
+          </div>
           <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="desc-a"></div></div>
         </div>
       </div>
 
       <div id="agent-b-wrap" class="hidden">
-        <div class="section-title purple-ttl">SECOND AI (YELLOW)</div>
+        <div class="section-title purple-ttl" id="agent-b-title">AI B</div>
         <div class="stack">
           <select class="cyber-select" id="agent-b" style="width:100%"></select>
           <div>
@@ -121,7 +129,24 @@
               <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
             </select>
           </div>
+          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="desc-b"></div></div>
+          <div>
+            <div class="field-lbl">SPEED</div>
+            <select class="cyber-select" id="speed" style="width:100%">
+              <option value="800">Slow</option><option value="350" selected>Normal</option><option value="120">Fast</option>
+            </select>
+          </div>
+          <label class="field-hint inline"><input type="checkbox" id="auto" checked> AUTO-RESTART after each game</label>
           <button class="cyber-btn green" id="btn-watch"><span class="btn-txt">▶ START MATCH</span></button>
+          <div class="inline">
+            <button class="cyber-btn" id="btn-pause" disabled><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" id="btn-step" disabled><span class="btn-txt">STEP</span></button>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div class="field-lbl">MATCH SCORE</div>
+            <div class="field-hint" id="score"></div>
+            <button class="cyber-btn" id="btn-reset-score" style="margin-top:0.5rem"><span class="btn-txt">RESET SCORE</span></button>
+          </div>
         </div>
       </div>
 
@@ -136,6 +161,10 @@
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">MINIMAX</div>
             <div class="field-hint">Looks ahead as many moves as its time budget allows and scores the leaves by counting open lines of four. Reports forced wins it can prove.</div>
           </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">CHANCE</div>
+            <div class="field-hint">Draws a column from fixed odds: 6% / 12% / 19% / 25% / 19% / 12% / 6% on an empty board, renormalised over the open columns. It does no search or lookahead, so it is a baseline for the search agents.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -144,7 +173,7 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The AlphaZero agent is a neural network that learned to play by playing itself, combined with a tree search that uses the network to choose moves. Two classic baselines sit beside it: minimax with alpha-beta pruning, which looks a fixed number of moves ahead with a hand-written score, and Monte Carlo tree search, which judges positions by random games.</p>
+  <p class="hiw-lede">The AlphaZero agent is a neural network that learned to play by playing itself, combined with a tree search that uses the network to choose moves. Two classic baselines sit beside it: minimax with alpha-beta pruning, which looks a fixed number of moves ahead with a hand-written score, and Monte Carlo tree search, which judges positions by random games. A chance player sits at the bottom of the scale: it rolls for its column with fixed odds and never looks at the position.</p>
   <div class="hiw-grid">
     <article class="hiw-card">
       <h3>AlphaZero (PUCT search with a network)</h3>
@@ -164,6 +193,12 @@
       <p>UCT tree search with random rollouts to the end of the game and no neural network. The move chosen is the child visited most often.</p>
       <ul><li>UCB1 exploration constant c = 1.4</li><li>300, 1,500 or 5,000 simulations, capped at 3 seconds</li></ul>
     </article>
+    <article class="hiw-card">
+      <h3>Chance (fixed odds)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Like the tile spawner in 2048: no thinking, just a weighted die roll over the moves that are legal.</p>
+      <p>No search, evaluation or lookahead. Each column has a fixed weight of 1, 2, 3, 4, 3, 2, 1 from the left, so the centre columns come up more often. The weights are renormalised over the columns that are not full, and the move is one draw from that distribution.</p>
+      <ul><li>Odds on an empty board: 6% / 12% / 19% / 25% / 19% / 12% / 6%</li><li>Strength has no effect: the same odds at Fast, Normal and Strong</li></ul>
+    </article>
   </div>
   <h3 class="hiw-sub">Heuristics and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
@@ -174,8 +209,8 @@
   <p class="hiw-note"><b>How these were chosen:</b> hand-set. The numbers are fixed in <code>connect4/minimax.py</code> and no tuning run is recorded. The code describes the evaluation as a standard hand-built one but cites no source. The MCTS constant and the PUCT constant were also set by hand; no sweep is recorded.</p>
 
   <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">The network learns from self-play only: no human games, no opening book, and no positions labelled by another engine. The architecture is a residual network with 4 blocks of 32 channels, a policy head that scores the 7 columns, and a value head that predicts the result from the side to move. Each iteration plays 128 games at once and trains on a replay buffer with mirrored positions. The loss is value mean squared error plus policy cross-entropy against the search's visit counts. During self-play, the root gets Dirichlet noise (alpha 1.0, weight 0.25), and the first 8 moves of each game are sampled from the visit counts.</p>
-  <p class="hiw-note">The training doc gives the run as 64 simulations per move and 100 training steps per iteration (the training script's current defaults are 100 and 400). On one shared laptop CPU (Intel Core i7-1265U, no GPU), it played 4,480 games over 35 iterations, about 2 hours 40 minutes of compute. The weights served on this page are the snapshot after iteration 19 (2,432 games), before the later phases. Against alpha-beta minimax at depths 2, 4 and 6 (50 games each, 200 simulations per move), that snapshot scored 64%, 77% and 44%. Plain MCTS with 1,000 simulations scored 32 wins, 2 draws, 16 losses against depth 4. The full run is in <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a>.</p>
+  <p class="hiw-note">The network learns from self-play only: no human games, no opening book, and no positions labelled by another engine. The architecture is a residual network with 4 blocks of 32 channels, a policy head that scores the 7 columns, and a value head that predicts the result from the side to move. Each laptop iteration played 128 games at once and trains on a replay buffer with mirrored positions. The loss is value mean squared error plus policy cross-entropy against the search's visit counts. During self-play, the root gets Dirichlet noise (alpha 1.0, weight 0.25), and the first 8 moves of each game are sampled from the visit counts.</p>
+  <p class="hiw-note">The laptop runs used 64 simulations per move and 100 training steps per iteration (<code>--simulations 64 --steps 100</code>; the script's defaults are 100 and 400). On one shared laptop CPU (Intel Core i7-1265U, no GPU), the first 37 iterations produced 4,736 self-play games. A Kaggle notebook then continued from that checkpoint for 8 hours on 4 CPU threads, with 512 games, 100 simulations and 400 training steps per iteration, reaching iteration 96 and 34,944 games. The weights served on this page are that iteration-96 export. Against alpha-beta minimax at depths 2, 4 and 6 (100 games each, 200 simulations per move), it scored 71%, 81% and 81%; the iteration-19 network served before it scored 63.5%, 58% and 39% on the same openings. Plain MCTS with 1,000 simulations scored 32 wins, 2 draws, 16 losses against depth 4 (50 games). The full run is in <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a>.</p>
 
   <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py">connect4/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py">connect4/puct.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py">connect4/net.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py">connect4/train_az.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py">connect4/minimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py">connect4/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/evaluate.py">connect4/evaluate.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/connect4_eval.json">results/connect4_eval.json</a></p>
 </section>

@@ -262,6 +262,31 @@ def test_main_rejects_bad_arguments():
         cli.main(["watch", "--agent", "nope"])
 
 
+def test_zero_seeds_is_a_clean_error_not_a_division_by_zero(capsys):
+    # M1: the Lai-Robbins floor is averaged over the seeds, so no seeds used to raise ZeroDivisionError.
+    with pytest.raises(ValueError):
+        run_benchmark(seeds=0, horizon=1100)
+    with pytest.raises(SystemExit):
+        cli.main(["benchmark", "--seeds", "0", "--no-write"])
+    assert "--seeds must be at least 1" in capsys.readouterr().err
+
+
+def test_reasons_name_machines_by_letter():
+    # M2: the Python reasons use the same letters as the play prompt and the page, not "machine 1".
+    out = []
+    cli.watch("ucb1", "bernoulli", 4, 12, 3, out=out.append, sleep=lambda s: None)
+    reasons = [line for line in out if "first round" in line or "highest optimistic bound" in line]
+    assert len(reasons) == 12 and "first round: try machine A once" in reasons[0]
+    assert not any(re.search(r"machine \d", line) for line in reasons)
+
+
+def test_help_names_the_module(capsys):
+    # M3: argparse shows the command the user typed.
+    with pytest.raises(SystemExit):
+        cli.main(["--help"])
+    assert capsys.readouterr().out.startswith("usage: python -m bandits")
+
+
 def test_describe_segments_labels_each_schedule_block():
     env = Environment("drifting", 3, 1000, 5)
     lines = cli.describe_segments(env)

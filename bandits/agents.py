@@ -47,6 +47,11 @@ def argmax(xs: list[float]) -> int:
     return best
 
 
+def machine_name(arm: int) -> str:
+    """The letter a machine goes by in the reasons, the play prompt and the page: 0 is A, 1 is B, ..."""
+    return chr(ord("A") + arm)
+
+
 class Agent:
     """Base class: counts, sums, the pull counter, and the display fields."""
 
@@ -80,7 +85,7 @@ class Agent:
     def _forced(self) -> int:
         """During the first K pulls, try each machine once. Returns the machine to try."""
         self.scores = self.means()
-        self.reason = f"first round: try machine {self.t + 1} once, since nothing is known yet"
+        self.reason = f"first round: try machine {machine_name(self.t)} once, since nothing is known yet"
         return self.t
 
 
@@ -95,7 +100,7 @@ class Greedy(Agent):
         m = self.means()
         self.scores = m
         arm = argmax(m)
-        self.reason = f"exploit: machine {arm + 1} has the best average so far ({m[arm]:.2f})"
+        self.reason = f"exploit: machine {machine_name(arm)} has the best average so far ({m[arm]:.2f})"
         return arm
 
 
@@ -119,10 +124,10 @@ class EpsilonGreedy(Agent):
         # Two draws: one decides explore or exploit, one picks the random machine if exploring.
         if self.rng.uniform() < eps:
             arm = self.rng.index(self.k)
-            self.reason = f"explore: a random machine ({arm + 1}), with epsilon {eps:.3f}"
+            self.reason = f"explore: a random machine ({machine_name(arm)}), with epsilon {eps:.3f}"
         else:
             arm = argmax(m)
-            self.reason = f"exploit: machine {arm + 1} has the best average ({m[arm]:.2f}); epsilon {eps:.3f}"
+            self.reason = f"exploit: machine {machine_name(arm)} has the best average ({m[arm]:.2f}); epsilon {eps:.3f}"
         return arm
 
 
@@ -149,7 +154,7 @@ class UCB1(Agent):
         self.scores = idx
         arm = argmax(idx)
         bonus = idx[arm] - m[arm]
-        self.reason = (f"highest optimistic bound: machine {arm + 1} has mean {m[arm]:.2f} "
+        self.reason = (f"highest optimistic bound: machine {machine_name(arm)} has mean {m[arm]:.2f} "
                        f"plus a bonus of {bonus:.2f} for its {self.counts[arm]} pulls")
         return arm
 
@@ -187,10 +192,10 @@ class Thompson(Agent):
         arm = argmax(samples)
         a, b = post[arm]
         if self.bernoulli:
-            self.reason = (f"sampled {samples[arm]:.2f} from machine {arm + 1}'s Beta({a:.0f}, {b:.0f}) "
+            self.reason = (f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s Beta({a:.0f}, {b:.0f}) "
                            "posterior, the best sample this round")
         else:
-            self.reason = (f"sampled {samples[arm]:.2f} from machine {arm + 1}'s posterior "
+            self.reason = (f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s posterior "
                            f"(mean {a:.2f}, sd {b:.2f}), the best sample this round")
         return arm
 
@@ -225,7 +230,7 @@ class EXP3(Agent):
             if u < cum:
                 arm = i
                 break
-        self.reason = f"sample machine {arm + 1} with probability {probs[arm]:.2f}"
+        self.reason = f"sample machine {machine_name(arm)} with probability {probs[arm]:.2f}"
         return arm
 
     def update(self, arm: int, reward: float) -> None:
@@ -267,7 +272,7 @@ class SlidingWindowUCB(Agent):
         for i in range(self.k):
             if self.wcounts[i] == 0:
                 self.scores = [0.0] * self.k
-                self.reason = f"machine {i + 1} has not paid out in the last {self.window} pulls: look again"
+                self.reason = f"machine {machine_name(i)} has not paid out in the last {self.window} pulls: look again"
                 return i
         # Inside the window: mean + sigma * sqrt(xi * ln(min(t, W)) / n). xi is smaller than UCB1's 2,
         # because the window already caps how long evidence lasts; xi = 0.6 is a fixed choice, not tuned.
@@ -276,8 +281,9 @@ class SlidingWindowUCB(Agent):
                for i in range(self.k)]
         self.scores = idx
         arm = argmax(idx)
-        self.reason = (f"highest window index: machine {arm + 1} averages {self.wsums[arm] / self.wcounts[arm]:.2f} "
-                       f"over its last {self.wcounts[arm]} pulls in the window")
+        mean, n = self.wsums[arm] / self.wcounts[arm], self.wcounts[arm]
+        self.reason = (f"highest window index: machine {machine_name(arm)} averages {mean:.2f} "
+                       f"over its last {n} pulls in the window")
         return arm
 
 

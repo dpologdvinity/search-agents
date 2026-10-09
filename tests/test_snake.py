@@ -174,6 +174,15 @@ def test_benchmark_summary_and_table():
     assert "| agent | mean apples" in table and "| greedy |" in table
 
 
+def test_action_counts_match_committed_file():
+    # The committed shares come from a fixed run of the committed net on the first 40 benchmark boards,
+    # so re-running it must reproduce the file exactly.
+    result = benchmark.action_counts(40)
+    assert sum(result["actions"].values()) == result["moves"]
+    committed = json.loads((benchmark.RESULTS_DIR / "snake_net_actions.json").read_text())
+    assert result == committed
+
+
 def test_cli_watch_and_turn_play(capsys):
     assert snake_main(["watch", "--agent", "greedy", "--seed", "2", "--delay", "0", "--steps", "20"]) == 0
     assert "apples" in capsys.readouterr().out

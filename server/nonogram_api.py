@@ -17,27 +17,28 @@ from __future__ import annotations
 
 import asyncio
 import random
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from nonogram.generate import NoUniquePicture, random_puzzle
+from nonogram.generate import RANDOM_MAX, RANDOM_MIN, NoUniquePicture, random_puzzle
 from nonogram.library import get, library
 from nonogram.puzzle import MAX_SIZE, Puzzle, validate_clues
-from nonogram.solvers import GUESSES_SERVER, SAT_PROPAGATIONS_SERVER, hint, solve
+from nonogram.solvers import GUESSES_SERVER, SAT_PROPAGATIONS_SERVER, SECONDS_SERVER, hint, solve
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
-RANDOM_MIN, RANDOM_MAX = 5, 20  # sizes the random generator offers
 DESCRIPTION = (
     "Each row and column has a clue: the lengths of its runs of filled cells. Line solving reads each clue "
     "as an automaton and fixes the cells every arrangement agrees on. Where that stops, a DPLL SAT solver "
     "or a guess-and-propagate search finishes, and it counts solutions to prove the picture is unique."
 )
 
-Clues = list[list[int]]
+# A line of n cells holds at most (n + 1) // 2 runs, so a longer clue list cannot describe any line.
+Clues = list[Annotated[list[int], Field(max_length=(MAX_SIZE + 1) // 2)]]
 
 
 class SolveRequest(BaseModel):
@@ -50,12 +51,7 @@ class SolveRequest(BaseModel):
 class HintRequest(BaseModel):
     row_clues: Clues = Field(max_length=MAX_SIZE)
     col_clues: Clues = Field(max_length=MAX_SIZE)
-    grid: list[list[int]] = Field(max_length=MAX_SIZE)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    grid: list[Annotated[list[int], Field(max_length=MAX_SIZE)]] = Field(max_length=MAX_SIZE)
 
 
 def _puzzle_from_clues(row_clues: Clues, col_clues: Clues) -> Puzzle:
@@ -89,8 +85,12 @@ def _puzzle_json(p: Puzzle) -> dict:
 
 
 def solve_json(puzzle: Puzzle, method: str, trace: bool) -> dict:
-    """Run one solve with the server's budgets and return the JSON the page reads."""
-    kwargs = {}
+    """Run one solve with the server's budgets and time limit, and return the JSON the page reads.
+
+    The time limit is the one that binds on large pictures; the counted budgets are backstops on small ones.
+    A run that stops at either reports status "undecided", with timed_out telling the page which one.
+    """
+    kwargs = {"time_limit": SECONDS_SERVER}
     if method == "sat":
         kwargs["max_propagations"] = SAT_PROPAGATIONS_SERVER
     elif method == "hybrid":
@@ -127,7 +127,7 @@ async def random_endpoint(request: Request,
                           cols: int = Query(10, ge=RANDOM_MIN, le=RANDOM_MAX),
                           seed: int | None = Query(None, ge=0, lt=2**31)):
     app = request.app
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     if seed is None:
         seed = random.randrange(2**31)
@@ -148,7 +148,7 @@ async def solve_endpoint(req: SolveRequest, request: Request):
     app = request.app
     if req.method not in ("line", "hybrid", "sat"):
         raise HTTPException(422, "method must be line, hybrid or sat")
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     puzzle_ = _puzzle_from_clues(req.row_clues, req.col_clues)
     try:
@@ -161,7 +161,7 @@ async def solve_endpoint(req: SolveRequest, request: Request):
 @router.post("/api/nonogram/hint")
 async def hint_endpoint(req: HintRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     puzzle_ = _puzzle_from_clues(req.row_clues, req.col_clues)
     _check_grid(req.grid, puzzle_.rows, puzzle_.cols)

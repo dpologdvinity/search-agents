@@ -6,6 +6,9 @@
 .qn-tabs .cyber-btn { opacity: 0.7; }
 .qn-tabs .cyber-btn.act, .qn-tabs .cyber-btn[aria-selected="true"] { opacity: 1; box-shadow: 0 0 18px currentColor; }
 .qn-mode .proj-body { align-items: flex-start; }
+/* The BIG N controls have a minimum width wider than a 390 px phone, which pushed the page 1 px past the
+   screen. Letting both columns shrink keeps the document at the viewport width. */
+.qn-mode .proj-game-col, .qn-mode .proj-ctrl-col { min-width: 0; max-width: 100%; }
 
 /* Board: n x n squares. Light and dark squares are both neon-tinted so the grid reads as a chessboard. */
 .qn-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; }

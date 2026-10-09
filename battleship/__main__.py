@@ -4,6 +4,7 @@
     python -m battleship --agent hunt --heatmap # the hunt/target baseline, odds map on from the start
     python -m battleship --watch --delay 0.1    # the agent sinks a random fleet while you watch
     python -m battleship benchmark --games 20   # average shots to win, per agent
+    python -m battleship match --games 100      # AI vs chance races: the AI and chance sink each other's fleet
 
 On your turn type a cell such as c7 to fire, m to show or hide the odds map, or q to quit. The odds map
 shows the agent's probability that each cell of your fleet holds a ship, as digits 0-9 (tenths).
@@ -17,7 +18,7 @@ import sys
 import time
 from random import Random
 
-from . import benchmark
+from . import benchmark, match
 from .agents import AGENTS, make_agent
 from .board import FLEET_NAMES, Fleet, Knowledge, cell_name, mask_of, parse_cell, random_fleet
 from .probability import ship_probabilities
@@ -194,10 +195,12 @@ def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else list(argv)
     if argv and argv[0] == "benchmark":
         return benchmark.main(argv[1:])
+    if argv and argv[0] == "match":
+        return match.main(argv[1:])
     parser = argparse.ArgumentParser(prog="python -m battleship", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--agent", choices=sorted(AGENTS), default="probability",
-                        help="opponent or watched agent (default probability)")
+                        help="opponent or watched agent: probability, hunt, random or chance (default probability)")
     parser.add_argument("--heatmap", action="store_true", help="show the agent's odds map from the start")
     parser.add_argument("--watch", action="store_true", help="watch the agent sink a random fleet")
     parser.add_argument("--delay", type=float, default=0.0, help="seconds between shots when watching")

@@ -33,6 +33,9 @@
 /* ── Arcade ───────────────────────────────────────────────────────────── */
 .arcade { max-width: 1440px; margin: 0 auto; padding: 5rem 2rem 3rem; }
 .arcade-title { font-family: var(--orb); font-weight: 900; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--yellow); text-shadow: 0 0 14px rgba(255,230,0,0.6); margin-bottom: 2rem; }
+/* Labs are few, so their tiles keep the cabinet width instead of stretching across the whole row. */
+.labs .cabinets { grid-template-columns: repeat(auto-fit, minmax(210px, 320px)); }
+.labs-lede { font-family: var(--mono); font-size: 0.85rem; color: var(--dim); margin: 0 0 1.6rem; max-width: 60ch; }
 .cabinets { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.2rem; }
 
 .cabinet {

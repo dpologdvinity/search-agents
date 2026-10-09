@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOST ROBOT // SEARCH AGENTS</title>
+<meta name="description" content="A robot on a known floor plan does not know where it is. A histogram filter and a particle filter both start from total ignorance and narrow down with noisy range sensors and odometry. Watch the particles collapse onto the robot.">
+<meta property="og:title" content="LOST ROBOT // SEARCH AGENTS">
+<meta property="og:description" content="A robot on a known floor plan does not know where it is. A histogram filter and a particle filter both start from total ignorance and narrow down with noisy range sensors and odometry. Watch the particles collapse onto the robot.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/localize.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="localize.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">BAYES FILTERING · GRID VS PARTICLES</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="LOST ROBOT">LOST ROBOT</h1>
+      <div class="proj-pg-sub">The robot does not know where it is on this floor plan. Its range sensors see walls at a few distances, and its wheels drift. Each guess is weighed against what the sensors see. Watch the belief split between look-alike rooms, then collapse onto the robot.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip">PARTICLE ERR <span class="val" id="chip-pf">—</span></span>
+        <span class="stat-chip green">GRID ERR <span class="val" id="chip-grid">—</span></span>
+        <span class="stat-chip">ESS <span class="val" id="chip-ess">—</span></span>
+        <span class="stat-chip pink">PLACES <span class="val" id="chip-modes">—</span></span>
+        <span class="stat-chip">STEP <span class="val" id="chip-step">0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="lr-stage">
+        <canvas id="lr-map" class="lr-map" width="960" height="640" role="img" aria-label="Floor plan with the particle cloud, the true robot, its sensor beams and the estimate"></canvas>
+        <div class="lr-readout field-hint" id="lr-info">Drive the robot with the arrow keys or WASD, or let the autopilot run. The filters never see the robot's true position.</div>
+      </div>
+
+      <div class="lr-legend">
+        <span><i class="lr-sw lr-sw-wall"></i>wall</span>
+        <span><i class="lr-sw lr-sw-part"></i>particle (brighter = heavier)</span>
+        <span><i class="lr-sw lr-sw-robot"></i>true robot</span>
+        <span><i class="lr-sw lr-sw-beam"></i>range beam</span>
+        <span><i class="lr-sw lr-sw-est"></i>estimate and 2-sigma ellipse</span>
+        <span><i class="lr-sw lr-sw-heat"></i>grid belief (heat map)</span>
+      </div>
+
+      <div class="lr-pad-wrap">
+        <div class="lr-pad" role="group" aria-label="Drive the robot">
+          <span></span>
+          <button class="cyber-btn lr-key" type="button" data-key="w" aria-label="Drive forward (W)"><span class="btn-txt">▲</span></button>
+          <span></span>
+          <button class="cyber-btn lr-key" type="button" data-key="a" aria-label="Turn left (A)"><span class="btn-txt">◀</span></button>
+          <button class="cyber-btn lr-key" type="button" data-key="s" aria-label="Back up (S)"><span class="btn-txt">▼</span></button>
+          <button class="cyber-btn lr-key" type="button" data-key="d" aria-label="Turn right (D)"><span class="btn-txt">▶</span></button>
+        </div>
+        <div class="lr-controls">
+          <button class="cyber-btn green" id="btn-auto" type="button" aria-pressed="true"><span class="btn-txt">AUTOPILOT</span></button>
+          <button class="cyber-btn pink" id="btn-kidnap" type="button"><span class="btn-txt">⚡ KIDNAP</span></button>
+          <button class="cyber-btn" id="btn-run" type="button" aria-pressed="true"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-new" type="button"><span class="btn-txt">↺ NEW FLOOR</span></button>
+          <button class="cyber-btn" id="btn-reset" type="button"><span class="btn-txt">⟲ REPLAY SEED</span></button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem">
+        <div class="section-title pink-ttl">WHAT THE FILTERS BELIEVE</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Ready</div>
+          <div class="lr-think" id="think-body" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="lr-charts">
+        <div class="viz-panel">
+          <div class="viz-title">Error against the true position (metres). Cyan: particles. Green: grid. Dashed line: 0.5 m.</div>
+          <canvas id="lr-err" class="lr-chart" width="640" height="220" role="img" aria-label="Estimation error over time for the particle filter and the grid filter"></canvas>
+        </div>
+        <div class="viz-panel">
+          <div class="viz-title">Effective sample size as a share of the particles. Below half, the cloud is resampled.</div>
+          <canvas id="lr-ess" class="lr-chart" width="640" height="220" role="img" aria-label="Effective sample size of the particle filter over time"></canvas>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem">
+        <div class="section-title pink-ttl">EVENT LOG</div>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">FLOOR</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PLAN</div>
+            <select class="cyber-select" id="layout" style="width:100%">
+              <option value="halls" selected>Twin Halls (rooms that look alike)</option>
+              <option value="vault">The Vault (irregular)</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">SEED (pillars and robot start)</div>
+            <div class="inline">
+              <input class="cyber-select" id="seed" type="number" min="0" max="4294967295" value="4" style="flex:1;min-width:0">
+              <button class="cyber-btn" id="btn-shuffle" type="button"><span class="btn-txt">⚄</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">FILTERS</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PARTICLES</div>
+            <select class="cyber-select" id="particles" style="width:100%">
+              <option value="100">100</option>
+              <option value="500">500</option>
+              <option value="2000" selected>2000</option>
+            </select>
+            <div class="field-hint">Fewer particles lose the other places sooner (particle deprivation).</div>
+          </div>
+          <div>
+            <div class="field-lbl">BEAMS <span id="rays-val">8</span></div>
+            <input id="rays" type="range" min="4" max="16" step="1" value="8" style="width:100%" aria-label="Number of range beams">
+            <div class="field-hint">Changing the beams rebuilds the grid's sensor table.</div>
+          </div>
+          <div>
+            <div class="field-lbl">SENSOR NOISE <span id="sigma-val">0.30 cells (0.15 m)</span></div>
+            <input id="sigma" type="range" min="0.1" max="1" step="0.05" value="0.3" style="width:100%" aria-label="Range sensor noise in cells">
+          </div>
+          <div>
+            <div class="field-lbl">ODOMETRY NOISE <span id="scale-val">1.0×</span></div>
+            <input id="scale" type="range" min="0" max="3" step="0.1" value="1" style="width:100%" aria-label="Odometry noise multiplier">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">VIEW</div>
+        <div class="stack">
+          <button class="cyber-btn" id="tog-particles" type="button" aria-pressed="true"><span class="btn-txt">PARTICLES ON</span></button>
+          <button class="cyber-btn" id="tog-rays" type="button" aria-pressed="true"><span class="btn-txt">BEAMS ON</span></button>
+          <button class="cyber-btn" id="tog-heat" type="button" aria-pressed="false"><span class="btn-txt">GRID HEAT MAP</span></button>
+          <div class="field-hint">The heat map is the grid filter's belief over position: bright is likely. It is exact on its bins; the particles are a sample of the same belief.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="hiw" id="how-it-works">
+    <div class="section-title pink-ttl">HOW IT WORKS</div>
+    <p class="hiw-lede">Two filters, the same robot, the same beams. Both start from total ignorance. On 16 seeded trials, the 2000-particle filter holds within 0.5 m for ten steps in 15 of them; the exact grid filter does so in all 16, but takes about 2.7 times as long per step in this implementation. Two devices do most of the work: the particles are resampled when their weights bunch up, and a fraction is re-scattered over the floor when the beams stop matching the belief.
+    <div class="hiw-grid">
+      <div class="hiw-card">
+        <h3>1. Bayes' rule: belief times evidence</h3>
+        <p><b>New to this?</b> Start with a guess about where the robot could be, the prior. Each sensor reading says how likely it is under each place. Multiply the two, divide by their total, and the result is the posterior: the new belief. The robot is never "found" in one jump; the belief shifts a little with each reading.</p>
+        <p>Written out: <code>p(x | z) = p(z | x) p(x) / p(z)</code>. Here <code>x</code> is the pose (position and heading), <code>z</code> the beams, and <code>p(z)</code> just the sum that makes the numbers add to one.</p>
+      </div>
+      <div class="hiw-card">
+        <h3>2. Predict, then update</h3>
+        <p><b>New to this?</b> Each tick has two steps. Predict: move every possible pose by the odometry, spreading the belief because the wheels drift. Update: multiply by how well the beams fit each pose, then renormalise. Prediction makes the belief wider; the sensor makes it narrower.</p>
+        <p>With no sensor the belief only spreads out. With no odometry the robot could only ever be where the first scan put it. The two together give the filter its shape.</p>
+      </div>
+      <div class="hiw-card">
+        <h3>3. Grid filter: one number per bin</h3>
+        <p><b>New to this?</b> Chop the floor into small bins, each with a heading, and keep one probability for every bin. Prediction moves probability from each bin to where the odometry could have taken it. Update multiplies by the likelihood of the beams in that bin. Nothing is sampled, so the result is the exact Bayes filter on these bins.</p>
+        <p>The cost grows with the number of bins, so it is exact but limited: 48 by 32 positions with 16 headings is 24 576 bins, and every bin is updated on every tick.</p>
+      </div>
+      <div class="hiw-card">
+        <h3>4. Particle filter: a sample of the belief</h3>
+        <p><b>New to this?</b> Instead of a number per bin, keep a few thousand guesses, each a pose. Predict moves each guess by the odometry plus its own random noise. Update scores each guess by how well its own beams match the sensor, and that score becomes its weight. The cloud of weighted guesses is the belief.</p>
+        <p>The cost grows with the particle count, not the size of the floor, which is why it scales to large maps. The price is randomness: fewer particles can lose a place for good.</p>
+      </div>
+      <div class="hiw-card">
+        <h3>5. Resampling: keep the good guesses</h3>
+        <p><b>New to this?</b> After a few updates most weight sits on a handful of particles. Resampling redraws the cloud in proportion to the weights: heavy particles are copied, light ones die. The effective sample size (ESS) measures how concentrated the weights are; when it falls below half the particles, the cloud is resampled. Systematic resampling uses one random offset and evenly spaced pointers, so every copy count is as even as it can be.</p>
+      </div>
+      <div class="hiw-card">
+        <h3>6. Kidnapped robot: inject new guesses</h3>
+        <p><b>New to this?</b> If someone carries the robot to a new room, every particle is now wrong and the cloud can never recover by itself. The filter compares the average likelihood of the beams now with its longer-run average. When the recent average falls well below the long-run one, it replaces the lowest-weight particles with random poses over the whole floor. This is augmented Monte Carlo localisation.</p>
+      </div>
+    </div>
+
+    <div class="section-title green-ttl" style="font-size:0.7rem">PARAMETERS AND WHERE THEY CAME FROM</div>
+    <div class="hiw-scroll">
+      <table class="hiw-table">
+        <thead><tr><th>parameter</th><th>value</th><th>notes</th></tr></thead>
+        <tbody>
+          <tr><td>cell size</td><td>0.5 m</td><td>Floor 24 by 16 cells, 12 m by 8 m. Walls are whole cells; the robot is a point.</td></tr>
+          <tr><td>beams</td><td>8 (4 to 16)</td><td>Evenly spread around the full circle, from the robot's heading. Range 8 cells (4 m).</td></tr>
+          <tr><td>sensor noise</td><td>σ = 0.3 cells (0.15 m)</td><td>Gaussian on each beam, with a 5% chance of a dropout reading the maximum range. Picked so the beams are informative but not so sharp that one scan kills the cloud.</td></tr>
+          <tr><td>odometry noise</td><td>turn: 0.05 + 0.15·|turn| rad; drive: 0.03 + 0.10·|drive| cells</td><td>Scaled by the slider. Both the true robot and the filters use this model, so the page tests the filters against the noise they assume.</td></tr>
+          <tr><td>particles</td><td>2000 (100, 500, 2000)</td><td>Failures in the benchmark: 11 of 16 at 100, 4 of 16 at 500, 1 of 16 at 2000. Too few guesses lose the other rooms after the first scan. 2000 is the default; the page's slider runs over the three values.</td></tr>
+          <tr><td>resampling</td><td>ESS below N/2, systematic</td><td>Standard threshold; the usual compromise between diversity and copying.</td></tr>
+          <tr><td>kidnap detector</td><td>fast average α = 0.1, slow α = 0.01, trigger at a 2.5 nat drop</td><td>The trigger is a log-likelihood drop, so routine noise rarely injects particles: 1.2% per step on average in the benchmark, when nothing is wrong.</td></tr>
+          <tr><td>grid</td><td>0.25 m bins, 16 headings</td><td>Odometry noise integrated with 3-point Gauss-Hermite quadrature (9 points per bin). The sensor table is the ray cast from each bin's centre.</td></tr>
+          <tr><td>estimate</td><td>densest cluster</td><td>The heaviest particle and those within 1.5 cells and 0.6 rad of it. A mean over all particles would fall between two rooms, in a wall.</td></tr>
+          <tr><td>PRNG</td><td>mulberry32</td><td>The same bits in Python and JavaScript, so the page, the CLI and the tests draw the same floor, noise and beams for a seed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hiw-note"><b>How these were measured:</b> 16 seeded trials (2 floors, 4 floor seeds, 2 robot seeds), 100 steps each, in Python on one core; the full table is <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/localize_benchmark.md">results/localize_benchmark.md</a>. A trial succeeds when the estimate stays within 0.5 m for ten steps in a row. With 2000 particles that happens in 15 of 16 trials, at a median of 2 steps (the first step of the held window). With 500 particles it fails in 4 of 16, and with 100 in 11 of 16: the first scan leaves too few guesses, and they all sit in one of the look-alike rooms. The grid filter fails in none, at 40 ms per step against 15 ms for the particles (timings from a quiet run; they move with machine load, the ratio less so). The sensor and odometry sweeps move the failure count by a few trials either way, within what 16 trials can resolve, so they are not a trend.</p>
+    <p class="hiw-note"><b>After a kidnap</b> (at step 40), augmented MCL re-finds the robot in a median of 13 steps, with 3 of 16 trials never recovering. Plain MCL, without the injection, recovers in only 2 of 16. Augmented MCL re-scatters 1.2% of particles per step when nothing is wrong, which is the false-alarm rate, and 19% per step after the kidnap. The grid filter takes a median of 33 steps: its belief stays confident in the old room until enough new beams outweigh it. The 60-step window is short. In a separate spot check of six kidnaps with a 240-step window, five recovered, after 52 to 167 steps, and one stayed lost: the injected particles are a fresh global search, and the look-alike rooms can hold it for a while.</p>
+
+    <div class="hiw-src">
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py">localize/world.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py">localize/grid.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py">localize/particles.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py">localize/sim.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py">localize/prng.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py">localize/benchmark.py</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize-core.js">web/js/localize-core.js</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize.js">web/js/localize.js</a>
+      <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/localize_api.py">server/localize_api.py</a>
+    </div>
+  </section>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/localize.js"></script>
+</body>
+</html>

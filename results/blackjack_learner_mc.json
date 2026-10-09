@@ -1,0 +1,36 @@
+{
+ "command": "PYTHONPATH=. .venv/bin/python -c 'import json; from blackjack.learner import learn; s = learn(100000, seed=1, snapshots=5); print(json.dumps([{k: v for k, v in vars(x).items() if k != \"actions\"} for x in s]))'",
+ "method": "Monte Carlo control, exploring starts, every-visit averages, epsilon-greedy; agreement with the exact table on decisive cells (exact top-two margin >= MIN_DECISIVE_MARGIN); loss is the mean exact value lost per cell (untried cells count as their worst action)",
+ "snapshots": [
+  {
+   "episodes": 20000,
+   "agreement": 0.6479750778816199,
+   "decisive": 321,
+   "loss": 0.07210471403723571
+  },
+  {
+   "episodes": 40000,
+   "agreement": 0.7258566978193146,
+   "decisive": 321,
+   "loss": 0.03935239296521654
+  },
+  {
+   "episodes": 60000,
+   "agreement": 0.7445482866043613,
+   "decisive": 321,
+   "loss": 0.030450706578132324
+  },
+  {
+   "episodes": 80000,
+   "agreement": 0.7538940809968847,
+   "decisive": 321,
+   "loss": 0.027877645058159324
+  },
+  {
+   "episodes": 100000,
+   "agreement": 0.7819314641744548,
+   "decisive": 321,
+   "loss": 0.023375509760155056
+  }
+ ]
+}

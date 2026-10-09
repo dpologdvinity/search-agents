@@ -1,7 +1,8 @@
 """Play one full game with an agent and keep every turn, for the web page, the benchmark, and the tests.
 
 The agent gets its own random generator, derived from the seed but separate from the
-game's, so changing the agent never changes how the ghosts move.
+game's, so changing the agent never changes how the ghosts move. The ghost policy ("ai" or
+"chance") is passed through to the game and recorded on the episode.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ class Episode:
     turns: tuple[Turn, ...]
     decisions: tuple[Decision, ...]  # one per turn, in order
     final: State
+    ghosts: str = "ai"  # the ghost policy the game was played under
 
     @property
     def won(self) -> bool:
@@ -37,12 +39,14 @@ def agent_rng(seed: int) -> random.Random:
     return random.Random(seed * 7919 + 1)
 
 
-def run_episode(agent, maze: Maze, seed: int, name: str = "", max_turns: int = MAX_TURNS) -> Episode:
+def run_episode(agent, maze: Maze, seed: int, name: str = "", max_turns: int = MAX_TURNS,
+                ghosts: str = "ai") -> Episode:
     """Play `agent` on `maze` with ghost randomness from `seed` until the game ends.
 
     `agent` is any object with act(state, rng) -> Decision; `name` is recorded for display.
+    `ghosts` picks the ghost policy: "ai" (A* routes) or "chance" (fixed odds).
     """
-    game = Game(maze, seed=seed, max_turns=max_turns)
+    game = Game(maze, seed=seed, max_turns=max_turns, ghosts=ghosts)
     rng = agent_rng(seed)
     turns: list[Turn] = []
     decisions: list[Decision] = []
@@ -59,4 +63,5 @@ def run_episode(agent, maze: Maze, seed: int, name: str = "", max_turns: int = M
         turns=tuple(turns),
         decisions=tuple(decisions),
         final=game.state,
+        ghosts=game.ghost_policy,
     )

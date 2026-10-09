@@ -27,6 +27,7 @@ DENSITY_MAX = 0.70
 CELL_SPAN = 3  # one noise value per this many cells, so blobs are about 3 cells across
 ATTEMPTS = 40  # pictures drawn before giving up
 NODE_BUDGET = 300  # hybrid guesses allowed per uniqueness check (a rejected picture costs at most about 1 s)
+RANDOM_MIN, RANDOM_MAX = 5, 20  # sizes the random generator offers, per side; the server and the CLI both check this
 
 
 class NoUniquePicture(RuntimeError):

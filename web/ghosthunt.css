@@ -1,0 +1,59 @@
+/* Ghost Hunt page. Loaded after style.css and app.css. The board is one canvas drawn by ghosthunt.js; the
+   legend swatches, the direction pad and the readouts reuse the neon palette of the other game pages. */
+
+.gh-stage {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 0.6rem; border: 1px solid rgba(255,0,160,0.4); background: rgba(2,4,14,0.9);
+  box-shadow: 0 0 30px rgba(255,0,160,0.18), inset 0 0 50px rgba(0,0,0,0.7);
+}
+.gh-stage::before {
+  /* A faint scanline sheet behind the board. */
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.6;
+  background-image: repeating-linear-gradient(0deg, rgba(155,0,255,0.05) 0 1px, transparent 1px 4px);
+}
+.gh-map {
+  position: relative; display: block; width: 100%; max-width: 640px; aspect-ratio: 1 / 1; height: auto;
+  cursor: pointer; touch-action: manipulation; border: 1px solid rgba(0,245,255,0.45);
+  box-shadow: 0 0 26px rgba(0,245,255,0.22), 0 0 60px rgba(155,0,255,0.12);
+  background: #02040c;
+}
+.gh-map:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.gh-readout { position: relative; min-height: 1.2em; text-align: center; font-family: var(--mono); font-size: 0.7rem; }
+
+.gh-legend {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; margin: 0.8rem 0 0;
+  font-family: var(--mono); font-size: 0.64rem; color: var(--dim); letter-spacing: 0.04em;
+}
+.gh-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.gh-sw { display: inline-block; width: 13px; height: 13px; border: 1px solid transparent; }
+.gh-sw-fog { background: radial-gradient(circle, #00f5ff 0%, rgba(0,245,255,0) 70%); box-shadow: 0 0 8px #00f5ff; }
+.gh-sw-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff00a0; box-shadow: 0 0 6px #ff00a0; margin: 0 3px; }
+.gh-sw-ring { border: 2px solid #00ff88; border-radius: 50%; box-shadow: 0 0 6px #00ff88; }
+.gh-sw-ghost { border: 1px solid #ffe600; background: rgba(255,230,0,0.15); }
+.gh-sw-true { height: 3px; background: repeating-linear-gradient(90deg, #ff00a0 0 4px, transparent 4px 7px); align-self: center; }
+.gh-sw-vit { height: 3px; background: #00f5ff; align-self: center; box-shadow: 0 0 6px #00f5ff; }
+
+/* The direction pad is a 3x3 grid: N above W, WAIT, E; S below. */
+.gh-pad {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; max-width: 300px;
+  margin: 0.9rem auto 0;
+}
+.gh-pad .cyber-btn { width: 100%; }
+.gh-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.9rem; }
+.gh-keys { text-align: center; margin-top: 0.5rem; }
+
+.gh-think {
+  font-family: var(--raj); font-size: 0.98rem; line-height: 1.5; color: var(--text); min-height: 4.5em;
+  white-space: pre-line;
+}
+.gh-check {
+  display: flex; align-items: center; gap: 0.45rem; font-family: var(--mono); font-size: 0.7rem;
+  color: var(--text); letter-spacing: 0.04em; cursor: pointer;
+}
+.gh-check input { accent-color: var(--pink); }
+.cyber-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.6); }
+
+@media (max-width: 600px) {
+  .gh-pad { max-width: 240px; }
+  .gh-stage { padding: 0.4rem; }
+}

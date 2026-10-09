@@ -1,4 +1,5 @@
 import random
+import time
 
 import pytest
 from fastapi import FastAPI
@@ -105,3 +106,27 @@ def test_analyze_is_rate_limited():
     with TestClient(make_app(rate=2)) as c:
         codes = [c.post("/api/minesweeper/analyze", json=body).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
+
+
+def test_exact_boards_say_so(client):
+    body = client.post("/api/minesweeper/analyze", json=payload(opened_board())).json()
+    assert body["exact"] is True
+
+
+def test_a_wide_frontier_board_is_answered_with_estimates_and_says_so(client):
+    """A crafted 16x30 board used to hold a worker for over a minute. Now the reply comes within the
+    work budget, keeps its proofs, and marks the odds as estimates."""
+    g = Game(16, 30, 99, random.Random(1))
+    g.reveal(0)  # places the mines; the page never sees them, and neither does the request below
+    mines = g.mine_set()
+    # Numbers on every other row, covered elsewhere: long covered chains between the numbers.
+    cells = [g.adjacent_mines(i) if (i // 30 + i % 30) % 2 == 0 and i not in mines else UNKNOWN
+             for i in range(16 * 30)]
+    start = time.perf_counter()
+    body_in = {"rows": 16, "cols": 30, "mines": 99, "cells": cells, "level": 3}
+    resp = client.post("/api/minesweeper/analyze", json=body_in)
+    assert resp.status_code == 200
+    assert time.perf_counter() - start < 15
+    body = resp.json()
+    assert body["exact"] is False and len(body["probability"]) == 16 * 30
+    assert all(0 <= p <= 1 for p in body["probability"] if p is not None)

@@ -33,7 +33,7 @@ from warehouse import (
     solve,
 )
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -81,13 +81,8 @@ class SolveRequest(MapRequest):
         return self
 
 
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
 def _rate_limit(request: Request) -> None:
-    if not request.app.state.rate.allow(_client_key(request)):
+    if not request.app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
 
 

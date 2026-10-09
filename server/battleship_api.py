@@ -3,7 +3,8 @@
 GET  /api/battleship/meta
 POST /api/battleship/new          -> {"id": ..., "size": 10, "fleet": [{"name", "length"}, ...]}
 POST /api/battleship/shot         {"id": ..., "cell": "C7"}  -> miss / hit / sunk, and the fleet once won
-POST /api/battleship/agent-shot   {"shots": [...]}           -> the agent's odds and its next cell
+POST /api/battleship/agent-shot   {"shots": [...], "agent": "probability" | "chance", "seed": 0}
+                                                             -> the agent's odds and its next cell
 
 Who knows what. The agent's fleet is random and lives only on the server, in a bounded in-memory store keyed by
 an unguessable id, so the player cannot read it from the page; it is revealed when the game is won. The player's
@@ -25,11 +26,11 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from battleship.agents import ProbabilityAgent
+from battleship.agents import CHANCE_PROFILE, ChanceAgent, ProbabilityAgent, chance_odds
 from battleship.board import COLUMNS, FLEET, FLEET_NAMES, SIZE, Fleet, Knowledge, cell_name, parse_cell, random_fleet
 from battleship.probability import SAMPLES, choose_cell, ship_probabilities
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -38,6 +39,10 @@ MAX_GAMES = 500  # oldest games are dropped first, so memory stays bounded
 DESCRIPTION = (
     "Bayesian targeting: it counts every fleet placement that fits its misses and hits, and fires at the cell "
     "most likely to hold a ship. Exact counts when they are cheap, importance sampling when they are not."
+)
+CHANCE_DESCRIPTION = (
+    "Fixed odds: no search and no reading of its hits. It fires at a random unknown cell, weighted by a fixed "
+    "table: a cell's weight is profile[row] * profile[col], so the middle of the board is favoured."
 )
 
 
@@ -68,6 +73,8 @@ class ShotReport(BaseModel):
 
 class ObserveIn(BaseModel):
     shots: list[ShotReport] = Field(default_factory=list, max_length=SIZE * SIZE)
+    agent: Literal["probability", "chance"] = "probability"  # whose odds to compute: the Bayesian AI or chance
+    seed: int = Field(default=0, ge=0, le=2**31 - 1)  # chance only: the same seed and shots give the same cell
 
 
 def _store(fleet: Fleet) -> str:
@@ -91,7 +98,7 @@ def _lookup(gid: str) -> _Game:
 
 def _limit(request: Request) -> None:
     """Per-client rate limit shared with the other move endpoints (MOVES_PER_MIN)."""
-    key = request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    key = client_key(request)
     if not request.app.state.move_rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
 
@@ -123,16 +130,28 @@ def _choose(k: Knowledge) -> dict:
     belief = ship_probabilities(k, rng, samples=SAMPLES)
     unknown = k.unknown_cells()
     cell = choose_cell(belief, unknown, rng)
-    top = sorted(unknown, key=lambda c: -belief.probs[c])[:5]
+    return _reply(k, cell, belief.probs, belief.method, belief.count)
+
+
+def _choose_chance(k: Knowledge, seed: int, shots_fired: int) -> dict:
+    """Chance's next cell and its fixed odds. Its rng is seeded from the game seed and how many shots it has
+    fired, so the same history always produces the same shot and a new shot gets a fresh draw."""
+    cell = ChanceAgent(random.Random(seed * 1_000_003 + shots_fired)).choose(k)
+    return _reply(k, cell, chance_odds(k), "fixed odds", None)
+
+
+def _reply(k: Knowledge, cell: int, probs, method: str, count) -> dict:
+    """The response shape shared by both agents: the choice plus the odds behind it."""
+    top = sorted(k.unknown_cells(), key=lambda c: -probs[c])[:5]
     return {
         "choice": cell_name(cell),
         "choice_index": cell,
-        "probability": round(belief.probs[cell], 4),
-        "method": belief.method,
-        "count": belief.count,
+        "probability": round(probs[cell], 4),
+        "method": method,
+        "count": count,
         "remaining": k.remaining_lengths(),
-        "probs": [round(p, 4) for p in belief.probs],  # row-major, cell = row * 10 + col
-        "top": [{"cell": cell_name(c), "probability": round(belief.probs[c], 4)} for c in top],
+        "probs": [round(p, 4) for p in probs],  # row-major, cell = row * 10 + col
+        "top": [{"cell": cell_name(c), "probability": round(probs[c], 4)} for c in top],
     }
 
 
@@ -142,7 +161,9 @@ async def meta():
         "size": SIZE,
         "columns": COLUMNS,
         "fleet": [{"name": n, "length": length} for n, length in zip(FLEET_NAMES, FLEET)],
-        "agent": {"name": ProbabilityAgent.name, "description": DESCRIPTION},
+        "agent": {"name": ProbabilityAgent.name, "label": ProbabilityAgent.label, "description": DESCRIPTION},
+        "chance": {"name": ChanceAgent.name, "label": ChanceAgent.label, "description": CHANCE_DESCRIPTION,
+                   "profile": list(CHANCE_PROFILE), "rule": "weight(row, col) = profile[row] * profile[col]"},
         "samples": SAMPLES,
         "game_ttl_seconds": GAME_TTL,
     }
@@ -185,6 +206,9 @@ async def agent_shot(req: ObserveIn, request: Request):
     k = _knowledge(req.shots)
     if not k.remaining_lengths():
         raise HTTPException(400, "no ships are afloat: the game is over")
+    if req.agent == "chance":
+        # Chance is a table lookup, so it skips the search slots that cap the Bayesian work.
+        return _choose_chance(k, req.seed, len(req.shots))
     try:
         async with request.app.state.slots.acquire():
             return await asyncio.to_thread(_choose, k)

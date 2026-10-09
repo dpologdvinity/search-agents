@@ -23,11 +23,12 @@ How the search works:
 from __future__ import annotations
 
 import heapq
+import time
 from dataclasses import dataclass, field
 
 SAT = "SAT"
 UNSAT = "UNSAT"
-UNKNOWN = "UNKNOWN"  # the propagation budget ran out before an answer
+UNKNOWN = "UNKNOWN"  # the propagation budget or the deadline ran out before an answer
 
 DECAY = 0.95  # activity decay per conflict, as in MiniSat's VSIDS
 PRIOR = 1.0  # initial activity given to the priority (cell) variables
@@ -86,6 +87,7 @@ class DPLL:
         self.stats = Stats()
         self.trace = trace
         self.ok = True
+        self.timed_out = False  # set when solve() stops at its deadline rather than its budget
         self.heap_rebuilds = 0
         if eliminate_pure:
             clauses, fixed = pure_literal_eliminate([list(c) for c in clauses], nvars)
@@ -212,13 +214,20 @@ class DPLL:
 
     # -- search -----------------------------------------------------------------------------------
 
-    def solve(self, max_propagations: int | None = None) -> str:
-        """Return SAT, UNSAT, or UNKNOWN when the propagation budget runs out."""
+    def solve(self, max_propagations: int | None = None, deadline: float | None = None) -> str:
+        """Return SAT, UNSAT, or UNKNOWN when the propagation budget runs out or `deadline` passes.
+
+        `deadline` is a time.perf_counter() value. It is checked once per loop turn, which is one
+        propagation round plus one decision or conflict, so the overshoot is a single round.
+        """
         if not self.ok:
             return UNSAT
         if self._propagate() is not None:
             return UNSAT
         while True:
+            if deadline is not None and time.perf_counter() > deadline:
+                self.timed_out = True
+                return UNKNOWN
             conflict = self._propagate()
             if conflict is not None:
                 self.stats.conflicts += 1

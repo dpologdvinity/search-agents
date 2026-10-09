@@ -87,6 +87,15 @@ def test_solve_from_a_custom_position_uses_interior_indices():
         assert bad.status_code == 400
 
 
+def test_boxes_without_a_player_cannot_cover_the_start_cell():
+    # Level 1 starts the player on index 6, so a box there with no player sent is a layout that cannot exist.
+    with client_for() as c:
+        on_start = c.post("/api/sokoban/solve", json={"level": 1, "boxes": [6]})
+        from_start = c.post("/api/sokoban/solve", json={"level": 1, "boxes": [7]})
+    assert on_start.status_code == 400
+    assert from_start.status_code == 200 and from_start.json()["solved"] is True  # the start is the player's cell
+
+
 def test_evaluate_flags_a_dead_square():
     # Level 5's dead squares are its room corners; a box moved into one is a deadlock.
     with client_for() as c:

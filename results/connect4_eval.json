@@ -1,29 +1,55 @@
 {
- "games_per_opponent": 50,
+ "games_per_opponent": 100,
  "simulations": 200,
  "seed": 0,
+ "protocol": "one run per depth: python -m connect4.evaluate --games 100 --depths D (fresh seed-0 openings per depth, so both networks play the same openings)",
+ "network": {
+  "iteration": 96,
+  "games": 34944
+ },
  "alphazero_vs_minimax_d2": {
-  "win": 30,
-  "draw": 4,
-  "loss": 16
+  "win": 67,
+  "draw": 8,
+  "loss": 25
  },
  "alphazero_vs_minimax_d4": {
-  "win": 36,
-  "draw": 5,
-  "loss": 9
+  "win": 79,
+  "draw": 4,
+  "loss": 17
  },
  "alphazero_vs_minimax_d6": {
-  "win": 18,
+  "win": 77,
   "draw": 8,
-  "loss": 24
+  "loss": 15
+ },
+ "previous_network": {
+  "iteration": 19,
+  "games": 2432,
+  "alphazero_vs_minimax_d2": {
+   "win": 61,
+   "draw": 5,
+   "loss": 34
+  },
+  "alphazero_vs_minimax_d4": {
+   "win": 53,
+   "draw": 10,
+   "loss": 37
+  },
+  "alphazero_vs_minimax_d6": {
+   "win": 29,
+   "draw": 20,
+   "loss": 51
+  }
  },
  "mcts1000_vs_minimax_d4": {
   "win": 32,
   "draw": 2,
-  "loss": 16
+  "loss": 16,
+  "games": 50,
+  "note": "from the earlier 50-game evaluation; it does not depend on the network"
  },
  "training": {
-  "iteration": 19,
-  "games": 2432
+  "iteration": 96,
+  "games": 34944
  }
 }

@@ -2,6 +2,7 @@
 
 Legend: # wall, . pellet, o power pellet, P Pac-Man, 1-4 ghosts (~ while they are scared).
 The human plays with w/a/s/d and Enter. A move into a wall is refused without using a turn.
+`ghosts` picks the opponent: "ai" (A* routes, the default) or "chance" (fixed odds).
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from collections.abc import Callable
 from .agents import make_agent
 from .engine import Game, State, Turn, legal_actions
 from .episode import run_episode
+from .ghosts import GHOST_LABELS
 from .mazes import ACTIONS, Maze, get
 
 KEYS = {"w": "N", "d": "E", "s": "S", "a": "W"}
@@ -52,9 +54,9 @@ def describe(turn: Turn) -> str:
 
 
 def play_human(maze: Maze | str, seed: int, read: Callable[[str], str] = input,
-               out: Callable[[str], None] = print) -> str:
-    """One interactive game. Returns the final status, or "quit"."""
-    game = Game(maze, seed)
+               out: Callable[[str], None] = print, ghosts: str = "ai") -> str:
+    """One interactive game against the chosen ghost policy. Returns the final status, or "quit"."""
+    game = Game(maze, seed, ghosts=ghosts)
     while not game.state.over:
         out("\n" + render(game.state))
         text = read("move (w/a/s/d, q to quit): ").strip().lower()
@@ -76,11 +78,11 @@ def play_human(maze: Maze | str, seed: int, read: Callable[[str], str] = input,
 
 def watch(agent_name: str, maze: Maze | str, seed: int, delay: float = 0.25,
           out: Callable[[str], None] = print, sleep: Callable[[float], None] = time.sleep,
-          clear: bool = True) -> str:
+          clear: bool = True, ghosts: str = "ai") -> str:
     """Play `agent_name` on `maze` and redraw the board after every turn. Returns the final status."""
     m = get(maze) if isinstance(maze, str) else maze
     agent = make_agent(agent_name)
-    episode = run_episode(agent, m, seed, agent_name)
+    episode = run_episode(agent, m, seed, agent_name, ghosts=ghosts)
     for turn, decision in zip(episode.turns, episode.decisions, strict=True):
         lines = [render(turn.after), f"{agent_name} plays {ACTIONS[turn.action]}"]
         if decision.values:
@@ -90,5 +92,5 @@ def watch(agent_name: str, maze: Maze | str, seed: int, delay: float = 0.25,
         out((CLEAR if clear else "\n") + "\n".join(lines))
         sleep(delay)
     final = episode.final
-    out(f"{agent_name} finished: {final.status}, score {final.points}, {final.turn} turns")
+    out(f"{agent_name} vs {GHOST_LABELS[ghosts]}: {final.status}, score {final.points}, {final.turn} turns")
     return final.status

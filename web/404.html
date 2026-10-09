@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 // SEARCH AGENTS</title>
+<meta name="description" content="Page not found. Play tic-tac-toe against a minimax agent with alpha-beta pruning, and watch its game tree while it thinks.">
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="notfound.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<main class="nf-page">
+
+  <header class="nf-head">
+    <div class="proj-pg-tag">404 // NO SUCH ROUTE IN THE INDEX</div>
+    <h1 class="glitch nf-title" data-text="404 // PATH NOT FOUND">404 // PATH NOT FOUND</h1>
+    <p class="nf-sub">The page you asked for does not exist. The agent is idle, so it will play you at tic-tac-toe
+      instead. It is unbeatable: minimax searches every continuation, so the best you can do is a draw.</p>
+  </header>
+
+  <div class="nf-grid">
+    <section class="nf-panel" aria-labelledby="nf-game-title">
+      <h2 class="section-title pink-ttl" id="nf-game-title">YOU ARE X // THE AGENT IS O</h2>
+      <div class="nf-board-wrap">
+        <div class="ttt-board" id="ttt-board" role="group" aria-label="Tic-tac-toe board"></div>
+      </div>
+      <div class="nf-status" id="ttt-status" role="status" aria-live="polite">Your move. Pick a square.</div>
+      <div class="nf-verdict" id="ttt-verdict" aria-live="polite"></div>
+      <div class="inline" style="justify-content:center">
+        <button class="cyber-btn" id="ttt-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
+      </div>
+    </section>
+
+    <section class="nf-panel" aria-labelledby="nf-tree-title">
+      <h2 class="section-title purple-ttl" id="nf-tree-title">THE AGENT'S GAME TREE</h2>
+      <div class="field-hint">Each column is a move the agent considered, with the minimax value from its side
+        (+1 it wins, 0 draw, -1 it loses). Below it, your replies. Struck branches were pruned: alpha-beta
+        proved they could not change the choice, so they were never searched.</div>
+      <div class="nf-tree-wrap">
+        <svg class="nf-tree" id="ttt-tree" viewBox="0 0 522 236" role="img" aria-label="The agent's search tree"></svg>
+      </div>
+      <div class="nf-readout" id="ttt-readout" aria-live="off">
+        <span>positions searched <b id="ttt-searched">0</b></span>
+        <span>pruned <b id="ttt-pruned">0</b></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="nf-links" aria-labelledby="nf-links-title">
+    <h2 class="section-title green-ttl" id="nf-links-title">OR GO TO A GAME</h2>
+    <div class="nf-link-grid" id="nf-links"></div>
+  </section>
+
+</main>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notfound.js"></script>
+</body>
+</html>

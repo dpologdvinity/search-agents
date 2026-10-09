@@ -1,0 +1,68 @@
+[
+  {
+    "piece": "Q",
+    "name": "KQK",
+    "games": 200,
+    "seed": 0,
+    "tablebase": "Tablebase (exact)",
+    "chance": "Chance (fixed odds)",
+    "max_plies": 300,
+    "seats": [
+      {
+        "seat": "strong",
+        "tablebase_side": "White",
+        "chance_side": "Black",
+        "wins": 200,
+        "draws": 0,
+        "losses": 0,
+        "unfinished": 0,
+        "mean_win_moves": 4.95,
+        "mean_loss_moves": null
+      },
+      {
+        "seat": "weak",
+        "tablebase_side": "Black",
+        "chance_side": "White",
+        "wins": 0,
+        "draws": 199,
+        "losses": 1,
+        "unfinished": 0,
+        "mean_win_moves": null,
+        "mean_loss_moves": 1.0
+      }
+    ]
+  },
+  {
+    "piece": "R",
+    "name": "KRK",
+    "games": 200,
+    "seed": 0,
+    "tablebase": "Tablebase (exact)",
+    "chance": "Chance (fixed odds)",
+    "max_plies": 300,
+    "seats": [
+      {
+        "seat": "strong",
+        "tablebase_side": "White",
+        "chance_side": "Black",
+        "wins": 200,
+        "draws": 0,
+        "losses": 0,
+        "unfinished": 0,
+        "mean_win_moves": 6.66,
+        "mean_loss_moves": null
+      },
+      {
+        "seat": "weak",
+        "tablebase_side": "Black",
+        "chance_side": "White",
+        "wins": 0,
+        "draws": 200,
+        "losses": 0,
+        "unfinished": 0,
+        "mean_win_moves": null,
+        "mean_loss_moves": null
+      }
+    ]
+  }
+]

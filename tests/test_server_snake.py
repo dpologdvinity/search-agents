@@ -29,7 +29,7 @@ def test_meta_describes_the_net_and_the_champion():
         body = client.get("/api/snake/meta").json()
     assert body["board"] == 12 and body["hidden"] == 16
     assert len(body["input_names"]) == 17 and body["output_names"] == ["left", "straight", "right"]
-    assert set(body["agents"]) == {"random", "greedy", "planner", "evolved"}
+    assert set(body["agents"]) == {"random", "greedy", "planner", "evolved", "evolved-eval"}
     assert "w1" not in body["champion"] and "history" not in body["champion"]
     assert body["champion"]["layers"] == [17, 16, 3]
 
@@ -47,6 +47,13 @@ def test_history_has_one_record_per_generation():
         history = client.get("/api/snake/history").json()["history"]
     assert history and history[0]["generation"] == 1
     assert {"best_fitness", "mean_fitness", "best_apples", "mean_apples"} <= set(history[0])
+
+
+def test_evaluator_weights_have_one_per_feature():
+    with TestClient(make_app()) as client:
+        data = client.get("/api/snake/evaluator").json()
+    assert len(data["weights"]) == len(data["features"]) == 8
+    assert data["history"] and data["history"][0]["generation"] == 1
 
 
 def test_hint_returns_the_planner_move_and_route():

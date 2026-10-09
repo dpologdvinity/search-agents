@@ -102,11 +102,18 @@ def _fold(conv: nn.Conv2d, bn: nn.BatchNorm2d):
     return w.detach().cpu().numpy().astype(np.float32), b.detach().cpu().numpy().astype(np.float32)
 
 
-def export(model: AZNet, path=WEIGHTS):
-    """Write the NumPy inference weights. Works for a model on any device: tensors are copied to the CPU first."""
+def export(model: AZNet, path=WEIGHTS, iteration: int | None = None, games: int | None = None):
+    """Write the NumPy inference weights. Works for a model on any device: tensors are copied to the CPU first.
+
+    iteration and games, when given, are stored beside the weights so the file says which checkpoint it
+    came from (see docs/connect4-training.md for the served one).
+    """
     model.eval()
     path = Path(path)
     arrays = {"blocks": np.array(len(model.blocks))}
+    if iteration is not None:
+        arrays["iteration"] = np.array(iteration)
+        arrays["games"] = np.array(games)
     arrays["stem.w"], arrays["stem.b"] = _fold(model.stem, model.stem_n)
     for i, blk in enumerate(model.blocks):
         arrays[f"b{i}.1.w"], arrays[f"b{i}.1.b"] = _fold(blk.c1, blk.n1)
@@ -392,7 +399,7 @@ def main(argv=None):
         save_checkpoint(checkpoint_out, model, opt, iteration, games_played, scaler)
         if args.save_buffer:
             save_buffer(buffer_path(checkpoint_out), buffer)
-        export(model, args.weights_out)
+        export(model, args.weights_out, iteration, games_played)
         log.write(json.dumps(record) + "\n")
         log.flush()
         print(json.dumps(record), flush=True)

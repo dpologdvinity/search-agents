@@ -1,6 +1,6 @@
 """Endgame API: solved king-and-piece endgames, served from the committed tablebases.
 
-GET  /api/endgame/meta                      sizes, outcome counts, and DTM histograms for KQK and KRK
+GET  /api/endgame/meta                      sizes, outcome counts, DTM histograms, and the two opponents for KQK and KRK
 GET  /api/endgame/random?piece=Q&want=strong_wins&stm=0
 POST /api/endgame/analyze   {"piece": "Q", "wk": 1, "wp": 9, "bk": 36, "stm": 0}   or   {"fen": "..."}
 GET  /api/endgame/heatmap?piece=Q&wk=0&wp=9&stm=1   the lone king's DTM on each of the 64 squares
@@ -15,21 +15,41 @@ limiter, the same one the game pages use for moves.
 
 from __future__ import annotations
 
+import asyncio
 import random
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from endgame import chance
 from endgame.retro import ILLEGAL
 from endgame.rules import BLACK, PIECES, WHITE, is_legal, parse_fen, square_name, to_fen
 from endgame.tablebase import describe, load
 
+from .limits import client_key
+
 router = APIRouter()
+
+# Rejection sampling for /random. A wanted position turns up within a few dozen draws (drawn positions are
+# about 6% of the legal ones), so this cap only ever stops a request that cannot be answered.
+RANDOM_TRIES = 2_000
 
 DESCRIPTION = (
     "A white king and one white piece against a lone black king, solved by retrograde analysis: every "
     "position's distance to mate (DTM) is known exactly, counted from checkmate backwards."
 )
+
+# The two opponents the page can pick. The tablebase plays the exact best move (no randomness). The chance
+# opponent draws from fixed odds (endgame/chance.py), and the page does that draw itself from the move list,
+# so the server only needs to publish the odds and say whether each move gives check.
+OPPONENTS = [
+    {"key": chance.TABLEBASE_KEY, "label": chance.TABLEBASE_LABEL,
+     "description": "plays the exact best move: the fastest mate when it is winning, the longest defence when "
+                    "it is lost"},
+    {"key": chance.KEY, "label": chance.LABEL,
+     "description": "draws each legal move from fixed odds (captures 4, checks 2, king steps toward the centre "
+                    "2, other moves 1), renormalised over the legal moves; no search or lookahead"},
+]
 
 
 class AnalyzeRequest(BaseModel):
@@ -41,13 +61,8 @@ class AnalyzeRequest(BaseModel):
     stm: int | None = Field(None, ge=0, le=1)
 
 
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
 def _limit(request: Request) -> None:
-    if not request.app.state.move_rate.allow(_client_key(request)):
+    if not request.app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
 
 
@@ -105,6 +120,7 @@ def analyze_json(piece: str, pos) -> dict:
                 "plies": info.plies,
                 "mate_in": info.moves,
                 "mate": info.mate,
+                "check": info.check,
                 "capture": info.move[0] == "k" and info.move[2] == pos[1],
             }
             for info in infos
@@ -118,6 +134,8 @@ async def meta():
     return {
         "pieces": {p: _meta_piece(p) for p in PIECES},
         "description": DESCRIPTION,
+        "opponents": OPPONENTS,
+        "chance": chance.table(),
     }
 
 
@@ -127,9 +145,15 @@ async def random_position(request: Request,
                           want: str = Query("strong_wins", pattern="^(strong_wins|draw|any)$"),
                           stm: int | None = Query(None, ge=0, le=1)):
     _limit(request)
+    if want == "draw" and stm == WHITE:
+        # Every White-to-move position is a win for White (the meta counts show no drawn ones), so no answer
+        # exists. Refuse it here instead of sampling until the cap.
+        raise HTTPException(400, "no drawn position has White to move: every one is a win for White")
     tb = _table(piece)
     try:
-        pos = tb.random_position(random.Random(), stm=stm, want=want)
+        # The sampler is a loop of table lookups; a thread keeps it off the event loop.
+        pos = await asyncio.to_thread(tb.random_position, random.Random(), stm=stm, want=want,
+                                      max_tries=RANDOM_TRIES)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
     return analyze_json(piece, pos)

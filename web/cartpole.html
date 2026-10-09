@@ -26,6 +26,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -136,7 +137,7 @@
       <div>
         <div class="section-title green-ttl">CHECK THE PORT</div>
         <div class="viz-panel">
-          <div class="field-hint">The page runs the physics and the policy in JavaScript. This asks the server for the same episode in Python, then checks every step: the same action, and the same next state.</div>
+          <div class="field-hint">The page runs the physics and the policy in JavaScript. This asks the server to replay an episode in Python from its own start state, then checks every step: the same action, and the same next state. The browser's own episodes start from a different generator, so the same seed does not give the same start state here.</div>
           <button class="cyber-btn green" id="btn-verify" type="button"><span class="btn-txt">✦ VERIFY AGAINST PYTHON</span></button>
           <div class="viz-title" id="verify-out"></div>
         </div>
@@ -226,7 +227,7 @@
   <p class="hiw-note"><b>How these were chosen:</b> The physics uses the standard constants and is not tuned. The PD gains were set by hand after a coarse sweep over tuning seeds 9000 to 9099; that sweep is not in the repository. The network width (16), batch size (8), learning rate (0.01 for both networks), discount (0.99), critic scale (50, so the critic's output stays near 1 when values approach 100) and CEM settings (40, 10, 0.01) are single hand-picked values. No sweep over them is committed. The one comparison on record is the actor-critic target: TD(0) variants were tried while tuning, and the Monte Carlo target was kept (table in cartpole/__main__.py).</p>
 
   <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">REINFORCE, actor-critic and CEM were each trained on seeds 0 to 4 for 1,500 episodes. Training episodes are sampled, not greedy. The shipped weights are the seed whose last 50 training episodes averaged highest, as recorded in results/cartpole_learning.md: REINFORCE seed 2, actor-critic seed 0, CEM seed 0. The table gives the first training episode at which the trailing 100-episode mean reached 475.</p>
+  <p class="hiw-note">REINFORCE, actor-critic and CEM were each trained on seeds 0 to 4 for 1,500 episodes. Training episodes are sampled, not greedy. The shipped weights are the seed whose last 50 training episodes averaged highest, as recorded in results/cartpole_learning.md: REINFORCE seed 2, actor-critic seed 0, CEM seed 0. Ties go to the seed listed first (several seeds reach the 500-step cap, so their last-50 means tie). The table gives the first training episode at which the trailing 100-episode mean reached 475.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Seed</th><th class="num">REINFORCE</th><th class="num">Actor-critic</th><th class="num">CEM</th></tr></thead><tbody>
     <tr><td>0</td><td class="num">376</td><td class="num">344</td><td class="num">391</td></tr>
     <tr><td>1</td><td class="num">384</td><td class="num">381</td><td class="num">388</td></tr>

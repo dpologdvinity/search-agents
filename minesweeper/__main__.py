@@ -3,7 +3,7 @@
     python -m minesweeper                          # beginner 9x9, you play
     python -m minesweeper -p expert --seed 7       # 30 columns x 16 rows, 99 mines, repeatable
     python -m minesweeper watch --agent probability -p intermediate --seed 3 --delay 0.2
-    python -m minesweeper benchmark                # the committed results under results/
+    python -m minesweeper benchmark --out results  # rewrites the committed results under results/
 
 Cells are typed as a column name then a row number, both from 1: `c5` is column c, row 5. Columns
 past z continue as aa, ab, ... During play:
@@ -172,7 +172,8 @@ def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0] not in COMMANDS + ("-h", "--help"):
         argv = ["play"] + argv  # bare options mean "play"
-    parser = argparse.ArgumentParser(description="Minesweeper with a constraint and probability agent.")
+    parser = argparse.ArgumentParser(prog="python -m minesweeper",
+                                     description="Minesweeper with a constraint and probability agent.")
     sub = parser.add_subparsers(dest="command", required=True)
     p_play = sub.add_parser("play", help="play in the terminal")
     p_play.add_argument("-p", "--preset", choices=tuple(PRESETS), default=DEFAULT_PRESET)
@@ -184,7 +185,8 @@ def main(argv=None) -> int:
     p_watch.add_argument("--delay", type=float, default=0.2, help="seconds between moves")
     p_bench = sub.add_parser("benchmark", help="win rates on fixed seeds")
     p_bench.add_argument("--games", type=int, help="games per size (default: the committed counts)")
-    p_bench.add_argument("--out", default="results", help="directory for minesweeper_benchmark.json and .md")
+    # No default directory: a run from the repo root must not overwrite the committed results by accident.
+    p_bench.add_argument("--out", help="directory for minesweeper_benchmark.json and .md (omit to only print)")
     args = parser.parse_args(argv)
 
     if args.command == "play":
@@ -197,9 +199,10 @@ def main(argv=None) -> int:
     if args.games is not None:
         games = {p: args.games for p in PRESETS}
     result = run_benchmark(games)
-    json_path, md_path = write_results(result, args.out)
     print(to_markdown(result))
-    print(f"wrote {json_path} and {md_path}")
+    if args.out is not None:
+        json_path, md_path = write_results(result, args.out)
+        print(f"wrote {json_path} and {md_path}")
     return 0
 
 

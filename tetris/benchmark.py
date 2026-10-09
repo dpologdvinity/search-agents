@@ -127,7 +127,8 @@ def to_markdown(result: dict) -> str:
     """The summary table for results/*.md and the README."""
     head = ("| Strategy | Games | Mean lines | 95% CI | Median | Min-max | Hit cap | Topped out | "
             "Mean pieces | s per game |")
-    lines = [f"Board {result.get('board_height', H)} rows, piece cap {result['piece_cap']}.", "", head,
+    source = f" The 'ga' row uses the weights in {result['ga_source']}." if result.get("ga_source") else ""
+    lines = [f"Board {result.get('board_height', H)} rows, piece cap {result['piece_cap']}.{source}", "", head,
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for s in result["summaries"]:
         lines.append(

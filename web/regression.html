@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REGRESSION // SEARCH AGENTS</title>
+<meta name="description" content="Drag points and watch the best-fit line or polynomial snap into place. Squared errors are drawn as squares whose total area is the loss. Compare normal equations, QR and gradient descent, add ridge, see overfitting on a train/test split, and fit a logistic boundary.">
+<meta property="og:title" content="REGRESSION // SEARCH AGENTS">
+<meta property="og:description" content="Drag points, watch the fit snap, and see the squared errors as glowing squares.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/regression.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="regression.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">LAB // LEAST SQUARES · GRADIENT DESCENT · LOGISTIC</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="REGRESSION">REGRESSION</h1>
+      <div class="proj-pg-sub">Drag the points and the best-fit curve snaps to them. Every squared error is a square, and their total area is the loss. Then watch gradient descent creep toward the same answer, and see what happens when the model is too flexible.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">MODEL <span class="val" id="chip-mode">—</span></span>
+        <span class="stat-chip">DEGREE <span class="val" id="chip-deg">—</span></span>
+        <span class="stat-chip green">POINTS <span class="val" id="chip-n">—</span></span>
+        <span class="stat-chip">LOSS <span class="val" id="chip-loss">—</span></span>
+        <span class="stat-chip">ERROR <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip green">STATUS <span class="val" id="chip-status">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+
+      <div class="section-title pink-ttl">THE PLANE</div>
+      <div class="rg-stage">
+        <div class="rg-frame" id="plane-wrap">
+          <canvas id="plane" role="img" aria-label="Scatter plot: drag points to move them; the fitted curve or the logistic probability map updates live."></canvas>
+        </div>
+        <div class="field-hint" id="plane-hint">Click empty space to add a point (logistic: in the active class colour). Drag a point to move it. Double-tap or right-click a point to delete it.</div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">THE LOSS: AREA OF THE SQUARES</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="loss-title">Gradient descent: log10 of the objective per step. The dashed line is the exact optimum (linear models only).</div>
+          <canvas id="loss-chart" width="480" height="200" aria-label="Loss per gradient descent step"></canvas>
+          <div class="field-hint">Gradient descent starts from zero weights and takes one small step at a time. A large step size overshoots and diverges; a small one is slow, most of all for high degrees, where the columns are nearly collinear.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem" data-mode="reg">
+        <div class="section-title pink-ttl">OVERFITTING: TRAIN VS TEST</div>
+        <div class="viz-panel">
+          <div class="viz-title">Error by polynomial degree, fitted on the training points only</div>
+          <canvas id="sweep-chart" width="480" height="200" aria-label="Train and test MSE by polynomial degree"></canvas>
+          <div class="field-hint">Cyan: training MSE. Green: test MSE on every fourth point (ids 3, 7, 11, ...). Training error only goes down; test error bottoms out and climbs once the curve starts chasing noise.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+
+      <div class="section-title pink-ttl">MODEL</div>
+      <div class="viz-panel">
+        <div class="inline">
+          <button class="cyber-btn pink" id="mode-reg" type="button" aria-pressed="true"><span class="btn-txt">LINEAR / POLY</span></button>
+          <button class="cyber-btn" id="mode-log" type="button" aria-pressed="false"><span class="btn-txt">LOGISTIC</span></button>
+        </div>
+        <div>
+          <div class="field-lbl">DATA</div>
+          <div class="inline">
+            <select class="cyber-select" id="preset" style="flex:1" aria-label="Preset data"></select>
+            <button class="cyber-btn" id="btn-new" type="button" title="new random seed"><span class="btn-txt">⟲ NEW</span></button>
+          </div>
+          <div class="field-hint" id="seed-val">seed 7</div>
+        </div>
+        <div class="inline">
+          <button class="cyber-btn" id="btn-undo" type="button"><span class="btn-txt">↶ UNDO</span></button>
+          <button class="cyber-btn pink" id="btn-clear" type="button"><span class="btn-txt">✕ CLEAR</span></button>
+        </div>
+      </div>
+
+      <div class="section-title green-ttl">FIT</div>
+      <div class="viz-panel">
+        <div data-mode="reg">
+          <div class="field-lbl">DEGREE <span class="field-hint" id="degree-val"></span></div>
+          <input class="cyber-range" id="degree" type="range" min="1" max="10" step="1" value="3" style="width:100%" aria-label="Polynomial degree">
+          <div class="field-hint">Degree 1 is a line; each step up adds a bend. Degree 10 can pass through almost any 11 points.</div>
+          <div class="field-lbl" style="margin-top:0.6rem">METHOD</div>
+          <select class="cyber-select" id="method" style="width:100%" aria-label="Fitting method">
+            <option value="qr">Exact: QR decomposition</option>
+            <option value="normal">Exact: normal equations</option>
+            <option value="gd">Gradient descent (creeping)</option>
+          </select>
+          <div class="field-hint">Normal equations and QR give the same answer on paper. In floating point, the normal equations square the condition number, so their error grows with degree (see the gap below).</div>
+          <label class="inline field-hint" style="margin-top:0.5rem"><input type="checkbox" id="holdout"> HOLD OUT TEST POINTS (fit on 3/4)</label>
+          <div class="field-hint" id="gap-note">Normal equations vs QR, largest weight gap: <span id="gap-val">—</span></div>
+        </div>
+        <div data-mode="log">
+          <div class="field-lbl">FEATURE DEGREE <span class="field-hint" id="ldeg-val"></span></div>
+          <input class="cyber-range" id="ldeg" type="range" min="1" max="4" step="1" value="1" style="width:100%" aria-label="Logistic feature degree">
+          <div class="field-hint">Degree 1 draws a straight boundary; higher degrees add polynomial features (x1^i x2^j) and bend it.</div>
+          <div class="field-lbl" style="margin-top:0.6rem">CLASS FOR NEW POINTS</div>
+          <div class="inline">
+            <button class="cyber-btn pink" id="cls0" type="button" aria-pressed="false"><span class="btn-txt">PINK (0)</span></button>
+            <button class="cyber-btn" id="cls1" type="button" aria-pressed="true"><span class="btn-txt">CYAN (1)</span></button>
+          </div>
+        </div>
+        <div>
+          <div class="field-lbl">RIDGE (L2) <span class="field-hint" id="ridge-val"></span></div>
+          <input class="cyber-range" id="ridge" type="range" min="0" max="2" step="0.01" value="0" style="width:100%" aria-label="Ridge penalty">
+          <div class="field-hint">Penalises large weights (the intercept is free). Zero is plain least squares.</div>
+        </div>
+      </div>
+
+      <div class="section-title pink-ttl">DESCENT</div>
+      <div class="viz-panel">
+        <div>
+          <div class="field-lbl">STEP SIZE (log10) <span class="field-hint" id="lr-val"></span></div>
+          <input class="cyber-range" id="lr" type="range" min="-3" max="0" step="0.05" value="-1" style="width:100%" aria-label="Gradient descent step size">
+        </div>
+        <div>
+          <div class="field-lbl">STEPS PER FRAME <span class="field-hint" id="steps-val"></span></div>
+          <input class="cyber-range" id="steps" type="range" min="1" max="40" step="1" value="4" style="width:100%" aria-label="Gradient descent steps per frame">
+        </div>
+        <div class="inline">
+          <button class="cyber-btn green" id="gd-run" type="button"><span class="btn-txt" id="gd-run-label">▶ RUN</span></button>
+          <button class="cyber-btn" id="gd-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
+        </div>
+        <div class="field-hint" id="gd-status">STEP 0</div>
+      </div>
+
+      <div class="section-title">HOW TO READ IT</div>
+      <div class="stack">
+        <div class="heuristic-card" style="padding:0.7rem">
+          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">SQUARES</div>
+          <div class="field-hint">Each point's vertical error is a segment; a square of that side hangs off it. Add the areas and you have the sum of squared errors the fit minimises.</div>
+        </div>
+        <div class="heuristic-card" style="padding:0.7rem">
+          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">DASHED PURPLE</div>
+          <div class="field-hint">While descending, the exact solution. The solid curve is where the descent has got to.</div>
+        </div>
+        <div class="heuristic-card" style="padding:0.7rem">
+          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">GREEN</div>
+          <div class="field-hint">Test points (every fourth) and their squares. With hold-out on, the fit never sees them.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">A fit is the set of weights that makes the total squared error smallest. For a line or a polynomial that has a closed-form answer, the normal equations. Gradient descent reaches the same answer by walking downhill. Logistic regression swaps the squared error for log-loss, which has no closed form, so descent is the only option.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Least squares</h3>
+      <p class="hiw-plain"><b>New to this?</b> Draw the line through the cloud of points so that the vertical gaps between the points and the line, squared and added up, are as small as possible. Squaring stops positive and negative gaps from cancelling, and it punishes one big miss more than several small ones.</p>
+      <p>With features X (one row per point, columns 1, x, x², …) and targets y, the model is ŷ = Xw. The objective is J(w) = (1/n) Σ (y<sub>i</sub> − x<sub>i</sub>·w)². Polynomial regression is linear regression on the powers of x, so the same algebra fits a curve.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The normal equations</h3>
+      <p class="hiw-plain"><b>New to this?</b> Setting the slope of J to zero gives a system of linear equations. Solving it is one step, and no guessing is needed.</p>
+      <p>Setting ∇J = 0 gives (XᵀX) w = Xᵀy. The page solves this by Gaussian elimination. The matrix XᵀX squares the condition number of X, so when the powers of x are nearly collinear the normal equations lose digits. QR factors X = QR instead and solves R w = Qᵀy, which keeps the precision. Both give the same answer in exact arithmetic.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Gradient descent</h3>
+      <p class="hiw-plain"><b>New to this?</b> Stand on a hill blindfolded and feel which way is downhill, then take a small step that way. Repeat. The step size is how far you move each time: too small and you crawl, too big and you overshoot the valley and climb back out.</p>
+      <p>The gradient is ∇J = (2/n) Xᵀ(Xw − y), and each step is w ← w − η ∇J. Starting from zero, the first steps fix the easy directions (the mean and the slope). High-degree powers of x are badly scaled against each other, so the valley is long and narrow and progress along it is slow. That is why a degree-10 fit creeps for hundreds of steps.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Overfitting and regularisation</h3>
+      <p class="hiw-plain"><b>New to this?</b> A model with many knobs can memorise the noise in the training points. It looks perfect on those points and fails on new ones, the way a student who memorises last year's exam fails the new one.</p>
+      <p>Train MSE falls as the degree rises. Test MSE, measured on points the fit never saw, falls and then rises. Ridge adds λ Σ w<sub>k</sub>² to the objective (the intercept is not penalised), which shrinks the weights and smooths the curve: the solution is (XᵀX + λD) w = Xᵀy with D = diag(0, 1, …, 1). Choosing λ and the degree on held-out data is how the best model is picked.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Logistic regression and log-loss</h3>
+      <p class="hiw-plain"><b>New to this?</b> For a yes/no label, predict a probability instead of a number. The sigmoid squashes any score into 0 to 1, and the log-loss punishes confident wrong answers heavily.</p>
+      <p>p = σ(Xw), σ(z) = 1/(1 + e<sup>−z</sup>). The log-loss is −[y log p + (1 − y) log(1 − p)], summed over points and divided by n. Its gradient is (1/n) Xᵀ(p − y), which has the same shape as the least-squares gradient, so the same descent code runs. The boundary is where p = 0.5, a straight line for degree 1 and a curve for higher degrees.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and defaults</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Range</th><th>Why this default</th></tr></thead><tbody>
+    <tr><td>Degree (linear / poly)</td><td class="num">3</td><td class="num">1 to 10</td><td>Enough bend to follow the sine preset without chasing noise. Degree 10 shows overfitting.</td></tr>
+    <tr><td>Method</td><td>QR</td><td>QR, normal, descent</td><td>Exact and numerically stable. Switch to normal equations to see the precision loss.</td></tr>
+    <tr><td>Hold out test points</td><td>off</td><td>on / off</td><td>With it off, every square counts toward the loss, so the area is the full loss. On fits 3/4 of the points and draws the rest as test error.</td></tr>
+    <tr><td>Ridge λ</td><td class="num">0</td><td class="num">0 to 2</td><td>Plain least squares, so overfitting is visible. Try 0.05 to 0.5 at high degree.</td></tr>
+    <tr><td>Step size η (log10)</td><td class="num">0.1</td><td class="num">0.001 to 1</td><td>Stable at 0.1 to 0.5 here. At η = 1, degrees 3, 5 and 10 diverge within 60 steps and the page stops and says so. Degree 1 stays finite for 500 steps, but its loss (about 7,400) never settles.</td></tr>
+    <tr><td>Steps per frame</td><td class="num">4</td><td class="num">1 to 40</td><td>About 240 steps a second: slow enough to watch the curve bend.</td></tr>
+    <tr><td>Data</td><td>noisy sine, 30 points</td><td>line, noisy sine, quadratic</td><td>The sine needs degree 3 or more; the line makes the squares small; noise 0.15 gives visible residuals.</td></tr>
+    <tr><td>Logistic feature degree</td><td class="num">1</td><td class="num">1 to 4</td><td>A straight boundary matches the two moons only roughly, so the default is the simplest case.</td></tr>
+  </tbody></table></div>
+
+  <h3 class="hiw-sub">Try this</h3>
+  <p class="hiw-note">Set degree 10 and click HOLD OUT TEST POINTS: the curve threads the training points, and the green test squares are the ones to watch. Then raise RIDGE to 0.3 and compare. For the descent, pick METHOD: gradient descent at degree 10 with the step size at 0.3, and watch the purple target stay far ahead of the curve; at step size 1 it blows up.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py">regression/core.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py">regression/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/__main__.py">regression/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js">web/js/regression-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js">web/js/regression.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_regression.py">tests/test_regression.py</a></p>
+</section>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/regression.js"></script>
+</body>
+</html>

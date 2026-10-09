@@ -21,10 +21,10 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from hexgame.agents import AGENTS, LEVELS, choose
+from hexgame.agents import AGENTS, CHANCE_RING_WEIGHTS, LEVELS, choose
 from hexgame.board import DEFAULT_N, MAX_N, MIN_N, SWAP, Board, label
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -33,13 +33,8 @@ class MoveRequest(BaseModel):
     size: int = Field(DEFAULT_N, ge=MIN_N, le=MAX_N)
     moves: list[int] = Field(default_factory=list, max_length=MAX_N * MAX_N + 1)
     swap: bool = False
-    agent: Literal["rave", "uct", "shortest", "random"] | None = None
+    agent: Literal["rave", "uct", "shortest", "random", "chance"] | None = None
     level: int = Field(2, ge=1, le=3)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _analysis_json(analysis: dict, n: int) -> dict:
@@ -57,13 +52,15 @@ async def meta():
         "default_size": DEFAULT_N,
         "agents": [{"name": k, "description": v} for k, v in AGENTS.items()],
         "levels": {str(k): v for k, v in LEVELS.items()},
+        # The chance table: the weight per hex ring from the centre (rings 3 and beyond share the last).
+        "chance": {"ring_weights": list(CHANCE_RING_WEIGHTS)},
     }
 
 
 @router.post("/api/hexgame/move")
 async def move(req: MoveRequest, request: Request):
     app = request.app
-    key = _client_key(request)
+    key = client_key(request)
     if not app.state.move_rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:

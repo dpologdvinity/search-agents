@@ -1,7 +1,11 @@
+import random
+import time
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from nonogram.library import PICTURES, get
+from nonogram.puzzle import clues_of
 from nonogram.solvers import verify
 from server import nonogram_api
 from server.limits import RateLimiter, SearchSlots
@@ -99,6 +103,25 @@ def test_solve_reports_multiple_solutions():
             "row_clues": [[1], [1]], "col_clues": [[1], [1]], "method": "hybrid"}).json()
         assert body["status"] == "multiple"
         assert body["second"] is not None and body["second"] != body["solution"]
+        assert body["timed_out"] is False
+
+
+def test_server_time_limit_ends_a_hard_25x25_as_a_timed_out_undecided(monkeypatch):
+    # The server's limit is shortened so the test stays fast; the wiring from solve_json is what is tested.
+    monkeypatch.setattr(nonogram_api, "SECONDS_SERVER", 0.5)
+    rng = random.Random(1)  # a 25x25 picture that takes several seconds to search
+    picture = [[1 if rng.random() < 0.5 else 0 for _ in range(25)] for _ in range(25)]
+    rows, cols = clues_of(picture)
+    with TestClient(make_app()) as client:
+        for method in ("hybrid", "sat"):
+            start = time.perf_counter()
+            r = client.post("/api/nonogram/solve", json={"row_clues": [list(c) for c in rows],
+                                                         "col_clues": [list(c) for c in cols],
+                                                         "method": method, "trace": False})
+            elapsed = time.perf_counter() - start
+            assert r.status_code == 200, method
+            assert r.json()["status"] == "undecided" and r.json()["timed_out"] is True, method
+            assert elapsed < 0.5 + 2.0, (method, elapsed)
 
 
 def test_hint_endpoint_and_grid_checks():

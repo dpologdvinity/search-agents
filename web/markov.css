@@ -1,0 +1,127 @@
+/* Markov text lab: the output screen, the context window, the next-token panel, the copy meter and the dials.
+   Shared look (cyber buttons, panels, chips, the how-it-works section) comes from style.css and app.css. */
+
+.proj-game-col, .proj-ctrl-col { min-width: 0; max-width: 100%; }
+
+/* ── Output screen ─────────────────────────────────────────────────────── */
+.mk-stage {
+  border: 1px solid var(--border); background: rgba(2,6,16,0.85); padding: 0.9rem 1rem;
+  position: relative;
+}
+.mk-stage::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,245,255,0.03) 0 1px, transparent 1px 3px);
+}
+.mk-screen {
+  position: relative; font-family: var(--mono); font-size: 1rem; line-height: 1.85; color: var(--text);
+  min-height: 170px; max-height: 340px; overflow-y: auto; overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.mk-tok { display: inline-block; white-space: pre-wrap; border-radius: 2px; }
+.mk-prompt { color: var(--dim); }
+.mk-gen { color: #e6fbff; }
+.mk-copied { text-decoration: underline; text-decoration-color: rgba(0,255,136,0.75); text-underline-offset: 4px; }
+.mk-jump { color: var(--yellow); border-bottom: 1px dashed var(--yellow); }
+.mk-ctx { background: rgba(0,245,255,0.16); color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
+.mk-last {
+  background: rgba(255,0,160,0.28); color: #fff; box-shadow: 0 0 12px rgba(255,0,160,0.55);
+}
+
+/* Typewriter: each new token is revealed in steps, one per character. */
+.mk-new { animation: mk-type var(--dur, 220ms) steps(var(--n, 4), end) both; }
+@keyframes mk-type {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* Low-probability pick: a short RGB split. */
+.mk-glitch { animation: mk-glitch 0.5s steps(2, end) 1; color: var(--pink); }
+@keyframes mk-glitch {
+  0% { transform: translate(3px, 0); text-shadow: 2px 0 var(--cyan), -2px 0 var(--pink); }
+  35% { transform: translate(-2px, 1px) skewX(-6deg); text-shadow: -3px 0 var(--cyan), 3px 0 var(--pink); }
+  70% { transform: translate(1px, -1px); text-shadow: 1px 0 var(--pink); }
+  100% { transform: none; text-shadow: none; }
+}
+
+.mk-status {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim); margin-top: 0.6rem; min-height: 1.2em;
+  overflow-wrap: anywhere;
+}
+
+/* Legend keys. */
+.mk-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px;
+  font-family: var(--mono); font-size: 0.66rem; color: var(--dim);
+}
+.mk-key { display: inline-block; width: 14px; height: 10px; margin-right: 5px; vertical-align: middle; }
+.mk-key-prompt { background: rgba(74,122,155,0.35); }
+.mk-key-ctx { background: rgba(0,245,255,0.3); box-shadow: inset 0 -2px 0 var(--cyan); }
+.mk-key-last { background: rgba(255,0,160,0.6); }
+.mk-key-copied { height: 0; border-bottom: 2px solid rgba(0,255,136,0.75); margin-bottom: 3px; }
+
+.mk-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.mk-actions .cyber-btn { min-height: 44px; }
+
+/* ── Next-token panel ─────────────────────────────────────────────────── */
+.mk-panel { gap: 0.6rem; }
+.mk-ctx-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 2.2em; font-family: var(--mono); font-size: 0.8rem; }
+.mk-chip {
+  padding: 2px 7px; border: 1px solid var(--cyan); color: var(--cyan); background: rgba(0,245,255,0.1);
+  box-shadow: 0 0 8px rgba(0,245,255,0.25); white-space: pre; font-size: 0.78rem;
+}
+.mk-chip-note { color: var(--dim); font-size: 0.68rem; }
+.mk-bars { display: flex; flex-direction: column; gap: 6px; }
+.mk-bar-row {
+  display: grid; grid-template-columns: minmax(64px, 120px) minmax(0, 1fr) 54px; gap: 8px; align-items: center;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text);
+}
+.mk-bar-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-bar-row.picked .mk-bar-lbl { color: #fff; text-shadow: 0 0 8px var(--pink); }
+.mk-bar-track {
+  height: 14px; background: rgba(0,245,255,0.07); border: 1px solid rgba(0,245,255,0.18); position: relative; min-width: 0;
+}
+.mk-bar-fill {
+  display: block; height: 100%; width: 0; min-width: 2px; max-width: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple)); box-shadow: 0 0 8px rgba(0,245,255,0.45);
+  transition: width 0.2s ease;
+}
+.mk-bar-row.picked .mk-bar-fill { background: linear-gradient(90deg, var(--pink), var(--yellow)); box-shadow: 0 0 10px rgba(255,0,160,0.6); }
+.mk-bar-row.flash .mk-bar-fill { animation: mk-flash 0.6s steps(3, end) 2; }
+@keyframes mk-flash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2.4); box-shadow: 0 0 22px #fff; }
+}
+.mk-bar-pct { text-align: right; color: var(--yellow); }
+
+/* ── Copy meter ───────────────────────────────────────────────────────── */
+.mk-meter { height: 18px; border: 1px solid var(--border); background: rgba(0,0,0,0.45); position: relative; overflow: hidden; }
+.mk-meter-fill {
+  height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--cyan));
+  box-shadow: 0 0 12px rgba(0,255,136,0.4); transition: width 0.3s ease;
+}
+
+/* ── Transcript ───────────────────────────────────────────────────────── */
+.mk-log { max-height: 200px; border-color: rgba(255,0,160,0.3); }
+.mk-log .mk-row { padding: 2px 0; border-bottom: 1px dashed rgba(0,245,255,0.12); white-space: nowrap; }
+
+/* ── Dials ────────────────────────────────────────────────────────────── */
+.mk-range { width: 100%; min-height: 44px; accent-color: var(--cyan); }
+.mk-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mk-toggle .cyber-btn { min-height: 44px; width: 100%; }
+.cyber-btn[aria-pressed="true"] { box-shadow: inset 0 0 14px rgba(0,255,136,0.25); }
+.mk-seed { display: flex; gap: 8px; align-items: stretch; }
+.mk-seed .cyber-input { flex: 1; min-width: 0; min-height: 44px; }
+.mk-seed .cyber-btn { min-height: 44px; }
+
+/* ── Small screens ────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .mk-screen { font-size: 0.9rem; min-height: 150px; }
+  .mk-bar-row { grid-template-columns: 74px minmax(0, 1fr) 46px; font-size: 0.68rem; }
+  .mk-legend { font-size: 0.6rem; }
+  .mk-actions .cyber-btn { flex: 1 1 30%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-new, .mk-glitch, .mk-bar-row.flash .mk-bar-fill { animation: none !important; }
+  .mk-bar-fill, .mk-meter-fill { transition: none; }
+}

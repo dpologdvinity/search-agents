@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CHECKERS // SEARCH AGENTS</title>
-<meta name="description" content="Play checkers against an alpha-beta search agent and see how many lines it pruned, or compare it with plain minimax.">
+<meta name="description" content="Play checkers on 8x8, 10x10 or 12x12 against alpha-beta, minimax, Monte Carlo tree search, greedy or random agents, or watch two agents play each other.">
 <meta property="og:title" content="CHECKERS // SEARCH AGENTS">
-<meta property="og:description" content="Play checkers against an alpha-beta search agent and see how many lines it pruned, or compare it with plain minimax.">
+<meta property="og:description" content="Play checkers on 8x8, 10x10 or 12x12 against alpha-beta, minimax, Monte Carlo tree search, greedy or random agents, or watch two agents play each other.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/checkers.html">
 <meta name="twitter:card" content="summary">
@@ -25,6 +25,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -32,10 +33,12 @@
       <div class="proj-pg-tag">05 // ADVERSARIAL SEARCH · ALPHA-BETA PRUNING</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="CHECKERS">CHECKERS</h1>
       <div class="proj-pg-sub">It assumes you always find your best reply, searches every line it cannot rule out, and prunes the rest.</div>
+      <div class="proj-pg-sub" id="pg-algo" style="color:var(--cyan)"></div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">YOU <span class="val" id="chip-you">RED</span></span>
+        <span class="stat-chip">BOARD <span class="val" id="chip-size">8×8</span></span>
         <span class="stat-chip">PIECES <span class="val" id="chip-pieces">12 – 12</span></span>
         <span class="stat-chip green">MOVE <span class="val" id="chip-move">1</span></span>
         <span class="stat-chip">STATUS <span class="val" id="chip-status">YOUR TURN</span></span>
@@ -47,11 +50,14 @@
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
         <div id="ck" class="ck-board" role="grid" aria-label="Checkers board"></div>
+        <div class="field-hint" id="algo-line" style="text-align:center;color:var(--cyan)"></div>
         <div class="field-hint" id="ck-hint">Click one of your pieces, then a glowing square. Captures are mandatory.</div>
         <div class="inline" style="justify-content:center">
           <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
           <button class="cyber-btn" id="btn-undo" type="button"><span class="btn-txt">◀ UNDO</span></button>
           <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-pause" type="button" hidden><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" hidden><span class="btn-txt">▶ STEP</span></button>
         </div>
       </div>
 
@@ -60,8 +66,8 @@
         <div class="viz-panel">
           <div class="viz-title" id="an-title">Make a move to see the agent think.</div>
           <div class="prune-meter" id="prune" hidden>
-            <div class="prune-row"><span>Positions searched</span><b id="pm-nodes">0</b></div>
-            <div class="prune-row"><span>Branches cut by alpha-beta</span><b id="pm-cuts">0</b></div>
+            <div class="prune-row"><span id="pm-nodes-lbl">Positions searched</span><b id="pm-nodes">0</b></div>
+            <div class="prune-row"><span id="pm-cuts-lbl">Branches cut by alpha-beta</span><b id="pm-cuts">0</b></div>
             <div class="prune-row"><span>Looked ahead</span><b id="pm-depth">0</b></div>
           </div>
           <ol class="ck-root" id="an-root"></ol>
@@ -77,6 +83,29 @@
 
     <div class="proj-ctrl-col">
       <div>
+        <div class="section-title pink-ttl">MODE</div>
+        <div class="stack">
+          <select class="cyber-select" id="mode" style="width:100%">
+            <option value="human">You vs AI</option>
+            <option value="watch">AI vs AI (watch)</option>
+          </select>
+          <div>
+            <div class="field-lbl">BOARD</div>
+            <select class="cyber-select" id="size" style="width:100%">
+              <option value="8" selected>8 × 8 (standard, 12 men each)</option>
+              <option value="10">10 × 10 (20 men each)</option>
+              <option value="12">12 × 12 (30 men each)</option>
+            </select>
+          </div>
+          <label class="toggle-wrap" for="forced">
+            <span class="toggle"><input type="checkbox" id="forced" checked><span class="toggle-slider"></span></span>
+            <span class="toggle-label">Captures are forced</span>
+          </label>
+          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="rule-desc"></div></div>
+        </div>
+      </div>
+
+      <div id="human-panel">
         <div class="section-title pink-ttl">MATCH</div>
         <div class="stack">
           <div>
@@ -86,15 +115,10 @@
               <option value="-1">White (moves second, top)</option>
             </select>
           </div>
-        </div>
-      </div>
-      <div>
-        <div class="section-title pink-ttl">OPPONENT</div>
-        <div class="stack">
-          <select class="cyber-select" id="agent" style="width:100%">
-            <option value="alphabeta">Alpha-beta search</option>
-            <option value="minimax">Plain minimax</option>
-          </select>
+          <div>
+            <div class="field-lbl">OPPONENT</div>
+            <select class="cyber-select" id="agent" style="width:100%"></select>
+          </div>
           <div>
             <div class="field-lbl">STRENGTH</div>
             <select class="cyber-select" id="level" style="width:100%">
@@ -104,6 +128,50 @@
           <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="agent-desc"></div></div>
         </div>
       </div>
+
+      <div id="watch-panel" hidden>
+        <div class="section-title pink-ttl">AI VS AI</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">RED</div>
+            <div class="inline">
+              <select class="cyber-select" id="red-agent" style="flex:1 1 9rem"></select>
+              <select class="cyber-select" id="red-level" style="flex:0 0 6rem" aria-label="Red strength">
+                <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">WHITE</div>
+            <div class="inline">
+              <select class="cyber-select" id="white-agent" style="flex:1 1 9rem"></select>
+              <select class="cyber-select" id="white-level" style="flex:0 0 6rem" aria-label="White strength">
+                <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">DELAY BETWEEN MOVES: <span id="speed-val">600 ms</span></div>
+            <input type="range" class="cyber-range" id="speed" min="0" max="1500" step="50" value="600" aria-label="Delay between moves">
+            <div class="cyber-range-label"><span>fast</span><span>slow</span></div>
+          </div>
+          <label class="toggle-wrap" for="auto">
+            <span class="toggle"><input type="checkbox" id="auto" checked><span class="toggle-slider"></span></span>
+            <span class="toggle-label">Auto-restart after each game</span>
+          </label>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div class="field-lbl">SCORE</div>
+            <div class="prune-meter" style="grid-template-columns:repeat(4,1fr);margin:0">
+              <div class="prune-row"><span>Red wins</span><b id="score-red">0</b></div>
+              <div class="prune-row"><span>White wins</span><b id="score-white">0</b></div>
+              <div class="prune-row"><span>Draws</span><b id="score-draw">0</b></div>
+              <div class="prune-row"><span>Games</span><b id="score-games">0</b></div>
+            </div>
+            <div class="inline" style="margin-top:0.6rem"><button class="cyber-btn" id="btn-reset-score" type="button"><span class="btn-txt">RESET SCORE</span></button></div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <div class="section-title green-ttl">HOW IT DECIDES</div>
         <div class="stack">
@@ -126,33 +194,56 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The checkers agent looks ahead through the game tree and scores each position at the end of a line with a hand-written evaluation. It has two modes: alpha-beta search, which skips lines that cannot change its decision and searches as deep as its time budget allows, and plain minimax, which searches a fixed depth without skipping anything. Both assume the opponent always finds the best reply.</p>
+  <p class="hiw-lede">The checkers agents look ahead through the game tree and score the positions at the end of a line with a hand-written evaluation, or, for Monte Carlo tree search, with the results of random games. The page offers five agents on three board sizes, with forced or optional captures. You can play any agent, or watch two of them play each other, each with its own strength.</p>
   <div class="hiw-grid">
     <article class="hiw-card">
       <h3>Alpha-beta search</h3>
       <p class="hiw-plain"><b>New to this?</b> While planning, once you find a line that is already worse than an option you have, stop looking at that line. You never needed to know how bad it was, so the same planning finishes sooner.</p>
       <p>Negamax with alpha-beta pruning, searched one ply deeper each round (iterative deepening) until the time budget runs out. The best move from the deepest finished round is played. Each round tries the previous best move first, and a transposition table reuses results for positions reached by different move orders.</p>
-      <ul><li>Time budget 0.2 s, 0.8 s or 2.0 s at Fast, Normal and Strong</li><li>When a capture is pending, the search keeps going past its depth limit until the captures run out</li></ul>
+      <ul><li>Time budget 0.2 s, 0.8 s or 2.0 s at Fast, Normal and Strong, on every board size</li><li>When a capture is pending, the search keeps going past its depth limit until the captures run out</li></ul>
     </article>
     <article class="hiw-card">
       <h3>Plain minimax</h3>
       <p class="hiw-plain"><b>New to this?</b> Plan a fixed number of moves for both sides, assume each side makes its best reply, score the position at the end, and pick the first move that leads to the best result. It is simple, but every extra move of planning multiplies the work.</p>
       <p>Negamax with no pruning, searching to a fixed depth. At the same depth, alpha-beta returns the same score with less work.</p>
-      <ul><li>Depth 2, 4 and 5 plies at Fast, Normal and Strong</li><li>Fixed depth because, without pruning, each extra ply multiplies the work by about 8, the typical number of moves</li></ul>
+      <ul><li>Depth depends on the board and the capture rule: 2 to 5 plies with forced captures on 8x8, fewer on bigger boards</li><li>Fixed depth because it has no time limit: without pruning, each extra ply multiplies the work by the number of moves, and optional captures add many more</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Monte Carlo tree search</h3>
+      <p class="hiw-plain"><b>New to this?</b> Instead of scoring every line, it plays many quick random games from the position and keeps track of which first moves win the most of them. It spends more games on the moves that look best, and it needs no hand-written evaluation to decide between them.</p>
+      <p>UCT: each iteration walks down the tree by the upper confidence bound (average result plus a bonus for moves tried rarely), adds one new position, plays a rollout, and passes the result back up. Rollouts stop after 40 plies and are scored by the same evaluation as the tree searches. They prefer captures when one exists. The seed is fixed for each position, so the same position always gets the same answer.</p>
+      <ul><li>Iterations per move: 300, 1,000 or 2,000 on 8x8 at Fast, Normal and Strong; fewer on the bigger boards</li><li>Reports a win rate for each move, not a score</li></ul>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy and random</h3>
+      <p class="hiw-plain"><b>New to this?</b> Greedy takes the move that looks best right after it, without thinking about your reply. Random picks any legal move. They are the baselines: a search agent should beat both, and greedy shows what a one-move look ahead is worth.</p>
+      <p>Greedy scores each legal move by the evaluation after it, and scores a move that leaves you no legal reply as a win. Random chooses uniformly from the legal moves, from a generator with a fixed seed.</p>
+      <ul><li>Neither changes with the strength setting</li><li>Greedy is deterministic; random repeats its choices for the same position</li></ul>
     </article>
   </div>
+  <h3 class="hiw-sub">Rules and board sizes</h3>
+  <p class="hiw-note">Every board uses the same American rules. Men move and capture forward only, kings move and capture one step in any direction (no flying kings), a man that reaches the far row is crowned and its move ends there, and a side with no legal move loses. Boards are 8×8 (12 men each), 10×10 (20 men each) and 12×12 (30 men each); a game is drawn after 80 plies with no capture and no man moving.</p>
+  <p class="hiw-note"><b>Forced or optional captures.</b> With forced captures (the default, standard rules) you must capture when you can. With optional captures you may make a simple move even when a capture is available. Either way, a capture chain is played to its end: once a piece starts jumping, it must keep jumping while it can, so no move stops partway through a chain. Where a player declines to capture, the search scores the position as it stands rather than in the middle of a capture.</p>
+  <h3 class="hiw-sub">Chance (fixed odds)</h3>
+  <p class="hiw-note">The chance opponent does no search and no reasoning, like the 2048 tile spawner, which places a 2 with 90% and a 4 with 10%. Each legal move gets a fixed weight by its type. The weights are renormalised over the legal moves and one move is sampled. It is seeded from the position, so the same position always gets the same move.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Move type</th><th>Example</th><th class="num">Weight</th></tr></thead><tbody>
+    <tr><td>Capture</td><td>Any move that jumps a piece (a chain counts once).</td><td class="num">5</td></tr>
+    <tr><td>Man into the centre</td><td>A man that moves onto one of the central 4×4 squares.</td><td class="num">3</td></tr>
+    <tr><td>Other man move</td><td>Any other step by a man.</td><td class="num">2</td></tr>
+    <tr><td>King move</td><td>A king stepping one square.</td><td class="num">1</td></tr>
+  </tbody></table></div>
   <h3 class="hiw-sub">Heuristics and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
     <tr><td>Man</td><td>A regular piece on the board.</td><td class="num">100 points</td></tr>
-    <tr><td>Advancement</td><td>How far a man has moved toward the crowning row.</td><td class="num">+3 per row (0 on its home row, 7 on the crowning row)</td></tr>
+    <tr><td>Advancement</td><td>How far a man has moved toward the crowning row.</td><td class="num">+3 per row: 0 on its home row, 3 × (rows − 1) on the crowning row (21 on 8x8)</td></tr>
     <tr><td>Home-row guard</td><td>A man still on its own back row, which keeps the opponent from crowning there.</td><td class="num">+8</td></tr>
     <tr><td>King</td><td>A crowned piece. No position term.</td><td class="num">165 points</td></tr>
-    <tr><td>Centre</td><td>A man or king on one of the eight central squares 9, 10, 13, 14, 17, 18, 21, 22.</td><td class="num">+6</td></tr>
+    <tr><td>Centre</td><td>A man or king on one of the eight central squares, the middle 4×4 block of the board.</td><td class="num">+6</td></tr>
     <tr><td>Win</td><td>Terminal position for either side.</td><td class="num">100,000</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The constants are fixed in <code>checkers/search.py</code>, and no tuning run or results file is committed for them. The evaluation has no mobility term. The score is always from the side to move's point of view, with each side's pieces summed.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The constants are fixed in <code>checkers/search.py</code>, and no tuning run or results file is committed for them. The evaluation has no mobility term. The score is always from the side to move's point of view, with each side's pieces summed. The same weights apply on every board size; the advancement and centre terms are measured on the board's own rows and columns.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py">checkers/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py">checkers/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py">checkers/board.py</a></p>
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py">checkers/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py">checkers/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py">checkers/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py">checkers/board.py</a></p>
 </section>
 </div>
 </div>

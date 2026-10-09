@@ -8,17 +8,27 @@ import { banner, burst, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const ROWS = 6, COLS = 7;
+const RESTART_MS = 1500;  // pause on a finished game before the next one starts in auto-restart
 
 const state = {
   moves: '',          // e.g. "4453"
   humanColor: 'red',  // in "You vs AI" mode
   busy: false,
   over: false,
-  watching: false,
+  watching: false,    // a watch match is running (drives the START/STOP button)
+  paused: false,      // watch match paused between moves
+  stepRequest: false, // STEP was pressed while paused: let exactly one move through
+  run: 0,             // bumped to end the current match loop (stop, new game, new match)
+  gen: 0,             // bumped by NEW GAME so a search that was already in flight is dropped
+  sideA: 'red',       // the colour AI A plays in the current match
+  score: { w: 0, d: 0, l: 0, games: 0 },  // AI A's record across the watch matches
   meta: null,
 };
 
-const NAMES = { alphazero: 'AlphaZero', minimax: 'Minimax', mcts: 'MCTS' };
+const NAMES = { alphazero: 'AlphaZero', minimax: 'Minimax', mcts: 'MCTS', chance: 'Chance' };
+// The algorithm behind each agent, shown beside its name so the page says what each side is doing.
+const ALGO = { alphazero: 'PUCT + network', minimax: 'alpha-beta', mcts: 'random rollouts', chance: 'fixed odds' };
+const LABEL = (agent) => `${NAMES[agent]} (${ALGO[agent]})`;
 
 // ── Rules (for rendering; the backend validates moves too) ──────────────
 
@@ -44,6 +54,8 @@ function winningCells(g) {
     }
   return null;
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Rendering ────────────────────────────────────────────────────────────
 
@@ -87,6 +99,27 @@ function log(text, cls = 'log-info') {
 }
 
 function setStatus(text) { $('chip-status').textContent = text; }
+
+// Which watch player sits on each colour. AI A takes the colour picked in #side-a; AI B takes the other.
+function watchPlayers() {
+  const sideA = $('side-a').value;
+  const sideB = sideA === 'red' ? 'yellow' : 'red';
+  return {
+    [sideA]: [$('agent-a').value, Number($('level-a').value)],
+    [sideB]: [$('agent-b').value, Number($('level-b').value)],
+  };
+}
+
+// Who is playing, naming the algorithm on each side, e.g. "You vs Chance (fixed odds)"
+// or "Red: AlphaZero (PUCT + network) vs Yellow: Chance (fixed odds)".
+function matchup() {
+  if ($('mode').value === 'human') return `You vs ${LABEL($('agent-a').value)}`;
+  const players = watchPlayers();
+  return `Red: ${LABEL(players.red[0])} vs Yellow: ${LABEL(players.yellow[0])}`;
+}
+
+// Status chip: the matchup followed by the turn state, e.g. "You vs Chance (fixed odds) · YOUR TURN".
+function showStatus(turn) { setStatus(`${matchup()} · ${turn}`); }
 
 // ── Analysis panel ──────────────────────────────────────────────────────
 
@@ -148,6 +181,14 @@ function showAnalysis(result, who) {
     note = a.best && a.best.result === 'win' ? `${name} has proven a forced win.`
       : a.best && a.best.result === 'loss' ? `${name} has proven it loses against perfect play.`
       : 'Scores count open lines of four at the search horizon. Only the chosen column\'s score is exact; others are upper bounds.';
+  } else if (a.kind === 'chance') {
+    // Fixed odds: there is no search, so each bar is just the odds that column was drawn with.
+    // Full columns have odds 0 and get no label.
+    const max = Math.max(...a.odds) || 1;
+    for (let c = 0; c < COLS; c++)
+      column(c, [['visits', a.odds[c] / max]], a.odds[c] ? `${Math.round(100 * a.odds[c])}%` : '');
+    legend([['var(--cyan)', 'fixed odds for this column, renormalised over open columns']]);
+    note = 'Chance does no search, evaluation or lookahead: the column was drawn from fixed odds.';
   } else {
     const total = a.visits.reduce((x, y) => x + y, 0) || 1;
     const max = Math.max(...a.visits) / total;
@@ -166,7 +207,9 @@ function humanTurn() {
   return $('mode').value === 'human' && toMove(state.moves) === state.humanColor;
 }
 
-function afterMove(col, who) {
+// Called after every move. `who` is 'you', 'AI' (human mode) or 'Red'/'Yellow' (watch mode);
+// `agent` is the agent that just moved, when there is one.
+function afterMove(col, who, agent) {
   render(col);
   shake($('c4'));
   const g = grid(state.moves);
@@ -174,15 +217,15 @@ function afterMove(col, who) {
     state.over = true;
     const human = who === 'you';
     const lost = !human && $('mode').value === 'human';
+    const title = human ? 'YOU WIN' : lost ? 'AI WINS' : `${NAMES[agent].toUpperCase()} WINS`;
     shake($('c4'), 'big');
     burst($('c4'), { count: 140, colors: lost ? ['#ff3b3b', '#ff00a0', '#ffe600'] : undefined });
-    banner(human ? 'YOU WIN' : lost ? 'AI WINS' : `${who.toUpperCase()} WINS`,
-           `four in a row after ${state.moves.length} moves`, lost ? '#ff3b3b' : '#00ff88');
-    setStatus(`${who.toUpperCase()} WINS`);
-    log(`★ ${who} wins in ${state.moves.length} moves.`, 'log-best');
+    banner(title, `four in a row after ${state.moves.length} moves`, lost ? '#ff3b3b' : '#00ff88');
+    showStatus(title);
+    log(`★ ${human ? 'You' : NAMES[agent]} wins in ${state.moves.length} moves.`, 'log-best');
   } else if (state.moves.length === ROWS * COLS) {
     state.over = true;
-    setStatus('DRAW');
+    showStatus('DRAW');
     log('= Draw: the board is full.', 'log-val');
   }
   render();
@@ -196,43 +239,120 @@ function humanMove(col) {
 }
 
 async function aiMove(agent, level, who) {
+  const gen = state.gen;  // a NEW GAME while this search runs makes its result stale
   state.busy = true;
-  setStatus(`${NAMES[agent].toUpperCase()} THINKING`);
+  showStatus(`${NAMES[agent].toUpperCase()} THINKING`);
   render();
   try {
     const result = await postJSON('/api/connect4/move', { moves: state.moves, agent, level });
-    showAnalysis(result, who === 'AI' ? 'AI' : who);
+    if (gen !== state.gen) return false;
+    showAnalysis(result, who);
     state.moves += String(result.move + 1);
     log(`${who} (${NAMES[agent]}) → column ${result.move + 1}`, 'log-adv');
     state.busy = false;
-    afterMove(result.move, who);
-    if (!state.over) setStatus(state.watching ? 'PLAYING' : 'YOUR TURN');
+    afterMove(result.move, who, agent);
+    if (!state.over) showStatus(state.watching ? 'PLAYING' : 'YOUR TURN');
     return true;
   } catch (err) {
+    if (gen !== state.gen) return false;
     state.busy = false;
     log(`✗ ${err.message}`, 'log-err');
-    setStatus('ERROR');
+    showStatus('ERROR');
     render();
     return false;
   }
 }
 
-async function watch() {
-  newGame();
-  state.watching = true;
-  render();
-  const players = { red: [$('agent-a').value, Number($('level-a').value)],
-                    yellow: [$('agent-b').value, Number($('level-b').value)] };
-  log(`▶ ${NAMES[players.red[0]]} (red) vs ${NAMES[players.yellow[0]]} (yellow)`, 'log-move');
-  while (state.watching && !state.over) {
+// Holds the watch loop while paused. STEP releases exactly one move, then the loop pauses again.
+async function pauseGate(run) {
+  while (state.paused && state.run === run && !state.stepRequest) await sleep(80);
+  state.stepRequest = false;
+}
+
+// Play one game of the match from an empty board. Returns 'red', 'yellow' or 'draw' when the game
+// ends, or null if the match was stopped or a request failed.
+async function playOneGame(players, run) {
+  startBoard();
+  log(`▶ Game ${state.score.games + 1}`, 'log-move');
+  while (state.run === run && !state.over) {
+    await pauseGate(run);
+    if (state.run !== run) return null;
     const color = toMove(state.moves);
     const [agent, level] = players[color];
     const ok = await aiMove(agent, level, color === 'red' ? 'Red' : 'Yellow');
-    if (!ok) break;
-    await new Promise((r) => setTimeout(r, 350));
+    if (!ok) return null;
+    if (!state.over) await sleep(Number($('speed').value));
   }
-  state.watching = false;
+  if (!state.over) return null;
+  if (!winningCells(grid(state.moves))) return 'draw';
+  // Red moves first, so an odd number of moves means red made the last (winning) move.
+  return state.moves.length % 2 === 1 ? 'red' : 'yellow';
+}
+
+// Add one finished game to AI A's W/D/L record.
+function recordResult(winner) {
+  const s = state.score;
+  s.games++;
+  if (winner === 'draw') s.d++;
+  else if (winner === state.sideA) s.w++;
+  else s.l++;
+  renderScore();
+}
+
+function renderScore() {
+  const s = state.score;
+  $('score').textContent = `AI A: W ${s.w} · D ${s.d} · L ${s.l} (${s.games} games)`;
+}
+
+function resetScore() {
+  state.score = { w: 0, d: 0, l: 0, games: 0 };
+  renderScore();
+}
+
+// Start a match: play games back to back, restarting after each one when AUTO-RESTART is on.
+async function watch() {
+  if (state.watching) { stopMatch(); return; }
+  const run = ++state.run;
+  state.watching = true;
+  state.paused = false;
+  state.stepRequest = false;
+  state.sideA = $('side-a').value;
+  const players = watchPlayers();
+  setWatchButtons();
+  $('log').innerHTML = '';  // a fresh match gets a fresh log; auto-restarts keep appending to it
+  log(`▶ Match: Red ${LABEL(players.red[0])} vs Yellow ${LABEL(players.yellow[0])}`, 'log-move');
+  while (state.run === run) {
+    const winner = await playOneGame(players, run);
+    if (state.run !== run || winner === null) break;
+    recordResult(winner);
+    if (!$('auto').checked) break;
+    await sleep(RESTART_MS);  // hold the finished board so the result can be read
+  }
+  if (state.run === run) state.watching = false;
+  setWatchButtons();
   render();
+}
+
+// End the match after the current move. The loop notices the new run number and exits.
+function stopMatch() {
+  state.run++;
+  state.watching = false;
+  state.paused = false;
+  state.stepRequest = false;
+  log('■ Match stopped.', 'log-info');
+  setWatchButtons();
+  render();
+}
+
+// Keep the watch controls in step with the match: START/STOP label, pause and step availability,
+// and whether the agent pickers can be changed (not while a match runs).
+function setWatchButtons() {
+  const running = state.watching;
+  $('btn-watch').querySelector('.btn-txt').textContent = running ? '■ STOP MATCH' : '▶ START MATCH';
+  $('btn-pause').querySelector('.btn-txt').textContent = state.paused ? '▶ RESUME' : '❚❚ PAUSE';
+  $('btn-pause').disabled = !running;
+  $('btn-step').disabled = !(running && state.paused);
+  for (const id of ['side-a', 'agent-a', 'level-a', 'agent-b', 'level-b']) $(id).disabled = running;
 }
 
 async function hint() {
@@ -258,33 +378,51 @@ function undo() {
   do {
     state.moves = state.moves.slice(0, -1);
   } while (state.moves.length && !humanTurn());
-  setStatus('YOUR TURN');
+  showStatus('YOUR TURN');
   log('◀ Undo', 'log-info');
   render();
   if (!humanTurn()) aiMove($('agent-a').value, Number($('level-a').value), 'AI');
 }
 
-function newGame() {
-  state.watching = false;
+// Empty the board for a new game. Used by NEW GAME and by each game of a watch match.
+function startBoard() {
   state.moves = '';
   state.over = false;
+  $('chip-you').textContent = $('mode').value === 'human' ? state.humanColor.toUpperCase() : '—';
+  render();
+}
+
+function newGame() {
+  state.run++;  // ends any running watch match
+  state.gen++;  // drops any search still in flight
+  state.busy = false;
+  state.watching = false;
+  state.paused = false;
+  state.stepRequest = false;
   $('log').innerHTML = '';
   const mode = $('mode').value;
   state.humanColor = $('first').value === 'human' ? 'red' : 'yellow';
   $('chip-you').textContent = mode === 'human' ? state.humanColor.toUpperCase() : '—';
   $('chip-ai').textContent = mode === 'human' ? NAMES[$('agent-a').value] : 'AI vs AI';
-  setStatus(mode === 'human' ? 'YOUR TURN' : 'READY');
-  render();
+  startBoard();
+  setWatchButtons();
+  showStatus(mode === 'human' ? 'YOUR TURN' : 'READY');
   if (mode === 'human' && !humanTurn()) aiMove($('agent-a').value, Number($('level-a').value), 'AI');
 }
 
 function updateSetup() {
   const ai = $('mode').value === 'ai';
   $('first-wrap').classList.toggle('hidden', ai);
+  $('side-wrap').classList.toggle('hidden', !ai);
   $('agent-b-wrap').classList.toggle('hidden', !ai);
-  $('agent-a-title').textContent = ai ? 'FIRST AI (RED)' : 'OPPONENT';
-  const info = state.meta?.agents.find((a) => a.name === $('agent-a').value);
-  $('desc-a').textContent = info ? info.description : '';
+  $('agent-a-title').textContent = ai ? 'AI A' : 'OPPONENT';
+  // Each selected agent's description (it includes the chance table when relevant).
+  const describe = (descId, selectId) => {
+    const info = state.meta?.agents.find((a) => a.name === $(selectId).value);
+    $(descId).textContent = info ? info.description : '';
+  };
+  describe('desc-a', 'agent-a');
+  describe('desc-b', 'agent-b');
 }
 
 async function init() {
@@ -292,9 +430,17 @@ async function init() {
   $('btn-undo').onclick = undo;
   $('btn-hint').onclick = hint;
   $('btn-watch').onclick = watch;
+  $('btn-pause').onclick = () => { state.paused = !state.paused; setWatchButtons(); };
+  $('btn-step').onclick = () => { state.stepRequest = true; };
+  $('btn-reset-score').onclick = resetScore;
   $('mode').onchange = () => { updateSetup(); newGame(); };
   $('first').onchange = newGame;
-  $('agent-a').onchange = () => { updateSetup(); if ($('mode').value === 'human') newGame(); };
+  // Changing a pick restarts from an empty board so the status line names the new matchup.
+  // Watch selectors are disabled while a match runs, so this cannot interrupt one.
+  $('agent-a').onchange = () => { updateSetup(); newGame(); };
+  $('agent-b').onchange = () => { updateSetup(); newGame(); };
+  $('side-a').onchange = newGame;
+  renderScore();
   render();
   try {
     state.meta = await getJSON('/api/connect4/meta');
@@ -307,7 +453,7 @@ async function init() {
     for (const a of state.meta.agents) {
       const opt = document.createElement('option');
       opt.value = a.name;
-      opt.textContent = NAMES[a.name] + (a.available ? '' : ' (not trained yet)');
+      opt.textContent = LABEL(a.name) + (a.available ? '' : ' (not trained yet)');
       opt.disabled = !a.available;
       sel.appendChild(opt);
     }

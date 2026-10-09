@@ -3,6 +3,8 @@
 // The API defaults to the page's own origin. A page hosted elsewhere sets
 // window.SEARCH_AGENTS_API = "https://<backend>" before loading this module.
 
+import { waitFor } from './sfx.js';
+
 export const API_BASE = (window.SEARCH_AGENTS_API || '').replace(/\/$/, '');
 
 export async function getJSON(path, params = {}) {
@@ -16,11 +18,12 @@ export async function getJSON(path, params = {}) {
 }
 
 export async function postJSON(path, body) {
-  const res = await fetch(new URL(API_BASE + path, location.href), {
+  // A user-started request: waitFor pulses softly if it takes a moment (sfx.js).
+  const res = await waitFor(fetch(new URL(API_BASE + path, location.href), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  });
+  }));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const detail = Array.isArray(data.detail) ? data.detail.map((d) => d.msg).join('; ') : data.detail;
@@ -79,10 +82,10 @@ export class SearchSocket {
   async solve(request, onMessage) {
     if (this.pending) throw new Error('a search is already running');
     await this._open();
-    return new Promise((resolve, reject) => {
+    return waitFor(new Promise((resolve, reject) => {
       this.pending = { resolve, reject, onMessage };
       this.ws.send(JSON.stringify(request));
-    });
+    }));
   }
 
   cancel() {

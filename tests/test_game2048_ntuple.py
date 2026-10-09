@@ -1,3 +1,4 @@
+import json
 import random
 
 import numpy as np
@@ -5,7 +6,7 @@ import pytest
 
 from game2048.batch import move_batch, new_games, spawn_batch, transpose_batch
 from game2048.board import empty_cells, from_grid, move, to_grid, transpose
-from game2048.ntuple import NTupleNetwork
+from game2048.ntuple import PATTERNS, SYMMETRIES, NTupleNetwork, canonical
 
 
 def random_boards(n, seed):
@@ -40,11 +41,26 @@ def test_spawn_batch_adds_one_tile():
     assert all(len(empty_cells(b)) == 14 for b in new_games(50, rng).tolist())
 
 
+def test_patterns_are_valid_cell_sets():
+    for pattern in PATTERNS:
+        assert len(pattern) in (5, 6)
+        assert len(set(pattern)) == len(pattern)
+        assert all(0 <= c < 16 for c in pattern)
+
+
+def test_patterns_have_no_symmetric_duplicates():
+    # Two patterns that are rotations or reflections of each other share one table entry per
+    # board, so the second adds no information. Computed from the 8 symmetries, not listed.
+    shapes = [canonical(p) for p in PATTERNS]
+    assert len(set(shapes)) == len(PATTERNS), shapes
+
+
 @pytest.fixture
 def random_net():
     rng = np.random.default_rng(0)
     net = NTupleNetwork()
-    net.weights[:] = rng.normal(size=net.weights.shape).astype(np.float32)
+    for table in net.tables:
+        table[:] = rng.normal(size=table.shape).astype(np.float32)
     return net
 
 
@@ -65,18 +81,42 @@ def test_value_is_invariant_under_symmetry(random_net):
         assert random_net.value(mirrored) == pytest.approx(v, rel=1e-5)
 
 
-def test_short_training_run_learns_something(tmp_path, monkeypatch):
-    import game2048.ntuple as ntuple
+def test_save_and_load_round_trip(tmp_path, random_net):
+    path = tmp_path / "net.npz"
+    random_net.save(path)
+    loaded = NTupleNetwork.load(path)
+    assert loaded.patterns == PATTERNS
+    assert [t.dtype for t in loaded.tables] == [np.float16] * len(PATTERNS)
+    for b in random_boards(10, 4):
+        # float16 storage rounds each table entry; the sums stay close.
+        assert loaded.value(b) == pytest.approx(random_net.value(b), rel=2e-3, abs=1.0)
+
+
+def test_short_training_run_learns_something(tmp_path):
     from game2048 import train_td
 
-    monkeypatch.setattr(ntuple, "WEIGHTS", tmp_path / "w.npz")
-    monkeypatch.setattr(train_td, "WEIGHTS", tmp_path / "w.npz")
-    def save(self, path=None):
-        np.savez(tmp_path / "w.npz", weights=self.weights)
+    out = tmp_path / "w.npz"
+    train_td.main(["--minutes", "0.05", "--games", "64", "--out", str(out),
+                   "--log", str(tmp_path / "log.jsonl")])
+    loaded = NTupleNetwork.load(out)
+    assert any(t.any() for t in loaded.tables)
+    # The run ends with a record of the games finished so far, so the log is never missing its last games.
+    records = [json.loads(line) for line in (tmp_path / "log.jsonl").read_text().splitlines()]
+    assert records and records[-1]["games"] > 0
 
-    monkeypatch.setattr(NTupleNetwork, "save", save)
-    train_td.main(["--minutes", "0.05", "--games", "64", "--log", str(tmp_path / "log.jsonl")])
-    assert np.load(tmp_path / "w.npz")["weights"].any()
+
+def test_legacy_npz_layout_loads(tmp_path):
+    """The first committed network stored one (patterns, 16 ** 5) array plus the pattern cells."""
+    rng = np.random.default_rng(0)
+    patterns = np.array(PATTERNS[:4], dtype=np.int8)  # four 5-cell patterns, as in the legacy layout
+    weights = rng.normal(size=(len(patterns), 16 ** 5)).astype(np.float16)
+    path = tmp_path / "legacy.npz"
+    np.savez(path, patterns=patterns, weights=weights)
+    loaded = NTupleNetwork.load(path)
+    assert loaded.patterns == tuple(tuple(int(c) for c in row) for row in patterns)
+    assert [t.dtype for t in loaded.tables] == [np.float16] * len(patterns)
+    for got, want in zip(loaded.tables, weights):
+        assert np.array_equal(got, want)
 
 
 def test_batched_td_update_does_not_scale_with_batch_size():
@@ -88,5 +128,11 @@ def test_batched_td_update_does_not_scale_with_batch_size():
     single, batch = NTupleNetwork(), NTupleNetwork()
     td_update(single, np.array([board], dtype=np.uint64), np.array([10.0]), alpha=0.01)
     td_update(batch, np.array([board] * 500, dtype=np.uint64), np.full(500, 10.0), alpha=0.01)
-    np.testing.assert_allclose(batch.weights, single.weights)
+    for a, b in zip(batch.tables, single.tables):
+        np.testing.assert_allclose(a, b)
     assert batch.value(board) > 0
+
+
+def test_symmetry_maps_are_a_group_of_eight():
+    assert len(SYMMETRIES) == 8
+    assert len({tuple(m) for m in SYMMETRIES}) == 8

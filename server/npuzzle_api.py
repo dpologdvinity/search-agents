@@ -71,7 +71,7 @@ HEURISTIC_DESCRIPTIONS = {
 
 
 class SolveRequest(BaseModel):
-    board: list[int]
+    board: list[int] = Field(max_length=16)  # the largest board is 4x4; valid_board() then checks 9 or 16
     algorithm: Literal["bfs", "dfs", "ids", "ucs", "bibfs", "greedy", "astar", "wastar", "idastar", "bwas"]
     heuristic: Literal["manhattan", "linear_conflict", "pdb", "neural"] = "manhattan"
     weight: float = Field(2.0, ge=1.0, le=10.0, description="h weight for wastar")

@@ -1,0 +1,124 @@
+{
+ "weights": {
+  "empty": 0.5655,
+  "monotonic": 1.0,
+  "smooth": 0.0,
+  "corner": 0.8276,
+  "merges": 0.2028,
+  "max_tile": 0.4242
+ },
+ "method": "cross-entropy method on greedy one-move-lookahead play, weights bounded at zero",
+ "settings": {
+  "generations": 20,
+  "population": 32,
+  "elite": 8,
+  "games_per_candidate": 300,
+  "seed": 0,
+  "generation_seeds": "1000 + generation",
+  "final_rescore_seed": 99,
+  "final_rescore_games": 600
+ },
+ "greedy_mean_score": 5736.253333333333,
+ "generations": [
+  {
+   "generation": 0,
+   "best": 5437.92,
+   "mean": 3592.534166666667
+  },
+  {
+   "generation": 1,
+   "best": 5325.1466666666665,
+   "mean": 4467.809166666667
+  },
+  {
+   "generation": 2,
+   "best": 5752.093333333333,
+   "mean": 5074.739166666667
+  },
+  {
+   "generation": 3,
+   "best": 5784.933333333333,
+   "mean": 5224.74375
+  },
+  {
+   "generation": 4,
+   "best": 6062.96,
+   "mean": 5366.539583333333
+  },
+  {
+   "generation": 5,
+   "best": 5980.6,
+   "mean": 5496.084583333333
+  },
+  {
+   "generation": 6,
+   "best": 5811.066666666667,
+   "mean": 5453.0199999999995
+  },
+  {
+   "generation": 7,
+   "best": 5991.786666666667,
+   "mean": 5597.84375
+  },
+  {
+   "generation": 8,
+   "best": 5867.973333333333,
+   "mean": 5485.81875
+  },
+  {
+   "generation": 9,
+   "best": 5865.346666666666,
+   "mean": 5438.153333333334
+  },
+  {
+   "generation": 10,
+   "best": 5968.093333333333,
+   "mean": 5524.619583333334
+  },
+  {
+   "generation": 11,
+   "best": 6114.4,
+   "mean": 5576.15
+  },
+  {
+   "generation": 12,
+   "best": 6033.84,
+   "mean": 5614.122083333334
+  },
+  {
+   "generation": 13,
+   "best": 5882.8133333333335,
+   "mean": 5464.83125
+  },
+  {
+   "generation": 14,
+   "best": 5849.333333333333,
+   "mean": 5529.911250000001
+  },
+  {
+   "generation": 15,
+   "best": 6108.133333333333,
+   "mean": 5520.341666666667
+  },
+  {
+   "generation": 16,
+   "best": 5925.106666666667,
+   "mean": 5473.440416666666
+  },
+  {
+   "generation": 17,
+   "best": 6181.1866666666665,
+   "mean": 5506.0525
+  },
+  {
+   "generation": 18,
+   "best": 6029.333333333333,
+   "mean": 5570.015416666667
+  },
+  {
+   "generation": 19,
+   "best": 5943.7733333333335,
+   "mean": 5639.965416666666
+  }
+ ]
+}

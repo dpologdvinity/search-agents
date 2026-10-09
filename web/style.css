@@ -254,6 +254,8 @@ body::before {
   cursor: pointer;
 }
 .cyber-select:focus { border-color: var(--cyan); }
+/* outline: none above removes the native ring, so keyboard focus needs its own visible ring. */
+.cyber-select:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
 
 /* ── SLIDER ── */
 .cyber-slider {

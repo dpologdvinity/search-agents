@@ -2,6 +2,11 @@
 // boot sequence, and four arcade cabinets each animating its agent's mechanism.
 // Everything pauses while off-screen and honors prefers-reduced-motion.
 
+import { play } from './sfx.js';
+import { makeMaze, run } from './pathfind-core.js';
+// Overdrive (overdrive.js): sims tick faster, and the hero search gets a BFS race beside it while it is on.
+import { speedFactor, subscribe as onOverdrive } from './overdrive.js';
+
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const C = {
@@ -67,6 +72,7 @@ function city() {
   const hero = canvas.parentElement;
   const CELL = 26;
   let ctx, W, H, cols, rows, walls, start, goal, search, visible = true, raf = 0, t = 0;
+  let race = null, racePanel = null;   // overdrive only: the BFS race state and its counters panel
   const hud = { expanded: document.getElementById('hud-expanded'),
                 frontier: document.getElementById('hud-frontier'), path: document.getElementById('hud-path') };
 
@@ -99,6 +105,7 @@ function city() {
     search = { g, parent: new Int32Array(cols * rows).fill(-1), closed: new Uint8Array(cols * rows),
                open: new Uint8Array(cols * rows), heap, expanded: 0, done: false, path: [] };
     search.open[start] = 1;
+    if (race) race = raceState();
   }
 
   function step(budget) {
@@ -183,11 +190,114 @@ function city() {
     hud.expanded.textContent = s.expanded.toLocaleString();
     hud.frontier.textContent = s.open.reduce((a, b) => a + b, 0).toLocaleString();
     hud.path.textContent = s.path.length ? String(s.path.length - 1) : (s.done ? 'no route' : '…');
+    if (race) drawRace();
+  }
+
+  // ── Overdrive race (overdrive.js) ──
+  // A breadth-first search from the same start to the same cursor, drawn in yellow beside the A* search.
+  // BFS has no heuristic: it floods outward in rings, so on this open map it expands many more cells than A*,
+  // which heads for the goal. Both share the walls, the start and the budget of 30 expansions per frame.
+  function raceState() {
+    const n = cols * rows;
+    const r = { closed: new Uint8Array(n), seen: new Uint8Array(n), parent: new Int32Array(n).fill(-1),
+                queue: [start], head: 0, expanded: 0, done: false, path: [] };
+    r.seen[start] = 1;
+    return r;
+  }
+
+  function raceStep(budget) {
+    const r = race;
+    while (budget-- > 0 && !r.done) {
+      if (r.head >= r.queue.length) { r.done = true; break; }
+      const u = r.queue[r.head++];
+      r.closed[u] = 1; r.expanded++;
+      if (u === goal) {
+        r.done = true;
+        for (let v = u; v !== -1; v = r.parent[v]) r.path.push(v);
+        break;
+      }
+      const c = u % cols, row = (u / cols) | 0;
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nc = c + dc, nr = row + dr;
+        if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+        const v = idx(nc, nr);
+        if (walls[v] || r.seen[v]) continue;
+        r.seen[v] = 1; r.parent[v] = u; r.queue.push(v);
+      }
+    }
+  }
+
+  function drawRace() {
+    const r = race;
+    for (let row = 0; row < rows; row++) {
+      for (let c = 0; c < cols; c++) {
+        const i = idx(c, row);
+        if (walls[i]) continue;
+        const x = c * CELL, y = row * CELL;
+        if (r.closed[i]) {
+          ctx.fillStyle = 'rgba(255,230,0,0.13)';
+          ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
+        } else if (r.seen[i]) {
+          // Frontier: yellow dots, so the BFS frontier reads differently from A*'s hollow cyan squares.
+          ctx.fillStyle = C.yellow;
+          ctx.beginPath(); ctx.arc(x + CELL / 2, y + CELL / 2, 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+    if (r.path.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = C.yellow; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      r.path.forEach((v, k) => {
+        const x = (v % cols) * CELL + CELL / 2, y = ((v / cols) | 0) * CELL + CELL / 2;
+        if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+    raceReadout();
+  }
+
+  function raceReadout() {
+    const s = search, r = race;
+    const set = (k, v) => { racePanel.querySelector(`[data-k="${k}"]`).textContent = v; };
+    const steps = (st) => (st.path.length ? String(st.path.length - 1) : (st.done ? 'no route' : '…'));
+    set('ae', s.expanded.toLocaleString()); set('ap', steps(s));
+    set('be', r.expanded.toLocaleString()); set('bp', steps(r));
+    let note = 'Both start at the green diamond and race to the yellow cross.';
+    if (s.done && r.done && s.path.length && r.path.length) {
+      note = r.expanded > s.expanded
+        ? `A* expanded ${(r.expanded / s.expanded).toFixed(1)}x fewer cells than BFS`
+        : 'BFS expanded fewer cells this time';
+    }
+    set('note', note);
+  }
+
+  function raceStart() {
+    racePanel = document.createElement('div');
+    racePanel.className = 'od-race';
+    racePanel.setAttribute('aria-hidden', 'true');
+    racePanel.innerHTML = '<div class="od-race-col a"><span class="od-race-name">A* // Manhattan</span>'
+      + '<span>expanded <b data-k="ae">0</b></span><span>steps <b data-k="ap">0</b></span></div>'
+      + '<div class="od-race-col b"><span class="od-race-name">BFS // no heuristic</span>'
+      + '<span>expanded <b data-k="be">0</b></span><span>steps <b data-k="bp">0</b></span></div>'
+      + '<div class="od-race-note" data-k="note"></div>';
+    hero.appendChild(racePanel);
+    race = raceState();
+    if (REDUCED) frame();
+  }
+
+  function raceStop() {
+    race = null;
+    racePanel?.remove();
+    racePanel = null;
+    if (REDUCED) frame();
   }
 
   function frame() {
     t++;
     step(REDUCED ? Infinity : 30);
+    if (race) raceStep(REDUCED ? Infinity : 30);
     draw();
     if (visible && !REDUCED) raf = requestAnimationFrame(frame);
   }
@@ -212,6 +322,8 @@ function city() {
     if (REDUCED) frame();
   });
   document.getElementById('city-reset').addEventListener('click', () => { walls.fill(0); restart(); if (REDUCED) frame(); });
+
+  onOverdrive((on) => (on ? raceStart() : raceStop()));
 
   let resizeTimer;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { layout(); frame(); }, 150); });
@@ -1652,15 +1764,891 @@ function nonogramSim(ctx, S) {
   };
 }
 
+function markovSim(ctx, S) {
+  const TEXT = "Shall I compare thee to a summer's day? Thou art more lovely and more temperate: "
+    + "Rough winds do shake the darling buds of May, And summer's lease hath all too short a date; "
+    + "Sometime too hot the eye of heaven shines, And often is his gold complexion dimm'd; "
+    + "And every fair from fair sometime declines, By chance or nature's changing course untrimm'd; "
+    + "But thy eternal summer shall not fade, Nor lose possession of that fair thou ow'st; "
+    + "Nor shall Death brag thou wander'st in his shade, When in eternal lines to time thou grow'st.";
+  const words = TEXT.match(/[A-Za-z]+(?:'[A-Za-z]+)*|[^\sA-Za-z]/g);
+  const KEY = '\u0001';
+  // Counts: for every pair of words, how often each word followed it.
+  const succ = new Map();
+  for (let i = 0; i + 2 < words.length; i++) {
+    const key = words[i] + KEY + words[i + 1];
+    if (!succ.has(key)) succ.set(key, new Map());
+    const d = succ.get(key);
+    d.set(words[i + 2], (d.get(words[i + 2]) || 0) + 1);
+  }
+  let out, hold, lines;
+  function reset() {
+    out = words.slice(0, 2);
+    hold = 0;
+    lines = [''];
+  }
+  // One draw: pick the next word in proportion to its count after the last two words.
+  function nextWord() {
+    const d = succ.get(out.slice(-2).join(KEY));
+    if (!d) { out.push(...words.slice(0, 2)); return; } // dead end at the end of the passage: jump back
+    let total = 0;
+    for (const c of d.values()) total += c;
+    let u = Math.random() * total;
+    for (const [w, c] of d) {
+      u -= c;
+      if (u < 0) { out.push(w); return; }
+    }
+  }
+  reset();
+  return function tick(speed) {
+    hold += speed;
+    if (hold > 7) {
+      hold = 0;
+      nextWord();
+      if (out.length > 400) out = out.slice(-40);
+      // Word-wrap the whole output into lines that fit the canvas.
+      lines = [''];
+      ctx.font = '12px monospace';
+      for (const w of out) {
+        const cand = lines[lines.length - 1] ? lines[lines.length - 1] + ' ' + w : w;
+        if (ctx.measureText(cand).width > S - 20) lines.push(w);
+        else lines[lines.length - 1] = cand;
+      }
+    }
+    ctx.fillStyle = '#05070d';
+    ctx.fillRect(0, 0, S, S);
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#c0e8ff';
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 6;
+    const top = Math.max(0, lines.length - 9);
+    for (let i = top; i < lines.length; i++) ctx.fillText(lines[i], 10, 22 + (i - top) * 18);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ff00a0';
+    ctx.fillRect(10, S - 22, 6 + 10 * ((Date.now() / 300) % 2 < 1 ? 1 : 0), 3);
+  };
+}
+
+function regressionSim(ctx, S) {
+  // Scatter of noisy points around a parabola, with a live least-squares quadratic through them.
+  // Each squared residual is drawn as a square (its area is the squared error). Every so often the
+  // points jitter and the fit snaps again. Cheap: 3x3 normal equations solved by Cramer's rule, no fetch.
+  const N = 14, PAD = 12, SPAN = S - 2 * PAD;
+  const gauss = () => Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random());
+  const X = (x) => PAD + ((x + 1) / 2) * SPAN;
+  const Y = (y) => S - PAD - ((y + 1) / 2) * SPAN;
+  let xs, ys, t;
+  function reset() {
+    xs = Array.from({ length: N }, () => -1 + 2 * Math.random());
+    ys = xs.map((x) => 0.7 * x * x - 0.3 + 0.12 * gauss());
+    t = 0;
+  }
+  // Quadratic least squares: the normal matrix A[r][c] = sum x^(r+c), right-hand side sum x^r y.
+  function det3(a) {
+    return a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+      - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+      + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+  }
+  function fit() {
+    const s = [0, 0, 0, 0, 0], b = [0, 0, 0];
+    for (let i = 0; i < N; i++) {
+      let p = 1;
+      for (let k = 0; k < 5; k++) { s[k] += p; p *= xs[i]; }
+      p = 1;
+      for (let k = 0; k < 3; k++) { b[k] += p * ys[i]; p *= xs[i]; }
+    }
+    const A = [[s[0], s[1], s[2]], [s[1], s[2], s[3]], [s[2], s[3], s[4]]];
+    const D = det3(A);
+    if (Math.abs(D) < 1e-12) return [0, 0, 0];
+    // Cramer's rule: replace column c with the right-hand side and take the determinant ratio.
+    return [0, 1, 2].map((c) => det3(A.map((row, r) => row.map((v, cc) => (cc === c ? b[r] : v)))) / D);
+  }
+  reset();
+  return function tick() {
+    if (++t % 260 === 0) {
+      // Jitter the points a little, and start over now and then so the cloud does not drift away.
+      if (Math.random() < 0.3) reset();
+      else ys = ys.map((y) => y + 0.06 * gauss());
+    }
+    ctx.clearRect(0, 0, S, S);
+    ctx.fillStyle = 'rgba(2,6,16,0.95)';
+    ctx.fillRect(0, 0, S, S);
+    const [w0, w1, w2] = fit();
+    // Squares: side = |residual| in pixels, so the drawn area equals the squared error.
+    ctx.fillStyle = 'rgba(255,0,160,0.18)';
+    ctx.strokeStyle = '#ff00a0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < N; i++) {
+      const yhat = w0 + w1 * xs[i] + w2 * xs[i] * xs[i];
+      const r = ys[i] - yhat;
+      const side = Math.abs(r) * (SPAN / 2);
+      if (side < 0.5) continue;
+      const x0 = X(xs[i]), y0 = Math.min(Y(ys[i]), Y(yhat));
+      ctx.fillRect(x0, y0, side, side);
+      ctx.strokeRect(x0, y0, side, side);
+    }
+    // The fitted curve, then the points on top.
+    ctx.strokeStyle = '#00f5ff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    for (let k = 0; k <= 60; k++) {
+      const x = -1 + (2 * k) / 60;
+      const y = w0 + w1 * x + w2 * x * x;
+      if (k === 0) ctx.moveTo(X(x), Y(y)); else ctx.lineTo(X(x), Y(y));
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffe600';
+    for (let i = 0; i < N; i++) {
+      ctx.beginPath();
+      ctx.arc(X(xs[i]), Y(ys[i]), 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+}
+
+function localizeSim(ctx, S) {
+  // Cabinet stand-in for the Lost Robot page: a 24x16 Twin Halls floor (same walls as localize-core.js), a robot
+  // that wanders the corridor, and a 150-particle cloud that collapses onto it. The page runs the full filters;
+  // here the cloud only has to show the collapse, so it is a short-range version with Math.random (no parity needed).
+  const W = 24, H = 16, cs = S / W;
+  const walls = new Uint8Array(W * H);
+  const rects = [[0, 0, 23, 0], [0, 15, 23, 15], [0, 0, 0, 15], [23, 0, 23, 15],
+    [1, 6, 2, 6], [4, 6, 8, 6], [10, 6, 14, 6], [16, 6, 19, 6], [21, 6, 22, 6],
+    [1, 9, 2, 9], [4, 9, 8, 9], [10, 9, 14, 9], [16, 9, 19, 9], [21, 9, 22, 9],
+    [6, 1, 6, 5], [12, 1, 12, 5], [18, 1, 18, 5], [6, 10, 6, 14], [12, 10, 12, 14], [18, 10, 18, 14]];
+  for (const [x0, y0, x1, y1] of rects) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) walls[y * W + x] = 1;
+  const blocked = (x, y) => {
+    const i = Math.floor(x), j = Math.floor(y);
+    return i < 0 || i >= W || j < 0 || j >= H || walls[j * W + i] === 1;
+  };
+  const cast = (x, y, a) => {
+    const dx = Math.cos(a) * 0.25, dy = Math.sin(a) * 0.25;
+    let px = x, py = y;
+    for (let k = 1; k <= 32; k++) { px += dx; py += dy; if (blocked(px, py)) return k * 0.25; }
+    return 8;
+  };
+  const N = 150, NB = 8, SIG = 0.4;
+  const rx = new Float64Array(N), ry = new Float64Array(N), rt = new Float64Array(N), rw = new Float64Array(N);
+  const cells = [];
+  for (let c = 0; c < W * H; c++) if (!walls[c]) cells.push(c);
+  const spawn = (i) => {
+    const c = cells[(Math.random() * cells.length) | 0];
+    rx[i] = (c % W) + Math.random(); ry[i] = ((c / W) | 0) + Math.random(); rt[i] = Math.random() * 6.283 - 3.1416;
+  };
+  let bx, by, bt, z;
+  const beams = (x, y, t) => {
+    const out = new Float64Array(NB);
+    for (let j = 0; j < NB; j++) out[j] = cast(x, y, t + (6.283 * j) / NB);
+    return out;
+  };
+  const deal = () => {
+    for (let i = 0; i < N; i++) { spawn(i); rw[i] = 1 / N; }
+    const cell = cells[(Math.random() * cells.length) | 0];
+    bx = (cell % W) + 0.5; by = ((cell / W) | 0) + 0.5; bt = Math.random() * 6.283;
+    z = beams(bx, by, bt);
+  };
+  deal();
+  let hold = 0, steps = 0;
+  return (speed) => {
+    if (hold > 0) { hold -= speed; if (hold <= 0) deal(); }
+    else {
+      // The robot turns when its next step would hit a wall, and drives otherwise.
+      if (blocked(bx + 0.3 * Math.cos(bt), by + 0.3 * Math.sin(bt))) bt += 0.5 + Math.random();
+      else { bx += 0.3 * Math.cos(bt); by += 0.3 * Math.sin(bt); }
+      z = beams(bx, by, bt);
+      steps++;
+      // Predict with the odometry noise, weigh by the beams, resample when the weights bunch up.
+      let total = 0;
+      for (let i = 0; i < N; i++) {
+        rt[i] += 0.05 * (Math.random() - 0.5) + 0.1 * (Math.random() - 0.5);
+        const nx = rx[i] + 0.3 * Math.cos(rt[i]), ny = ry[i] + 0.3 * Math.sin(rt[i]);
+        if (!blocked(nx, ny)) { rx[i] = nx; ry[i] = ny; }
+        const e = beams(rx[i], ry[i], rt[i]);
+        let ll = 0;
+        for (let j = 0; j < NB; j++) ll -= ((z[j] - e[j]) / SIG) ** 2 / 2;
+        rw[i] *= Math.exp(ll / 4);
+        total += rw[i];
+      }
+      for (let i = 0; i < N; i++) rw[i] /= total || 1;
+      let sq = 0;
+      for (let i = 0; i < N; i++) sq += rw[i] * rw[i];
+      if (1 / sq < N / 2) {
+        // Multinomial resampling is enough at this size: copy particles in proportion to their weight.
+        const nx = new Float64Array(N), ny = new Float64Array(N), nt = new Float64Array(N);
+        for (let i = 0; i < N; i++) {
+          let u = Math.random(), k = 0;
+          for (let acc = rw[0]; acc < u && k < N - 1; ) acc += rw[++k];
+          nx[i] = rx[k]; ny[i] = ry[k]; nt[i] = rt[k];
+        }
+        rx.set(nx); ry.set(ny); rt.set(nt);
+        rw.fill(1 / N);
+      }
+      if (steps > 90) hold = 60;
+    }
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let c = 0; c < W * H; c++) {
+      if (!walls[c]) continue;
+      ctx.fillStyle = 'rgba(255,0,160,0.35)';
+      ctx.fillRect((c % W) * cs + 0.5, ((c / W) | 0) * cs + 0.5, cs - 1, cs - 1);
+    }
+    ctx.fillStyle = C.cyan;
+    for (let i = 0; i < N; i++) {
+      ctx.globalAlpha = 0.25 + 0.75 * Math.min(1, rw[i] * N / 2);
+      ctx.fillRect(rx[i] * cs - 1, ry[i] * cs - 1, 2.5, 2.5);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = C.yellow; ctx.shadowBlur = 10;
+    ctx.fillStyle = C.yellow;
+    ctx.beginPath(); ctx.arc(bx * cs, by * cs, cs * 0.3, 0, 6.283); ctx.fill();
+    ctx.shadowBlur = 0;
+  };
+}
+
+function walkersSim(ctx, S) {
+  // A stylised walker for the cabinet: six nodes in a row, each link a muscle whose length swings with a wave that
+  // travels along the body, so it inches to the right. Pure drawing, no physics (the real run is on walkers.html).
+  const N = 6, seg = S * 0.105, groundY = S * 0.72;
+  let t = 0;
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2; ctx.shadowColor = C.cyan; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(S, groundY); ctx.stroke();
+    ctx.shadowBlur = 0;
+    t += 0.05 * speed;
+    const px = [], py = [];
+    for (let i = 0; i < N; i++) {
+      const phase = t - i * 0.7;
+      const stretch = 0.5 + 0.5 * Math.sin(phase);
+      px.push(S * 0.12 + i * seg * (0.9 + 0.2 * stretch));
+      py.push(groundY - S * 0.05 - S * 0.05 * Math.max(0, Math.sin(phase + 1.2)));
+    }
+    for (let i = 0; i < N - 1; i++) {
+      const pull = Math.sin(t - i * 0.7);
+      ctx.strokeStyle = pull > 0 ? C.pink : C.cyan;
+      ctx.lineWidth = 2 + 2 * Math.abs(pull);
+      ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(px[i], py[i]); ctx.lineTo(px[i + 1], py[i + 1]); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = C.yellow;
+    for (let i = 0; i < N; i++) { ctx.beginPath(); ctx.arc(px[i], py[i], S * 0.025, 0, Math.PI * 2); ctx.fill(); }
+  };
+}
+
+// Landing cabinet sim for the cluster lab. Paste into web/js/landing.js next to the other *Sim functions and add
+// `clusters: clustersSim` to the sims map in cabinets(). Same contract as the others: draw into ctx (S x S units)
+// and return tick(speed). No server calls and no imports.
+function clustersSim(ctx, S) {
+  // k-means on 90 points in three blobs, one assign or update step per tick. The start is deliberately poor
+  // (all three centroids on one side), so the centroids visibly walk into the blobs, then the run pauses and
+  // restarts from a new random start. The points come from a fixed LCG, so every visit looks the same.
+  const N = 90, K = 3;
+  const COLS = ['#00f5ff', '#ff00a0', '#00ff88'];
+  const pad = 14, span = S - 2 * pad;
+  const X = (x) => pad + x * span, Y = (y) => pad + (1 - y) * span;
+  let seed = 12345;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const centres0 = [[0.25, 0.3], [0.75, 0.3], [0.5, 0.75]];
+  const P = Array.from({ length: N }, (_, i) => {
+    const c = centres0[i % K];
+    return [c[0] + (rnd() - 0.5) * 0.22, c[1] + (rnd() - 0.5) * 0.22];
+  });
+  let cent = [];
+  let lab = new Array(N).fill(0);
+  let trail = [];
+  let phase = 0;     // 0 = assign next, 1 = update next
+  let hold = 0;      // frames to pause on the converged picture
+  let done = false;
+  const restart = () => {
+    cent = [0, 1, 2].map(() => [0.15 + rnd() * 0.7, 0.15 + rnd() * 0.7]);
+    lab = new Array(N).fill(0);
+    trail = [];
+    phase = 0;
+    done = false;
+    hold = 0;
+  };
+  restart();
+  const step = () => {
+    if (done) {
+      if (++hold > 90) restart();
+      return;
+    }
+    if (phase === 0) {
+      let changed = false;
+      for (let i = 0; i < N; i++) {
+        let best = 0;
+        let bd = Infinity;
+        for (let j = 0; j < K; j++) {
+          const d = (P[i][0] - cent[j][0]) ** 2 + (P[i][1] - cent[j][1]) ** 2;
+          if (d < bd) { bd = d; best = j; }
+        }
+        if (lab[i] !== best) changed = true;
+        lab[i] = best;
+      }
+      if (!changed && trail.length) done = true;
+      phase = 1;
+    } else {
+      const sum = Array.from({ length: K }, () => [0, 0, 0]);
+      for (let i = 0; i < N; i++) {
+        sum[lab[i]][0] += P[i][0];
+        sum[lab[i]][1] += P[i][1];
+        sum[lab[i]][2]++;
+      }
+      trail.push(cent.map((c) => c.slice()));
+      if (trail.length > 8) trail.shift();
+      cent = cent.map((c, j) => (sum[j][2] ? [sum[j][0] / sum[j][2], sum[j][1] / sum[j][2]] : c));
+      phase = 0;
+    }
+  };
+  const draw = () => {
+    ctx.fillStyle = '#03060f';
+    ctx.fillRect(0, 0, S, S);
+    // Voronoi shading of the current centroids, on a coarse grid
+    const g = 20;
+    for (let gy = 0; gy < g; gy++) {
+      for (let gx = 0; gx < g; gx++) {
+        const x = (gx + 0.5) / g, y = 1 - (gy + 0.5) / g;
+        let best = 0, bd = Infinity;
+        for (let j = 0; j < K; j++) {
+          const d = (x - cent[j][0]) ** 2 + (y - cent[j][1]) ** 2;
+          if (d < bd) { bd = d; best = j; }
+        }
+        ctx.fillStyle = COLS[best] + '14';
+        ctx.fillRect(pad + (gx / g) * span, pad + (gy / g) * span, span / g + 1, span / g + 1);
+      }
+    }
+    for (let i = 0; i < N; i++) {
+      ctx.fillStyle = COLS[lab[i]];
+      ctx.beginPath();
+      ctx.arc(X(P[i][0]), Y(P[i][1]), 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    trail.forEach((snap, t) => {
+      snap.forEach((c, j) => {
+        ctx.strokeStyle = COLS[j] + '66';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(X(c[0]), Y(c[1]), 3 + t * 0.3, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    });
+    cent.forEach((c, j) => {
+      ctx.save();
+      ctx.shadowColor = COLS[j];
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = COLS[j];
+      ctx.beginPath();
+      ctx.arc(X(c[0]), Y(c[1]), 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  };
+  let acc = 0;
+  return (speed) => {
+    acc += speed * 0.25;
+    while (acc >= 1) {
+      acc -= 1;
+      step();
+    }
+    draw();
+  };
+}
+
+function nnlabSim(ctx, S) {
+  // A three-neuron tanh network learns a ring of 40 points by plain full-batch gradient descent, two steps
+  // per frame. The plane behind is a coarse neon heat map of its answer, so the boundary bends as it learns.
+  // Cheap: no fetch, 40 points, 16 x 16 cells, and the network restarts every 600 steps.
+  const N = 40, H = 3, G = 16, RESTART = 600;
+  const pts = Array.from({ length: N }, (_, i) => {
+    const inner = i % 2 === 0;
+    const r = inner ? 0.35 : 0.8, a = Math.random() * Math.PI * 2;
+    return { x: r * Math.cos(a), y: r * Math.sin(a), c: inner ? 0 : 1 };
+  });
+  let W1, b1, W2, b2, steps = 0;
+  const rnd = () => (Math.random() * 2 - 1) * 0.6;
+  function reset() {
+    W1 = Array.from({ length: H }, () => [rnd(), rnd()]);
+    b1 = Array(H).fill(0);
+    W2 = Array.from({ length: H }, rnd);
+    b2 = 0;
+    steps = 0;
+  }
+  // Forward pass: hidden tanh units h, then a sigmoid output q = P(pink).
+  function fwd(x, y) {
+    const h = W1.map((w, j) => Math.tanh(w[0] * x + w[1] * y + b1[j]));
+    let z = b2;
+    for (let j = 0; j < H; j++) z += W2[j] * h[j];
+    return [h, 1 / (1 + Math.exp(-z))];
+  }
+  // One full-batch step. Output: dz = (q - c) / N. Hidden: dh = dz * W2 * (1 - h^2), the chain rule through tanh.
+  function step() {
+    const gW1 = W1.map(() => [0, 0]), gb1 = Array(H).fill(0), gW2 = Array(H).fill(0);
+    let gb2 = 0;
+    for (const p of pts) {
+      const [h, q] = fwd(p.x, p.y);
+      const dz = (q - p.c) / N;
+      gb2 += dz;
+      for (let j = 0; j < H; j++) {
+        gW2[j] += dz * h[j];
+        const dh = dz * W2[j] * (1 - h[j] * h[j]);
+        gW1[j][0] += dh * p.x;
+        gW1[j][1] += dh * p.y;
+        gb1[j] += dh;
+      }
+    }
+    const lr = 2.5;
+    for (let j = 0; j < H; j++) {
+      W1[j][0] -= lr * gW1[j][0];
+      W1[j][1] -= lr * gW1[j][1];
+      b1[j] -= lr * gb1[j];
+      W2[j] -= lr * gW2[j];
+    }
+    b2 -= lr * gb2;
+  }
+  reset();
+  return () => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    for (let k = 0; k < 2; k++) step();
+    if ((steps += 2) >= RESTART) reset();
+    const cell = S / G;
+    for (let gy = 0; gy < G; gy++) {
+      for (let gx = 0; gx < G; gx++) {
+        const x = ((gx + 0.5) / G) * 2 - 1, y = 1 - ((gy + 0.5) / G) * 2;
+        const q = fwd(x, y)[1];
+        const near = Math.min(1, Math.abs(q - 0.5) * 2);
+        ctx.fillStyle = q >= 0.5
+          ? `rgba(255,0,160,${(0.12 + 0.4 * (1 - near)).toFixed(3)})`
+          : `rgba(0,245,255,${(0.12 + 0.4 * (1 - near)).toFixed(3)})`;
+        ctx.fillRect(gx * cell, gy * cell, cell + 0.5, cell + 0.5);
+      }
+    }
+    for (const p of pts) {
+      ctx.fillStyle = p.c ? C.pink : C.cyan;
+      ctx.beginPath();
+      ctx.arc((p.x + 1) / 2 * S, (1 - p.y) / 2 * S, S * 0.025, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+}
+
+function pathfindSim(ctx, S) {
+  // A 21x21 perfect maze, searched by A* from corner to corner, one expansion per tick. The frontier
+  // (cyan) and expanded cells (dim purple) spread over the maze, then the path lights up pink. A new
+  // maze is dealt after a short hold.
+  const n = 21, cell = S / n;
+  let race = null, hold = 0;
+  const deal = () => {
+    const seed = 1 + Math.floor(Math.random() * 99999);
+    const m = makeMaze('prim', n, n, seed);
+    const res = run('astar', m.grid, m.start, m.goal, { heur: 'octile' });
+    race = { grid: m.grid, res, state: new Uint8Array(n * n), i: 0, done: false };
+    hold = 0;
+  };
+  deal();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    const { grid, res, state } = race;
+    for (let i = 0; i < n * n; i++) {
+      const x = (i % n) * cell, y = Math.floor(i / n) * cell;
+      if (grid.cells[i] === 0) { // 0 is a wall in pathfind-core
+        ctx.fillStyle = 'rgba(0,245,255,0.35)';
+        ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      } else if (state[i] === 2) {
+        ctx.fillStyle = 'rgba(155,0,255,0.35)';
+        ctx.fillRect(x, y, cell, cell);
+      } else if (state[i] === 1) {
+        ctx.fillStyle = 'rgba(0,245,255,0.75)';
+        ctx.fillRect(x, y, cell, cell);
+      }
+    }
+    if (!race.done) {
+      const to = Math.min(res.steps.length, race.i + Math.max(1, Math.round(speed * 0.6)));
+      for (; race.i < to; race.i++) {
+        const [c, , fresh] = res.steps[race.i];
+        state[c] = 2;
+        for (const [v] of fresh) if (!state[v]) state[v] = 1;
+      }
+      if (race.i >= res.steps.length) race.done = true;
+      return;
+    }
+    hold += speed;
+    const k = Math.min(res.path.length, Math.floor(hold / 5));
+    if (k > 1) {
+      ctx.strokeStyle = C.pink;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = C.pink;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      for (let j = 0; j < k; j++) {
+        const p = res.path[j];
+        const x = ((p % n) + 0.5) * cell, y = (Math.floor(p / n) + 0.5) * cell;
+        if (j) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    if (hold > 220) deal();
+  };
+}
+
+function mdplabSim(ctx, S) {
+  // A 6-by-5 grid with a reward, a pit and a wall. Value iteration runs a few sweeps per tick, so the heat
+  // spreads out from the reward and the arrows settle; when the values converge the sim restarts. Cheap:
+  // 26 states, and only a couple of sweeps a frame. Colours come from the landing page's palette C.
+  const rows = ['......', '.#..-.', '..#...', '.#...+', 'S.....'];
+  const W = 6, H = 5, gamma = 0.95, living = -0.04, slip = 0.1;
+  const kind = rows.join('');
+  const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  const pay = (k) => (k === '+' ? 1 : k === '-' ? -1 : 0);
+  const term = (i) => kind[i] === '+' || kind[i] === '-';
+  const move = (s, d) => {
+    const x = (s % W) + dirs[d][0], y = ((s / W) | 0) + dirs[d][1];
+    if (x < 0 || y < 0 || x >= W || y >= H || kind[y * W + x] === '#') return s;
+    return y * W + x;
+  };
+  const states = [];
+  for (let i = 0; i < W * H; i++) if (kind[i] !== '#' && !term(i)) states.push(i);
+  const P = {};
+  for (const s of states) {
+    P[s] = [0, 1, 2, 3].map((a) => [[1 - slip, a], [slip / 2, (a + 3) % 4], [slip / 2, (a + 1) % 4]]
+      .map(([p, d]) => { const t = move(s, d); return [p, t, living + pay(kind[t])]; }));
+  }
+  let V, sweeps, done, hold, greedy;
+  const reset = () => { V = Array(W * H).fill(0); sweeps = 0; done = false; hold = 0; greedy = Array(W * H).fill(-1); };
+  function sweep() {
+    const next = V.slice();
+    let res = 0;
+    for (const s of states) {
+      let best = -Infinity, arg = 0;
+      for (let a = 0; a < 4; a++) {
+        let q = 0;
+        for (const [p, t, r] of P[s][a]) q += p * (r + gamma * V[t]); // terminal V stays 0
+        if (q > best) { best = q; arg = a; }
+      }
+      res = Math.max(res, Math.abs(best - V[s]));
+      next[s] = best;
+      greedy[s] = arg;
+    }
+    V = next;
+    sweeps++;
+    done = res < 1e-4;
+  }
+  reset();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    hold += speed;
+    if (!done) {
+      if (hold >= 4) { hold = 0; sweep(); }
+    } else if (hold > 120) {
+      reset();
+    }
+    const vmax = Math.max(0.05, ...states.map((s) => Math.abs(V[s])));
+    const cell = S / W, oy = (S - H * cell) / 2;
+    for (let i = 0; i < W * H; i++) {
+      const x = (i % W) * cell, y = oy + ((i / W) | 0) * cell, k = kind[i];
+      if (k === '#') {
+        ctx.fillStyle = C.dim;
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+        ctx.globalAlpha = 1;
+        continue;
+      }
+      if (k === '+') ctx.fillStyle = C.green;
+      else if (k === '-') ctx.fillStyle = C.pink;
+      else {
+        const t = Math.min(1, Math.abs(V[i]) / vmax), a = 0.1 + 0.7 * t;
+        ctx.fillStyle = V[i] >= 0 ? `rgba(0,245,255,${a})` : `rgba(255,0,160,${a})`;
+      }
+      ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+    }
+    ctx.strokeStyle = C.yellow;
+    ctx.lineWidth = 2;
+    for (const s of states) {
+      if (greedy[s] < 0) continue;
+      const cx = (s % W) * cell + cell / 2, cy = oy + ((s / W) | 0) * cell + cell / 2;
+      const [dx, dy] = dirs[greedy[s]], L = cell * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(cx - dx * L, cy - dy * L);
+      ctx.lineTo(cx + dx * L, cy + dy * L);
+      ctx.stroke();
+    }
+    ctx.fillStyle = C.dim;
+    ctx.font = '10px monospace';
+    ctx.fillText(`sweep ${sweeps}`, 6, S - 6);
+  };
+}
+
+function optlabSim(ctx, S) {
+  // Cabinet screen for the optimizer race: three optimizers race down Rosenbrock's banana from one point, with
+  // their step sizes from the lab's defaults scaled for this view. Paths are computed once at load (about 400
+  // steps each), then revealed along their length, and the heat map is cached. No server calls.
+  const pad = 14, span = S - pad * 2;
+  const px = (x) => pad + ((x + 2) / 4) * span; // view box: x in [-2, 2], y in [-1, 3]
+  const py = (y) => pad + ((3 - y) / 4) * span;
+  const gradOf = (x, y) => {
+    const r = y - x * x;
+    return [-2 * (1 - x) - 400 * x * r, 200 * r];
+  };
+  const lossOf = (x, y) => (1 - x) * (1 - x) + 100 * ((y - x * x) * (y - x * x));
+  const runs = [
+    { c: '#00f5ff', x: -1.5, y: 2, opt: 'sgd', lr: 0.002 },
+    { c: '#00ff88', x: -1.5, y: 2, opt: 'momentum', lr: 0.001, b: 0.9 },
+    { c: '#b56bff', x: -1.5, y: 2, opt: 'adam', lr: 0.05 },
+  ].map((r) => {
+    const pts = [[r.x, r.y]];
+    let x = r.x, y = r.y, vx = 0, vy = 0, m = [0, 0], v = [0, 0], t = 0;
+    for (let k = 0; k < 400; k++) {
+      const [gx, gy] = gradOf(x, y);
+      if (r.opt === 'sgd') { x -= r.lr * gx; y -= r.lr * gy; }
+      else if (r.opt === 'momentum') {
+        vx = r.b * vx - r.lr * gx; vy = r.b * vy - r.lr * gy; x += vx; y += vy;
+      } else {
+        t += 1;
+        const g = [gx, gy];
+        const nx = [x, y];
+        for (let i = 0; i < 2; i++) {
+          m[i] = 0.9 * m[i] + 0.1 * g[i];
+          v[i] = 0.999 * v[i] + 0.001 * (g[i] * g[i]);
+          nx[i] -= r.lr * (m[i] / (1 - 0.9 ** t)) / (Math.sqrt(v[i] / (1 - 0.999 ** t)) + 1e-8);
+        }
+        [x, y] = nx;
+      }
+      if (!Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6) break;
+      pts.push([x, y]);
+    }
+    return { ...r, pts };
+  });
+  // Cached heat map: log loss on a 48 by 48 grid, scaled up with smoothing.
+  const N = 48;
+  const heat = document.createElement('canvas');
+  heat.width = N; heat.height = N;
+  const hctx = heat.getContext('2d');
+  const img = hctx.createImageData(N, N);
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const x = -2 + ((c + 0.5) / N) * 4, y = 3 - ((r + 0.5) / N) * 4;
+    const t = Math.min(1, Math.max(0, Math.log10(lossOf(x, y) + 0.01) / 4 + 0.5));
+    const i = 4 * (r * N + c);
+    img.data[i] = 20 + 90 * t; img.data[i + 1] = 10 + 40 * (1 - t); img.data[i + 2] = 60 + 150 * (1 - t);
+    img.data[i + 3] = 255;
+  }
+  hctx.putImageData(img, 0, 0);
+  let k = 0, hold = 0;
+  return (speed) => {
+    ctx.fillStyle = '#020610';
+    ctx.fillRect(0, 0, S, S);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(heat, pad, pad, span, span);
+    const reach = Math.floor(k);
+    for (const r of runs) {
+      const n = Math.min(reach, r.pts.length - 1);
+      if (n < 1) continue;
+      ctx.strokeStyle = r.c; ctx.lineWidth = 2; ctx.shadowColor = r.c; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(px(r.pts[0][0]), py(r.pts[0][1]));
+      for (let i = 1; i <= n; i++) ctx.lineTo(px(r.pts[i][0]), py(r.pts[i][1]));
+      ctx.stroke();
+      const [hx, hy] = r.pts[n];
+      ctx.fillStyle = r.c; ctx.beginPath(); ctx.arc(px(hx), py(hy), 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(px(1), py(1), 3, 0, Math.PI * 2); ctx.fill();
+    const longest = Math.max(...runs.map((r) => r.pts.length - 1));
+    k += 2.2 * speed;
+    if (k >= longest) { hold += 1; if (hold > 90) { k = 0; hold = 0; } }
+  };
+}
+
+function treelabSim(ctx, S) {
+  // A depth-2 tree on the XOR pattern: a laser cuts x = 0.5, then y = 0.5, and the four quadrants shade in by
+  // class. The Tree lab grows the same kind of tree with the full exhaustive split search on its own page.
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let pts, step, phase, hold;
+  const reset = () => {
+    pts = Array.from({ length: 48 }, () => {
+      const x = rnd(), y = rnd();
+      return [x, y, (x > 0.5) !== (y > 0.5) ? 1 : 0];
+    });
+    step = 0; phase = 0; hold = 0;
+  };
+  reset();
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    const shade = Math.min(1, step / 2);
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        ctx.globalAlpha = 0.28 * shade;
+        ctx.fillStyle = (i ^ j) ? C.pink : C.cyan;
+        ctx.fillRect(i * S / 2, j * S / 2, S / 2, S / 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+    for (const [x, y, c] of pts) {
+      ctx.fillStyle = c ? C.pink : C.cyan;
+      ctx.beginPath();
+      ctx.arc(x * S, (1 - y) * S, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (step < 2) {
+      phase = Math.min(1, phase + speed / 40);
+      ctx.strokeStyle = C.yellow; ctx.shadowColor = C.yellow; ctx.shadowBlur = 10; ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (step === 0) { ctx.moveTo(S / 2, 0); ctx.lineTo(S / 2, S * phase); }
+      else { ctx.moveTo(0, S / 2); ctx.lineTo(S * phase, S / 2); }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      if (phase >= 1 && (hold += speed) > 50) { step++; phase = 0; hold = 0; }
+    } else if ((hold += speed) > 90) reset();
+  };
+}
+
+function ghosthuntSim(ctx, S) {
+  // Cabinet preview of Ghost Hunt: an 11x11 maze, one ghost drifting at random, and a cheap belief over its cell.
+  // The belief is a one-pass forward step (random-walk predict, discrete-Gaussian sonar update) on cells only, so
+  // the cabinet shows the fog and the bust without the full heading-aware filter the page runs. Ping noise uses
+  // Math.random: this is a picture, not a parity-checked result.
+  const n = 11, N = n * n, cs = S / n, SIGMA = 1.0;
+  let walls, pos, ghost, belief, ring, wait, hunt = 0;
+  const nb = (c) => {
+    const r = (c / n) | 0, k = c % n, out = [];
+    if (r > 0 && !walls[c - n]) out.push(c - n);
+    if (k < n - 1 && !walls[c + 1]) out.push(c + 1);
+    if (r < n - 1 && !walls[c + n]) out.push(c + n);
+    if (k > 0 && !walls[c - 1]) out.push(c - 1);
+    return out;
+  };
+  // Distances from one cell to all others (BFS over the corridors).
+  const dists = (src) => {
+    const d = new Int16Array(N).fill(-1);
+    d[src] = 0;
+    const q = [src];
+    for (let i = 0; i < q.length; i++) for (const v of nb(q[i])) if (d[v] < 0) { d[v] = d[q[i]] + 1; q.push(v); }
+    return d;
+  };
+  // A small perfect maze by depth-first carving on the odd cells.
+  const carve = () => {
+    const w = new Uint8Array(N).fill(1), seen = new Uint8Array(N);
+    const start = n + 1;
+    w[start] = 0; seen[start] = 1;
+    const stack = [start];
+    while (stack.length) {
+      const c = stack[stack.length - 1], r = (c / n) | 0, k = c % n;
+      const opts = [[-2 * n, -n], [2, 1], [2 * n, n], [-2, -1]].filter(([dd]) => {
+        const t = c + dd;
+        const tr = (t / n) | 0, tk = t % n;
+        return tr > 0 && tr < n - 1 && tk > 0 && tk < n - 1 && !seen[t] && r >= 0 && k >= 0;
+      });
+      if (!opts.length) { stack.pop(); continue; }
+      const [dd, mid] = opts[(Math.random() * opts.length) | 0];
+      w[c + mid] = 0; w[c + dd] = 0; seen[c + dd] = 1;
+      stack.push(c + dd);
+    }
+    return w;
+  };
+  const newHunt = () => {
+    walls = carve();
+    const open = [];
+    for (let c = 0; c < N; c++) if (!walls[c]) open.push(c);
+    pos = n + 1;
+    const far = dists(pos);
+    const cand = open.filter((c) => far[c] >= 4);
+    ghost = cand[(Math.random() * cand.length) | 0];
+    belief = new Float64Array(N);
+    for (const c of cand) belief[c] = 1 / cand.length;
+    ring = null;
+    wait = 20;
+    hunt += 1;
+  };
+  // One turn: the ghost drifts, the belief is predicted, a ping arrives and the belief is weighed by it.
+  const turn = () => {
+    const moves = nb(ghost).concat([ghost]);
+    ghost = moves[(Math.random() * moves.length) | 0];
+    const pred = new Float64Array(N);
+    for (let c = 0; c < N; c++) {
+      if (!belief[c]) continue;
+      const opts = nb(c).concat([c]);
+      for (const o of opts) pred[o] += belief[c] / opts.length;
+    }
+    const d = dists(pos);
+    const reading = Math.max(0, Math.round(d[ghost] + SIGMA * Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random())));
+    let z = 0;
+    for (let c = 0; c < N; c++) {
+      if (d[c] < 0) { pred[c] = 0; continue; }
+      const e = Math.exp(-((reading - d[c]) ** 2) / (2 * SIGMA * SIGMA));
+      pred[c] *= e;
+      z += pred[c];
+    }
+    if (z > 0) for (let c = 0; c < N; c++) pred[c] /= z;
+    belief = pred;
+    ring = { t: 0, r: reading + 0.5 };
+  };
+  // The player walks toward the most likely cell and fires when it is next door and the belief is sure.
+  const step = () => {
+    let peak = 0;
+    for (let c = 1; c < N; c++) if (belief[c] > belief[peak]) peak = c;
+    if (belief[peak] > 0.5 && (peak === pos || nb(pos).includes(peak))) {
+      if (peak === ghost) { wait = 30; ring = { t: 0, r: 0, hit: true }; } else { ring = { t: 0, r: 0 }; }
+      newHunt();
+      return;
+    }
+    const d = dists(peak);
+    const next = nb(pos).filter((c) => d[c] === d[pos] - 1);
+    if (next.length) pos = next[0];
+    turn();
+  };
+  newHunt();
+  return (speed) => {
+    if (wait > 0) { wait -= 1; }
+    else step();
+    if (ring) ring.t += 0.05 * speed;
+    if (ring && ring.t > 1) ring = null;
+    ctx.fillStyle = '#05060f';
+    ctx.fillRect(0, 0, S, S);
+    for (let c = 0; c < N; c++) {
+      const r = (c / n) | 0, k = c % n;
+      if (walls[c]) { ctx.fillStyle = '#1a0f2e'; ctx.fillRect(k * cs, r * cs, cs, cs); continue; }
+      const p = belief[c];
+      if (p > 0.004) {
+        ctx.fillStyle = `rgba(255,0,160,${Math.min(0.9, Math.sqrt(p) * 1.1)})`;
+        ctx.fillRect(k * cs + 1, r * cs + 1, cs - 2, cs - 2);
+      } else {
+        ctx.fillStyle = 'rgba(0,245,255,0.05)';
+        ctx.fillRect(k * cs + 1, r * cs + 1, cs - 2, cs - 2);
+      }
+    }
+    if (ring) {
+      const px = ((pos % n) + 0.5) * cs, py = (((pos / n) | 0) + 0.5) * cs;
+      ctx.strokeStyle = `rgba(0,245,255,${1 - ring.t})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, Math.max(2, ring.r * cs * ring.t * 2), 0, 6.283); ctx.stroke();
+    }
+    ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 10;
+    ctx.fillStyle = '#e8fdff';
+    ctx.beginPath(); ctx.arc(((pos % n) + 0.5) * cs, (((pos / n) | 0) + 0.5) * cs, cs * 0.3, 0, 6.283); ctx.fill();
+    ctx.shadowBlur = 0;
+  };
+}
+
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim, nonogram: nonogramSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim, nonogram: nonogramSim, clusters: clustersSim, nnlab: nnlabSim, pathfind: pathfindSim, mdplab: mdplabSim, optlab: optlabSim, treelab: treelabSim, ghosthunt: ghosthuntSim, markov: markovSim, regression: regressionSim, localize: localizeSim, walkers: walkersSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');
     let speed = 1, visible = false, raf = 0;
     cab.addEventListener('pointerenter', () => { speed = 2.5; });
     cab.addEventListener('pointerleave', () => { speed = 1; });
-    const loop = () => { tick(speed); if (visible && !REDUCED) raf = requestAnimationFrame(loop); };
+    // speedFactor() is 10 during overdrive (overdrive.js), 1 otherwise.
+    const loop = () => { tick(speed * speedFactor()); if (visible && !REDUCED) raf = requestAnimationFrame(loop); };
     if (REDUCED) { for (let i = 0; i < 400; i++) tick(1); return; }
     onVisible(cab, (v) => { visible = v; cancelAnimationFrame(raf); if (v) loop(); });
   });
@@ -1669,3 +2657,6 @@ function cabinets() {
 boot();
 city();
 cabinets();
+
+// A mouse over the glitch title zaps (sfx.js). The CSS glitch itself is unchanged.
+document.getElementById('hero-title')?.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') play('zap'); });

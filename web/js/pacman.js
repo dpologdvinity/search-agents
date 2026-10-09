@@ -6,6 +6,8 @@
 //   watch  POST /api/pacman/episode returns the whole game; playback steps through its turns.
 //   play   POST /api/pacman/play replays the moves so far (the server keeps no session), and
 //          returns the new state, the legal moves next, and the turn just played.
+// The GHOSTS menu sends "ghosts": "ai" (A* routes) or "chance" (fixed odds) with every request.
+// The server draws the chance moves from the game's seed, so this file holds no chance logic.
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
@@ -21,6 +23,9 @@ const KEY_MOVES = {
   w: 'N', arrowup: 'N', s: 'S', arrowdown: 'S', a: 'W', arrowleft: 'W', d: 'E', arrowright: 'E',
 };
 const DEATH_MS = 700; // how long Pac-Man takes to shrink away
+const ODDS_NAMES = { straight: 'Keep going', left: 'Turn left', right: 'Turn right', back: 'Reverse' };
+const POLICY_CHIP = { ai: 'AI', chance: 'CHANCE' };
+const NEXT_GAME_MS = 900; // pause between games when auto-restart is on, so the last board can be read
 const HINT_PLAY = 'Use W A S D or the arrow keys to move. Each key is one turn. Ghosts move after you.';
 const HINT_WATCH = 'Press Run to watch the agent play the seeded game. Pause and step to read its values turn by turn.';
 
@@ -38,11 +43,14 @@ const S = {
   from: null, animStart: 0, animDur: 0, deathAt: 0,
   legal: [], actions: [],
   episode: null, index: 0, playing: false, timer: 0,
+  policy: 'ai', // the ghost policy of the board on screen
+  tally: { games: 0, won: 0, lost: 0, timeout: 0 }, // watch-mode results for the current settings
 };
 
 const key = (r, c) => `${r},${c}`;
 const solid = (r, c) => r >= 0 && c >= 0 && r < S.rows.length && c < S.rows[0].length && S.rows[r][c] === '#';
 const speedMs = () => Number($('speed').value);
+const randomSeed = () => { $('seed').value = Math.floor(Math.random() * 1_000_000); };
 const smooth = (t) => t * t * (3 - 2 * t);
 const lerp = (a, b, k) => a + (b - a) * k;
 
@@ -265,8 +273,75 @@ function screenXY(rc) {
   return [rect.left + (rc[1] + 0.5) * CELL * s, rect.top + (rc[0] + 0.5) * CELL * s];
 }
 
+function ghostInfo(policy) {
+  return S.meta?.ghost_policies.find((p) => p.name === policy);
+}
+
+// Names the algorithm on each side. Shown under the title and in the GHOSTS chip, so the page
+// always says what Pac-Man and the ghosts are running.
+function updateMatchup() {
+  const policy = $('ghosts').value;
+  const ghosts = ghostInfo(policy)?.label ?? policy;
+  const pacman = $('mode').value === 'play' ? 'You play Pac-Man' : `${$('agent').selectedOptions[0].textContent} plays Pac-Man`;
+  $('matchup').textContent = `${pacman} against ${ghosts}.`;
+  $('ghosts-desc').textContent = ghostInfo(policy)?.description ?? '';
+  $('chip-ghosts').textContent = POLICY_CHIP[policy];
+}
+
+// The odds as a two-column table: each way a chance ghost can turn and its share of the draw.
+function oddsTable() {
+  const odds = S.meta?.chance_odds;
+  const table = document.createElement('table');
+  table.className = 'pm-feats';
+  table.innerHTML = '<thead><tr><th>TURN</th><th>SHARE</th></tr></thead>';
+  const body = document.createElement('tbody');
+  for (const [name, share] of Object.entries(odds ?? {})) {
+    const tr = document.createElement('tr');
+    const turn = document.createElement('td');
+    turn.textContent = ODDS_NAMES[name];
+    const pct = document.createElement('td');
+    pct.textContent = `${Math.round(100 * share)}%`;
+    tr.append(turn, pct);
+    body.appendChild(tr);
+  }
+  table.appendChild(body);
+  return table;
+}
+
+// Score across watch-mode games for the current settings: wins, losses, and time-ups.
+function renderTally() {
+  const t = S.tally;
+  const rate = t.games ? `${((100 * t.won) / t.games).toFixed(1)}%` : '—';
+  $('score').replaceChildren(...[['GAMES', t.games], ['WON', t.won], ['LOST', t.lost], ['TIME UP', t.timeout], ['WIN RATE', rate]]
+    .map(([label, value]) => {
+      const chip = document.createElement('span');
+      chip.className = 'stat-chip';
+      chip.textContent = `${label} `;
+      const val = document.createElement('span');
+      val.className = 'val';
+      val.textContent = String(value);
+      chip.appendChild(val);
+      return chip;
+    }));
+}
+
+function resetTally() {
+  S.tally = { games: 0, won: 0, lost: 0, timeout: 0 };
+  renderTally();
+}
+
+// Counts a finished watch game once: a win, a loss, or running out of turns.
+function countGame(result) {
+  S.tally.games += 1;
+  if (result.won) S.tally.won += 1;
+  else if (result.status === 'timeout') S.tally.timeout += 1;
+  else S.tally.lost += 1;
+  renderTally();
+}
+
 function updateChips() {
   $('chip-mode').textContent = $('mode').value === 'play' ? 'PLAY' : 'WATCH';
+  $('chip-ghosts').textContent = POLICY_CHIP[S.policy];
   $('chip-score').textContent = S.points.toLocaleString('en-US');
   $('chip-pellets').textContent = String(S.pellets.size);
   $('chip-turn').textContent = String(S.turn);
@@ -334,6 +409,9 @@ function updateBrain() {
     body.appendChild(tr);
   });
   note.textContent = `The contributions add up to this move's Q-value (${total.toFixed(2)}). Green pushes the move up, pink pushes it down.`;
+  if (S.policy === 'chance') {
+    note.textContent += ' The learned model was trained against the A* ghosts, so its survival look-ahead assumes their moves, not the chance odds.';
+  }
 }
 
 function updateGhosts() {
@@ -353,18 +431,28 @@ function updateGhosts() {
       state = atTarget
         ? 'on its target'
         : `heading for (${plan.target[0]}, ${plan.target[1]}), ${plan.path.length - 1} steps`;
+    } else if (S.policy === 'chance') {
+      state = 'moves by the fixed odds';
     }
     const row = document.createElement('div');
     row.className = 'pm-ghost';
     row.innerHTML = '<span class="sw"></span><span class="name"></span><span class="state"></span>';
     row.querySelector('.sw').style.color = GHOST_COLOR[g.personality] || '#ffffff';
-    row.querySelector('.name').textContent = `${i + 1} · ${g.personality.toUpperCase()}`;
+    // Chance ghosts have no personality, so they are all just GHOST; the colour still tells them apart.
+    const role = S.policy === 'chance' ? 'GHOST' : g.personality.toUpperCase();
+    row.querySelector('.name').textContent = `${i + 1} · ${role}`;
     row.querySelector('.state').textContent = state;
     panel.appendChild(row);
   });
   const hint = document.createElement('div');
   hint.className = 'field-hint';
   hint.style.marginTop = '0.4rem';
+  if (S.policy === 'chance') {
+    hint.textContent = 'Chance ghosts ignore Pac-Man and the maze: each one keeps going, turns or reverses by the odds below.';
+    panel.appendChild(hint);
+    panel.appendChild(oddsTable());
+    return;
+  }
   hint.textContent = 'Chasers head for Pac-Man. The ambusher aims ahead of him. Scatter ghosts retreat to a corner when close.';
   panel.appendChild(hint);
 }
@@ -401,7 +489,8 @@ function updateAll() {
 // ── State changes ────────────────────────────────────────────────────────
 
 // Starts a fresh board from a start state (from the server), with no animation.
-function setBoard(maze, start) {
+function setBoard(maze, start, policy) {
+  S.policy = policy;
   S.rows = maze.rows;
   sizeCanvas();
   S.pac = start.pac;
@@ -516,12 +605,15 @@ function setBusy(flag) {
 
 // Loads the board for the current maze and seed. Both modes start from the same opening position.
 async function loadBoard() {
-  const res = await postJSON('/api/pacman/play', { maze: $('maze').value, seed: seedValue(), actions: [] });
+  const res = await postJSON('/api/pacman/play', {
+    maze: $('maze').value, seed: seedValue(), actions: [], ghosts: $('ghosts').value,
+  });
   stopPlayback();
   S.actions = [];
   S.episode = null;
   S.legal = res.legal;
-  setBoard(res.maze, res.state);
+  setBoard(res.maze, res.state, res.ghosts);
+  updateMatchup();
 }
 
 function setMode(mode) {
@@ -529,6 +621,7 @@ function setMode(mode) {
   for (const id of ['btn-run', 'btn-toggle', 'btn-step']) $(id).hidden = !watch;
   $('agent-row').hidden = !watch;
   $('speed').closest('div').hidden = !watch;
+  $('score-row').hidden = !watch;
   $('pm-hint').textContent = watch ? HINT_WATCH : HINT_PLAY;
   $('btn-new').querySelector('.btn-txt').textContent = watch ? '↺ NEW SEED' : '↺ NEW GAME';
   loadBoard().catch((e) => log(e.message, 'log-err'));
@@ -540,12 +633,13 @@ async function runAgent() {
   const seed = seedValue();
   try {
     const episode = await postJSON('/api/pacman/episode', {
-      agent: $('agent').value, maze: $('maze').value, seed, max_turns: 300,
+      agent: $('agent').value, maze: $('maze').value, seed, max_turns: 300, ghosts: $('ghosts').value,
     });
     S.episode = episode;
     S.index = 0;
-    setBoard(episode.maze, episode.start);
-    log(`${episode.agent} on ${episode.maze.title}, seed ${seed}: ${episode.turns.length} turns`, 'log-info');
+    setBoard(episode.maze, episode.start, episode.ghosts);
+    updateMatchup();
+    log(`${episode.agent} vs ${episode.ghosts_label} on ${episode.maze.title}, seed ${seed}: ${episode.turns.length} turns`, 'log-info');
     playFrom();
   } catch (e) {
     log(e.message, 'log-err');
@@ -561,6 +655,19 @@ function stepWatch() {
     stopPlayback();
     const r = S.episode?.result;
     if (r) log(`game over: ${r.status}, score ${r.score} in ${r.turns} turns`, r.won ? 'log-best' : 'log-info');
+    // Each game is counted once, however many times the end is reached (step, then play).
+    if (r && !S.episode.scored) {
+      S.episode.scored = true;
+      countGame(r);
+      if ($('auto-restart').checked) {
+        S.timer = setTimeout(() => {
+          if ($('mode').value === 'watch' && $('auto-restart').checked) {
+            randomSeed();
+            runAgent();
+          }
+        }, NEXT_GAME_MS);
+      }
+    }
     return false;
   }
   applyWatchTurn(turns[S.index]);
@@ -589,7 +696,9 @@ async function humanMove(letter) {
   setBusy(true);
   try {
     const actions = [...S.actions, letter];
-    const res = await postJSON('/api/pacman/play', { maze: $('maze').value, seed: seedValue(), actions });
+    const res = await postJSON('/api/pacman/play', {
+      maze: $('maze').value, seed: seedValue(), actions, ghosts: S.policy,
+    });
     S.actions = actions;
     applyHumanState(res, letter);
     if (S.status === 'playing') {
@@ -609,15 +718,23 @@ async function humanMove(letter) {
 
 function wire() {
   const reload = () => loadBoard().catch((e) => log(e.message, 'log-err'));
-  const randomSeed = () => { $('seed').value = Math.floor(Math.random() * 1_000_000); };
 
   $('mode').addEventListener('change', () => setMode($('mode').value));
-  $('maze').addEventListener('change', reload);
+  $('maze').addEventListener('change', () => { resetTally(); reload(); });
   $('seed').addEventListener('change', () => { if ($('mode').value === 'play') reload(); });
   $('agent').addEventListener('change', () => {
     const info = S.meta?.agents.find((a) => a.name === $('agent').value);
     $('agent-desc').textContent = info ? info.description : '';
+    resetTally();
+    updateMatchup();
   });
+  $('ghosts').addEventListener('change', () => {
+    // The board and any watched game were built under the old ghosts, so start again under the new ones.
+    resetTally();
+    stopPlayback();
+    loadBoard().catch((e) => log(e.message, 'log-err'));
+  });
+  $('btn-reset-score').addEventListener('click', resetTally);
   $('speed').addEventListener('input', () => { $('speed-val').textContent = `${speedMs()} ms per turn`; });
   $('btn-run').addEventListener('click', runAgent);
   $('btn-toggle').addEventListener('click', () => {
@@ -662,7 +779,10 @@ async function init() {
     $('maze').appendChild(opt);
   }
   $('agent-desc').textContent = S.meta.agents[0].description;
+  $('odds-table').replaceChildren(oddsTable());
+  renderTally();
   renderWeights();
+  updateMatchup();
   setMode($('mode').value);
   log('ready. Watch the agent, or switch to You play and use the arrow keys or W A S D.', 'log-info');
 }

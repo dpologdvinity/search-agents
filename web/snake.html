@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SNAKE // SEARCH AGENTS</title>
-<meta name="description" content="A snake steered by a tiny neural network whose 339 weights were evolved by a genetic algorithm. Watch the net think, or play against the BFS planner's hints.">
+<meta name="description" content="A snake steered by learned agents: eight weights tuned by the cross-entropy method over features of each move, or a 339-weight neural net bred by a genetic algorithm. Watch them think, or play against the BFS planner's hints.">
 <meta property="og:title" content="SNAKE // SEARCH AGENTS">
-<meta property="og:description" content="A snake steered by a tiny neural network whose 339 weights were evolved by a genetic algorithm. Watch the net think, or play against the BFS planner's hints.">
+<meta property="og:description" content="A snake steered by learned agents: eight weights tuned by the cross-entropy method over features of each move, or a 339-weight neural net bred by a genetic algorithm. Watch them think, or play against the BFS planner's hints.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/snake.html">
 <meta name="twitter:card" content="summary">
@@ -26,13 +26,14 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">09 // NEUROEVOLUTION · GENETIC ALGORITHM</div>
       <h1 class="proj-pg-title neon-green glitch" data-text="SNAKE">SNAKE</h1>
-      <div class="proj-pg-sub">No one wrote this snake's rules. A 339-weight network was bred by a genetic algorithm: mutate, cross over, keep the fittest, repeat. The net sees danger, free space, and food in its own frame, and turns left, straight, or right.</div>
+      <div class="proj-pg-sub">No one wrote this snake's rules into its moves. The default agent scores each safe move with eight weights, tuned by the cross-entropy method over features of the position it leads to. The other is a 339-weight neural net bred by a genetic algorithm. Both are learned, and both are shown here.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -51,9 +52,14 @@
         <div class="sn-board-wrap">
           <canvas id="sn-board" class="sn-board" role="img" aria-label="Snake board"></canvas>
         </div>
-        <div class="field-hint" id="sn-note">Watch the evolved net, or take the wheel with W A S D or the arrow keys.</div>
+        <div class="field-hint" id="sn-note">Watch the learned agent, or take the wheel with W A S D or the arrow keys.</div>
+        <div class="sn-agent" role="group" aria-label="Learned agent">
+          <span class="field-lbl">AGENT</span>
+          <button class="cyber-btn green" id="btn-agent-eval" type="button" aria-pressed="true"><span class="btn-txt">EVALUATION FUNCTION</span></button>
+          <button class="cyber-btn" id="btn-agent-net" type="button" aria-pressed="false"><span class="btn-txt">NEURAL NET</span></button>
+        </div>
         <div class="sn-controls">
-          <button class="cyber-btn green" id="btn-watch" type="button" aria-pressed="false"><span class="btn-txt">▶ WATCH THE NET</span></button>
+          <button class="cyber-btn green" id="btn-watch" type="button" aria-pressed="false"><span class="btn-txt">▶ WATCH THE AGENT</span></button>
           <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false"><span class="btn-txt">✎ PLAY YOURSELF</span></button>
           <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">→ ONE STEP</span></button>
           <button class="cyber-btn" id="btn-hint" type="button"><span class="btn-txt">✦ PLANNER HINT</span></button>
@@ -74,16 +80,16 @@
       </div>
 
       <div style="margin-top:1.6rem">
-        <div class="section-title green-ttl">WHAT THE NET IS THINKING</div>
+        <div class="section-title green-ttl" id="think-section-title">WHAT THE AGENT IS THINKING</div>
         <div class="viz-panel">
           <div class="viz-title" id="think-title">Waiting for a move.</div>
           <div class="sn-think" id="think-text"></div>
-          <div class="sn-bars" id="think-inputs" aria-label="What the snake senses"></div>
-          <div class="sn-bars" id="think-outputs" aria-label="Output probabilities"></div>
+          <div class="sn-bars" id="think-inputs" aria-label="What the agent weighs"></div>
+          <div class="sn-bars" id="think-outputs" aria-label="The three moves"></div>
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
+      <div style="margin-top:1.6rem" id="net-panel" hidden>
         <div class="section-title pink-ttl">THE NETWORK, LIT BY EACH STEP</div>
         <div class="viz-panel">
           <canvas id="sn-net" class="sn-net" aria-label="Network: 17 senses, 16 hidden units, 3 outputs"></canvas>
@@ -110,19 +116,19 @@
         </div>
       </div>
       <div>
-        <div class="section-title pink-ttl">THE GENETIC LOOP</div>
+        <div class="section-title pink-ttl" id="loop-section-title">THE LEARNING LOOP</div>
         <div class="stack">
           <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">1 · PLAY</div>
-            <div class="field-hint">Each genome plays the same seeded boards. Fitness is apples eaten, plus a small bonus for surviving, which only breaks ties.</div>
+            <div id="loop-t-1" style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">1 · PLAY</div>
+            <div class="field-hint" id="loop-x-1"></div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">2 · KEEP THE BEST</div>
-            <div class="field-hint">The top genomes are copied unchanged, so the best result never gets lost. Tournament selection picks parents from random groups of three.</div>
+            <div id="loop-t-2" style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">2 · KEEP THE BEST</div>
+            <div class="field-hint" id="loop-x-2"></div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">3 · CROSS AND MUTATE</div>
-            <div class="field-hint">Uniform crossover takes each weight from one parent or the other. Then about one weight in ten moves by a small Gaussian nudge.</div>
+            <div id="loop-t-3" style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">3 · CROSS AND MUTATE</div>
+            <div class="field-hint" id="loop-x-3"></div>
           </div>
         </div>
       </div>
@@ -133,11 +139,93 @@
         </div>
       </div>
       <div>
+        <div class="section-title pink-ttl">HOW THE EVALUATOR CHOOSES</div>
+        <div class="heuristic-card" style="padding:0.7rem">
+          <div class="field-hint">The snake tries each safe move, and for the position it would reach it reads eight features: whether the move eats, how near the food is by walking distance, whether the food is reachable, how much of the board it can reach, whether that room can hold its body, whether it can still reach its tail, how many exits its head has, and how long it is. The move with the largest weighted sum wins. The rules, the features and the choice are hand-built. The eight weights are the only thing that was learned.</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title green-ttl">THE RESULTS</div>
+        <div class="viz-panel sn-champ">
+          <div class="field-hint" style="margin-bottom:0.5rem">200 held-out 12x12 games per agent, seeds 50,000 and up, the same boards for every agent.</div>
+          <table class="sn-results">
+            <thead><tr><th>agent</th><th>mean apples</th><th>median</th><th>max</th><th>deaths</th><th>starved</th></tr></thead>
+            <tbody>
+              <tr class="hl"><td>evaluation function</td><td>90.13</td><td>86</td><td>133</td><td>0.0%</td><td>200</td></tr>
+              <tr><td>planner (BFS)</td><td>56.13</td><td>49.5</td><td>137</td><td>0.0%</td><td>200</td></tr>
+              <tr><td>greedy</td><td>20.12</td><td>19</td><td>47</td><td>100.0%</td><td>0</td></tr>
+              <tr><td>neural net (v2)</td><td>13.69</td><td>13</td><td>26</td><td>38.5%</td><td>123</td></tr>
+              <tr><td>random</td><td>0.16</td><td>0</td><td>2</td><td>100.0%</td><td>0</td></tr>
+            </tbody>
+          </table>
+          <div class="field-hint" style="margin-top:0.5rem">Every game of the top two ends by starving, two laps without an apple: they never die, they stall. The full table is in <code>results/snake_benchmark.md</code>.</div>
+        </div>
+      </div>
+      <div>
         <div class="section-title pink-ttl">THE PLAYERS</div>
         <div class="stack" id="players"></div>
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Each turn the snake picks left, straight, or right with a small neural network of 339 weights. Nobody wrote those weights. A genetic algorithm bred them: play a generation of snakes on fresh boards, keep the best, mix and mutate them, and repeat. The evolved snake learned to eat, but it is still well behind a greedy rule and a BFS planner on the same held-out boards.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Evolving the weights</h3>
+      <p class="hiw-plain"><b>New to this?</b> Think of breeding dogs for herding. You keep the best of each litter, cross them, add small random changes, and repeat. Nobody explains herding to the dogs; the good ones just get to breed more.</p>
+      <p>Each generation, 60 genomes (lists of 339 numbers) play 8 games on the same fresh boards. A game scores apples eaten, plus a small bonus for surviving, minus a penalty for starving. Then: the 4 best are copied unchanged, and the other 56 are children. A parent is the best of 3 random genomes (tournament). Each weight comes from one parent or the other with equal chance (uniform crossover), and about one weight in ten is nudged by a small random amount.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The network and its 17 senses</h3>
+      <p class="hiw-plain"><b>New to this?</b> A network is a chain of weighted sums. Each input is multiplied by a weight, the results are added up, and a squashing function keeps them between −1 and 1. The output with the largest value wins, so the snake turns that way.</p>
+      <p>The snake senses the board in its own frame, so "ahead" means where it is facing: danger ahead, left, and right (is the next cell blocked?); free run in each direction; the food's offset ahead and to the right; the tail's offset; its heading; and the room it can reach in each direction, counted by a flood fill up to 30 cells. The 17 inputs feed 16 hidden units (tanh), which feed 3 outputs.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Baseline: greedy</h3>
+      <p class="hiw-plain"><b>New to this?</b> Greedy is the simplest sensible rule: look at the three possible moves, throw out the ones that crash, and take the one that ends closest to the food.</p>
+      <p>It needs no learning and no lookahead. It is the bar an evolved net should clear, and it wins on apples per game against the evolved net here.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Baseline: BFS planner with tail-chasing</h3>
+      <p class="hiw-plain"><b>New to this?</b> A breadth-first search (BFS) tries every route one step deeper at a time, so the first route it finds to the food is a shortest one. The snake must also not trap itself after eating.</p>
+      <p>The planner finds a shortest path to the food over empty cells. Before taking it, it checks that after eating, the head can still reach the tail. If not, it follows its own tail (which always moves away) until the food route is safe. It is the strongest classic baseline here, and it still starves on some boards.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and how they were chosen</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>Board</td><td>12 × 12</td><td>Fixed by the rules. The snake starts with 3 segments heading east.</td></tr>
+    <tr><td>Starvation</td><td>2 laps (288 steps) without food</td><td>Ends the game. Same rule for every agent in the benchmark.</td></tr>
+    <tr><td>Population</td><td>60</td><td>Sized to fit about 10 minutes on two cores.</td></tr>
+    <tr><td>Generations</td><td>80</td><td>Time budget. The 200-generation runs (v3a, v3b) were still improving at the end.</td></tr>
+    <tr><td>Games per genome</td><td>8</td><td>Every genome in a generation plays the same 8 boards.</td></tr>
+    <tr><td>Training boards</td><td>Seeds drawn from 1000 to 39999, new each generation</td><td>Never overlaps the benchmark seeds (50000 and up).</td></tr>
+    <tr><td>Fitness per game</td><td>apples + up to 0.25 survival bonus; −0.0002 per step beyond 300</td><td>Survival bonus breaks ties between early learners.</td></tr>
+    <tr><td>Starvation penalty</td><td>0.5, and no survival bonus</td><td>Looping is worse than dying cleanly. A penalty of 2.0 was tried in v3a and made the population learn to die early (see the history).</td></tr>
+    <tr><td>Elites</td><td>4</td><td>Copied unchanged each generation.</td></tr>
+    <tr><td>Tournament size</td><td>3</td><td>Parents are the best of 3 random genomes.</td></tr>
+    <tr><td>Crossover</td><td>Uniform, p = 1/2 per weight</td><td>Each weight comes from either parent.</td></tr>
+    <tr><td>Mutation</td><td>rate 0.10 per weight, sigma 0.15</td><td>A first try at sigma 0.3 on 8% of weights learned slowly.</td></tr>
+    <tr><td>Initial weights</td><td>Normal, sigma 0.5</td><td>Random start.</td></tr>
+    <tr><td>Champion</td><td>Best of the best-ever genome and the last generation's top 5</td><td>Re-scored on 16 fixed validation seeds (20000 to 20015), not on the benchmark. These seeds fall inside the training range (1000 to 39999), so this check is same-distribution, not held-out.</td></tr>
+    <tr><td>Random seed</td><td>1</td><td>Makes the run repeatable: <code>python -m snake evolve</code>.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> by trial, not by a systematic sweep. The first version used three fixed training boards and learned to memorise them (6.0 apples on those boards, 2.05 on new ones). Fresh boards each generation fixed most of that. The starvation cap was first set to four laps, then cut to two to keep looping games cheap; the benchmark uses the same cap for every agent. The population and generation counts were set by the time budget. Two longer runs (v3a, v3b: 200 generations, population 100) did not beat v2. v3a's penalty of 2.0 collapsed into early death. v3b, with the penalty back at 0.5, reached 13.22 apples, within noise of v2's 13.69 and not better, so v2 stays the live champion. No parameter was tuned on the benchmark seeds.</p>
+
+  <h3 class="hiw-sub">Training history</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Version</th><th>What changed</th><th class="num">Evolved mean apples</th><th class="num">Median</th><th class="num">Death rate</th><th class="num">Starved (of 200)</th></tr></thead><tbody>
+    <tr><td>v1</td><td>3 fixed training boards, 14 senses, 291 weights, 100 generations of 80 × 3 games</td><td class="num">2.05</td><td class="num">1</td><td class="num">5.0%</td><td class="num">190</td></tr>
+    <tr><td>v2 (live)</td><td>Fresh boards each generation, 8 games, starvation penalty 0.5, room senses, 339 weights, 80 generations of 60</td><td class="num">13.69</td><td class="num">13</td><td class="num">38.5%</td><td class="num">123</td></tr>
+    <tr><td>v3a</td><td>Starvation penalty 2.0, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">0.93</td><td class="num">1</td><td class="num">100.0%</td><td class="num">0</td></tr>
+    <tr><td>v3b</td><td>Starvation penalty 0.5, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">13.22</td><td class="num">13</td><td class="num">53.5%</td><td class="num">93</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>Which way the net turns:</b> over the first 40 benchmark boards (seeds 50000 to 50039) the net made 19,829 moves: 17,033 straight (85.9%), 2,793 left (14.1%), and 3 right (0.02%). The mean score above hides this, so the turning pattern is nearly one-sided. The counts are committed in <code>results/snake_net_actions.json</code> (<code>python -m snake actions --write</code>).</p>
+  <p class="hiw-note"><b>Results on held-out boards:</b> 200 seeded games per agent on 12 × 12, seeds 50000 to 50199, the same boards for every agent. Random scores 0.16 apples, greedy 20.12, the BFS planner 56.13, and the evolved net (v2) 13.69. So the evolved snake clearly beats random and learned to eat, but it does not beat greedy, and it dies in 38.5% of games. Greedy dies in every game, but it eats more before it does. Treat the evolved row as a result, not a win.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py">snake/net.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py">snake/evolve.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py">snake/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py">snake/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py">snake/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/data/champion.json">snake/data/champion.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_benchmark.md">results/snake_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_train_log.jsonl">results/snake_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 

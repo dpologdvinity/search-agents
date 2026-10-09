@@ -1,13 +1,14 @@
 """Snake API: the committed champion's weights and training history, and the planner's hint for a position.
 
 GET  /api/snake/meta      board size, input and output names, layer sizes, agent descriptions, champion summary
-GET  /api/snake/champion  the 291 weights as JSON, plus the champion's metadata
+GET  /api/snake/champion  the 339 weights as JSON, plus the champion's metadata
 GET  /api/snake/history   one record per generation: best and mean fitness and apples
+GET  /api/snake/evaluator the evaluation-function agent: feature names, its eight weights, its history
 POST /api/snake/hint      {"body": [[x, y], ...], "heading": 1, "food": [x, y]}  ->  the planner's move and route
 
-The page runs the evolved network itself (the weights are small), so the server only does the
-planner: its BFS path and tail-chasing check. A request costs about a millisecond on a 12x12 board.
-The champion file is read once and cached.
+The page runs the evolved network and the evaluation function itself (both are small), so the server only
+does the planner: its BFS path and tail-chasing check. A request costs about a millisecond on a 12x12 board.
+The weight files are read once and cached.
 """
 
 from __future__ import annotations
@@ -15,15 +16,17 @@ from __future__ import annotations
 import asyncio
 import json
 from functools import lru_cache
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from snake.agents import DESCRIPTIONS, planner, planner_path
 from snake.board import ACTION_NAMES, BOARD, Game
+from snake.evaluator import WEIGHTS_PATH
 from snake.net import CHAMPION_PATH, INPUT_NAMES, N_HIDDEN, OUTPUT_NAMES
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -33,15 +36,16 @@ def _champion_data() -> dict:
     return json.loads(CHAMPION_PATH.read_text())
 
 
+@lru_cache(maxsize=1)
+def _evaluator_data() -> dict:
+    return json.loads(WEIGHTS_PATH.read_text())
+
+
 class HintRequest(BaseModel):
-    body: list[list[int]] = Field(min_length=3, max_length=BOARD * BOARD)
+    # Each body cell is an [x, y] pair; the snake cannot be longer than the board has cells.
+    body: list[Annotated[list[int], Field(min_length=2, max_length=2)]] = Field(min_length=3, max_length=BOARD * BOARD)
     heading: int = Field(ge=0, le=3)
     food: list[int] | None = Field(None, min_length=2, max_length=2)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _check_position(req: HintRequest) -> Game:
@@ -109,10 +113,16 @@ async def history():
     return {"history": _champion_data().get("history", [])}
 
 
+@router.get("/api/snake/evaluator")
+async def evaluator_weights():
+    """The evaluation-function agent's eight weights, the feature names, and its training history."""
+    return _evaluator_data()
+
+
 @router.post("/api/snake/hint")
 async def hint(req: HintRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     game = _check_position(req)
     try:

@@ -11,6 +11,7 @@
 
 import { DStarLite, Explorer, INF, generate } from './rover_core.js';
 import { banner } from './fx.js';
+import { expand } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { cyan: '#00f5ff', pink: '#ff00a0', yellow: '#ffe600', green: '#00ff88', white: '#e8fdff' };
@@ -392,6 +393,7 @@ function stepOnce() {
     state.flash = { cells: cells.slice(0, 4000), t0: performance.now() };
     const changes = ex.lastChanges;
     think(describeReplan(changes, dExp, aExp, `Sensor update at ${labelOf(before.pos, state.size)}.`), { flash: true });
+    expand(Math.min(1, (dExp + aExp) / 300)); // one micro-blip per replan, higher for more expansions
     const walls = changes.filter(([, w]) => w).length;
     log(`step ${ex.steps}: sensed ${walls ? plural(walls, 'wall') : 'a clear cell'} near ${labelOf(before.pos, state.size)}. ` +
         `replan cost D* ${dExp}, A* ${aExp}.`, walls ? 'log-warn' : 'log-info');

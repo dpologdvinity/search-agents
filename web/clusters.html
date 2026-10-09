@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLUSTER LAB // SEARCH AGENTS</title>
+<meta name="description" content="Paint points, then watch k-means, DBSCAN and a Gaussian mixture fitted by EM cluster them step by step, with inertia, silhouette and an elbow chart.">
+<meta property="og:title" content="CLUSTER LAB // SEARCH AGENTS">
+<meta property="og:description" content="Paint points, then watch k-means, DBSCAN and a Gaussian mixture fitted by EM cluster them step by step, with inertia, silhouette and an elbow chart.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/clusters.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="clusters.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">LAB // K-MEANS · DBSCAN · EM</div>
+      <h1 class="proj-pg-title neon-cyan glitch" data-text="CLUSTER LAB">CLUSTER LAB</h1>
+      <div class="proj-pg-sub">Paint points or load a shape, then watch the algorithms find groups. Drag a centroid to restart k-means from there.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip">ALGO <span class="val" id="chip-algo">K-MEANS</span></span>
+        <span class="stat-chip green">CLUSTERS <span class="val" id="chip-k">0</span></span>
+        <span class="stat-chip pink">ITER <span class="val" id="chip-iter">0</span></span>
+        <span class="stat-chip">SILHOUETTE <span class="val" id="chip-sil">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="cl-stage">
+        <div class="cl-frame">
+          <canvas id="cl-canvas" role="img" aria-label="Scatter of points with cluster colours and the algorithm's current state"></canvas>
+        </div>
+        <div class="field-hint" id="cl-hint">Hold and drag on the plot to spray points. Drag a centroid to restart from there.</div>
+        <div class="inline cl-controls" style="justify-content:center">
+          <button class="cyber-btn green" id="btn-run" type="button"><span class="btn-txt">▶ RUN</span></button>
+          <button class="cyber-btn" id="btn-toggle" type="button"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn pink" id="btn-clear" type="button"><span class="btn-txt">✕ CLEAR</span></button>
+        </div>
+        <div class="cl-phase" id="cl-phase" aria-live="polite">READY</div>
+      </div>
+
+      <div class="cl-charts">
+        <div class="viz-panel cl-chart-box">
+          <div class="viz-title" id="conv-title">Inertia per iteration</div>
+          <canvas id="conv-canvas" class="cl-chart" aria-label="Convergence chart"></canvas>
+        </div>
+        <div class="viz-panel cl-chart-box">
+          <div class="viz-title">Elbow: inertia for k = 1 to 10</div>
+          <canvas id="elbow-canvas" class="cl-chart" aria-label="Elbow chart"></canvas>
+          <div class="field-hint" id="elbow-note">Runs in the background on the current points.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">EVENT LOG</div>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title">DATA</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PRESET</div>
+            <div class="cl-presets" id="presets">
+              <button class="cyber-btn" type="button" data-preset="blobs"><span class="btn-txt">BLOBS</span></button>
+              <button class="cyber-btn" type="button" data-preset="aniso"><span class="btn-txt">STRETCHED</span></button>
+              <button class="cyber-btn" type="button" data-preset="rings"><span class="btn-txt">RINGS</span></button>
+              <button class="cyber-btn" type="button" data-preset="moons"><span class="btn-txt">MOONS</span></button>
+              <button class="cyber-btn" type="button" data-preset="uniform"><span class="btn-txt">NOISE</span></button>
+              <button class="cyber-btn" type="button" data-preset="smiley"><span class="btn-txt">SMILEY</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">POINTS <span id="n-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="n" type="range" min="60" max="600" step="20" value="300" style="width:100%">
+          </div>
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same picture)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="2" style="flex:1">
+              <button class="cyber-btn" id="btn-seed" type="button" title="random seed"><span class="btn-txt">RANDOM</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">BRUSH <span id="brush-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="brush" type="range" min="2" max="14" step="1" value="6" style="width:100%">
+          </div>
+          <div>
+            <div class="field-lbl">SPRAY RATE <span id="rate-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="rate" type="range" min="1" max="8" step="1" value="3" style="width:100%">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">ALGORITHM</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">METHOD</div>
+            <select class="cyber-select" id="algo" style="width:100%">
+              <option value="kmeans" selected>k-means (Lloyd)</option>
+              <option value="dbscan">DBSCAN (density)</option>
+              <option value="gmm">Gaussian mixture (EM)</option>
+            </select>
+          </div>
+          <div id="p-k">
+            <div class="field-lbl">K <span id="k-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="k" type="range" min="1" max="10" step="1" value="4" style="width:100%">
+          </div>
+          <div id="p-init">
+            <div class="field-lbl">INITIALISATION</div>
+            <select class="cyber-select" id="init" style="width:100%">
+              <option value="kmeans++" selected>k-means++ (D² seeding)</option>
+              <option value="random">Random data points</option>
+            </select>
+          </div>
+          <div id="p-dbscan" hidden>
+            <div class="field-lbl">EPS <span id="eps-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="eps" type="range" min="0.02" max="0.2" step="0.005" value="0.08" style="width:100%">
+            <div class="field-lbl" style="margin-top:0.6rem">MIN PTS <span id="minpts-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="minpts" type="range" min="2" max="12" step="1" value="5" style="width:100%">
+          </div>
+          <div>
+            <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="speed" type="range" min="1" max="12" step="1" value="3" style="width:100%">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">READOUTS</div>
+        <div class="viz-panel cl-readouts">
+          <table class="cmp-table cl-table">
+            <tbody>
+              <tr><td>Clusters found</td><td class="num" id="ro-k">—</td></tr>
+              <tr><td>Iterations</td><td class="num" id="ro-iter">—</td></tr>
+              <tr><td>Inertia (SSE)</td><td class="num" id="ro-inertia">—</td></tr>
+              <tr><td>Log-likelihood / pt</td><td class="num" id="ro-ll">—</td></tr>
+              <tr><td>Noise points</td><td class="num" id="ro-noise">—</td></tr>
+              <tr><td>Silhouette</td><td class="num" id="ro-sil">—</td></tr>
+              <tr><td>Converged</td><td class="num" id="ro-conv">—</td></tr>
+            </tbody>
+          </table>
+          <div class="field-hint" id="ro-note"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">HOW IT DECIDES</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">K-MEANS</div>
+            <div class="field-hint">Each point joins its nearest centroid, then each centroid moves to the mean of its points. The shaded regions are the Voronoi cells of the centroids.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">DBSCAN</div>
+            <div class="field-hint">Points with at least minPts neighbours inside eps are core points. Cores connect into clusters, and everything unreached is noise. Hover to see a point's eps circle.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">EM</div>
+            <div class="field-hint">Each cluster is an ellipse. The E step shares every point among the ellipses, the M step refits them. Colours blend by how much each ellipse claims a point.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Three ways to split points into groups. k-means cuts space into k regions and alternates two steps until nothing moves. DBSCAN grows clusters through dense regions and labels what is left as noise. A Gaussian mixture fits k ellipses with EM, giving every point a soft probability for each. All three run in your browser, step by step, from the same seed as the Python package (clusters/).</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>k-means (Lloyd's algorithm)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Put k markers on the map at random spots. Every point hands itself to the nearest marker. Then each marker moves to the middle of the points it holds. Repeat until no point changes hands.</p>
+      <p>One iteration is two steps. <b>Assign</b>: each point takes the nearest centroid, by squared Euclidean distance. <b>Update</b>: each centroid becomes the mean of its points. The inertia (within-cluster sum of squares) never increases across steps, and there are only finitely many labellings, so the run stops.</p>
+      <p>Seeding matters. <b>k-means++</b> picks the first centroid at random, then draws each next one with probability proportional to its squared distance from the nearest centroid already chosen, so the seeds spread out. Random seeding can drop two centroids into one blob and leave another blob with none.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>DBSCAN (density clustering)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Draw a circle of radius eps around each point. If the circle holds enough points, the spot is crowded and counts as a core. Crowded spots that touch form one cluster; lonely points that touch no crowd are noise.</p>
+      <p>A point is a <b>core</b> when at least minPts points, itself included, lie within eps. Cores within eps of each other join one cluster, and the cluster grows like a flood fill through the cores. A <b>border</b> point is not core but sits within eps of one; it joins its lowest-index core neighbour's cluster. The rest is <b>noise</b>. The number of clusters is not chosen: it falls out of eps and minPts.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Gaussian mixture by EM</h3>
+      <p class="hiw-plain"><b>New to this?</b> Each cluster is a soft blob: a centre and a stretched, tilted ellipse. Every point is partly owned by each blob. EM alternates: first ask how much each blob owns each point, then move every blob to fit the points it owns, and repeat.</p>
+      <p><b>E step</b>: responsibility r<sub>ik</sub> = π<sub>k</sub> N(x<sub>i</sub> | μ<sub>k</sub>, Σ<sub>k</sub>) / Σ<sub>j</sub> π<sub>j</sub> N(x<sub>i</sub> | μ<sub>j</sub>, Σ<sub>j</sub>). <b>M step</b>: N<sub>k</sub> = Σ<sub>i</sub> r<sub>ik</sub>, μ<sub>k</sub> = Σ r<sub>ik</sub> x<sub>i</sub> / N<sub>k</sub>, Σ<sub>k</sub> = Σ r<sub>ik</sub> (x<sub>i</sub> − μ<sub>k</sub>)(x<sub>i</sub> − μ<sub>k</sub>)ᵀ / N<sub>k</sub>, π<sub>k</sub> = N<sub>k</sub> / n. The average log-likelihood never decreases, and the run stops when it gains less than 1e-6.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The elbow</h3>
+      <p class="hiw-plain"><b>New to this?</b> More clusters always fit better. The elbow chart shows how much each extra cluster helps. Where the drops flatten out is a fair guess at the right k.</p>
+      <p>The lab runs k-means for k = 1 to 10 with the same seed and plots the final inertia. Silhouette is the complementary check: for each point, how close it sits to its own cluster compared with the nearest other cluster, averaged over points, from −1 to 1. DBSCAN noise is left out of the silhouette.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and defaults</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why this value</th></tr></thead><tbody>
+    <tr><td>k (k-means, EM)</td><td class="num">4</td><td>k is the one number you must know in advance. The presets have 4 blobs, 3 stretched blobs, 2 rings, 2 moons and 4 smiley parts (so 4 fits most of them); the elbow chart shows what the data supports.</td></tr>
+    <tr><td>Initialisation</td><td>k-means++</td><td>Spreads the starting centres apart, so runs land in one good solution far more often than random starts. Random starts are kept to show the failure.</td></tr>
+    <tr><td>Max iterations (k-means)</td><td class="num">100</td><td>Lloyd's algorithm converges in a few steps on these sizes; the cap is a safety net, and the readout says if it was hit.</td></tr>
+    <tr><td>eps (DBSCAN)</td><td class="num">0.08</td><td>On the unit square, 0.08 links the points of one blob and of one ring into a single cluster. Too small splits clusters into arcs; too large merges neighbours.</td></tr>
+    <tr><td>minPts (DBSCAN)</td><td class="num">5</td><td>Counts the point itself. Five is enough to rule out a pair of stray points forming a cluster, and low enough that thin rings keep their core points.</td></tr>
+    <tr><td>EM tolerance</td><td class="num">1e-6</td><td>Stop when the average log-likelihood gains less than this in one iteration. Below that, the fitted ellipses no longer visibly move.</td></tr>
+    <tr><td>EM max iterations</td><td class="num">200</td><td>EM converges slowly when clusters overlap; the cap bounds the animation, and the readout says if it was hit.</td></tr>
+    <tr><td>EM covariance regulariser</td><td class="num">1e-6</td><td>Added to the covariance diagonal so a component fitted to a few points cannot collapse to zero width.</td></tr>
+  </tbody></table></div>
+
+  <h3 class="hiw-sub">Strengths and weaknesses</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Method</th><th>Strengths</th><th>Weaknesses</th></tr></thead><tbody>
+    <tr><td>k-means</td><td>Fast (each step is one pass over the points); simple; the elbow tells you where k should be.</td><td>Needs k up front. Assumes round clusters of similar size: on <b>rings</b> and <b>moons</b> it cuts the shapes in half. Sensitive to the start.</td></tr>
+    <tr><td>DBSCAN</td><td>Finds clusters of any shape, including rings and moons, and marks noise. No k needed.</td><td>Struggles when clusters have very different densities: one eps cannot fit both. Sensitive to eps; the page's eps circles show why.</td></tr>
+    <tr><td>EM (Gaussian mixture)</td><td>Soft labels, and each cluster's shape and tilt. Fits the stretched blobs that k-means cuts wrongly.</td><td>Needs k. Assumes each cluster is Gaussian, so rings and moons fit badly. Can converge to a local optimum.</td></tr>
+  </tbody></table></div>
+
+  <p class="hiw-note"><b>Reference implementation:</b> the Python package <code>clusters/</code> runs the same algorithms with the same seeds (<code>python -m clusters run --algo kmeans --k 4 --data blobs --seed 2</code>). A test compares the browser core with it on fixed seeds, and checks k-means monotone inertia, DBSCAN against a brute-force reference, and EM's non-decreasing log-likelihood.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/kmeans.py">clusters/kmeans.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/dbscan.py">clusters/dbscan.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/gmm.py">clusters/gmm.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/metrics.py">clusters/metrics.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/data.py">clusters/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/clusters/rng.py">clusters/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/clusters-core.js">web/js/clusters-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_clusters.py">tests/test_clusters.py</a></p>
+</section>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/clusters.js"></script>
+</body>
+</html>

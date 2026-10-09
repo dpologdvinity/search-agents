@@ -53,4 +53,25 @@ def test_alphazero_move_when_weights_exist(client):
 
 def test_meta(client):
     names = {a["name"] for a in client.get("/api/connect4/meta").json()["agents"]}
-    assert names == {"alphazero", "minimax", "mcts"}
+    assert names == {"alphazero", "minimax", "mcts", "chance"}
+
+
+def test_chance_move_reports_its_odds(client):
+    r = client.post("/api/connect4/move", json={"moves": "4453", "agent": "chance"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["analysis"]["kind"] == "chance"
+    odds = body["analysis"]["odds"]
+    assert len(odds) == 7 and odds[body["move"]] > 0
+    assert abs(sum(odds) - 1) < 1e-3
+
+
+def test_meta_publishes_the_chance_table(client):
+    body = client.get("/api/connect4/meta").json()
+    assert body["chance"]["weights"] == [1, 2, 3, 4, 3, 2, 1]
+    assert body["chance"]["odds"][3] == 0.25
+
+
+def test_unknown_agent_name_is_rejected(client):
+    r = client.post("/api/connect4/move", json={"moves": "", "agent": "random"})
+    assert r.status_code == 422

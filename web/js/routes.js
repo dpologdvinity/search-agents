@@ -6,6 +6,7 @@
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, shake } from './fx.js';
+import { expand } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -234,7 +235,7 @@ function animate(frames, onFrame, perFrameMs = 25) {
     if (REDUCED) { onFrame(frames[frames.length - 1], frames.length - 1); resolve(); return; }
     let k = 0, last = 0;
     const step = (t) => {
-      if (t - last >= perFrameMs) { onFrame(frames[k], k); k++; last = t; }
+      if (t - last >= perFrameMs) { onFrame(frames[k], k); expand(k / frames.length); k++; last = t; }
       if (k < frames.length) state.animation = requestAnimationFrame(step); else resolve();
     };
     state.animation = requestAnimationFrame(step);

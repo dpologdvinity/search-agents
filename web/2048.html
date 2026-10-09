@@ -25,6 +25,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -98,7 +99,7 @@
         <div class="stack">
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--purple);margin-bottom:0.3rem">HAND-TUNED VS LEARNED</div>
-            <div class="field-hint">The hand-crafted agent scores boards with six features (empty cells, monotonicity, corner, merges, smoothness, max tile), with weights found by an automated search over simulated games. The n-tuple network learned its own scoring from 42,980 self-played games.</div>
+            <div class="field-hint">The hand-crafted agent scores boards with six features (empty cells, monotonicity, corner, merges, smoothness, max tile), with weights found by an automated search over simulated games. The n-tuple network learned its own scoring from 45,514 self-played games (the last count the trainer logged).</div>
           </div>
           <div class="heuristic-card" style="padding:0.7rem">
             <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CHANCE NODES</div>
@@ -121,7 +122,7 @@
     <article class="hiw-card">
       <h3>N-tuple network (no search)</h3>
       <p class="hiw-plain"><b>New to this?</b> A cheat sheet that lists a score for every small patch of a board. To judge a position, look up each patch and add the scores, with no planning at all.</p>
-      <p>Six 5-cell patterns, each with its own table of 16⁵ = 1,048,576 values. Each pattern is read under the 8 board symmetries, so a position costs 48 lookups. The move chosen maximises points gained plus the value of the resulting board. Trained by TD(0), below.</p>
+      <p>Six patterns of tile positions, each with its own table: four 5-cell patterns (16⁵ = 1,048,576 values each) and two 6-cell patterns (16⁶ = 16,777,216 values each). Each pattern is read under the 8 board symmetries, so a position costs 48 lookups. The move chosen maximises points gained plus the value of the resulting board. Trained by TD(0), below.</p>
     </article>
     <article class="hiw-card">
       <h3>N-tuple + expectimax</h3>
@@ -133,17 +134,39 @@
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Tuned weight</th></tr></thead><tbody>
     <tr><td>empty</td><td>log2 of (empty cells + 1)</td><td class="num">0.7204</td></tr>
     <tr><td>monotonic</td><td>How far rows and columns break a sorted order, in tile exponents (a penalty, zero or below). The better direction is taken for rows and for columns separately.</td><td class="num">1.0</td></tr>
-    <tr><td>smooth</td><td>Negative sum of exponent differences between neighbouring tiles in rows and columns (zero or below)</td><td class="num">−0.129</td></tr>
+    <tr><td>smooth</td><td>Negative sum of exponent differences between consecutive non-empty tiles in each row and column, empty cells skipped (zero or below)</td><td class="num">−0.129</td></tr>
     <tr><td>corner</td><td>Exponent of the largest tile if it sits in a corner, otherwise 0</td><td class="num">0.9022</td></tr>
     <tr><td>merges</td><td>Count of equal neighbouring pairs in rows and columns</td><td class="num">0.2986</td></tr>
     <tr><td>max_tile</td><td>Exponent of the largest tile</td><td class="num">0.8174</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> tuned automatically with the cross-entropy method (<code>game2048/tune.py</code>). Each generation draws candidate weight vectors from a Gaussian, scores each by the mean final score of greedy one-move-lookahead games on shared seeds, keeps the best elite, and refits the Gaussian to them. The starting Gaussian has mean 1 and standard deviation 2 per feature. The committed run has 20 generations (the default is 15); its population, elite count, and games per candidate are not recorded, and the defaults are 16, 4, and 200. Final weights are rescaled so the largest is 1.0. Greedy play with them averaged 7,140.94 points. <b>Sign note:</b> smooth is stored as a non-positive number with a negative weight, so the term adds 0.129 per unit of total exponent difference and the search rewards rougher boards on that term. The tuner produced this sign; the other features dominate.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> tuned automatically with the cross-entropy method (<code>game2048/tune.py</code>). Each generation draws candidate weight vectors from a Gaussian, scores each by the mean final score of greedy one-move-lookahead games on shared seeds, keeps the best elite, and refits the Gaussian to them. The table's weights are from an earlier, unbounded run whose settings were not recorded. The bounded runs used 20 generations, 32 candidates, 8 elite, 300 games per candidate, and seed 0 (<code>python -m game2048.tune --generations 20 --population 32 --elite 8 --games 300 --seed 0</code>). Final weights are rescaled so the largest is 1.0.</p>
+  <p class="hiw-note"><b>Sign note:</b> every feature is oriented so that larger is better: the two penalties (monotonic, smooth) are zero or below. A negative weight on a penalty rewards the disorder it measures. The tuner now bounds every weight at zero. The table's smooth weight is negative because its run was unbounded, and the search rewards rougher boards on that term. A bounded re-run scored lower under greedy play (5,823 against 7,074 points on 3,000 held-out games; 95% intervals 5,709 to 5,936 and 6,930 to 7,219). Its expectimax score was higher by about 1,700 points on 60 held-out games, but the intervals overlap, so the table's weights were kept.</p>
+  <p class="hiw-note">Expectimax with these features, 60 held-out games at 50 ms per move: mean 16,954 (95% CI 15,259 to 18,650), 2048 reached in 11.7% (5.8 to 22.2). The bounded set gave 18,639 (16,461 to 20,817) and 20.0% (11.8 to 31.8).</p>
 
   <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">The n-tuple network is trained by TD(0) on afterstates (<code>game2048/train_td.py</code>), with 1,000 games advancing in lockstep. After each move, the value of the previous afterstate moves toward the reward plus the value of the new one, with target 0 at game end. The learning rate is 0.1, split across the 48 lookups of each position, and updates are averaged per weight within a batch. The committed log ends at 64.1 minutes with 42,980 games, a mean score of 43,929, 2048 reached in 84% of games and 4096 in 32%. In the committed network, patterns 5 and 6 are transposes of patterns 3 and 4, and the symmetry sum already includes transposes, so each pair scores every board identically. In effect the table uses four distinct shapes.</p>
+  <h3 class="hiw-sub">N-tuple patterns</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Pattern</th><th>Cells (row-major, 4 × row + col)</th><th>Shape on the 4 × 4 board</th></tr></thead><tbody>
+    <tr><td>1</td><td>0, 1, 2, 3, 4</td><td><code>XXXX / X... / .... / ....</code></td></tr>
+    <tr><td>2</td><td>4, 5, 6, 7, 8</td><td><code>.... / XXXX / X... / ....</code></td></tr>
+    <tr><td>3</td><td>0, 1, 2, 4, 5</td><td><code>XXX. / XX.. / .... / ....</code></td></tr>
+    <tr><td>4</td><td>4, 5, 6, 8, 9</td><td><code>.... / XXX. / XX.. / ....</code></td></tr>
+    <tr><td>5</td><td>0, 1, 2, 3, 4, 5</td><td><code>XXXX / XX.. / .... / ....</code></td></tr>
+    <tr><td>6</td><td>0, 1, 2, 4, 5, 6</td><td><code>XXX. / XXX. / .... / ....</code></td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Patterns 5 and 6 are the 6-cell tuples of the 4 × 6-tuple network of Yeh et al. (the TDL2048 demo). The other two, cells 4, 5, 6, 7, 8, 9 and cells 4, 5, 6, 8, 9, 10, were left out to keep the 6-cell tables to two. The earlier network used six 5-cell patterns, and its patterns 5 and 6 were transposes of 3 and 4. Under the symmetry sum a transpose scores every board the same as its source, so that network had four distinct shapes.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py">game2048/expectimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py">game2048/tune.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json">game2048/data/heuristic_weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py">game2048/ntuple.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py">game2048/train_td.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py">game2048/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log.jsonl">results/game2048_train_log.jsonl</a></p>
+  <p class="hiw-note">The n-tuple network is trained by TD(0) on afterstates (<code>game2048/train_td.py</code>), with 1,000 games advancing in lockstep: <code>python -m game2048.train_td --minutes 70 --games 1000 --alpha 0.1 --seed 0</code>. After each move, the value of the previous afterstate moves toward the reward plus the value of the new one, with target 0 at game end. The learning rate is 0.1, split across the 48 lookups of each position, and updates are averaged per weight within a batch. Tables are float32 during training and stored as float16 (72 MiB in memory). The trainer logs once a minute and writes no final record, so the figures are its last logged record: 45,514 games at 69.04 minutes, with a mean score of 52,801 over the last 2,000 training games, 2048 reached in 86.4% and 4096 in 45.6%. The previous network's last record is 42,980 games at 64.1 minutes.</p>
+
+  <h3 class="hiw-sub">Held-out results</h3>
+  <p class="hiw-note">The greedy held-out tables share one batch seed, 500000, and the 60-game expectimax rows use seeds 500000 to 500059; neither the tuner nor the trainer used these seeds. Intervals are 95%: normal for the mean, Wilson for the rates.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th>Games</th><th class="num">Mean score (95% CI)</th><th class="num">Reached 2048</th><th class="num">Reached 4096</th><th class="num">Reached 8192</th></tr></thead><tbody>
+    <tr><td>N-tuple, greedy, earlier network</td><td class="num">3,000</td><td class="num">43,970 (43,168 to 44,773)</td><td class="num">83.5% (82.1 to 84.8)</td><td class="num">32.1% (30.5 to 33.8)</td><td class="num">2.1% (1.6 to 2.7)</td></tr>
+    <tr><td>N-tuple, greedy, this network</td><td class="num">3,000</td><td class="num">54,835 (53,791 to 55,879)</td><td class="num">88.1% (86.9 to 89.2)</td><td class="num">48.7% (46.9 to 50.5)</td><td class="num">6.7% (5.9 to 7.7)</td></tr>
+    <tr><td>N-tuple + expectimax, earlier network, 50 ms/move</td><td class="num">12</td><td class="num">46,459 (32,404 to 60,513)</td><td class="num">75.0% (46.8 to 91.1)</td><td class="num">41.7% (19.3 to 68.0)</td><td class="num">0.0% (0.0 to 24.3)</td></tr>
+    <tr><td>N-tuple + expectimax, this network, 50 ms/move</td><td class="num">12</td><td class="num">104,144 (82,370 to 125,919)</td><td class="num">100.0% (75.7 to 100.0)</td><td class="num">91.7% (64.6 to 98.5)</td><td class="num">41.7% (19.3 to 68.0)</td></tr>
+  </tbody></table></div>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py">game2048/expectimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py">game2048/tune.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json">game2048/data/heuristic_weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py">game2048/ntuple.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py">game2048/train_td.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py">game2048/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/benchmark.py">game2048/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log_v2.jsonl">results/game2048_train_log_v2.jsonl</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_combined.md">results/game2048_heuristic_combined.md</a></p>
 </section>
 </div>
 </div>

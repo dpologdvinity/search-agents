@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TETRIS // SEARCH AGENTS</title>
-<meta name="description" content="Tetris with a placement search: every rotation and column is scored by a weighted sum of board features, and a genetic algorithm tunes the weights. Play, or watch the agent think.">
+<meta name="description" content="Tetris with a placement search: every rotation and column is scored by a weighted sum of board features, and a cross-entropy search tunes the weights. Play, or watch the agent think.">
 <meta property="og:title" content="TETRIS // SEARCH AGENTS">
-<meta property="og:description" content="Tetris with a placement search: every rotation and column is scored by a weighted sum of board features, and a genetic algorithm tunes the weights. Play, or watch the agent think.">
+<meta property="og:description" content="Tetris with a placement search: every rotation and column is scored by a weighted sum of board features, and a cross-entropy search tunes the weights. Play, or watch the agent think.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/tetris.html">
 <meta name="twitter:card" content="summary">
@@ -26,13 +26,14 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">PLACEMENT SEARCH · GENETIC ALGORITHM</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="TETRIS">TETRIS</h1>
-      <div class="proj-pg-sub">Every rotation and column is a candidate. Each result is scored as a weighted sum of board features, and a genetic algorithm found the weights.</div>
+      <div class="proj-pg-sub">Every rotation and column is a candidate. Each result is scored as a weighted sum of board features, and a cross-entropy search found the weights.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -104,17 +105,17 @@
         <div class="section-title pink-ttl">FEATURE WEIGHTS</div>
         <div class="field-hint" style="margin-bottom:0.6rem">Drag a weight and the agent re-scores every candidate at once. The score is the sum of weight times feature, and the agent takes the highest.</div>
         <div class="tt-presets">
-          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false"><span class="btn-txt">GA-TUNED</span></button>
+          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false"><span class="btn-txt">TUNED</span></button>
           <button class="cyber-btn green" id="tt-reset-hand" type="button" aria-pressed="true"><span class="btn-txt">HAND-PICKED</span></button>
         </div>
         <div class="tt-sliders" id="tt-sliders"></div>
       </div>
 
       <div style="margin-top:1.4rem">
-        <div class="section-title green-ttl">HOW THE GA FOUND THEM</div>
+        <div class="section-title green-ttl">HOW THE TUNED WEIGHTS WERE FOUND</div>
         <div class="viz-panel">
           <div class="field-hint" id="tt-cfg">Loading the tuned weights...</div>
-          <div class="field-hint" style="margin-top:0.4rem">Honest result: on held-out games played to game over, the hand-picked weights clear more lines than these (see results/tetris_benchmark_hard.md). The GA trained on games capped at 2,500 pieces, so it rewarded early survival.</div>
+          <div class="field-hint" style="margin-top:0.4rem">Held-out result (30 games played to game over, seeds the training never used): the tuned weights clear 6,702 mean lines against 2,129 for the hand-picked weights. The tuned set is the noisy cross-entropy result, stopped after 6 iterations for time. The earlier GA set (v2) cleared fewer lines than hand-picked; its record is in results/tetris_benchmark_hard.md and results/tetris_benchmark_hard_v3.md.</div>
           <div class="field-hint" style="margin-top:0.4rem">Training fitness (mean lines over the training games): <span id="tt-train-fit">—</span></div>
           <canvas id="tt-fitness" class="tt-fitness" aria-label="Best and mean training fitness per generation"></canvas>
           <div class="field-hint">Cyan is the best genome in each generation, pink the population mean. Every genome plays the same seeded games, so the curve is deterministic.</div>
@@ -144,6 +145,61 @@
       </div>
     </div>
   </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">For each falling piece the agent tries every rotation and every column, scores the board that would result as a weighted sum of nine features, and plays the best one. Only the nine weights were learned. The search, the features and the game rules are hand-written.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Try every placement</h3>
+      <p class="hiw-plain"><b>New to this?</b> Before a piece lands, try it in every spot and keep the one that looks best afterwards. Trying everything is slow for chess, but for Tetris a piece has only a few dozen resting places.</p>
+      <p>A piece has up to four rotations, and each can sit in up to ten columns: about 34 resting spots on an empty board. Each one drops straight down and locks. The board is stored as one bitmask per row, so a full row is detected and cleared with a single comparison. With <b>lookahead</b> on, the six best placements are each followed by the best placement of the preview piece, and the two scores are added.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Score the result</h3>
+      <p class="hiw-plain"><b>New to this?</b> The score is a checklist with weights. Each item is a count, such as holes or bumps, multiplied by how much that item should matter. Summing the products gives one number per placement.</p>
+      <p>Nine features are read off the board after the lock and the line clear: landing height, eroded piece cells, row and column transitions, holes, cumulative wells, aggregate height, bumpiness, and completed lines. The score is their weighted sum. The agent takes the highest. The first six come from the classic Dellacherie set; the other three (aggregate height, bumpiness, lines cleared) are simple board-shape counts.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Genetic algorithm (v2)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Start with many random guesses. Keep the better ones, mix pairs of them, nudge the results a little, and repeat for many generations. Weights that play better survive more often.</p>
+      <p>Population 16, 16 generations. Each genome plays 6 games on the 10-row board, capped at 2,500 pieces. Each generation uses fresh seeds that no other generation sees. Selection is by tournament, crossover is arithmetic, mutation is Gaussian, and the two best genomes are copied unchanged. This set was worse than the hand-picked weights on held-out games.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Cross-entropy method (v3)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Picture a cloud of possible weight sets. Try many of them, keep the best tenth, move the cloud's centre to them, and keep it wide enough to keep exploring. Repeat until the cloud stops moving.</p>
+      <p>This is the noisy cross-entropy method of Szita and Lorincz (2006), the approach usually used for Tetris. A Gaussian over the nine weights starts centred on the hand-picked set. Each iteration samples 20 weight sets, plays 3 fresh games each to game over (cap 100,000 pieces, matching the benchmark), keeps the top 15%, refits the mean and variance to them, and adds a shrinking amount of extra variance. The run was stopped after 6 iterations for time.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Features and weights</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Hand-picked</th><th class="num">Tuned v3 (CEM)</th><th class="num">GA v2</th></tr></thead><tbody>
+    <tr><td>landing height</td><td>Height of the piece's centre when it lands. Higher is worse.</td><td class="num">-1.00</td><td class="num">-2.50</td><td class="num">-0.35</td></tr>
+    <tr><td>eroded cells</td><td>Lines cleared times this piece's cells in them.</td><td class="num">+1.00</td><td class="num">+2.51</td><td class="num">-0.78</td></tr>
+    <tr><td>row transitions</td><td>Filled-to-empty changes along each row, walls counted as filled.</td><td class="num">-1.00</td><td class="num">-1.62</td><td class="num">+0.13</td></tr>
+    <tr><td>column transitions</td><td>Filled-to-empty changes up each column, floor counted as filled.</td><td class="num">-1.00</td><td class="num">-5.50</td><td class="num">-0.98</td></tr>
+    <tr><td>holes</td><td>Empty cells with a block somewhere above them.</td><td class="num">-4.00</td><td class="num">-5.01</td><td class="num">-1.18</td></tr>
+    <tr><td>wells</td><td>Cumulative well depth: a well of depth d adds 1 + 2 + ... + d.</td><td class="num">-1.00</td><td class="num">-2.47</td><td class="num">-0.16</td></tr>
+    <tr><td>aggregate height</td><td>Sum of the column heights.</td><td class="num">0.00</td><td class="num">-0.24</td><td class="num">-0.92</td></tr>
+    <tr><td>bumpiness</td><td>Sum of height differences between neighbouring columns.</td><td class="num">0.00</td><td class="num">+1.32</td><td class="num">-0.44</td></tr>
+    <tr><td>lines cleared</td><td>Full rows this placement completes.</td><td class="num">0.00</td><td class="num">-0.19</td><td class="num">+0.76</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The hand-picked set is the classic Dellacherie-style weighting on its six features, with zero on the other three; it was set by hand and never tuned here. The v3 set is the cross-entropy result, started from the hand-picked set. The v2 set is the GA result, from random starting weights. Weights only matter relative to each other, since the agent takes the highest score, so read them together: a large weight on one feature can be offset by a large weight on another.</p>
+
+  <h3 class="hiw-sub">Training</h3>
+  <p class="hiw-note">Training uses a 10-row board, a different board from the 20-row game you can play here. Training games use seeds from 200000 upward for the cross-entropy run and from 1000 upward for the GA, both separate from the benchmark seeds. The cross-entropy run had 20 samples per iteration, 3 games each, 6 iterations completed, and the final mean is the distribution's centre after iteration 6 (training fitness is the last elite mean, 6,869 lines). The GA had 16 genomes, 6 games each, 2,500-piece cap, and 16 generations (training fitness on its best genome's own seeds, 804.5 lines, which is optimistic). Both runs are logged in <code>results/</code>.</p>
+
+  <h3 class="hiw-sub">Held-out results</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Mean lines</th><th class="num">95% CI</th><th class="num">Median</th><th class="num">Mean pieces</th><th class="num">Hit cap</th></tr></thead><tbody>
+    <tr><td>random placement</td><td class="num">0.0</td><td class="num">± 0.1</td><td class="num">0</td><td class="num">14</td><td class="num">0 / 30</td></tr>
+    <tr><td>hand-picked weights</td><td class="num">2128.5</td><td class="num">± 895.6</td><td class="num">867</td><td class="num">5342</td><td class="num">0 / 30</td></tr>
+    <tr><td>GA v2 weights</td><td class="num">388.9</td><td class="num">± 109.0</td><td class="num">311</td><td class="num">993</td><td class="num">0 / 30</td></tr>
+    <tr><td>cross-entropy v3 weights</td><td class="num">6702.0</td><td class="num">± 2194.9</td><td class="num">6305</td><td class="num">16776</td><td class="num">0 / 30</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">30 seeds (50000 to 50029), 10-row board, no lookahead, every game played to game over with a 100,000-piece cap. No game reached the cap. The v3 row is the first run that beats hand-picked weights on these seeds, and the 95% intervals do not overlap. Caveats: the cross-entropy run was stopped early (6 iterations); there is one training run, not several; and the page plays the 20-row game, so these numbers are for the 10-row board. The earlier table on the 20-row board with a 2,000-piece cap is saturated (every survivor sits near 800 lines, the cell-count ceiling) and is kept in <code>results/tetris_benchmark.md</code>.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py">tetris/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py">tetris/features.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py">tetris/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/game.py">tetris/game.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py">tetris/evolve.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py">tetris/cem.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py">tetris/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/tuned.json">tetris/tuned.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard_v3.md">results/tetris_benchmark_hard_v3.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_log.jsonl">results/tetris_cem_log.jsonl</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_train_log.jsonl">results/tetris_train_log.jsonl</a></p>
+</section>
 </div>
 </div>
 

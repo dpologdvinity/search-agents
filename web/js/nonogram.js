@@ -619,15 +619,21 @@ async function solve() {
     banner('NO SOLUTION', 'these clues cannot all hold', C.red);
     log('no solution: the clues contradict each other', 'log-err');
   } else {
-    // Undecided: a budget was hit. Show the cells the search did prove, in green.
+    // Undecided: the server's time limit or a budget stopped the search. Show the cells it did prove, in green.
     setStatus('UNDECIDED');
     if (res.partial) {
       state.ded = Int8Array.from(res.partial.flat());
       paintAll();
       $('btn-ded-clear').disabled = false;
     }
-    banner('UNDECIDED: budget', 'the search stopped at its budget; the proved cells show in green', C.yellow);
-    log('undecided: the search hit its budget', 'log-info');
+    if (res.timed_out) {
+      const took = `${s.seconds.toFixed(1)} s`;
+      banner('UNDECIDED: time limit', `the server stopped the search after ${took}; the proved cells show in green`, C.yellow);
+      log(`undecided: the time limit ran out after ${took}`, 'log-info');
+    } else {
+      banner('UNDECIDED: budget', 'the search stopped at its budget; the proved cells show in green', C.yellow);
+      log('undecided: the search hit its budget', 'log-info');
+    }
   }
 }
 

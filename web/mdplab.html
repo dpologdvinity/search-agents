@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRIDWORLD MDP // SEARCH AGENTS</title>
+<meta name="description" content="A grid world with slippery moves, solved three ways: value iteration, policy iteration, and Q-learning that walks the grid. Paint walls, rewards and pits, then watch the values spread.">
+<meta property="og:title" content="GRIDWORLD MDP // SEARCH AGENTS">
+<meta property="og:description" content="Paint a grid world with rewards, pits and wind, then watch value iteration, policy iteration and Q-learning solve it.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/mdplab.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="mdplab.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">09 // PLANNING WITH A MODEL, LEARNING FROM EXPERIENCE</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="GRIDWORLD MDP">GRIDWORLD MDP</h1>
+      <div class="proj-pg-sub">Moves slip. Rewards pay, pits cost, and every step has a price. Three solvers work the same world: two plan from the model, and one learns by walking the grid.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">WORLD <span class="val" id="chip-world">—</span></span>
+        <span class="stat-chip">VI SWEEPS <span class="val" id="chip-vi">0</span></span>
+        <span class="stat-chip green">PI ROUNDS <span class="val" id="chip-pi">0</span></span>
+        <span class="stat-chip">Q EPISODES <span class="val" id="chip-q">0</span></span>
+        <span class="stat-chip">Q MATCHES OPTIMAL <span class="val" id="chip-agree">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+
+      <div class="section-title pink-ttl">THE WORLD</div>
+      <div class="viz-panel mdp-world">
+        <div class="mdp-row" role="group" aria-label="Presets">
+          <button class="cyber-btn" type="button" data-preset="cliff"><span class="btn-txt">CLIFF WALK</span></button>
+          <button class="cyber-btn" type="button" data-preset="rooms"><span class="btn-txt">FOUR ROOMS</span></button>
+          <button class="cyber-btn" type="button" data-preset="maze"><span class="btn-txt">MAZE</span></button>
+          <button class="cyber-btn" type="button" data-preset="windy"><span class="btn-txt">WINDY CORRIDOR</span></button>
+          <button class="cyber-btn purple" type="button" id="btn-clear"><span class="btn-txt">CLEAR</span></button>
+        </div>
+        <div class="mdp-row" role="group" aria-label="Paint tool">
+          <button class="cyber-btn green tool" type="button" data-tool="start" aria-pressed="false"><span class="btn-txt">S START</span></button>
+          <button class="cyber-btn tool" type="button" data-tool="wall" aria-pressed="false"><span class="btn-txt">▮ WALL</span></button>
+          <button class="cyber-btn green tool" type="button" data-tool="reward" aria-pressed="true"><span class="btn-txt">+ REWARD</span></button>
+          <button class="cyber-btn pink tool" type="button" data-tool="pit" aria-pressed="false"><span class="btn-txt">− PIT</span></button>
+          <button class="cyber-btn yellow tool" type="button" data-tool="cliff" aria-pressed="false"><span class="btn-txt">≈ CLIFF</span></button>
+          <button class="cyber-btn tool" type="button" data-tool="erase" aria-pressed="false"><span class="btn-txt">⌫ ERASE</span></button>
+        </div>
+        <canvas id="world" class="mdp-world-canvas" role="img" aria-label="Grid world. Click or drag to paint with the selected tool."></canvas>
+        <div class="field-hint" id="world-hint">Paint with the selected tool. Any change restarts all three solvers.</div>
+        <p class="mdp-blurb" id="preset-blurb"></p>
+      </div>
+
+      <div class="mdp-views" role="group" aria-label="Solver view">
+        <button class="cyber-btn" type="button" data-view="all" aria-pressed="true"><span class="btn-txt">SIDE BY SIDE</span></button>
+        <button class="cyber-btn" type="button" data-view="vi" aria-pressed="false"><span class="btn-txt">VALUE</span></button>
+        <button class="cyber-btn" type="button" data-view="pi" aria-pressed="false"><span class="btn-txt">POLICY</span></button>
+        <button class="cyber-btn" type="button" data-view="q" aria-pressed="false"><span class="btn-txt">Q-LEARNING</span></button>
+      </div>
+
+      <div class="mdp-trio" id="trio" data-view="all">
+
+        <article class="viz-panel mdp-panel" id="panel-vi" aria-labelledby="t-vi">
+          <div class="mdp-panel-head"><span class="viz-title" id="t-vi">VALUE ITERATION</span><span class="mdp-badge" id="vi-badge">RUNNING</span></div>
+          <div class="mdp-board-wrap"><canvas id="vi-board" class="mdp-board" role="img" aria-label="Value iteration: cell colour is the value, arrows are the greedy policy."></canvas></div>
+          <div class="mdp-status" id="vi-status"></div>
+          <div class="mdp-chart-label">BELLMAN RESIDUAL, LOG SCALE</div>
+          <canvas id="vi-chart" class="mdp-chart" role="img" aria-label="Bellman residual by sweep, dropping to the convergence threshold."></canvas>
+          <div class="mdp-btns">
+            <button class="cyber-btn green" type="button" id="vi-run"><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" type="button" id="vi-step"><span class="btn-txt">+1 SWEEP</span></button>
+            <button class="cyber-btn pink" type="button" id="vi-reset"><span class="btn-txt">↺ RESET</span></button>
+          </div>
+          <p class="field-hint">Each sweep sets every value to its best one-step look-ahead. Value spreads out from the rewards like heat, one step per sweep, until the residual is below the threshold.</p>
+        </article>
+
+        <article class="viz-panel mdp-panel" id="panel-pi" aria-labelledby="t-pi">
+          <div class="mdp-panel-head"><span class="viz-title" id="t-pi">POLICY ITERATION</span><span class="mdp-badge" id="pi-badge">EVALUATING</span></div>
+          <div class="mdp-board-wrap"><canvas id="pi-board" class="mdp-board" role="img" aria-label="Policy iteration: cell colour is the value of the current policy, arrows are the policy."></canvas></div>
+          <div class="mdp-status" id="pi-status"></div>
+          <div class="mdp-chart-label">EVALUATION RESIDUAL, LOG SCALE. TICKS MARK IMPROVEMENTS</div>
+          <canvas id="pi-chart" class="mdp-chart" role="img" aria-label="Evaluation residual by sweep, with a tick at each policy improvement."></canvas>
+          <div class="mdp-btns">
+            <button class="cyber-btn green" type="button" id="pi-run"><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" type="button" id="pi-step"><span class="btn-txt">+1 STEP</span></button>
+            <button class="cyber-btn pink" type="button" id="pi-reset"><span class="btn-txt">↺ RESET</span></button>
+          </div>
+          <p class="field-hint">Evaluation lets the values of the current policy settle. Improvement then switches every cell to its best action under those values. Stop when no cell changes.</p>
+        </article>
+
+        <article class="viz-panel mdp-panel" id="panel-q" aria-labelledby="t-q">
+          <div class="mdp-panel-head"><span class="viz-title" id="t-q">Q-LEARNING AGENT</span><span class="mdp-badge" id="q-badge">PAUSED</span></div>
+          <div class="mdp-board-wrap"><canvas id="q-board" class="mdp-board" role="img" aria-label="Q-learning agent walking the grid. Each cell shows Q for four actions as triangles."></canvas></div>
+          <div class="mdp-status" id="q-status"></div>
+          <div class="mdp-chart-label">EPISODE RETURN (LINE: 50-EPISODE AVERAGE)</div>
+          <canvas id="q-returns" class="mdp-chart" role="img" aria-label="Return of each learning episode, with a moving average."></canvas>
+          <div class="mdp-chart-label">SHARE OF REACHABLE CELLS WITH THE OPTIMAL ACTION</div>
+          <canvas id="q-agree" class="mdp-chart mdp-chart-short" role="img" aria-label="Share of reachable cells whose greedy action is optimal, by episode."></canvas>
+          <div class="mdp-btns">
+            <button class="cyber-btn green" type="button" id="q-run"><span class="btn-txt">▶ RUN</span></button>
+            <button class="cyber-btn purple" type="button" id="q-ff"><span class="btn-txt">» +1000 EPISODES</span></button>
+            <button class="cyber-btn pink" type="button" id="q-reset"><span class="btn-txt">↺ RESET</span></button>
+          </div>
+          <div class="mdp-q-opts">
+            <label class="field-lbl" for="q-algo">UPDATE RULE</label>
+            <select class="cyber-select" id="q-algo" aria-describedby="q-algo-note">
+              <option value="q" selected>Q-learning (off-policy)</option>
+              <option value="sarsa">SARSA (on-policy)</option>
+            </select>
+            <div class="field-hint" id="q-algo-note">Q-learning looks ahead to the best next action. SARSA looks ahead to the action it will actually take, so it respects its own exploration.</div>
+            <label class="mdp-check"><input type="checkbox" id="q-compare"> <span>COMPARE WITH OPTIMAL POLICY</span></label>
+          </div>
+          <p class="field-hint">The agent never sees the model. It walks by epsilon-greedy choice and corrects one Q(s, a) per step. Triangles: the four Q values of each cell, one per direction.</p>
+        </article>
+
+      </div>
+
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">THE MODEL</div>
+        <div class="stack">
+          <div class="mdp-field">
+            <div class="field-lbl">DISCOUNT γ <span class="mdp-val" id="gamma-val"></span></div>
+            <input class="mdp-range" id="gamma" type="range" min="0.5" max="0.99" step="0.01" aria-label="Discount gamma">
+            <div class="field-hint">How much a reward one step away is worth compared with now. Close to 1 looks far ahead.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">WIND: SLIP CHANCE <span class="mdp-val" id="slip-val"></span></div>
+            <input class="mdp-range" id="slip" type="range" min="0" max="0.5" step="0.01" aria-label="Slip probability">
+            <div class="field-hint">Each move goes sideways with this chance (half to each side). A move into a wall leaves you where you are.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">LIVING REWARD <span class="mdp-val" id="living-val"></span></div>
+            <input class="mdp-range" id="living" type="range" min="-1" max="0" step="0.01" aria-label="Living reward per step">
+            <div class="field-hint">Paid on every step. Negative means hurry.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">REWARD + <span class="mdp-val" id="reward-val"></span></div>
+            <input class="mdp-range" id="reward" type="range" min="0" max="10" step="0.5" aria-label="Reward cell payout">
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">PIT − <span class="mdp-val" id="pit-val"></span></div>
+            <input class="mdp-range" id="pit" type="range" min="0" max="10" step="0.5" aria-label="Pit cost, as a positive number">
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">SEED <span class="mdp-val" id="seed-val"></span></div>
+            <div class="mdp-seed">
+              <input class="cyber-input" id="seed" type="number" min="1" max="99999" inputmode="numeric" aria-label="Seed">
+              <button class="cyber-btn" type="button" id="btn-seed"><span class="btn-txt">⟲ NEW</span></button>
+            </div>
+            <div class="field-hint">Seeds the random starting policy and every episode the agent walks.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">CONVERGENCE THRESHOLD ε</div>
+            <select class="cyber-select" id="conv" aria-label="Convergence threshold">
+              <option value="0.01">1e-2</option>
+              <option value="0.001">1e-3</option>
+              <option value="0.0001" selected>1e-4</option>
+              <option value="0.000001">1e-6</option>
+            </select>
+          </div>
+          <label class="mdp-check"><input type="checkbox" id="numbers"> <span>SHOW NUMBERS ON THE BOARDS</span></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">THE AGENT</div>
+        <div class="stack">
+          <div class="mdp-field">
+            <div class="field-lbl">STEP SIZE α <span class="mdp-val" id="alpha-val"></span></div>
+            <input class="mdp-range" id="alpha" type="range" min="0.01" max="1" step="0.01" aria-label="Q-learning step size alpha">
+            <div class="field-hint">How far each step moves Q toward its target. Large is fast and noisy.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">EXPLORATION ε <span class="mdp-val" id="epsilon-val"></span></div>
+            <input class="mdp-range" id="epsilon" type="range" min="0" max="1" step="0.01" aria-label="Starting exploration rate">
+            <div class="field-hint">Chance of a random move. It decays once per episode.</div>
+          </div>
+          <div class="mdp-field">
+            <div class="field-lbl">DECAY PER EPISODE <span class="mdp-val" id="decay-val"></span></div>
+            <input class="mdp-range" id="decay" type="range" min="0.99" max="1" step="0.0005" aria-label="Exploration decay per episode">
+            <div class="field-hint">Exploration falls to its floor of 0.01 over a few thousand episodes at 0.999.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">SPEED</div>
+        <div class="mdp-speed" role="group" aria-label="Animation and learning speed">
+          <button class="cyber-btn" type="button" data-speed="0" aria-pressed="false"><span class="btn-txt">SLOW</span></button>
+          <button class="cyber-btn" type="button" data-speed="1" aria-pressed="true"><span class="btn-txt">NORMAL</span></button>
+          <button class="cyber-btn" type="button" data-speed="2" aria-pressed="false"><span class="btn-txt">FAST</span></button>
+          <button class="cyber-btn pink" type="button" data-speed="3" aria-pressed="false"><span class="btn-txt">TURBO</span></button>
+        </div>
+        <div class="field-hint" id="speed-note">Sweeps per frame for the planners; episodes per second for the agent (thousands at TURBO).</div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">READING THE BOARDS</div>
+        <div class="stack">
+          <div class="heuristic-card mdp-legend">
+            <div class="mdp-swatch-row"><span class="mdp-swatch mdp-swatch-neg"></span><span>negative value</span><span class="mdp-swatch mdp-swatch-zero"></span><span>zero</span><span class="mdp-swatch mdp-swatch-pos"></span><span>positive</span></div>
+            <div class="field-hint">Colour is the value: pink below zero, cyan above, brighter with magnitude.</div>
+          </div>
+          <div class="heuristic-card mdp-legend">
+            <div class="field-hint"><b>Arrows</b> show the chosen action in each cell. <b>Triangles</b> show Q for up, right, down and left. <b>Orb</b> is the agent, and its trail is the last few walks.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The grid is a Markov decision process: a set of cells, four moves, a chance that each move slips sideways, and a reward on each step. Two solvers compute the best behaviour from the full model, and Q-learning finds it from experience alone. All three run here in JavaScript, and a Python package (<code>python -m mdplab</code>) reproduces the same numbers for the same seed.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>The MDP</h3>
+      <p class="hiw-plain"><b>New to this?</b> Think of a robot on a tiled floor. Each turn it picks a direction, but the floor is slippery, so it sometimes goes sideways. Some tiles pay, some cost, and every turn costs a little. The task is to choose moves that earn the most over time.</p>
+      <p>An MDP is a tuple (S, A, P, R, γ). The states S are the cells the agent can stand on. The actions A are up, right, down and left. The transition P(s′ | s, a) is 1 − slip for the intended direction and slip / 2 for each perpendicular one; a move into a wall stays put. The reward R pays the living reward on every step, plus the payout of any + or − cell entered. A + or − cell ends the episode, and a C cell (the cliff) sends the agent back to the start.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The Bellman equation</h3>
+      <p class="hiw-plain"><b>New to this?</b> The value of a cell is the best you can expect from it: the reward of the next step plus the value of wherever you land, discounted a little. Q(s, a) is the same idea for one particular first move.</p>
+      <p>Q(s, a) = Σ<sub>s′</sub> P(s′ | s, a) · [ R(s, a, s′) + γ · V(s′) ] and V(s) = max<sub>a</sub> Q(s, a). A terminal cell has value 0, because nothing follows it. The optimal values are the unique solution of these equations, and the greedy policy (take the best action in every cell) is optimal.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Value iteration</h3>
+      <p class="hiw-plain"><b>New to this?</b> Start with every cell at zero. Then repeatedly update every cell from its neighbours. Each round carries information one step further from the rewards, so the values spread out like heat.</p>
+      <p>Sweep k sets V<sub>k+1</sub>(s) = max<sub>a</sub> Q(s, a) using V<sub>k</sub>. The Bellman residual is max<sub>s</sub> |V<sub>k+1</sub>(s) − V<sub>k</sub>(s)|. The update is a contraction: with discount γ the residual shrinks by at least a factor γ per sweep, so the stopping rule is a guarantee, not a guess. The policy is read off the final values.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Policy iteration</h3>
+      <p class="hiw-plain"><b>New to this?</b> Alternate two questions. First, if I follow this policy, what do I get? Second, given those values, where would I do better? Repeat until neither answer changes.</p>
+      <p>Evaluation solves V<sup>π</sup> for the current policy by sweeps of the same backup with a fixed action per cell. Improvement sets π(s) to the best action under V<sup>π</sup>, keeping the current action unless the new one is better by more than 10<sup>-9</sup>. The policy only improves, and there are finitely many policies, so it stops, and when no action changes the policy is optimal. Each round costs many evaluation sweeps but few improvements, which is why it often takes fewer rounds than value iteration takes sweeps.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Q-learning and SARSA</h3>
+      <p class="hiw-plain"><b>New to this?</b> The agent does not know the slips or the rewards in advance. It walks the grid, sometimes at random, and after each step nudges its estimate of "this move from this cell is worth this much" toward what it just saw. Over many walks the estimates settle.</p>
+      <p>After each step from s with action a, landing on s′ with reward r, the table moves by α · (target − Q(s, a)), where the target is r + γ · max<sub>a′</sub> Q(s′, a′) for Q-learning, and r + γ · Q(s′, a′) for SARSA, with a′ the action actually chosen next. A terminal s′ uses target = r. Actions are chosen ε-greedily: random with probability ε, otherwise the best Q, with ties broken at random. The learned greedy policy is the argmax of Q, and it is compared here with the exact optimal policy from value iteration.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why this value</th></tr></thead><tbody>
+    <tr><td>Discount γ</td><td>0.95 (cliff: 0.99)</td><td>Looks about 20 steps ahead in a 11-by-11 grid, so the goal in a far corner still matters. Sutton and Barto use 1 on the cliff; with 1, a deterministic starting policy can loop forever and policy iteration never settles, so the cliff uses 0.99.</td></tr>
+    <tr><td>Slip p</td><td>0.1 (windy: 0.3; cliff: 0)</td><td>Enough that the agent must plan around the pits, not walk straight through them. The slider stops at 0.5, where the intended move is still at least as likely as either slip.</td></tr>
+    <tr><td>Living reward</td><td>−0.04 (cliff: −1)</td><td>A small cost per step, so the agent prefers a shorter route to the same goal. The cliff uses the textbook −1.</td></tr>
+    <tr><td>Reward + and pit −</td><td>+1 and −1</td><td>The goal is worth more than the cost of walking to it, and a pit is as bad as a goal is good. The cliff's −100 is the textbook fall penalty.</td></tr>
+    <tr><td>Step size α</td><td>0.1 (cliff: 0.5)</td><td>Slips make each step's target noisy. With 0.5 the table jitters and the greedy policy flips between near-equal actions; 0.1 settles. The cliff keeps the textbook 0.5, which is fine when the world is deterministic.</td></tr>
+    <tr><td>Exploration ε</td><td>0.1, decaying to 0.01</td><td>Enough random moves to find the far goal and the pits. The cliff keeps ε = 0.1 constant, so SARSA's cautious route is a real consequence of exploration.</td></tr>
+    <tr><td>Decay per episode</td><td>0.999 (cliff: 1, constant)</td><td>Explore hard early and exploit later: from 0.1 at 0.999 the rate reaches its floor of 0.01 after about 2300 episodes. The cliff keeps ε fixed for the textbook comparison.</td></tr>
+    <tr><td>Convergence ε (planners)</td><td>1e-4 (choose 1e-2 to 1e-6)</td><td>Stop when no value changes by more than this. The values are then within about ε · γ / (1 − γ) of the optimum (about 0.002 at γ = 0.95 and ε = 1e-4), and the greedy policy is usually exact well before that.</td></tr>
+    <tr><td>Tie tolerance</td><td>1e-9</td><td>Two actions within 1e-9 count as tied, so rounding noise cannot flip a policy. The Python and JavaScript versions use the same value.</td></tr>
+    <tr><td>Random seed</td><td>1</td><td>Fixes the random starting policy and every episode. The same seed gives the same walks in the browser and in <code>python -m mdplab</code>.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The grid layouts, the rewards and the slip values were set by hand so each lesson shows: a shortcut through a pit, a corridor where the wind matters, a cliff with a textbook penalty. The discount, the step size and the exploration schedule are standard starting points, not tuned against a benchmark. The cliff's settings follow Sutton and Barto (2018, example 6.6), except for the discount, which is 0.99 for the reason given above. No parameter sweep is committed.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/mdplab/grid.py">mdplab/grid.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/mdplab/mdp.py">mdplab/mdp.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/mdplab/solve.py">mdplab/solve.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/mdplab/learn.py">mdplab/learn.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/mdplab/__main__.py">mdplab/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/mdplab-core.js">web/js/mdplab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/mdplab.js">web/js/mdplab.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/mdplab_api.py">server/mdplab_api.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_mdplab.py">tests/test_mdplab.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_mdplab_parity.py">tests/test_mdplab_parity.py</a></p>
+</section>
+  </div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/mdplab.js"></script>
+</body>
+</html>

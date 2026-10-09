@@ -26,6 +26,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -33,10 +34,12 @@
       <div class="proj-pg-tag">07 // A* ROUTES · APPROXIMATE Q-LEARNING</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="PAC-MAN">PAC-MAN</h1>
       <div class="proj-pg-sub">Eat every pellet and dodge the ghosts. The agent learned its moves by playing itself, and you can see the value it puts on each one.</div>
+      <div class="field-hint" id="matchup" role="status" aria-live="polite" style="margin-top:0.5rem"></div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip">MODE <span class="val" id="chip-mode">WATCH</span></span>
+        <span class="stat-chip">GHOSTS <span class="val" id="chip-ghosts">AI</span></span>
         <span class="stat-chip green">SCORE <span class="val" id="chip-score">0</span></span>
         <span class="stat-chip pink">PELLETS <span class="val" id="chip-pellets">—</span></span>
         <span class="stat-chip">TURN <span class="val" id="chip-turn">0</span></span>
@@ -91,6 +94,14 @@
             <div class="heuristic-card pm-card"><div class="field-hint" id="agent-desc"></div></div>
           </div>
           <div>
+            <div class="field-lbl">GHOSTS</div>
+            <select class="cyber-select" id="ghosts" style="width:100%">
+              <option value="ai" selected>AI ghosts (A* routes)</option>
+              <option value="chance">Chance (fixed odds)</option>
+            </select>
+            <div class="heuristic-card pm-card"><div class="field-hint" id="ghosts-desc"></div></div>
+          </div>
+          <div>
             <div class="field-lbl">SEED <span class="field-hint">(same seed, same ghosts)</span></div>
             <div class="inline">
               <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="7" style="flex:1">
@@ -100,6 +111,14 @@
           <div>
             <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
             <input class="cyber-range" id="speed" type="range" min="60" max="700" step="20" value="240" style="width:100%">
+          </div>
+          <div id="score-row">
+            <div class="field-lbl">SCORE <span class="field-hint">(across games, same settings)</span></div>
+            <div class="stat-chips" id="score"></div>
+            <div class="inline" style="margin-top:0.5rem">
+              <label class="field-hint"><input type="checkbox" id="auto-restart"> AUTO-RESTART</label>
+              <button class="cyber-btn" id="btn-reset-score" type="button"><span class="btn-txt">RESET SCORE</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -152,7 +171,7 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Pac-Man steps first each turn, then every ghost steps. The ghosts plan routes with A* search. The learned agent scores each legal move as a weighted sum of 13 hand-designed features, with weights learned from 3000 self-play games.</p>
+  <p class="hiw-lede">Pac-Man steps first each turn, then every ghost steps. The AI ghosts plan routes with A* search, or chance ghosts roll fixed odds. The learned agent scores each legal move as a weighted sum of 13 hand-designed features, with weights learned from 3000 self-play games.</p>
   <div class="hiw-grid">
     <article class="hiw-card">
       <h3>A* route search (the ghosts)</h3>
@@ -190,6 +209,13 @@
       <h3>Random (floor)</h3>
       <p class="hiw-plain"><b>New to this?</b> It rolls a die at each junction. It sets the floor any real strategy should beat.</p>
       <p>Picks uniformly among legal moves.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Chance ghosts (fixed odds)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Like rolling a die at each junction. The ghost does not look at the maze or at Pac-Man; it only rolls the table.</p>
+      <p>Each turn a chance ghost picks a direction from fixed odds, read relative to the way it last moved. The shares are renormalised over the directions that are open, so a ghost in a corridor with one way out takes it.</p>
+      <div id="odds-table"></div>
+      <p>No search and no lookahead. The shares were set by hand, not fitted to data. Choose it from the GHOSTS menu, or run <code>python -m pacman match</code> to play each agent against both ghost policies on the same seeds.</p>
     </article>
   </div>
 

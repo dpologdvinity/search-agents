@@ -183,7 +183,8 @@ def watch(lex: Lexicon, answer: str | None = None, seed: int | None = None, stra
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Play Wordle, watch the solver, or benchmark the strategies.")
+    parser = argparse.ArgumentParser(prog="python -m wordle",
+                                     description="Play Wordle, watch the solver, or benchmark the strategies.")
     sub = parser.add_subparsers(dest="cmd")
     p_play = sub.add_parser("play", help="you guess; the game scores it (the default)")
     p_play.add_argument("--answer", help="the secret word (must be one of the answers)")

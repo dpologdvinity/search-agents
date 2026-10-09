@@ -10,6 +10,8 @@
   cursor: pointer; touch-action: none;
 }
 .sn-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.sn-agent { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; }
+.sn-agent .field-lbl { margin-right: 0.2rem; }
 .sn-speed { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; justify-content: center; width: 100%; max-width: 480px; }
 .sn-speed input[type="range"] { flex: 1 1 160px; accent-color: var(--green); }
 
@@ -55,6 +57,12 @@
 .sn-champ-row span { color: var(--dim); }
 .sn-champ-row b { color: var(--text); font-weight: 600; text-align: right; }
 .sn-champ .field-hint { margin-top: 0.5rem; }
+.sn-results { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.7rem; }
+.sn-results th, .sn-results td { padding: 0.3rem 0.35rem; border-bottom: 1px dashed var(--border); text-align: right; }
+.sn-results th:first-child, .sn-results td:first-child { text-align: left; }
+.sn-results th { color: var(--dim); font-weight: 400; }
+.sn-results td { color: var(--text); }
+.sn-results tr.hl td { color: var(--green); }
 
 /* Phones: the pad appears, the network labels tighten, and bar labels shrink. */
 @media (max-width: 900px) {

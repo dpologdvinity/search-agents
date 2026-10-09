@@ -1,0 +1,16 @@
+{
+  "games": 40,
+  "board": 12,
+  "seed_base": 50000,
+  "moves": 19829,
+  "actions": {
+    "left": 2793,
+    "straight": 17033,
+    "right": 3
+  },
+  "shares": {
+    "left": 0.1409,
+    "straight": 0.859,
+    "right": 0.0002
+  }
+}

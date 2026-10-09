@@ -3,7 +3,7 @@
 // The physics, the policies and the rollout loop run here in JavaScript, ported line for line from
 // cartpole/env.py, cartpole/nets.py and cartpole/agents.py. The server supplies the trained weights
 // (exact float32 values, so both sides make the same decisions), the learning curves and the benchmark.
-// VERIFY AGAINST PYTHON asks the server for the same episode and compares every state, which tests the port.
+// VERIFY AGAINST PYTHON asks the server to replay an episode from its own start state and checks every step, which tests the port.
 //
 // Browser training is REINFORCE with a batch baseline, with the same equations as cartpole/train.py.
 // The network is stored as one flat vector, so Adam and the gradient are plain loops over it.
@@ -35,7 +35,8 @@ function rng(seed) {
   };
 }
 
-// Start state: each variable uniform in [-0.05, 0.05], as in CartPole.reset.
+// Start state: each variable uniform in [-0.05, 0.05], as in CartPole.reset. The values are not Python's for the same
+// seed: this generator (mulberry32) differs from cartpole/env.py's random.Random. Verify therefore starts from the server's states[0].
 function newState(seed) {
   const r = rng(seed);
   const u = () => (r() * 2 - 1) * INIT_RANGE;
@@ -698,19 +699,20 @@ async function loadBenchmark() {
   }
 }
 
-// ── Verify the port: the same episode in Python and JavaScript ──────────────────────────
+// ── Verify the port: a Python episode replayed step by step in JavaScript ───────────────
 async function verifyPort() {
   const out = $('verify-out');
   const name = state.agentName;
   if (name === 'random') { out.textContent = 'Pick a learned agent or PD: a random agent has no shared generator.'; return; }
   const seed = Math.max(0, Math.floor(Number($('seed').value) || 0));
-  out.textContent = 'asking the server for the same episode...';
+  out.textContent = 'asking the server to replay the episode from its own start state...';
   try {
     const py = await postJSON('/api/cartpole/rollout', { agent: name, seed, steps: MAX_STEPS });
     const agent = await loadAgent(name);
     // Each step is checked from the Python state, not from the JavaScript run's own state. The controllers
     // chatter around the switching surface, so one flipped decision would make a whole-episode run diverge.
-    // Checking step by step isolates each step's arithmetic and decision.
+    // Checking step by step isolates each step's arithmetic and decision. The first check starts from the server's
+    // states[0] (the Python start), not from newState(seed), which would give different values for the same seed.
     let worst = 0, mismatches = 0;
     for (let t = 0; t < py.actions.length; t++) {
       const [x, xd, th, thd] = py.states[t];

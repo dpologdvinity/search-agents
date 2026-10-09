@@ -33,7 +33,8 @@ def _row_features(row: int):
     """(empty count, increasing-order penalty, decreasing-order penalty, roughness, equal neighbours).
 
     Penalties are in tile exponents (log2 of tile values) over the row's
-    non-empty tiles; equal neighbours are adjacent cells holding the same tile.
+    non-empty tiles, so empty cells between two tiles are skipped. Equal
+    neighbours are adjacent cells holding the same tile.
     """
     cells = [(row >> (4 * i)) & 0xF for i in range(4)]
     tiles = [v for v in cells if v]
@@ -59,7 +60,15 @@ CORNER_SHIFTS = (0, 12, 48, 60)
 
 
 def features(board: int) -> tuple[float, ...]:
-    """The six features of one board, in FEATURES order."""
+    """The six features of one board, in FEATURES order.
+
+    Sign convention: every feature is oriented so that a larger value is
+    better. Penalties (monotonic, smooth) are zero or negative, rewards
+    (empty, corner, merges, max tile) are zero or positive, so a non-negative
+    weight makes the term reward order. The tuner bounds weights at zero. The
+    shipped smoothness weight is negative anyway: its run was unbounded, and
+    it rewards rougher rows and columns (see the README for the comparison).
+    """
     empty_t, up_t, down_t, rough_t, equal_t = _LISTS
     rows = [(board >> s) & ROW_MASK for s in (0, 16, 32, 48)]
     t = transpose(board)
@@ -94,12 +103,18 @@ def features_batch(boards: np.ndarray) -> np.ndarray:
     return np.stack([np.log2(empty + 1), monotonic, smooth, corner, merges, peak], axis=1).astype(np.float64)
 
 
+def load_weights(path=WEIGHTS) -> tuple[float, ...]:
+    """Feature weights in FEATURES order, from a file written by game2048.tune."""
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing; tune it with: python -m game2048.tune")
+    data = json.loads(path.read_text())
+    return tuple(data["weights"][f] for f in FEATURES)
+
+
 @lru_cache(maxsize=1)
 def tuned_weights() -> tuple[float, ...]:
-    if not WEIGHTS.exists():
-        raise FileNotFoundError(f"{WEIGHTS} missing; tune it with: python -m game2048.tune")
-    data = json.loads(WEIGHTS.read_text())
-    return tuple(data["weights"][f] for f in FEATURES)
+    return load_weights(WEIGHTS)
 
 
 def evaluate(board: int, weights=None) -> float:

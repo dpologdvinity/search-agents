@@ -33,7 +33,7 @@ from wordle import feedback, solver
 from wordle.feedback import ALL_GREEN, WORD_LENGTH
 from wordle.lexicon import Lexicon, get_lexicon
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -66,11 +66,6 @@ class GuessRequest(BaseModel):
     word: str = Field(min_length=WORD_LENGTH, max_length=WORD_LENGTH)
 
 
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
 async def _lexicon() -> Lexicon:
     # The first call builds the feedback table (a few seconds), so it runs off the event loop.
     return await asyncio.to_thread(get_lexicon)
@@ -98,7 +93,7 @@ async def meta():
 
 @router.post("/api/wordle/new")
 async def new_game(request: Request):
-    if not request.app.state.move_rate.allow(_client_key(request)):
+    if not request.app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     lex = await _lexicon()
     game_id = secrets.token_urlsafe(9)
@@ -111,14 +106,16 @@ async def new_game(request: Request):
 
 @router.post("/api/wordle/guess")
 async def guess(req: GuessRequest, request: Request):
-    if not request.app.state.move_rate.allow(_client_key(request)):
+    if not request.app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
+    # The await comes first: it yields to other requests, so the game is read and changed only after it.
+    # Checking "over" before an await let concurrent guesses pass the check and push past the six allowed.
+    lex = await _lexicon()
     game = _GAMES.get(req.game_id)
     if game is None:
         raise HTTPException(404, "unknown game: start a new one")
     if game.over:
         raise HTTPException(409, "this game is over: start a new one")
-    lex = await _lexicon()
     word = req.word.lower()
     if not word.isascii() or word not in lex.guess_index:
         raise HTTPException(400, "not in the allowed word list")
@@ -152,7 +149,7 @@ async def guess(req: GuessRequest, request: Request):
 @router.get("/api/wordle/hint")
 async def hint(request: Request, game_id: str | None = Query(None, max_length=64),
                strategy: Strategy = "entropy", top: int = Query(8, ge=1, le=20)):
-    if not request.app.state.rate.allow(_client_key(request)):
+    if not request.app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     lex = await _lexicon()
     if game_id is None:

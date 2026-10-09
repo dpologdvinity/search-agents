@@ -128,9 +128,11 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
   .c4-bar { width: 9px; }
 }
 
-/* Phones: a one-line nav. The logo drops its subtitle, and the games panel spans the bar below it. */
+/* Phones: a compact nav. The logo drops its subtitle, and the links wrap onto a second row when a page's active
+   item does not fit beside the GAMES and LABS menus, so the sound toggle is never pushed off screen. */
 @media (max-width: 600px) {
   .nav-logo span { display: none; }
+  .nav-links { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.2rem; }
   .nav-links a { padding-left: 0.6rem; padding-right: 0.6rem; font-size: 0.6rem; }
 }
 
@@ -192,6 +194,38 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
   border-left-color: var(--pink);
   text-shadow: 0 0 8px var(--pink);
 }
+/* Sound toggle (sfx.js): the last item of the nav links, a speaker icon. Waves show when sound is on, a slash when
+   off. Neon when on; the focus ring matches the games menu. */
+.sound-li { display: flex; align-items: center; margin-left: 0.4rem; }
+.sound-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.sound-toggle svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sound-toggle .body { fill: currentColor; stroke: none; }
+.sound-toggle .slash { display: none; }
+.sound-toggle[aria-pressed="false"] .wave { display: none; }
+.sound-toggle[aria-pressed="false"] .slash { display: inline; }
+.sound-toggle:hover { color: var(--cyan); border-color: var(--borderb); }
+.sound-toggle[aria-pressed="true"] {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.45), inset 0 0 8px rgba(0, 245, 255, 0.15);
+  text-shadow: 0 0 8px var(--cyan);
+}
+.sound-toggle:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+.sound-toggle .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 /* On phones the panel spans the bar under the nav instead of hanging from the GAMES item. */
 @media (max-width: 600px) {
   .games-menu { position: static; }
@@ -200,11 +234,14 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
 
 /* ── Game pages: maximalist layer ─────────────────────────────────────── */
 
-/* Perspective neon floor behind every game page. */
+/* Perspective neon floor behind every game page. The plane is clipped by a viewport-sized fixed wrapper
+   (.neon-floor, the first child of .proj-page on each game page). Its far, sideways projection would otherwise
+   count toward the document's scrollable width (scrollWidth ~8800px at 1280) until layout settles. */
 body:not(.landing-page)::before { z-index: 0; }
 .proj-page { position: relative; z-index: 2; }
-.proj-page::before {
-  content: ''; position: fixed; left: -50%; right: -50%; bottom: -10vh; height: 60vh; z-index: -1; pointer-events: none;
+.neon-floor { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.neon-floor-plane {
+  position: absolute; left: -50%; right: -50%; bottom: -10vh; height: 60vh;
   background-image:
     linear-gradient(rgba(255,0,160,0.35) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0,245,255,0.28) 1px, transparent 1px);
@@ -265,13 +302,15 @@ body:not(.landing-page)::before { z-index: 0; }
 @keyframes banner-in { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .proj-page::before, .np-grid, .c4-board, .g-board, .s-board { animation: none; }
+  .neon-floor-plane, .np-grid, .c4-board, .g-board, .s-board { animation: none; }
   .fx-banner { animation: none; }
 }
 
 /* Checkers */
-.ck-board { display: grid; grid-template-columns: repeat(8, 58px); border: 2px solid var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.35), inset 0 0 40px rgba(0,0,0,0.6); }
-.ck-cell { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; position: relative; }
+/* The board is n x n, with n set by --n (8, 10 or 12). It scales down to the width of its
+   container, so a 12x12 board still fits a 390 px phone; the squares stay square and tappable. */
+.ck-board { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); grid-template-rows: repeat(var(--n, 8), minmax(0, 1fr)); width: min(100%, calc(var(--n, 8) * 58px)); aspect-ratio: 1; container-type: inline-size; border: 2px solid var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.35), inset 0 0 40px rgba(0,0,0,0.6); }
+.ck-cell { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .ck-cell.light { background: rgba(155,0,255,0.07); }
 .ck-cell.dark { background: rgba(2,6,16,0.95); box-shadow: inset 0 0 0 1px rgba(255,0,160,0.12); }
 .ck-cell.trail { background: rgba(0,245,255,0.14); }
@@ -282,12 +321,13 @@ body:not(.landing-page)::before { z-index: 0; }
 .ck-piece { width: 76%; height: 76%; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
 .ck-piece.red { background: radial-gradient(circle at 35% 30%, #ff6ad0, var(--pink) 55%, #8a0058); box-shadow: 0 0 14px rgba(255,0,160,0.7), inset 0 -4px 0 rgba(0,0,0,0.35); }
 .ck-piece.white { background: radial-gradient(circle at 35% 30%, #ffffff, #9feeff 50%, #2b7f99); box-shadow: 0 0 14px rgba(0,245,255,0.6), inset 0 -4px 0 rgba(0,0,0,0.3); }
-.ck-piece.king::after { content: '♛'; font-size: 1.35rem; color: var(--yellow); text-shadow: 0 0 8px var(--yellow), 0 1px 0 #000; }
+.ck-piece.king::after { content: '♛'; font-size: clamp(0.6rem, 3.6cqw, 1.35rem); color: var(--yellow); text-shadow: 0 0 8px var(--yellow), 0 1px 0 #000; }
 .ck-piece.movable { cursor: pointer; outline: none; }
 .ck-piece.movable:hover, .ck-piece.movable:focus-visible { transform: scale(1.1); }
 .ck-piece.movable:focus-visible { box-shadow: 0 0 0 3px var(--yellow), 0 0 18px var(--yellow); }
 .ck-piece.selected { transform: scale(1.12); box-shadow: 0 0 0 3px var(--yellow), 0 0 22px var(--yellow); }
 
+.cyber-btn[hidden] { display: none; }
 .prune-meter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
 .prune-meter[hidden] { display: none; }
 .prune-row { border: 1px solid var(--border); background: rgba(0,0,0,0.3); padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.2rem; }
@@ -304,9 +344,6 @@ body:not(.landing-page)::before { z-index: 0; }
 .ck-root .sc { text-align: right; }
 
 @media (max-width: 600px) {
-  .ck-board { grid-template-columns: repeat(8, 40px); }
-  .ck-cell { width: 40px; height: 40px; }
-  .ck-piece.king::after { font-size: 1rem; }
   .prune-meter { grid-template-columns: 1fr; }
 }
 
@@ -348,4 +385,49 @@ body:not(.landing-page)::before { z-index: 0; }
 @media (max-width: 720px) {
   .hiw { padding: 1.6rem 1rem 2.4rem; }
   .hiw-table td:first-child { white-space: normal; }
+}
+
+/* AGENT OVERDRIVE (overdrive.js): a temporary layer on every page. Nothing here is part of the normal look. */
+.od-root { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
+.od-scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,245,255,0.09) 2px 3px);
+  animation: od-scan-roll 2.2s linear infinite; }
+@keyframes od-scan-roll { to { background-position: 0 60px; } }
+.od-pulse { position: absolute; inset: 0; box-shadow: inset 0 0 90px rgba(255,0,160,0.5), inset 0 0 24px rgba(0,245,255,0.35);
+  animation: od-pulse 1.6s ease-in-out infinite alternate; }
+@keyframes od-pulse { from { opacity: 0.4; } to { opacity: 1; } }
+.od-banner { position: absolute; left: 0; right: 0; top: 30%; text-align: center; padding: 1.1rem 1rem;
+  background: linear-gradient(90deg, transparent, rgba(2,6,16,0.94) 14%, rgba(2,6,16,0.94) 86%, transparent);
+  border-top: 2px solid var(--pink); border-bottom: 2px solid var(--pink); box-shadow: 0 0 40px rgba(255,0,160,0.5);
+  transition: opacity 0.6s; animation: od-storm 0.9s steps(4) 2; }
+.od-banner.out { opacity: 0; }
+.od-banner-title.glitch { display: block; font-size: clamp(2rem, 7vw, 4.4rem); color: #fff; line-height: 1.05;
+  text-shadow: 0 0 12px var(--pink), 0 0 32px var(--pink); }
+.od-banner-sub { display: block; font-family: var(--mono); font-size: 0.8rem; color: var(--yellow); margin-top: 0.4rem; letter-spacing: 0.08em; }
+/* A short glitch storm when the banner lands: a few jolts, then still. */
+@keyframes od-storm {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-7px) skewX(-4deg); }
+  50% { transform: translateX(6px) skewX(3deg); }
+  75% { transform: translateX(-3px); }
+  100% { transform: none; }
+}
+.od-badge { position: fixed; left: 12px; bottom: 12px; pointer-events: auto; cursor: pointer; font-family: var(--mono);
+  font-size: 0.68rem; letter-spacing: 0.08em; color: var(--yellow); background: rgba(2,6,16,0.9);
+  border: 1px solid var(--yellow); padding: 0.35rem 0.6rem; box-shadow: 0 0 12px rgba(255,230,0,0.4); }
+.od-badge:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+/* The hero race panel (landing.js): A* and BFS counters side by side, bottom-right of the hero. */
+.od-race { position: absolute; right: 14px; bottom: 14px; z-index: 3; width: min(340px, calc(100% - 28px)); pointer-events: none;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0.6rem 0.7rem; background: rgba(2,6,16,0.88);
+  border: 1px solid var(--border); font-family: var(--mono); font-size: 0.66rem; color: var(--dim); }
+.od-race-col { display: flex; flex-direction: column; gap: 0.2rem; }
+.od-race-col b { font-family: var(--orb); font-size: 0.8rem; color: var(--text); }
+.od-race-name { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.od-race-col.a .od-race-name { color: var(--cyan); }
+.od-race-col.a b { color: var(--cyan); }
+.od-race-col.b .od-race-name { color: var(--yellow); }
+.od-race-col.b b { color: var(--yellow); }
+.od-race-note { grid-column: 1 / -1; color: var(--text); border-top: 1px solid var(--border); padding-top: 0.35rem; }
+@media (prefers-reduced-motion: reduce) {
+  .od-scan, .od-pulse, .od-banner { animation: none; }
+  .od-banner-title.glitch::before, .od-banner-title.glitch::after { display: none; }
 }

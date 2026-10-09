@@ -2,7 +2,6 @@
 .venv
 **/__pycache__
 results
-!results/bandits_benchmark.json
 tests
 checkpoints
 *.pt

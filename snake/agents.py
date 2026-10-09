@@ -1,17 +1,22 @@
-"""The four agents: random, greedy, a BFS path planner with a tail-chasing safety check, and the evolved net.
+"""The agents: random, greedy, a BFS path planner, the evolved net, and the evolved evaluation function.
 
 Every agent is a function `policy(game) -> action`, so the benchmark, the watch command, and the
-evolver all drive them the same way. The planner is the strong classic baseline; the other two
+evolvers all drive them the same way. The planner is the strong classic baseline; random and greedy
 show what a snake gets from doing nothing clever (random), and from always heading for the food
-(greedy).
+(greedy). The two evolved agents are learned: a neural net whose 339 weights are evolved (evolve.py),
+and an evaluation function whose 8 weights are evolved over hand-built features of each move (cem.py).
 """
 
 from __future__ import annotations
 
 import random
 from collections import deque
+from functools import lru_cache
+
+import numpy as np
 
 from .board import DIRS, LEFT, RIGHT, STRAIGHT, Game, action_toward
+from .evaluator import evaluator, load_weights
 from .net import Net, load_champion
 
 Cell = tuple[int, int]
@@ -148,18 +153,33 @@ def champion_policy():
     return evolved(net)
 
 
+@lru_cache(maxsize=1)
+def _eval_weights() -> np.ndarray:
+    """The committed evaluation weights, read once."""
+    return load_weights()[0]
+
+
+def evolved_eval(weights=None):
+    """The policy for the evaluation function. Uses the committed weights unless `weights` is given."""
+    return evaluator(_eval_weights() if weights is None else weights)
+
+
 # name -> factory(seed) -> policy. The factories take a seed so random can be repeated per game.
-AGENT_NAMES = ("random", "greedy", "planner", "evolved")
+AGENT_NAMES = ("random", "greedy", "planner", "evolved", "evolved-eval")
 DESCRIPTIONS = {
     "random": "uniform over left, straight, right; no sensing at all",
     "greedy": "the safe move that ends closest to the food",
     "planner": "BFS path to the food, with a tail-chasing safety check",
     "evolved": "the neural net evolved by the genetic algorithm (the committed champion)",
+    "evolved-eval": "eight evolved weights over hand-built features of each move (the committed weights)",
 }
 
 
-def make_policy(name: str, seed: int = 0, net: Net | None = None):
-    """A fresh policy for one game. `net` is used only by "evolved"; the champion is loaded if it is None."""
+def make_policy(name: str, seed: int = 0, net: Net | None = None, weights=None):
+    """A fresh policy for one game. `net` is used only by "evolved", `weights` only by "evolved-eval".
+
+    Each defaults to the committed file when it is None.
+    """
     if name == "random":
         return random_policy(seed)
     if name == "greedy":
@@ -168,5 +188,7 @@ def make_policy(name: str, seed: int = 0, net: Net | None = None):
         return planner
     if name == "evolved":
         return evolved(net if net is not None else load_champion()[0])
+    if name == "evolved-eval":
+        return evolved_eval(weights)
     raise KeyError(f"unknown agent {name!r}; choose from {', '.join(AGENT_NAMES)}")
 

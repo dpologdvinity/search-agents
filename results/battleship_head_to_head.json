@@ -1,0 +1,19 @@
+{
+ "command": "PYTHONPATH=. .venv/bin/python -c 'import json, statistics; from math import sqrt; from battleship.benchmark import run; r = run(100, 1); h, p = r[\"hunt\"][\"shots\"], r[\"probability\"][\"shots\"]; s = [a - b for a, b in zip(h, p)]; n = len(s); m = statistics.fmean(s); se = statistics.stdev(s) / sqrt(n); print(json.dumps({\"fleets\": n, \"probability_fewer\": sum(x > 0 for x in s), \"ties\": sum(x == 0 for x in s), \"hunt_fewer\": sum(x < 0 for x in s), \"mean_shots_saved\": m, \"stdev_of_difference\": statistics.stdev(s), \"ci95_t_99df\": [m - 1.9842 * se, m + 1.9842 * se], \"ci95_normal\": [m - 1.96 * se, m + 1.96 * se]}))'",
+ "same_fleets_as": "python -m battleship benchmark --games 100 --seed 1",
+ "interval_method": "paired per-fleet difference (hunt minus probability); t interval with 99 df, normal interval also given",
+ "fleets": 100,
+ "probability_fewer": 67,
+ "ties": 3,
+ "hunt_fewer": 30,
+ "mean_shots_saved": 5.96,
+ "stdev_of_difference": 11.45647891330094,
+ "ci95_t_99df": [
+  3.6868054540228274,
+  8.233194545977172
+ ],
+ "ci95_normal": [
+  3.7145301329930156,
+  8.205469867006984
+ ]
+}

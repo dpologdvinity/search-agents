@@ -7,9 +7,14 @@ return (Szubert and Jaskowski, 2014):
     V(s'_prev) += alpha * (r + V(s'_next) - V(s'_prev))
 
 with target 0 when the game ends. All games advance in lockstep as NumPy
-arrays; a finished game restarts immediately.
+arrays; a finished game restarts immediately. Tables are trained in float32
+and written to --out as float16 (see game2048.ntuple), so a resumed run starts
+from the rounded values.
 
-    python -m game2048.train_td --minutes 60
+    python -m game2048.train_td --minutes 70 --games 1000 --alpha 0.1 --out /tmp/ntuple_2048.npz
+
+The shipped tables are game2048/data/ntuple_2048.npz, the default --out, so write to another path
+first and copy the result over only when it is meant to ship.
 """
 
 from __future__ import annotations
@@ -23,7 +28,7 @@ from pathlib import Path
 import numpy as np
 
 from .batch import max_exponent_batch, move_batch, new_games, spawn_batch
-from .ntuple import PATTERNS, SYMMETRIES, WEIGHTS, NTupleNetwork, indices_batch
+from .ntuple import PATTERNS, SYMMETRIES, WEIGHTS, NTupleNetwork
 
 
 def td_update(net: NTupleNetwork, boards: np.ndarray, delta: np.ndarray, alpha: float):
@@ -35,27 +40,31 @@ def td_update(net: NTupleNetwork, boards: np.ndarray, delta: np.ndarray, alpha: 
     batch size, which diverges. Averaging per weight keeps every weight's
     step at alpha * (mean error) regardless of batch size.
     """
-    idx = indices_batch(boards)  # (patterns, symmetries, B)
-    per_feature = np.broadcast_to(delta, idx.shape[1:]).ravel()
-    for p in range(len(PATTERNS)):
-        used, inverse = np.unique(idx[p].ravel(), return_inverse=True)
+    for table, idx in zip(net.tables, net.indices_batch(boards)):  # idx: (symmetries, B)
+        per_feature = np.broadcast_to(delta, idx.shape).ravel()
+        used, inverse = np.unique(idx.ravel(), return_inverse=True)
         total = np.bincount(inverse, weights=per_feature)
         count = np.bincount(inverse)
-        net.weights[p][used] += (alpha * total / count).astype(np.float32)
+        table[used] += (alpha * total / count).astype(table.dtype)
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--minutes", type=float, default=60)
     ap.add_argument("--games", type=int, default=1000, help="games played in parallel")
-    ap.add_argument("--alpha", type=float, default=0.1, help="total step size, split across features")
+    ap.add_argument("--alpha", type=float, default=0.1, help="total step size, split across the 48 lookups")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--out", type=Path, default=WEIGHTS, help="where to write the network")
     ap.add_argument("--log", type=Path, default=Path("results/game2048_train_log.jsonl"))
     args = ap.parse_args(argv)
 
     rng = np.random.default_rng(args.seed)
-    net = NTupleNetwork.load() if args.resume and WEIGHTS.exists() else NTupleNetwork()
+    if args.resume and args.out.exists():
+        net = NTupleNetwork.load(args.out, dtype=np.float32)
+    else:
+        net = NTupleNetwork()
+    # Each board uses len(PATTERNS) * len(SYMMETRIES) lookups; split the step across them.
     alpha = args.alpha / (len(PATTERNS) * len(SYMMETRIES))
 
     n = args.games
@@ -68,6 +77,17 @@ def main(argv=None):
     args.log.parent.mkdir(parents=True, exist_ok=True)
     log = args.log.open("a" if args.resume else "w")
     start = last_log = time.time()
+
+    def log_record():
+        """Append the statistics of the recent finished games to the log and print them."""
+        s = np.array([x[0] for x in recent])
+        m = np.array([x[1] for x in recent])
+        record = {"minutes": round((time.time() - start) / 60, 2), "games": finished,
+                  "mean_score": float(s.mean()),
+                  **{f"reach_{1 << k}": float((m >= k).mean()) for k in (10, 11, 12, 13)}}
+        log.write(json.dumps(record) + "\n")
+        log.flush()
+        print(json.dumps(record), flush=True)
 
     while time.time() - start < args.minutes * 60:
         # Evaluate all four moves for every game.
@@ -113,17 +133,14 @@ def main(argv=None):
 
         if time.time() - last_log > 60 and recent:
             last_log = time.time()
-            s = np.array([x[0] for x in recent])
-            m = np.array([x[1] for x in recent])
-            record = {"minutes": round((time.time() - start) / 60, 2), "games": finished,
-                      "mean_score": float(s.mean()),
-                      **{f"reach_{1 << k}": float((m >= k).mean()) for k in (10, 11, 12, 13)}}
-            log.write(json.dumps(record) + "\n")
-            log.flush()
-            print(json.dumps(record), flush=True)
-            net.save()
-    net.save()
-    print(f"wrote {WEIGHTS} after {finished} games")
+            log_record()
+            net.save(args.out)
+    # One last record, so the log also covers the time after the final full minute.
+    if recent:
+        log_record()
+    log.close()
+    net.save(args.out)
+    print(f"wrote {args.out} after {finished} games")
 
 
 if __name__ == "__main__":

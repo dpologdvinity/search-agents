@@ -3,7 +3,7 @@
 A placement is a rotation index, a column, and the piece's resulting board. The piece is dropped
 straight down from the spawn row, which is how Dellacherie-style bots assume it moves. Sliding a piece
 sideways around overhangs is ignored: the search only asks which resting places are reachable in
-principle. A typical piece has 30 to 40 legal placements.
+principle. On an empty board the counts are 9 for O, 17 for I, S and Z, and 34 for T, J and L.
 
 With one-piece lookahead the search looks at the next (preview) piece too. For each of the best few
 one-piece candidates (top_k, a beam), it finds the best placement of the preview piece on the resulting

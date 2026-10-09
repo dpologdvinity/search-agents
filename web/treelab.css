@@ -1,0 +1,125 @@
+/* Tree lab page. Loaded after style.css and app.css. The plane and the tree diagram are the two stages:
+   the plane is a square canvas that scales to the column; the diagram is an SVG that scrolls and zooms, so it
+   stays legible at 390px. */
+
+.tl-page .proj-game-col { min-width: 0; }
+.tl-page .proj-ctrl-col { min-width: 0; }
+
+/* ── Mode tabs ─────────────────────────────────────────────────────────── */
+.tl-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+.tl-tab { opacity: 0.6; }
+.tl-tab.act { opacity: 1; box-shadow: 0 0 18px rgba(0,245,255,0.45); }
+.tl-tab[aria-selected="true"] { border-color: var(--pink); color: var(--pink); }
+
+/* ── Plane ─────────────────────────────────────────────────────────────── */
+.tl-stage { display: flex; flex-direction: column; gap: 0.6rem; }
+.tl-plane-wrap {
+  position: relative; width: 100%; max-width: 560px; margin: 0 auto;
+  border: 2px solid var(--cyan); background: #02050d;
+  box-shadow: 0 0 28px rgba(0,245,255,0.22), inset 0 0 40px rgba(0,0,0,0.7);
+}
+.tl-plane-wrap::after { /* scanlines over the plane */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 3px);
+}
+#tl-plane { display: block; width: 100%; aspect-ratio: 1 / 1; cursor: crosshair; touch-action: none; }
+.tl-readout-line {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--text); min-height: 2.2em;
+  border-left: 2px solid var(--yellow); padding: 0.2rem 0.5rem; background: rgba(255,230,0,0.05);
+}
+
+.tl-paint { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.7rem; justify-content: center; }
+.tl-swatches { display: flex; gap: 0.4rem; }
+.tl-swatch {
+  width: 40px; height: 40px; min-width: 44px; min-height: 44px; border: 2px solid var(--sw); background: rgba(0,0,0,0.5);
+  color: var(--sw); font-family: var(--orb); font-size: 0.8rem; cursor: pointer; border-radius: 50%;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sw) 40%, transparent);
+  transition: transform 0.12s, box-shadow 0.2s, background 0.2s;
+}
+.tl-swatch:hover { transform: translateY(-1px); }
+.tl-swatch[aria-checked="true"] { background: var(--sw); color: #02050d; box-shadow: 0 0 18px var(--sw); }
+.tl-swatch:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.tl-swatch[hidden] { display: none; }
+.tl-inline-lbl { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; color: var(--dim); display: flex; align-items: center; gap: 0.4rem; }
+.tl-inline-lbl input { width: 110px; }
+#tl-erase[aria-pressed="true"] { border-color: var(--red); color: var(--red); box-shadow: 0 0 14px rgba(255,59,59,0.5); }
+
+/* ── Section heads ─────────────────────────────────────────────────────── */
+.tl-section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin: 1.2rem 0 0.6rem; }
+.tl-section-head .section-title { margin: 0; }
+.tl-zoom { display: flex; align-items: center; gap: 0.35rem; }
+.tl-zoom .cyber-btn { min-width: 44px; min-height: 36px; padding: 0.2rem 0.6rem; }
+.tl-zoom-val { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); min-width: 3.5em; text-align: center; }
+.tl-legend { margin-top: 0.4rem; }
+.tl-legend-keys { font-family: var(--mono); font-size: 0.66rem; color: var(--dim); display: flex; align-items: center; gap: 0.3rem; }
+.tl-key { display: inline-block; width: 14px; height: 3px; background: var(--k); box-shadow: 0 0 6px var(--k); margin-left: 0.6rem; }
+.tl-key + span, .tl-key ~ span { color: var(--text); }
+
+/* ── Tree diagram ──────────────────────────────────────────────────────── */
+.tl-tree-wrap {
+  position: relative; overflow: auto; height: min(420px, 62vh); min-height: 240px;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+#tl-svg { display: block; font-family: var(--mono); }
+.tl-tree-empty {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 0.75rem; color: var(--dim); text-align: center; padding: 1rem;
+}
+.tl-tree-wrap.empty .tl-tree-empty { display: flex; }
+
+.tl-edge { fill: none; stroke: rgba(0,245,255,0.35); stroke-width: 1.5; }
+.tl-edge.hot { stroke: var(--yellow); stroke-width: 2.5; filter: drop-shadow(0 0 4px var(--yellow)); }
+.tl-edge-lbl { font-size: 10px; fill: var(--dim); }
+
+.tl-node rect.tl-box { fill: #05080f; stroke: var(--cyan); stroke-width: 1.5; }
+.tl-node.split rect.tl-box { stroke: var(--cyan); }
+.tl-node.leaf rect.tl-box { stroke: var(--c, var(--green)); }
+.tl-node.pending rect.tl-box { stroke: var(--dim); stroke-dasharray: 5 4; fill: rgba(74,122,155,0.08); }
+.tl-node .tl-rule { font-size: 12px; fill: var(--cyan); font-weight: 700; }
+.tl-node.leaf .tl-rule { fill: var(--c, var(--green)); }
+.tl-node .tl-meta { font-size: 10px; fill: var(--text); opacity: 0.85; }
+.tl-node.pending .tl-meta, .tl-node.pending .tl-rule { fill: var(--dim); }
+.tl-node.hot rect.tl-box { stroke: var(--yellow); stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(255,230,0,0.8)); }
+.tl-node.lit rect.tl-box { animation: tl-lit 1.6s ease-in-out infinite; }
+.tl-node.lit .tl-rule { filter: drop-shadow(0 0 5px var(--c, var(--green))); }
+.tl-node.fresh { animation: tl-grow 0.5s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes tl-lit {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--c, var(--green))); }
+  50% { filter: drop-shadow(0 0 9px var(--c, var(--green))); }
+}
+@keyframes tl-grow { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+.tl-bar-bg { fill: rgba(255,255,255,0.05); }
+
+/* ── Accuracy curve ────────────────────────────────────────────────────── */
+.tl-curve-wrap { border: 1px solid var(--border); background: rgba(0,0,0,0.3); height: 180px; position: relative; }
+#tl-curve { display: block; width: 100%; height: 100%; }
+
+/* ── Controls ──────────────────────────────────────────────────────────── */
+.tl-check { display: flex; align-items: flex-start; gap: 0.5rem; font-family: var(--raj); font-size: 0.92rem; color: var(--text); cursor: pointer; }
+.tl-check input { margin-top: 0.3rem; accent-color: var(--pink); width: 16px; height: 16px; }
+.tl-playback { gap: 0.4rem; flex-wrap: wrap; }
+.tl-playback .cyber-btn { flex: 1 1 110px; }
+.tl-big { font-family: var(--orb); font-size: 1.6rem; color: var(--cyan); text-shadow: 0 0 10px rgba(0,245,255,0.6); }
+.tl-big.green { color: var(--green); text-shadow: 0 0 10px rgba(0,255,136,0.6); }
+.tl-forest-stats { gap: 0.3rem; }
+.tl-imp { display: flex; flex-direction: column; gap: 0.45rem; }
+.tl-imp-row { display: grid; grid-template-columns: 4.5em 1fr 3.6em; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.7rem; color: var(--text); }
+.tl-imp-track { height: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); }
+.tl-imp-bar { height: 100%; background: linear-gradient(90deg, var(--pink), var(--cyan)); box-shadow: 0 0 8px rgba(255,0,160,0.5); transition: width 0.4s; }
+.tl-readout { font-family: var(--mono); font-size: 0.7rem; color: var(--text); line-height: 1.6; }
+.tl-readout .row { display: flex; justify-content: space-between; gap: 0.5rem; border-bottom: 1px dashed rgba(0,245,255,0.15); padding: 0.15rem 0; }
+.tl-readout .row b { color: var(--cyan); font-weight: 400; }
+.tl-readout .warn { color: var(--yellow); margin-top: 0.4rem; }
+.tl-readout .ok { color: var(--green); margin-top: 0.4rem; }
+
+/* ── Small screens ─────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tl-paint { gap: 0.4rem; }
+  .tl-swatch { width: 44px; height: 44px; }
+  .tl-tree-wrap { height: 340px; }
+  .tl-section-head .section-title { font-size: 0.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-node.lit rect.tl-box, .tl-node.fresh { animation: none; }
+}

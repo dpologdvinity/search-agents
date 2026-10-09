@@ -8,5 +8,5 @@ game.py      the seeded 7-bag, the policies (random, greedy, lookahead), and the
 evolve.py    the genetic algorithm that tunes the weights (python -m tetris evolve)
 benchmark.py the comparison of four strategies on the same seeded games (python -m tetris benchmark)
 terminal.py  turn-based play in the terminal, with the agent's hint (python -m tetris play)
-tuned.py     loads tuned.json, the committed GA result
+tuned.py     loads tuned.json, the committed tuned weights (cross-entropy v3)
 """

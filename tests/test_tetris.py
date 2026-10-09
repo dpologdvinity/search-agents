@@ -10,13 +10,13 @@ import pytest
 from tetris import __main__ as cli
 from tetris.benchmark import run_benchmark
 from tetris.board import FULL, H, W, drop_row, empty_board, lock, render
-from tetris.evolve import GAConfig, evolve
+from tetris.evolve import GAConfig, evolve, generation_seeds
 from tetris.features import FEATURES, HAND_WEIGHTS, ROW_TRANSITIONS, board_features
 from tetris.game import PieceBag, greedy_policy, lookahead_policy, play, random_policy
 from tetris.pieces import PIECES, ROTATIONS
 from tetris.search import best_move, legal_moves
 from tetris.terminal import Game, run
-from tetris.tuned import load_tuned
+from tetris.tuned import TUNED_PATH, load_tuned
 
 ROOT = Path(__file__).resolve().parent.parent
 ENGINE = ROOT / "web" / "js" / "tetris_engine.js"
@@ -183,8 +183,8 @@ def test_committed_tuned_weights_match_the_feature_set():
     doc = load_tuned()
     assert doc["features"] == list(FEATURES)
     assert len(doc["weights"]) == 9
-    assert len(doc["history"]) == doc["config"]["generations"] + 1
-    assert doc["config"]["board_height"] == 10  # tuned on the narrow, harder board
+    assert doc["history"] and {"best", "mean"} <= set(doc["history"][0])
+    assert doc["config"].get("board_height", doc["config"].get("height")) == 10  # tuned on the narrow, harder board
 
 
 def test_games_run_on_a_shorter_board():
@@ -218,6 +218,15 @@ def test_terminal_movement_is_bounded():
     for _ in range(20):
         g.move(1)
     assert g.x + ROTATIONS[g.piece][g.rot].width == W
+
+
+def test_terminal_end_of_input_is_not_reported_as_game_over():
+    # An empty stdin ends the loop without a game over, so the message must say the input ended.
+    out = io.StringIO()
+    assert run(seed=3, weights=HAND_WEIGHTS, stdin=io.StringIO(""), stdout=out) == 0
+    text = out.getvalue()
+    assert "input ended after 0 lines in 1 pieces." in text
+    assert "game over" not in text
 
 
 def test_cli_watch_runs_and_reports_the_cap(capsys):
@@ -279,3 +288,21 @@ def test_js_engine_matches_python_placements_and_features(tmp_path):
         for m, j in zip(py_moves, js_moves):
             assert j["features"] == pytest.approx(list(m.features), abs=1e-9)
             assert j["score"] == pytest.approx(m.score, abs=1e-9)
+
+
+def test_cem_noise_shrinks_to_its_floor_and_seeds_are_disjoint():
+    from tetris.cem import CEM_SEED_BASE, CEMConfig, iteration_seeds, noise
+    cfg = CEMConfig()
+    assert noise(0, cfg) == cfg.noise0
+    assert noise(10**6, cfg) == cfg.noise_min
+    assert noise(5, cfg) > noise(6, cfg) or noise(6, cfg) == cfg.noise_min
+    seeds = iteration_seeds(3, 3)
+    assert len(set(seeds)) == 3 and all(s >= CEM_SEED_BASE for s in seeds)
+    assert not set(seeds) & set(generation_seeds(0, 100))  # disjoint from the GA's training seeds
+
+
+def test_evolve_default_out_is_not_the_shipped_weights():
+    """`evolve` writes its result to results/, so a plain run cannot overwrite the default AI's tuned.json."""
+    args = cli.build_parser().parse_args(["evolve"])
+    assert Path(args.out) != TUNED_PATH
+    assert Path(args.out).parent == cli.RESULTS

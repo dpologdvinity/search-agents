@@ -8,8 +8,10 @@ POST /api/cartpole/rollout             {"agent": "...", "seed": 1, "steps": 500}
 
 The page runs the physics and the policy in JavaScript, so almost everything above is static
 data. The rollout endpoint lets the page check that its JavaScript port matches the Python
-physics: the same agent and seed must give the same states. Rollouts cost a few milliseconds
-of CPU, so they go through the same per-client rate limit as the other move endpoints.
+physics: from the server's start state (states[0]), each step's action and next state must match.
+The browser's own start state for a seed differs from Python's (different generators), so the check
+never starts from it. Rollouts cost a few milliseconds of CPU, so they go through the same per-client
+rate limit as the other move endpoints.
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ from cartpole.env import ACTIONS, MAX_STEPS, THETA_LIMIT, X_LIMIT, run_episode
 from cartpole.nets import OBS_SCALE
 from cartpole.train import ALGOS, GAMMA, HIDDEN, VALUE_SCALE
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -37,11 +39,6 @@ class RolloutRequest(BaseModel):
     agent: str = "reinforce"
     seed: int = Field(0, ge=0, le=2**31 - 1)
     steps: int = Field(MAX_STEPS, ge=1, le=MAX_STEPS)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 @functools.cache
@@ -125,7 +122,7 @@ async def rollout(req: RolloutRequest, request: Request):
     app = request.app
     if req.agent not in AGENT_NAMES:
         raise HTTPException(400, f"unknown agent {req.agent!r}")
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
         async with app.state.slots.acquire():

@@ -1,6 +1,8 @@
-"""Heads-up Leduc hold'em against a CFR+ bot, plus training, exploitability, and the benchmark.
+"""Heads-up Leduc hold'em against a CFR+ bot or the chance player, plus training, exploitability, and the benchmark.
 
-    python -m poker                         # play Leduc against the bot (seats alternate each hand)
+    python -m poker                         # play Leduc against the CFR+ bot (seats alternate each hand)
+    python -m poker --opponent chance       # play against chance: fixed action odds, ignores its card
+    python -m poker match --opponent chance --hands 20000 --seed 1   # CFR+ against chance, no typing
     python -m poker train --save            # train CFR and CFR+ for Leduc, write the committed files
     python -m poker train --game kuhn       # train Kuhn and check the game value against -1/18
     python -m poker exploit                 # best responses and exploitability of the committed strategy
@@ -17,18 +19,27 @@ from __future__ import annotations
 import argparse
 import random
 import sys
+import time
 
 from . import strategy
 from .betting import BET, CALL, CHECK, FOLD, RAISE
-from .bots import deal
+from .bots import OPPONENTS, CFRBot, deal, head_to_head, make_opponent
 from .leduc import BET_SIZES, card_name
 from .tree import expected_value, exploitability
+
+# How each opponent is named in the session banner and the match report. The names say which algorithm runs.
+OPPONENT_LABELS = {
+    "cfr": "CFR+ average strategy",
+    "chance": "Chance (fixed odds, ignores its card)",
+}
 
 ACTION_WORDS = {
     "k": CHECK, "check": CHECK, "b": BET, "bet": BET, "c": CALL, "call": CALL,
     "r": RAISE, "raise": RAISE, "f": FOLD, "fold": FOLD,
 }
-LETTER_NAME = {CHECK: "checks", BET: "bets", CALL: "calls", RAISE: "raises", FOLD: "folds"}
+# The same actions as they read after "you" (base verb) and after "the bot" (third person).
+YOU_WORDS = {CHECK: "check", BET: "bet", CALL: "call", RAISE: "raise", FOLD: "fold"}
+BOT_WORDS = {CHECK: "checks", BET: "bets", CALL: "calls", RAISE: "raises", FOLD: "folds"}
 
 
 class Quit(Exception):
@@ -39,12 +50,13 @@ def _public_shown(state) -> bool:
     return state.public is not None and "/" in state.hist
 
 
-def _describe(state, action: str) -> str:
-    """"checks", or "bets 2" with the size of the round the action is in (round 1 is 2, round 2 is 4)."""
+def _describe(state, action: str, words: dict[str, str]) -> str:
+    """The action in the given wording, with the bet size for bets and raises: "check", or "bet 2" in
+    round 1 (round 2 is 4). `words` is YOU_WORDS after "you" and BOT_WORDS after "the bot"."""
     if action in (BET, RAISE):
         size = BET_SIZES[1] if "/" in state.hist else BET_SIZES[0]
-        return f"{LETTER_NAME[action]} {size}"
-    return LETTER_NAME[action]
+        return f"{words[action]} {size}"
+    return words[action]
 
 
 def _legal_text(actions) -> str:
@@ -52,9 +64,15 @@ def _legal_text(actions) -> str:
     return ", ".join(names[a] for a in actions)
 
 
-def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, out=print) -> float:
-    """Play one hand with the human in seat `me`. Returns the human's net chips for the hand."""
+def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, out=print, bot=None) -> float:
+    """Play one hand with the human in seat `me`. Returns the human's net chips for the hand.
+
+    `bot` is the opponent; it defaults to the CFR+ bot that plays `bot_table`. The hint always reads
+    `bot_table`, because the equilibrium mix is the human's own advice whoever the opponent is.
+    """
     opp = 1 - me
+    if bot is None:
+        bot = CFRBot(bot_table)
     shown_public = False
     while not state.is_terminal():
         if _public_shown(state) and not shown_public:
@@ -82,13 +100,13 @@ def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, o
                     out(f"  '{text}' is not a legal choice here. Legal: {_legal_text(acts)}, h=hint, q=quit")
                     continue
                 break
-            out(f"  you {_describe(state, action)}")
+            out(f"  you {_describe(state, action, YOU_WORDS)}")
             state = state.apply(action)
         else:
             acts = state.actions()
-            action = strategy.sample(bot_table[state.infoset(opp)], rng)
+            action = bot.act(state, rng)
             assert action in acts
-            out(f"  the bot {_describe(state, action)}")
+            out(f"  the bot {_describe(state, action, BOT_WORDS)}")
             state = state.apply(action)
     payoff = state.payoff() if me == 0 else -state.payoff()
     bot_card = card_name(state.cards[opp])
@@ -98,20 +116,26 @@ def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, o
     return payoff
 
 
-def session(seed: int | None, table: dict, read=input, out=print, hands: int | None = None) -> None:
+def session(seed: int | None, table: dict, read=input, out=print, hands: int | None = None,
+            opponent: str = "cfr") -> None:
     """Keep dealing hands until q, EOF, or `hands` hands. Seats alternate, so each player gets both."""
     rng = random.Random(seed)
+    bot = make_opponent(opponent, table)
     net = 0.0
     played = 0
     out("Leduc hold'em. Six cards (two each of J, Q, K), a public card after round 1, bets of "
         f"{BET_SIZES[0]} then {BET_SIZES[1]}, at most two bets or raises a round.")
-    out("The bot plays the CFR+ average strategy. Type h at any decision to see its equilibrium mix.")
+    if opponent == "cfr":
+        out("The bot plays the CFR+ average strategy. Type h at any decision to see its equilibrium mix.")
+    else:
+        out(f"The bot plays {OPPONENT_LABELS[opponent]}: its moves ignore its card. "
+            "Type h at any decision to see the equilibrium mix for your card.")
     try:
         while hands is None or played < hands:
             state = deal(rng)
             me = played % 2
             out(f"\nHand {played + 1}: you are seat {me + 1} ({'first' if me == 0 else 'second'} to act)")
-            net += play_hand(state, me, table, rng, read, out)
+            net += play_hand(state, me, table, rng, read, out, bot=bot)
             played += 1
             out(f"  net for the session: {net:+g} chips over {played} hands")
     except Quit:
@@ -182,6 +206,25 @@ def cmd_exploit(args) -> int:
     return 0
 
 
+def cmd_match(args) -> int:
+    """The CFR+ bot against the chosen opponent, seeded, with no typing. Every deal is played in both seats,
+    so the result is a fair comparison of the two algorithms rather than of the seats."""
+    table = strategy.load()["strategy"]
+    ai = CFRBot(table)
+    opp = make_opponent(args.opponent, table)
+    deals = max(1, args.hands // 2)  # each deal is two hands, one in each seat
+    start = time.time()
+    r = head_to_head(ai, opp, deals, args.seed)
+    seconds = time.time() - start
+    lo, hi = r.ci95_mbb()
+    print(f"Poker match, seed {args.seed}: {OPPONENT_LABELS['cfr']} (cfr) vs {OPPONENT_LABELS[args.opponent]} "
+          f"({args.opponent})")
+    print(f"  {r.hands:,} hands ({deals:,} deals, each played in both seats), {seconds:.1f} s")
+    print(f"  CFR+ side: {r.mbb_per_hand:+.1f} mbb/hand, 95% CI [{lo:+.1f}, {hi:+.1f}]")
+    print(f"  CFR+ side: {r.mean_chips:+.4f} chips/hand, {r.mean_chips * r.hands:+.1f} chips over the match")
+    return 0
+
+
 def cmd_benchmark(args) -> int:
     from .benchmark import markdown, run_benchmark, write_results
 
@@ -192,9 +235,12 @@ def cmd_benchmark(args) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Leduc hold'em against a CFR+ bot, and the CFR tools behind it.")
+    parser = argparse.ArgumentParser(prog="python -m poker",
+                                     description="Leduc hold'em against a CFR+ bot, and the CFR tools behind it.")
     parser.add_argument("--seed", type=int, help="seed the deals and the bot, for a repeatable session")
     parser.add_argument("--hands", type=int, help="stop after this many hands (default: until q)")
+    parser.add_argument("--opponent", choices=OPPONENTS, default="cfr",
+                        help="who you play: cfr (the CFR+ average strategy) or chance (fixed odds)")
     sub = parser.add_subparsers(dest="command")
 
     t = sub.add_parser("train", help="train CFR or CFR+ and measure exploitability")
@@ -211,6 +257,11 @@ def main(argv=None) -> int:
     b.add_argument("--deals", type=int, default=100_000, help="deals per matchup, each played in both seats")
     b.add_argument("--seed", type=int, default=1)
 
+    m = sub.add_parser("match", help="CFR+ against an opponent over seeded hands, printed as a result")
+    m.add_argument("--opponent", choices=OPPONENTS, default="chance", help="the CFR+ bot's opponent")
+    m.add_argument("--hands", type=int, default=20_000, help="hands to play (rounded down to whole deals)")
+    m.add_argument("--seed", type=int, default=1)
+
     args = parser.parse_args(argv)
     if args.command == "train":
         return cmd_train(args)
@@ -218,7 +269,9 @@ def main(argv=None) -> int:
         return cmd_exploit(args)
     if args.command == "benchmark":
         return cmd_benchmark(args)
-    session(args.seed, strategy.load()["strategy"], hands=args.hands)
+    if args.command == "match":
+        return cmd_match(args)
+    session(args.seed, strategy.load()["strategy"], hands=args.hands, opponent=args.opponent)
     return 0
 
 

@@ -56,7 +56,10 @@ def play_turns(seed: int, read=input, out=print) -> int:
     env.reset(seed)
     out(CLEAR + render_frame(env.x, env.theta, env.steps))
     while not env.done:
-        line = read("push (a = left, d = right, q = quit): ").strip().lower()
+        try:
+            line = read("push (a = left, d = right, q = quit): ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            break  # Ctrl-D or Ctrl-C ends the game like typing q, with the same outcome line
         if "q" in line:
             break
         for ch in line:
@@ -76,11 +79,15 @@ def play_slow(seed: int, tick: float = 0.12, out=print) -> int:
     import termios
     import tty
 
+    # cbreak needs a real terminal; with a pipe or a redirect, tcgetattr fails with a raw termios error.
+    if not sys.stdin.isatty():
+        raise SystemExit("play --slow needs a terminal. Run it in one, or use `python -m cartpole play` instead.")
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     env = CartPole(seed)
     env.reset(seed)
     action = RIGHT  # the first push goes right; the pole is nearly upright, so either direction works
+    quit_now = False
     try:
         tty.setcbreak(fd)
         while not env.done:
@@ -93,7 +100,10 @@ def play_slow(seed: int, tick: float = 0.12, out=print) -> int:
                 if ch in KEYS:
                     action = KEYS[ch]
                 elif ch == "q":
-                    return env.steps
+                    quit_now = True  # leave both loops, so the tty is restored and the outcome is printed
+                    break
+            if quit_now:
+                break
             env.step(action)
             out(CLEAR + render_frame(env.x, env.theta, env.steps, action))
     finally:

@@ -46,16 +46,22 @@ class Choice:
 
 
 def best_guess(analysis: Analysis) -> int:
-    """The covered cell with the lowest exact mine probability.
+    """The covered cell with the lowest mine probability: exact when the analysis is exact, else estimated.
 
-    Ties (common on the interior, where every cell has the same probability) go to the cell with the
-    most covered neighbours: a zero there would reveal the most, which is the opening the agent wants.
-    The final tie-break on the index keeps the choice deterministic.
+    Exact weights are compared as integers, so two cells never tie by rounding. Ties (common on the
+    interior, where every cell has the same probability) go to the cell with the most covered neighbours:
+    a zero there would reveal the most, which is the opening the agent wants. The final tie-break on the
+    index keeps the choice deterministic.
     """
-    candidates = [c for c in analysis.covered if c in analysis.numerator]
+    if analysis.exact:
+        candidates = [c for c in analysis.covered if c in analysis.numerator]
+        if not candidates:
+            raise ValueError("no covered cell has a computed probability")
+        return min(candidates, key=lambda c: (analysis.numerator[c], -analysis.unknown_neighbours(c), c))
+    candidates = [c for c in analysis.covered if c in analysis.estimate]
     if not candidates:
-        raise ValueError("no covered cell has a computed probability")
-    return min(candidates, key=lambda c: (analysis.numerator[c], -analysis.unknown_neighbours(c), c))
+        raise ValueError("no covered cell has an estimated probability")
+    return min(candidates, key=lambda c: (analysis.estimate[c], -analysis.unknown_neighbours(c), c))
 
 
 class Agent:

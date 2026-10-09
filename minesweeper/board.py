@@ -100,9 +100,13 @@ class Game:
         return frozenset(self._mine or ())
 
     def _place_mines(self, first: int) -> None:
-        # The first click and its neighbours stay clear, so the first reveal opens an area.
+        # The first click and its neighbours stay clear, so the first reveal opens an area. On a board too
+        # small for that (a 3x3 with the click in the centre leaves no room), only the click stays clear.
         clear = {first, *neighbour_table(self.rows, self.cols)[first]}
         pool = [i for i in range(self.size) if i not in clear]
+        if len(pool) < self.mines:
+            clear = {first}
+            pool = [i for i in range(self.size) if i not in clear]
         self._mine = set(self.rng.sample(pool, self.mines))
 
     def adjacent_mines(self, cell: int) -> int:

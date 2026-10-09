@@ -1,0 +1,84 @@
+/* Grid MDP lab page. Loaded after style.css and app.css. Boards are canvases sized from their container, so
+   the grid keeps its shape at 390px: the three solvers stack, and the touch targets stay 44px tall. */
+
+/* ── The world editor ─────────────────────────────────────────────────── */
+.mdp-world { gap: 0.6rem; }
+.mdp-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.mdp-row .cyber-btn, .mdp-views .cyber-btn, .mdp-btns .cyber-btn, .mdp-speed .cyber-btn { min-height: 44px; }
+.mdp-row .cyber-btn { flex: 1 1 auto; }
+.mdp-world .cyber-btn[aria-pressed="true"] { background: rgba(0,245,255,0.12); box-shadow: 0 0 14px rgba(0,245,255,0.35); }
+.mdp-world-canvas {
+  width: 100%; display: block; touch-action: none; cursor: crosshair;
+  border: 1px solid var(--border); background: #03060e;
+}
+.mdp-blurb { font-family: var(--raj); font-size: 0.95rem; line-height: 1.45; color: var(--text); margin: 0; }
+
+/* ── View switch and the solver trio ──────────────────────────────────── */
+.mdp-views { display: flex; flex-wrap: wrap; gap: 8px; margin: 1.4rem 0 1rem; }
+.mdp-views .cyber-btn[aria-pressed="true"] { background: rgba(0,255,136,0.12); box-shadow: 0 0 14px rgba(0,255,136,0.3); }
+
+.mdp-trio { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.mdp-trio[data-view="vi"], .mdp-trio[data-view="pi"], .mdp-trio[data-view="q"] { grid-template-columns: minmax(0, 1fr); }
+.mdp-trio[data-view="vi"] .mdp-panel:not(#panel-vi),
+.mdp-trio[data-view="pi"] .mdp-panel:not(#panel-pi),
+.mdp-trio[data-view="q"] .mdp-panel:not(#panel-q) { display: none; }
+.mdp-panel { min-width: 0; max-width: 100%; }
+@media (min-width: 1200px) {
+  .mdp-trio[data-view="all"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.mdp-panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mdp-panel .viz-title { color: var(--text); }
+.mdp-badge {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; padding: 3px 7px;
+  border: 1px solid var(--cyan); color: var(--cyan); white-space: nowrap;
+}
+.mdp-badge.is-done { border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.4); }
+.mdp-badge.is-warn { border-color: var(--yellow); color: var(--yellow); }
+.mdp-badge.is-paused { border-color: var(--dim); color: var(--dim); }
+
+.mdp-board-wrap { width: 100%; min-width: 0; }
+.mdp-board { display: block; width: 100%; height: auto; border: 1px solid rgba(0,245,255,0.25); background: #03060e; }
+.mdp-status { font-family: var(--mono); font-size: 0.7rem; line-height: 1.55; color: var(--text); min-height: 2.6em; }
+.mdp-status b { color: var(--yellow); font-weight: 400; }
+.mdp-chart-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--dim); }
+.viz-panel .mdp-chart { width: 100%; height: 110px; display: block; border: 1px solid rgba(0,245,255,0.15); background: rgba(0,0,0,0.35); }
+.viz-panel .mdp-chart-short { height: 70px; }
+.mdp-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mdp-btns .cyber-btn { flex: 1 1 auto; }
+.mdp-q-opts { display: flex; flex-direction: column; gap: 6px; }
+.mdp-q-opts .cyber-select { min-height: 44px; }
+.mdp-check {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer;
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; color: var(--text);
+}
+.mdp-check input { width: 18px; height: 18px; accent-color: var(--green); flex: 0 0 auto; }
+.mdp-trio .field-hint { font-size: 0.8rem; }
+
+/* ── Controls in the side column ──────────────────────────────────────── */
+.mdp-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mdp-field .field-lbl { display: flex; justify-content: space-between; gap: 8px; }
+.mdp-val { color: var(--cyan); }
+.mdp-range { width: 100%; min-height: 44px; accent-color: var(--cyan); }
+.mdp-seed { display: flex; gap: 8px; }
+.mdp-seed .cyber-input { flex: 1; min-width: 0; min-height: 44px; }
+.mdp-seed .cyber-btn { min-height: 44px; }
+.mdp-speed { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 0.4rem; }
+.mdp-speed .cyber-btn { padding-left: 0.2rem; padding-right: 0.2rem; }
+.mdp-speed .cyber-btn[aria-pressed="true"] { background: rgba(0,245,255,0.14); box-shadow: 0 0 12px rgba(0,245,255,0.35); }
+.mdp-legend { gap: 0.4rem; }
+.mdp-swatch-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 0.62rem; color: var(--dim); }
+.mdp-swatch { display: inline-block; width: 22px; height: 10px; border: 1px solid rgba(255,255,255,0.15); }
+.mdp-swatch-neg { background: linear-gradient(90deg, #ff00a0, #2a0d3a); }
+.mdp-swatch-zero { background: #0a1230; }
+.mdp-swatch-pos { background: linear-gradient(90deg, #0a1230, #00f5ff); }
+
+/* Canvas text sizing inside the trio uses the field-hint font; keep the page's own caps on labels. */
+@media (max-width: 600px) {
+  .mdp-speed { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mdp-views .cyber-btn { flex: 1 1 calc(50% - 8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mdp-badge { animation: none; }
+}

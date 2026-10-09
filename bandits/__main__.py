@@ -16,16 +16,12 @@ import random
 import sys
 import time
 
-from .agents import AGENTS, LINEUP
+from .agents import AGENTS, LINEUP, machine_name
 from .benchmark import HORIZON, SEEDS, K, run_benchmark, to_markdown, write_results
 from .env import KINDS, Environment
 from .sim import make_for, play, run_agent, score_pulls
 
 DEFAULT_OUT = "results"
-
-
-def machine_name(arm: int) -> str:
-    return chr(ord("A") + arm)
 
 
 def parse_pull(text: str, k: int) -> int | None:
@@ -127,7 +123,8 @@ def watch(key: str, kind: str, k: int, pulls: int, seed: int, delay: float = 0.0
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Neon casino: multi-armed bandits, exploration vs exploitation.")
+    parser = argparse.ArgumentParser(prog="python -m bandits",
+                                     description="Neon casino: multi-armed bandits, exploration vs exploitation.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_casino(p):
@@ -154,6 +151,8 @@ def main(argv=None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "benchmark":
+        if args.seeds < 1:
+            parser.error("--seeds must be at least 1")
         if args.horizon <= 1000:
             parser.error("--horizon must be more than 1000")
         def progress(kind, seed):

@@ -24,7 +24,7 @@ from sokoban.levels import OPTIMAL_PUSHES, all_levels, get_level
 from sokoban.search import DEFAULT_NODES, solve
 from sokoban.tables import tables
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -48,11 +48,6 @@ class SolveRequest(BaseModel):
 class EvaluateRequest(BaseModel):
     level: int = Field(1, ge=1, le=LEVEL_COUNT)
     boxes: list[int] = Field(max_length=64)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _interior(level: Level, padded: int) -> int:
@@ -130,6 +125,9 @@ def solve_json(level_number: int, boxes: list[int] | None, player: int | None, a
     level = get_level(level_number)
     if boxes is not None:
         padded, start = _check_layout(level, boxes, player)
+        if player is None and start in padded:
+            # Without a player the level's start cell stands in for one, so it cannot hold a box.
+            raise HTTPException(400, "a box is on the level's start cell: send the player's cell too")
         level = level.with_state(start, padded)
     res = solve(level, algorithm, heuristic, prune, node_budget=budget, time_limit=SECONDS_CAP)
     return {
@@ -190,7 +188,7 @@ async def one_level(number: int):
 @router.post("/api/sokoban/solve")
 async def solve_level(req: SolveRequest, request: Request):
     app = request.app
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
         async with app.state.slots.acquire():
@@ -203,6 +201,6 @@ async def solve_level(req: SolveRequest, request: Request):
 @router.post("/api/sokoban/evaluate")
 async def evaluate(req: EvaluateRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     return await asyncio.to_thread(evaluate_json, req.level, req.boxes)

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEURAL NET LAB // SEARCH AGENTS</title>
+<meta name="description" content="Drop pink and cyan points and watch a small neural network learn to separate them. The decision boundary, the neurons, the weights and the loss all update live in your browser.">
+<meta property="og:title" content="NEURAL NET LAB // SEARCH AGENTS">
+<meta property="og:description" content="Drop points, pick a dataset, and watch a multilayer perceptron bend its decision boundary as it trains.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/nnlab.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="nnlab.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">LAB // NEURAL NETWORKS</div>
+      <h1 class="proj-pg-title neon-cyan glitch" data-text="NEURAL NET LAB">NEURAL NET LAB</h1>
+      <div class="proj-pg-sub">Drop pink and cyan points. A small multilayer perceptron learns, in your browser, where to draw the line between them, and you can watch every neuron and weight take part.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LIVE</span></span>
+        <span class="stat-chip">EPOCH <span class="val" id="chip-epoch">0</span></span>
+        <span class="stat-chip green">TRAIN ACC <span class="val" id="chip-train">—</span></span>
+        <span class="stat-chip green">TEST ACC <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip">LOSS <span class="val" id="chip-loss">—</span></span>
+        <span class="stat-chip">POINTS <span class="val" id="chip-points">0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+
+      <div class="nl-top">
+        <div class="viz-panel nl-plane-panel">
+          <div class="section-title pink-ttl">THE PLANE</div>
+          <div class="nl-board" id="board">
+            <canvas id="plane" class="nl-canvas nl-plane" role="img" aria-label="Decision boundary: a heat map of the network's prediction over the plane, with the points. Click to add or erase points."></canvas>
+          </div>
+          <div class="field-hint" id="plane-note">Click to drop a point of the chosen colour. Drag to paint. Erase mode removes the nearest point. Hover to read the network's answer at that spot.</div>
+        </div>
+
+        <div class="viz-panel nl-net-panel">
+          <div class="section-title green-ttl">THE NETWORK</div>
+          <canvas id="net" class="nl-canvas nl-net" role="img" aria-label="Network diagram: neurons light by activation and edges are coloured by weight sign. Hover a neuron to see what it detects."></canvas>
+          <div class="nl-legend field-hint">
+            <span><i class="nl-sw pink"></i>positive weight</span>
+            <span><i class="nl-sw cyan"></i>negative weight</span>
+            <span>thicker edge = larger weight</span>
+          </div>
+          <div class="field-hint" id="net-caption">Neurons light up for the data point being shown (hover the plane to choose one). The bright bar sweeps through the layers on every epoch.</div>
+        </div>
+      </div>
+
+      <div class="viz-panel nl-detail-panel">
+        <div class="nl-detail-row">
+          <canvas id="detail" class="nl-canvas nl-detail" role="img" aria-label="What the hovered neuron responds to over the plane"></canvas>
+          <div class="nl-detail-text">
+            <div class="section-title pink-ttl" id="detail-title">NEURON DETECTOR</div>
+            <div class="field-hint" id="detail-note">Hover a hidden neuron in the network to see its own heat map. Pink is where it fires positive, cyan where it fires negative. Click to pin it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viz-panel nl-loss-panel">
+        <div class="section-title green-ttl">LOSS CURVE</div>
+        <canvas id="loss" class="nl-canvas nl-loss" role="img" aria-label="Training loss (pink, solid) and test loss (cyan, dashed) on a log scale against epochs"></canvas>
+        <div class="field-hint">Cross-entropy on a log scale. Pink solid: training points. Cyan dashed: held-out test points, which the network never trains on, so a gap between the two means overfitting.</div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">DATA</div>
+        <div class="stack">
+          <div class="nl-presets" id="presets">
+            <button class="cyber-btn nl-preset" type="button" data-preset="blobs"><span class="btn-txt">BLOBS</span></button>
+            <button class="cyber-btn nl-preset" type="button" data-preset="xor"><span class="btn-txt">XOR</span></button>
+            <button class="cyber-btn nl-preset" type="button" data-preset="circles"><span class="btn-txt">CIRCLES</span></button>
+            <button class="cyber-btn nl-preset" type="button" data-preset="spiral"><span class="btn-txt">SPIRALS</span></button>
+            <button class="cyber-btn nl-preset" type="button" data-preset="moons"><span class="btn-txt">MOONS</span></button>
+            <button class="cyber-btn nl-preset" type="button" id="btn-clear"><span class="btn-txt">CLEAR</span></button>
+          </div>
+          <div>
+            <div class="field-lbl">BRUSH COLOUR</div>
+            <div class="nl-seg" role="group" aria-label="Brush colour">
+              <button class="cyber-btn pink" type="button" data-class="1" aria-pressed="true"><span class="btn-txt">● PINK</span></button>
+              <button class="cyber-btn" type="button" data-class="0" aria-pressed="false"><span class="btn-txt">● CYAN</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">BRUSH MODE</div>
+            <div class="nl-seg" role="group" aria-label="Brush mode">
+              <button class="cyber-btn green" type="button" data-brush="add" aria-pressed="true"><span class="btn-txt">+ ADD POINTS</span></button>
+              <button class="cyber-btn" type="button" data-brush="erase" aria-pressed="false"><span class="btn-txt">× ERASE</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">INPUT FEATURES</div>
+        <div class="field-hint">Choose the numbers the network sees. Curved features let a small network draw curved lines.</div>
+        <div class="nl-feats" id="feats" style="margin-top:0.5rem">
+          <button class="nl-chip" type="button" data-feature="x" aria-pressed="true">x</button>
+          <button class="nl-chip" type="button" data-feature="y" aria-pressed="true">y</button>
+          <button class="nl-chip" type="button" data-feature="x2" aria-pressed="false">x²</button>
+          <button class="nl-chip" type="button" data-feature="y2" aria-pressed="false">y²</button>
+          <button class="nl-chip" type="button" data-feature="xy" aria-pressed="false">xy</button>
+          <button class="nl-chip" type="button" data-feature="sinx" aria-pressed="false">sin πx</button>
+          <button class="nl-chip" type="button" data-feature="siny" aria-pressed="false">sin πy</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">ARCHITECTURE</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">HIDDEN LAYERS: <span id="layers-val">2</span></div>
+            <input class="nl-range" id="layers" type="range" min="0" max="4" value="2" aria-label="Hidden layers">
+          </div>
+          <div>
+            <div class="field-lbl">NEURONS PER LAYER: <span id="neurons-val">6</span></div>
+            <input class="nl-range" id="neurons" type="range" min="1" max="8" value="6" aria-label="Neurons per hidden layer">
+          </div>
+          <div>
+            <div class="field-lbl">ACTIVATION</div>
+            <select class="cyber-select" id="act" style="width:100%" aria-label="Activation function">
+              <option value="tanh" selected>tanh: smooth, centred on 0</option>
+              <option value="relu">ReLU: max(0, z), sharp corners</option>
+              <option value="sigmoid">sigmoid: squashes to 0 to 1</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">TRAINING</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">LEARNING RATE</div>
+            <select class="cyber-select" id="lr" style="width:100%" aria-label="Learning rate">
+              <option value="0.001">0.001</option>
+              <option value="0.003">0.003</option>
+              <option value="0.01">0.01</option>
+              <option value="0.03" selected>0.03 (default)</option>
+              <option value="0.1">0.1</option>
+              <option value="0.3">0.3</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">BATCH SIZE</div>
+            <select class="cyber-select" id="batch" style="width:100%" aria-label="Mini-batch size">
+              <option value="1">1 (stochastic)</option>
+              <option value="4">4</option>
+              <option value="8">8</option>
+              <option value="16" selected>16 (default)</option>
+              <option value="32">32</option>
+              <option value="0">full batch</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">OPTIMISER</div>
+            <select class="cyber-select" id="opt" style="width:100%" aria-label="Optimiser">
+              <option value="adam" selected>Adam</option>
+              <option value="sgd">Plain gradient descent</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">L2 REGULARISATION (λ)</div>
+            <select class="cyber-select" id="l2" style="width:100%" aria-label="L2 regularisation">
+              <option value="0" selected>0 (off)</option>
+              <option value="0.001">0.001</option>
+              <option value="0.01">0.01</option>
+              <option value="0.1">0.1</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">TEST SHARE (HELD OUT)</div>
+            <select class="cyber-select" id="split" style="width:100%" aria-label="Share of points held out for testing">
+              <option value="0">none</option>
+              <option value="0.2" selected>20%</option>
+              <option value="0.35">35%</option>
+              <option value="0.5">50%</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">NOISE: <span id="noise-val">0.00</span></div>
+            <input class="nl-range" id="noise" type="range" min="0" max="0.3" step="0.01" value="0" aria-label="Noise">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">PLAYBACK</div>
+        <div class="stack">
+          <div class="nl-seg">
+            <button class="cyber-btn green" id="btn-play" type="button" aria-pressed="true"><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">▸ STEP</span></button>
+          </div>
+          <div class="nl-seg">
+            <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ RESET WEIGHTS</span></button>
+            <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">⟲ NEW SEED</span></button>
+          </div>
+          <div>
+            <div class="field-lbl">EPOCHS PER SECOND: <span id="speed-val">20</span></div>
+            <input class="nl-range" id="speed" type="range" min="1" max="60" value="20" aria-label="Epochs per second">
+          </div>
+          <div class="field-hint">Seed <span id="seed-val">0</span>. The seed fixes the points, the starting weights and the batch order, so a run can be replayed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">A neural network is a stack of simple weighted sums, each followed by a bend. Training nudges every weight a little in the direction that makes the predictions less wrong, and repeats. Everything on this page runs in JavaScript (web/js/nnlab-core.js), a port of the NumPy package that gives the same numbers for the same seed.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>What a neural network is</h3>
+      <p class="hiw-plain"><b>New to this?</b> A neural network is a function with many adjustable knobs, called weights. You give it numbers (here, where a point sits on the plane), and it gives back a guess (pink or cyan). At the start the knobs are random, so the guesses are random. Training turns the knobs until the guesses match the colours.</p>
+      <p>Here the input is the point's position, optionally widened by the features you pick. The output is one number between 0 and 1: the network's probability that the point is pink. Everything in between is a stack of layers, each a row of neurons.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The forward pass</h3>
+      <p class="hiw-plain"><b>New to this?</b> A neuron multiplies each of its inputs by a weight, adds them up with a bias, and passes the total through a bend called an activation. A layer is a row of neurons that all read the same inputs. Chaining layers lets the network build shapes out of simple pieces.</p>
+      <p>For a layer with input a, the pre-activation is z = W a + b, and the output is f(z). The last layer uses a sigmoid, so its output p = sigmoid(z) is a probability. Hover a neuron and you see the shape it has learned: the region of the plane where it fires.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>The loss</h3>
+      <p class="hiw-plain"><b>New to this?</b> The loss is one number that says how wrong the network is. It is small when the network is confident and right, and large when it is confident and wrong. Training is just trying to make this number smaller.</p>
+      <p>The loss is binary cross-entropy: L = mean of −[y log p + (1 − y) log(1 − p)], where y is 1 for pink and 0 for cyan. It punishes confident mistakes hard. The curve on the page is log10 of the loss, averaged over the training points. The test curve uses points the network never trains on.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Backpropagation</h3>
+      <p class="hiw-plain"><b>New to this?</b> To improve each knob, we need to know how much it affects the loss. Backpropagation works that out for every knob at once, by walking backwards from the output and passing blame down through the layers, the way a chain of cause and effect is traced.</p>
+      <p>The chain rule gives dL/dz for the output as (p − y) / batch, using the sigmoid and the cross-entropy together. Then dL/dW = (dL/dz) aᵀ, dL/db is the sum of dL/dz, and the blame moves to the layer below as dL/da = Wᵀ(dL/dz), multiplied by the activation's slope f′(z). The code in nnlab/mlp.py repeats these four steps layer by layer, and tests/test_nnlab.py checks them against finite differences.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Gradient descent and Adam</h3>
+      <p class="hiw-plain"><b>New to this?</b> Once we know which way each knob should move, we take a small step the other way. The learning rate sets the step size. Too large and the steps overshoot; too small and training crawls. A mini-batch is a random handful of points used for one step, which is noisy but fast.</p>
+      <p>Plain descent updates each parameter as p ← p − lr · g. Adam keeps a running average of the gradient and of its square, so each parameter gets a step of about lr whatever the gradient's scale, and it is the default here. Each epoch shuffles the points and takes one step per batch.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Activations</h3>
+      <p class="hiw-plain"><b>New to this?</b> Without a bend between layers, a stack of weighted sums is just one weighted sum, and it can only draw straight lines. The activation is that bend. It is what lets the network draw curves, and it decides how a neuron responds to its input.</p>
+      <p>tanh squashes to (−1, 1) and is centred on 0. Its slope, 1 − tanh², is 1 at 0 and falls toward 0 at the ends. ReLU is max(0, z): it is linear for positive input and off for negative, cheap to compute, and its slope is 0 or 1. Sigmoid squashes to (0, 1) but its slope is at most 0.25, so deep sigmoid stacks learn slowly. The output unit is always a sigmoid, because it gives a probability.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Overfitting and regularisation</h3>
+      <p class="hiw-plain"><b>New to this?</b> With enough knobs, a network can memorise the training points, wiggling around each one. It then does well on those points and badly on new ones. The held-out test points show this: if the training accuracy climbs while the test accuracy stalls, the network has memorised. Two remedies are on the page: a smaller network or an L2 penalty.</p>
+      <p>L2 regularisation adds (λ / 2) Σ W² to the loss, so large weights cost something, and the gradient gains λW. The biases are left out. The test share holds points back from training. Noise blurs the points, which makes memorising harder. The defaults (no L2, no noise) are chosen to show the boundary bending freely. Raise λ or the noise to see the boundary smooth out.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters and their values</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why this value</th></tr></thead><tbody>
+    <tr><td>Dataset</td><td>circles, 200 points</td><td>A pink ring around a cyan disc cannot be split by a straight line, so the default shows what hidden layers add. 200 points keep each epoch cheap enough to run many per second.</td></tr>
+    <tr><td>Features</td><td>x, y</td><td>The plain coordinates are enough for the circles, so the default network needs no extra features. The curved features change the boundary's shape, at the cost of more inputs.</td></tr>
+    <tr><td>Hidden layers</td><td>2</td><td>Two hidden layers are enough to learn the ring in the Python check (full training accuracy within 300 epochs). More layers add knobs to fit on 200 points.</td></tr>
+    <tr><td>Neurons per layer</td><td>6</td><td>Each neuron contributes one bend, and the ring needs several. Six reaches full training accuracy on the default run and still fits the diagram.</td></tr>
+    <tr><td>Activation</td><td>tanh</td><td>Centred on 0 and smooth, so the early steps are well scaled, and its output in (−1, 1) maps directly onto the neuron colours.</td></tr>
+    <tr><td>Weight init</td><td>Glorot uniform; He for ReLU</td><td>The weight scale keeps the signal's size about the same from layer to layer, so no layer starts saturated (flat, with no slope to learn from).</td></tr>
+    <tr><td>Learning rate</td><td>0.03</td><td>With Adam, 0.03 is fast enough to see the boundary move within seconds, and low enough that it does not jump around the ring.</td></tr>
+    <tr><td>Batch size</td><td>16</td><td>About 10 steps per epoch on the roughly 160 training points. Small batches are cheap and add sampling noise to each step, which is why the page offers 1 to full batch.</td></tr>
+    <tr><td>Optimiser</td><td>Adam (β₁ 0.9, β₂ 0.999, ε 1e-8)</td><td>The standard defaults from Kingma and Ba (2015). Adam rescales each weight's step by its own gradient history, so one learning rate works across all the weights.</td></tr>
+    <tr><td>L2 λ</td><td>0 (off)</td><td>Off so the first run shows the unregularised boundary. Try 0.01 to see the shape tighten.</td></tr>
+    <tr><td>Test share</td><td>20%</td><td>A fifth of the points are held out, so the test accuracy is measured on points the network never trained on.</td></tr>
+    <tr><td>Noise</td><td>0</td><td>Clean data first. Noise moves each point by noise × a normal draw, so the classes overlap more.</td></tr>
+    <tr><td>Epochs per second</td><td>20</td><td>Fast enough that the boundary visibly moves, slow enough to follow each change.</td></tr>
+    <tr><td>Seed</td><td>0</td><td>The points, the starting weights and the batch order all come from the seed, so the same seed replays the same run. The browser and the Python package agree on it.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>Run it from the terminal:</b> <code>python -m nnlab train --data spiral --layers 8,8 --act tanh --epochs 500</code> trains the same network with the same seed and prints the loss and accuracy, then draws the boundary in text.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py">nnlab/mlp.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/data.py">nnlab/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/rng.py">nnlab/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/train.py">nnlab/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py">nnlab/config.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/cli.py">nnlab/cli.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js">web/js/nnlab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py">tests/test_nnlab.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab_parity.py">tests/test_nnlab_parity.py</a></p>
+</section>
+  </div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/nnlab.js"></script>
+</body>
+</html>

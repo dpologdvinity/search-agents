@@ -65,7 +65,8 @@ def _benchmark_command(args) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Sokoban: search with push-level pruning and matching bounds.")
+    parser = argparse.ArgumentParser(prog="python -m sokoban",
+                                     description="Sokoban: search with push-level pruning and matching bounds.")
     sub = parser.add_subparsers(dest="command")
 
     p_play = sub.add_parser("play", help="play in the terminal (the default)")

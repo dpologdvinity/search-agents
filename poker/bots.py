@@ -1,8 +1,11 @@
-"""Players for Leduc: the CFR bot, three baselines, and a seeded head-to-head match runner.
+"""Players for Leduc: the CFR bot, the fixed-odds chance player, three baselines, and a seeded match runner.
 
 Every bot has `act(state, rng) -> action`, where `state` is a decision state and the bot acts for
 `state.player()`. Bots see only what their seat sees (`state.infoset(seat)` for the CFR bot, the seat's
-own card for the heuristic), so none of them can read the opponent's card.
+own card for the heuristic), so none of them can read the opponent's card. Chance sees no card at all.
+
+The two opponents the web game and the CLI offer are `cfr` (the trained average strategy) and `chance`
+(fixed action odds, see chance.py). `make_opponent` maps those names to bots.
 
 Baselines, from weakest to strongest:
   random       uniform over the legal actions
@@ -21,6 +24,7 @@ import random
 from dataclasses import dataclass
 
 from .betting import BET, CALL, CHECK, FOLD, RAISE
+from .chance import ChanceBot
 from .leduc import BET_SIZES, DECK, LeducState, rank_of
 from .strategy import sample
 
@@ -80,6 +84,18 @@ class CFRBot:
 
     def act(self, state, rng: random.Random) -> str:
         return sample(self.table[state.infoset(state.player())], rng)
+
+
+OPPONENTS = ("cfr", "chance")  # the opponents the web game and the CLI offer, by name
+
+
+def make_opponent(name: str, table: dict[str, dict[str, float]]):
+    """The bot for an opponent name: "cfr" plays the trained table, "chance" draws from the fixed odds."""
+    if name == "cfr":
+        return CFRBot(table)
+    if name == "chance":
+        return ChanceBot()
+    raise ValueError(f"unknown opponent {name!r}: choose from {', '.join(OPPONENTS)}")
 
 
 def deal(rng: random.Random) -> LeducState:

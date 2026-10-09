@@ -3,6 +3,7 @@
     python -m snake benchmark                 # 200 games per agent, printed as a table
     python -m snake benchmark --games 50      # a quick check
     python -m snake benchmark --write         # also writes results/snake_benchmark.{json,md}
+    python -m snake actions --write           # left/straight/right shares of the net; results/snake_net_actions.json
 
 Every agent plays the same boards: game i uses seed BENCH_SEED_BASE + i. The boards are different
 from the training seeds, so the evolved agent is scored on positions it was never trained on. Each
@@ -19,7 +20,7 @@ import time
 from pathlib import Path
 
 from .agents import AGENT_NAMES, DESCRIPTIONS, make_policy
-from .board import BOARD, Game
+from .board import ACTION_NAMES, BOARD, Game
 from .net import Net, load_champion
 
 BENCH_SEED_BASE = 50_000
@@ -100,3 +101,39 @@ def write_results(result: dict, out_dir: Path = RESULTS_DIR) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "snake_benchmark.json").write_text(json.dumps(result, indent=2) + "\n")
     (out_dir / "snake_benchmark.md").write_text(to_markdown(result))
+
+
+def action_counts(games: int = 40, size: int = BOARD, net: Net | None = None) -> dict:
+    """How often the evolved net picks each turn, over the first `games` benchmark boards.
+
+    Same seeds as the benchmark (BENCH_SEED_BASE onward), so the run is fixed and repeatable. The
+    benchmark table cannot show this: a net that almost never turns right can still score well on
+    average, so the per-turn shares are reported on their own.
+    """
+    if net is None:
+        net, _ = load_champion()
+    counts = dict.fromkeys(ACTION_NAMES, 0)
+    for i in range(games):
+        seed = BENCH_SEED_BASE + i
+        game = Game(seed, size)
+        policy = make_policy("evolved", seed=seed, net=net)
+        # Step by hand instead of Game.play so each chosen action can be counted.
+        while game.alive:
+            action = policy(game)
+            counts[ACTION_NAMES[action]] += 1
+            game.step(action)
+    moves = sum(counts.values())
+    return {
+        "games": games,
+        "board": size,
+        "seed_base": BENCH_SEED_BASE,
+        "moves": moves,
+        "actions": counts,
+        "shares": {name: round(n / moves, 4) for name, n in counts.items()},
+    }
+
+
+def write_action_counts(result: dict, out_dir: Path = RESULTS_DIR) -> None:
+    """Write the per-turn counts to results/snake_net_actions.json."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "snake_net_actions.json").write_text(json.dumps(result, indent=2) + "\n")

@@ -1,0 +1,66 @@
+/* Lost Robot page. Loaded after style.css and app.css. The floor is one canvas drawn by localize.js; the legend
+   swatches, the drive pad and the two charts use the same neon palette as the rest of the site. */
+
+.lr-stage {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 0.6rem; border: 1px solid rgba(0,245,255,0.35); background: rgba(2,6,16,0.85);
+  box-shadow: 0 0 28px rgba(0,245,255,0.18), inset 0 0 40px rgba(0,0,0,0.6);
+}
+.lr-stage::before {
+  /* A faint neon grid behind the floor, like a plotter sheet. */
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background-image: linear-gradient(rgba(0,245,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.lr-map {
+  position: relative; display: block; width: 100%; max-width: 720px; aspect-ratio: 3 / 2; height: auto;
+  border: 1px solid rgba(255,0,160,0.4); box-shadow: 0 0 22px rgba(255,0,160,0.25);
+  touch-action: manipulation;
+}
+.lr-map:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.lr-readout { position: relative; min-height: 1.2em; text-align: center; font-family: var(--mono); font-size: 0.7rem; }
+
+.lr-legend {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; margin: 0.8rem 0 0;
+  font-family: var(--mono); font-size: 0.64rem; color: var(--dim); letter-spacing: 0.04em;
+}
+.lr-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.lr-sw { display: inline-block; width: 13px; height: 13px; border: 1px solid transparent; }
+.lr-sw-wall { background: #ff00a0; box-shadow: 0 0 8px #ff00a0; }
+.lr-sw-part { background: #00f5ff; border-radius: 50%; box-shadow: 0 0 6px #00f5ff; width: 9px; height: 9px; }
+.lr-sw-robot { background: #ffe600; border-radius: 50%; box-shadow: 0 0 8px #ffe600; }
+.lr-sw-beam { background: #00ff88; height: 2px; align-self: center; box-shadow: 0 0 6px #00ff88; }
+.lr-sw-est { border: 1px dashed #00f5ff; border-radius: 50%; }
+.lr-sw-heat { background: linear-gradient(90deg, rgba(0,245,255,0.05), #00f5ff); }
+
+/* Drive pad: a 3-by-2 grid of arrow keys. Touch users press the same keys. */
+.lr-pad-wrap { display: flex; flex-wrap: wrap; gap: 0.8rem 1.2rem; align-items: center; justify-content: center; margin-top: 0.9rem; }
+.lr-pad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 48px); gap: 0.35rem; }
+.lr-pad .cyber-btn { width: 100%; min-width: 0; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.lr-pad .cyber-btn.lr-held { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 16px rgba(255,230,0,0.5); }
+.lr-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+
+.lr-think {
+  font-family: var(--raj); font-size: 1rem; line-height: 1.5; color: var(--text); min-height: 5em;
+}
+.lr-think b { color: var(--yellow); font-weight: 700; }
+.lr-think .lr-num { font-family: var(--mono); color: var(--cyan); }
+.lr-think .lr-warn { color: var(--pink); }
+.lr-think .lr-ok { color: var(--green); }
+
+.lr-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+.lr-chart { width: 100%; height: auto; aspect-ratio: 640 / 220; display: block; border: 1px solid var(--border); background: rgba(0,0,0,0.35); }
+.lr-charts .viz-panel .viz-title { white-space: normal; }
+
+.agent-log .log-win { color: var(--green); }
+.agent-log .log-warn { color: var(--pink); }
+
+@media (max-width: 600px) {
+  .lr-stage { padding: 0.4rem; }
+  .lr-legend { font-size: 0.6rem; gap: 0.3rem 0.6rem; }
+  .lr-pad { grid-template-columns: repeat(3, 62px); grid-template-rows: repeat(2, 56px); }
+  .lr-think { font-size: 0.95rem; min-height: 8em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lr-think.flash { animation: none; }
+}

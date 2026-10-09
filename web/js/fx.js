@@ -1,7 +1,10 @@
 // Shared effects for the game pages: particle bursts, screen shake, floating
 // score pops, and banners for big moments. One overlay canvas, drawn only
 // while particles are alive. All effects are skipped under reduced motion,
-// except banners, which carry information and appear without animation.
+// except banners, which carry information and appear without animation. Each effect also plays its synth
+// sound (sfx.js); those play even under reduced motion, since they are not motion.
+
+import { announce, outcome, play } from './sfx.js';
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const COLORS = ['#00f5ff', '#ff00a0', '#9b00ff', '#00ff88', '#ffe600'];
@@ -47,7 +50,9 @@ function center(el) {
 
 /** Burst of particles from the centre of el (or [x, y]). */
 export function burst(target, { count = 60, colors = COLORS, speed = 7, gravity = 0.12 } = {}) {
-  if (REDUCED || !target) return;
+  if (!target) return;
+  play('burst');
+  if (REDUCED) return;
   overlay();
   const [x, y] = Array.isArray(target) ? target : center(target);
   for (let i = 0; i < count; i++) {
@@ -61,7 +66,9 @@ export function burst(target, { count = 60, colors = COLORS, speed = 7, gravity 
 
 /** Shake an element briefly. */
 export function shake(el, strength = 'small') {
-  if (REDUCED || !el) return;
+  if (!el) return;
+  play(strength === 'big' ? 'thudBig' : 'thud');
+  if (REDUCED) return;
   el.classList.remove('fx-shake', 'fx-shake-big');
   void el.offsetWidth; // restart the animation
   el.classList.add(strength === 'big' ? 'fx-shake-big' : 'fx-shake');
@@ -69,7 +76,9 @@ export function shake(el, strength = 'small') {
 
 /** Floating text (e.g. "+64") that rises from el and fades. */
 export function pop(target, text, color = '#ffe600') {
-  if (REDUCED || !target) return;
+  if (!target) return;
+  play('tick');
+  if (REDUCED) return;
   const [x, y] = Array.isArray(target) ? target : center(target);
   const el = document.createElement('div');
   el.className = 'fx-pop';
@@ -81,6 +90,7 @@ export function pop(target, text, color = '#ffe600') {
 
 /** Big banner across the screen for a moment; `sub` is a smaller second line. */
 export function banner(text, sub = '', color = '#00f5ff') {
+  announce(outcome(text, color));
   document.querySelectorAll('.fx-banner').forEach((b) => b.remove());
   const el = document.createElement('div');
   el.className = 'fx-banner';

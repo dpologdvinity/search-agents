@@ -7,6 +7,8 @@ use the knowledge:
     the two colours is always hit) until a hit appears, then fire next to the hit, extending along the line
     once two hits are aligned.
   - ProbabilityAgent: the Bayesian agent. Fire at the unknown cell most likely to hold a ship.
+  - ChanceAgent: fixed odds. Fire at a random unknown cell, weighted by a fixed table of cell weights. It
+    never looks at its hits or misses, so it is a dice roller rather than a reasoner.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ class Agent:
     """Base class: a strategy with its own random generator, so games are reproducible from a seed."""
 
     name = "agent"
+    label = "agent"
 
     def __init__(self, rng: random.Random):
         self.rng = rng
@@ -34,6 +37,7 @@ class RandomAgent(Agent):
     """Fires at a uniformly random unknown cell."""
 
     name = "random"
+    label = "Random"
 
     def choose(self, k: Knowledge) -> int:
         return self.rng.choice(k.unknown_cells())
@@ -58,6 +62,7 @@ class HuntAgent(Agent):
     """Hunt/target: checkerboard search, then finish off wounded ships."""
 
     name = "hunt"
+    label = "Hunt/target"
 
     def choose(self, k: Knowledge) -> int:
         fired = k.fired
@@ -109,6 +114,7 @@ class ProbabilityAgent(Agent):
     """
 
     name = "probability"
+    label = "Probability (Bayesian)"
 
     def __init__(self, rng: random.Random, samples: int = SAMPLES):
         super().__init__(rng)
@@ -120,7 +126,45 @@ class ProbabilityAgent(Agent):
         return choose_cell(self.last, k.unknown_cells(), self.rng)
 
 
-AGENTS = {"random": RandomAgent, "hunt": HuntAgent, "probability": ProbabilityAgent}
+# Chance's fixed odds. Each cell's weight is profile[row] * profile[col], where the profile rises from the edge
+# to the middle, so a centre cell weighs 16 times a corner cell. The shape is fixed in advance and never changes
+# with the game: it is the Battleship analogue of the 2048 spawner's fixed 90/10 split. The bias is not arbitrary:
+# a ship can cover more placements through the middle of the board than along the edges, so a centre cell is
+# slightly likelier to hold a ship. Chance does not know that; it just fires where the table says.
+CHANCE_PROFILE = (1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
+CHANCE_WEIGHTS = tuple(CHANCE_PROFILE[c // SIZE] * CHANCE_PROFILE[c % SIZE] for c in range(SIZE * SIZE))
+
+
+class ChanceAgent(Agent):
+    """Fixed odds: draws an unknown cell with probability proportional to CHANCE_WEIGHTS.
+
+    Only the cells still unknown are candidates, so every shot is legal, and the sampler renormalises the weights
+    over them. There is no search and no lookahead: the only thing taken from the knowledge is which cells are
+    still unknown, so hits and misses change nothing. With a seeded rng the sequence of shots is fixed.
+    """
+
+    name = "chance"
+    label = "Chance (fixed odds)"
+
+    def choose(self, k: Knowledge) -> int:
+        unknown = k.unknown_cells()
+        return self.rng.choices(unknown, weights=[CHANCE_WEIGHTS[c] for c in unknown])[0]
+
+
+def chance_odds(k: Knowledge) -> list[float]:
+    """Chance's probability of each cell on its next shot: the weights renormalised over the unknown cells.
+
+    Fired cells are 0. The list is row-major, like ProbabilityAgent's belief, so the page can draw both the same way.
+    """
+    unknown = k.unknown_cells()
+    total = sum(CHANCE_WEIGHTS[c] for c in unknown)
+    odds = [0.0] * (SIZE * SIZE)
+    for c in unknown:
+        odds[c] = CHANCE_WEIGHTS[c] / total
+    return odds
+
+
+AGENTS = {"random": RandomAgent, "hunt": HuntAgent, "probability": ProbabilityAgent, "chance": ChanceAgent}
 
 
 def make_agent(name: str, rng: random.Random) -> Agent:

@@ -1,12 +1,14 @@
-"""Play Snake in the terminal, watch an agent play, evolve a network, or run the benchmark.
+"""Play Snake in the terminal, watch an agent play, train the agents, or run the benchmark and action counts.
 
     python -m snake                              # play yourself, turn by turn (w a s d, one step per line)
     python -m snake play --delay 0.15            # timed: the snake keeps moving; w a s d set its heading
     python -m snake watch --agent evolved --seed 3 --delay 0.08
     python -m snake watch --agent planner --seed 3 --steps 400
-    python -m snake evolve                       # the committed run (about 4 minutes on a laptop core)
+    python -m snake evolve                       # the committed run (about 10 minutes on two cores)
     python -m snake evolve --generations 20 --pop 40 --games 2 --no-save    # a quick sketch
+    python -m snake cem                          # cross-entropy over the evaluator's 8 weights (about 55 minutes)
     python -m snake benchmark --games 200 --write
+    python -m snake actions --games 40 --write   # how often the net picks left, straight, right
 
 Keys in turn mode: w a s d set the next move's direction (w is north). A blank line keeps the
 current heading. h shows the planner's suggested move, q quits. In timed mode the same keys set the
@@ -21,14 +23,26 @@ import os
 import select
 import sys
 import time
+from pathlib import Path
 
 from .agents import AGENT_NAMES, DESCRIPTIONS, make_policy, planner_path
-from .benchmark import DEFAULT_GAMES, RESULTS_DIR, run_benchmark, to_markdown, write_results
+from .benchmark import (
+    DEFAULT_GAMES,
+    RESULTS_DIR,
+    action_counts,
+    run_benchmark,
+    to_markdown,
+    write_action_counts,
+    write_results,
+)
 from .board import ACTION_NAMES, BOARD, HEADING_NAMES, STRAIGHT, Game, action_toward
+from .cem import CEMSettings, cem, write_weights
+from .cem import settings_dict as cem_settings_dict
+from .evaluator import WEIGHTS_PATH
 from .evolve import Settings, evolve, settings_dict
 from .net import CHAMPION_PATH, Net
 
-COMMANDS = ("play", "watch", "evolve", "benchmark")
+COMMANDS = ("play", "watch", "evolve", "cem", "benchmark", "actions")
 KEY_HEADINGS = {"w": 0, "d": 1, "s": 2, "a": 3}  # w north, d east, s south, a west
 ARROWS = {0: "^", 1: ">", 2: "v", 3: "<"}
 
@@ -152,21 +166,35 @@ def watch(agent: str, seed: int, delay: float, steps: int | None, out=print, siz
     return game
 
 
+def _write_champion(path: Path, genome, meta: dict) -> None:
+    net = Net.from_genome(genome)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(net.to_json(**meta), separators=(",", ":")) + "\n")
+
+
 def _evolve_cmd(args) -> int:
     s = Settings(pop=args.pop, games=args.games, generations=args.generations, elites=args.elites,
                  tournament=args.tournament, mutation_rate=args.mutation_rate, mutation_sigma=args.mutation_sigma,
-                 seed=args.seed, workers=args.workers)
+                 seed=args.seed, workers=args.workers, starve_penalty=args.starve_penalty)
     t0 = time.perf_counter()
+    checkpoint_dir = Path(args.checkpoint_dir) if args.checkpoint_dir else None
+    records: list[dict] = []
 
-    def show(rec):
+    def show(rec, best_genome):
+        records.append(rec)
         print(f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
               f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
               f"best steps {rec['best_steps']:7.1f}  {rec['elapsed_s']:7.1f}s", flush=True)
+        # Checkpoints hold the best-ever training genome, not the validated champion, so they are marked as such.
+        # They let a partial run be used or inspected without waiting for the end.
+        if checkpoint_dir and rec["generation"] % args.checkpoint_every == 0:
+            meta = {"checkpoint": True, "generation": rec["generation"], "settings": settings_dict(s)}
+            _write_champion(checkpoint_dir / f"champion_gen{rec['generation']:03d}.json", best_genome, meta)
+            (checkpoint_dir / "log.jsonl").write_text("".join(json.dumps(h) + "\n" for h in records))
 
     genome, score, history, best_gen = evolve(s, on_generation=show)
-    net = Net.from_genome(genome)
     print(f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, "
-          f"training fitness {score.fitness:.3f}, apples {score.apples:.2f} per game")
+          f"validation fitness {score.fitness:.3f}, apples {score.apples:.2f} per game")
     if args.no_save:
         return 0
     meta = {
@@ -177,11 +205,42 @@ def _evolve_cmd(args) -> int:
         "train_steps": round(score.steps, 1),
         "history": history,
     }
-    CHAMPION_PATH.write_text(json.dumps(net.to_json(**meta), separators=(",", ":")) + "\n")
-    log = RESULTS_DIR / "snake_train_log.jsonl"
+    champion = Path(args.champion) if args.champion else CHAMPION_PATH
+    log = Path(args.log) if args.log else RESULTS_DIR / "snake_train_log.jsonl"
+    _write_champion(champion, genome, meta)
     log.parent.mkdir(parents=True, exist_ok=True)
     log.write_text("".join(json.dumps(r) + "\n" for r in history))
-    print(f"wrote {CHAMPION_PATH} and {log}")
+    print(f"wrote {champion} and {log}")
+    return 0
+
+
+def _cem_cmd(args) -> int:
+    s = CEMSettings(pop=args.pop, games=args.games, generations=args.generations, elites=args.elites,
+                    init_sigma=args.init_sigma, min_sigma=args.min_sigma, seed=args.seed, workers=args.workers)
+    t0 = time.perf_counter()
+
+    def show(rec):
+        print(f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
+              f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
+              f"best steps {rec['best_steps']:7.1f}  sigma {rec['sigma_mean']:.3f}  {rec['elapsed_s']:7.1f}s",
+              flush=True)
+
+    weights, score, history, best_gen = cem(s, on_generation=show)
+    print(f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, validation fitness "
+          f"{score.fitness:.3f}, apples {score.apples:.2f} per game")
+    if args.no_save:
+        return 0
+    meta = {
+        "settings": cem_settings_dict(s),
+        "best_generation": best_gen,
+        "validation_apples": round(score.apples, 3),
+        "validation_steps": round(score.steps, 1),
+        "history": history,
+    }
+    write_weights(WEIGHTS_PATH, weights, meta)
+    log = RESULTS_DIR / "snake_eval_train_log.jsonl"
+    log.write_text("".join(json.dumps(r) + "\n" for r in history))
+    print(f"wrote {WEIGHTS_PATH} and {log}")
     return 0
 
 
@@ -190,7 +249,10 @@ def main(argv=None) -> int:
     # A bare `python -m snake` (or one that starts with a flag) means `play`.
     if not argv or (argv[0] not in COMMANDS and argv[0] not in ("-h", "--help")):
         argv = ["play", *argv]
-    parser = argparse.ArgumentParser(prog="python -m snake", description="Snake: a neuroevolved net against planners.")
+    parser = argparse.ArgumentParser(
+        prog="python -m snake",
+        description="Snake: play it, watch the agents, train the net and the evaluation function, or benchmark them.",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("play", help="play yourself (turn by turn, or timed with --delay)")
@@ -214,12 +276,35 @@ def main(argv=None) -> int:
     e.add_argument("--mutation-sigma", type=float, default=d.mutation_sigma)
     e.add_argument("--seed", type=int, default=d.seed)
     e.add_argument("--workers", type=int, default=d.workers, help="processes scoring genomes in parallel")
+    e.add_argument("--starve-penalty", type=float, default=d.starve_penalty,
+                   help="fitness lost by a game that ends by starvation")
+    e.add_argument("--champion", help="where to write the champion (default: snake/data/champion.json)")
+    e.add_argument("--log", help="where to write the per-generation log (default: results/snake_train_log.jsonl)")
+    e.add_argument("--checkpoint-dir",
+                   help="also write the best-so-far genome here, every --checkpoint-every generations")
+    e.add_argument("--checkpoint-every", type=int, default=20)
     e.add_argument("--no-save", action="store_true", help="print the run but leave the committed files alone")
+
+    c = sub.add_parser("cem", help="cross-entropy method over the evaluation function's weights")
+    cd = CEMSettings()
+    c.add_argument("--pop", type=int, default=cd.pop, help="candidate weight vectors per generation")
+    c.add_argument("--games", type=int, default=cd.games, help="training games per candidate")
+    c.add_argument("--generations", type=int, default=cd.generations)
+    c.add_argument("--elites", type=int, default=cd.elites, help="candidates the Gaussian is refit to")
+    c.add_argument("--init-sigma", type=float, default=cd.init_sigma)
+    c.add_argument("--min-sigma", type=float, default=cd.min_sigma)
+    c.add_argument("--seed", type=int, default=cd.seed)
+    c.add_argument("--workers", type=int, default=cd.workers, help="processes scoring candidates in parallel")
+    c.add_argument("--no-save", action="store_true", help="print the run but leave the committed files alone")
 
     b = sub.add_parser("benchmark", help="win and death statistics for every agent on the same boards")
     b.add_argument("--games", type=int, default=DEFAULT_GAMES)
     b.add_argument("--agents", nargs="+", choices=AGENT_NAMES, default=list(AGENT_NAMES))
     b.add_argument("--write", action="store_true", help="also write results/snake_benchmark.{json,md}")
+
+    a = sub.add_parser("actions", help="how often the committed net picks left, straight, and right")
+    a.add_argument("--games", type=int, default=40, help="benchmark boards to play (from seed 50000)")
+    a.add_argument("--write", action="store_true", help="also write results/snake_net_actions.json")
 
     args = parser.parse_args(argv)
     if args.command == "play":
@@ -233,6 +318,8 @@ def main(argv=None) -> int:
         return 0
     if args.command == "evolve":
         return _evolve_cmd(args)
+    if args.command == "cem":
+        return _cem_cmd(args)
     if args.command == "benchmark":
         result = run_benchmark(args.games, tuple(args.agents),
                                log=lambda name, s: print(f"{name}: {s['mean_apples']:.2f} mean apples", flush=True))
@@ -241,6 +328,13 @@ def main(argv=None) -> int:
         if args.write:
             write_results(result)
             print(f"wrote {RESULTS_DIR / 'snake_benchmark.json'} and .md")
+        return 0
+    if args.command == "actions":
+        result = action_counts(args.games)
+        print(json.dumps(result, indent=2))
+        if args.write:
+            write_action_counts(result)
+            print(f"wrote {RESULTS_DIR / 'snake_net_actions.json'}")
         return 0
     return 1
 

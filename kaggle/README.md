@@ -3,6 +3,9 @@
 `train_connect4.py` runs `connect4.train_az` as a Kaggle GPU script kernel. It resumes from a checkpoint attached as a
 dataset, trains for a set number of hours, and leaves the outputs in `/kaggle/working`.
 
+If the session has no working GPU, the script falls back to the CPU and keeps the other flags. That happened on the run
+that produced the served network: 8 hours on 4 CPU threads, iterations 38–96 (docs/connect4-training.md, phase 5).
+
 | File | Purpose |
 |---|---|
 | `train_connect4.py` | The kernel script: locates the code and checkpoint, checks the GPU, runs training |

@@ -3,13 +3,18 @@
 // The page never searches. Each position goes to /api/endgame/analyze, which looks it up in a tablebase
 // built by retrograde analysis: working backwards from checkmate, every position gets an exact distance
 // to mate (DTM), or a draw. The reply lists every legal move with its own DTM, so the board can tag each
-// move, and the agent picks its reply from the same list. The side with the piece wants the smallest DTM;
+// move, and the tablebase picks its reply from the same list. The side with the piece wants the smallest DTM;
 // the lone king wants the largest: the longest resistance.
+//
+// The other opponent is the Chance (fixed odds) player from endgame-core.js: it draws a move from the same
+// list by fixed weights on each move's kind (captures, checks, king steps to the centre, other moves), and
+// never reads the tablebase. Two modes use them: you play the agent, or watch the tablebase play chance.
 //
 // Positions are {wk, wp, bk, stm} with squares 0..63 (a1 = 0, h8 = 63) and stm 0 = White, 1 = Black.
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
+import { pickAt, probabilities, seededRandom } from './endgame-core.js';
 
 const $ = (id) => document.getElementById(id);
 const WHITE = 0, BLACK = 1;
@@ -18,11 +23,26 @@ const GLYPH = { K: '♔', Q: '♕', R: '♖', k: '♚' };
 const TAG_CLASSES = ['tag-win', 'tag-draw', 'tag-loss', 'tag-mate'];
 const AGENT_DELAY = 650; // pause before the agent answers, so the reply can be read
 const HISTORY_LIMIT = 200;
+const WATCH_MAX_PLIES = 300; // a watched game stops here; the chance side can hold out in an endless line
+const WATCH_RESTART_DELAY = 1800; // pause between the end of one watched game and the next
+const OPP_LABEL = { tablebase: 'Tablebase (exact)', chance: 'Chance (fixed odds)' };
+const OPP_SHORT = { tablebase: 'TABLEBASE', chance: 'CHANCE' };
 
 const state = {
   meta: null,
   piece: 'Q',         // the white piece: Q or R
   human: BLACK,       // BLACK: you are the lone king; WHITE: you have the king and the piece
+  opponent: 'tablebase', // who answers you: 'tablebase' (exact) or 'chance' (fixed odds)
+  watching: false,    // MODE: watch the tablebase play the chance opponent, with no moves from you
+  tbSide: WHITE,      // watch mode: the side the tablebase plays (the other side is chance)
+  paused: false,      // watch mode: PAUSE stops after the current move
+  speed: 600,         // watch mode: milliseconds between moves
+  autoRestart: true,  // watch mode: start the next game when one ends
+  score: { win: 0, draw: 0, loss: 0, unfinished: 0 }, // watch mode: the tablebase's results
+  roll: null,         // seeded uniform generator for the chance opponent's draws, reset for each game
+  seed: 0,            // seed of the current game; each new game takes the next one
+  plies: 0,           // moves made in the current game (watch mode stops at WATCH_MAX_PLIES)
+  games: 0,           // watch mode: games started since the score was last reset
   pos: null,          // the current position
   info: null,         // the analyze reply for pos: value, moves, best
   history: [],        // states before each of your moves, for UNDO
@@ -40,13 +60,21 @@ const state = {
 
 const sqName = (sq) => FILES[sq & 7] + ((sq >> 3) + 1);
 const agentSide = () => 1 - state.human;
-const isAgentTurn = () => !!state.pos && state.pos.stm === agentSide();
 const sideName = (stm) => (stm === WHITE ? 'White' : 'Black');
 
-// You can pick up the king and piece when you are White, and the lone king when you are Black.
+// Which opponent moves for side stm. Watch mode has one per side (the tablebase on tbSide, chance on the
+// other). Play mode has the agent on its side, and nothing on yours.
+function opponentFor(stm) {
+  if (state.watching) return stm === state.tbSide ? 'tablebase' : 'chance';
+  return stm === agentSide() ? state.opponent : null;
+}
+// True when the engine, not you, is to move: always in watch mode.
+const isAgentTurn = () => !!state.pos && (state.watching || state.pos.stm === agentSide());
+
+// You can pick up the king and piece when you are White, and the lone king when you are Black. Never in watch mode.
 function ownPiece(sq) {
   const p = state.pos;
-  if (!p || p.stm !== state.human || state.over) return false;
+  if (!p || state.watching || p.stm !== state.human || state.over) return false;
   return state.human === WHITE ? sq === p.wk || sq === p.wp : sq === p.bk;
 }
 
@@ -184,7 +212,18 @@ function paint() {
   $('eg-board').classList.toggle('over', !!state.over);
   renderChips();
   renderCountdown();
+  renderSides();
   renderThink();
+}
+
+// The line under the board: who plays each side, by name, so the algorithm in use is always visible.
+function renderSides() {
+  if (state.watching) {
+    $('eg-sides').textContent = `White: ${OPP_LABEL[opponentFor(WHITE)]}. Black: ${OPP_LABEL[opponentFor(BLACK)]}.`;
+    return;
+  }
+  $('eg-sides').textContent = `You play ${sideName(state.human)}. The agent plays ${sideName(agentSide())}: `
+    + `${OPP_LABEL[state.opponent]}.`;
 }
 
 // ── Panels ──────────────────────────────────────────────────────────────
@@ -196,7 +235,14 @@ function statusText() {
   if (state.over === 'draw') return 'DRAWN';
   if (!state.info) return 'LOADING';
   if (state.info.value.outcome === 'draw') return 'DRAWN';
-  return isAgentTurn() ? 'AGENT TO MOVE' : 'YOUR MOVE';
+  if (isAgentTurn()) return `${OPP_SHORT[opponentFor(state.pos.stm)]} TO MOVE`;
+  return 'YOUR MOVE';
+}
+
+// The side-to-move tag in the TO MOVE chip: who moves for that side.
+function turnTag(stm) {
+  if (state.watching) return ` (${OPP_SHORT[opponentFor(stm)]})`;
+  return stm === state.human ? ' (you)' : ' (agent)';
 }
 
 // Moves the side with the piece needs to mate from here, or null when the position is drawn.
@@ -209,7 +255,7 @@ function renderChips() {
   const p = state.pos;
   const n = mateNumber();
   $('chip-status').textContent = statusText();
-  $('chip-turn').textContent = p ? `${sideName(p.stm)}${p.stm === state.human ? ' (you)' : ' (agent)'}` : '—';
+  $('chip-turn').textContent = p ? `${sideName(p.stm)}${turnTag(p.stm)}` : '—';
   $('chip-mate').textContent = n === null || n === undefined ? '—' : String(n);
   $('chip-moves').textContent = String(state.moves);
   $('chip-pos').textContent = state.meta ? state.meta.pieces[state.piece].legal.toLocaleString('en-US') : '—';
@@ -222,7 +268,7 @@ function renderCountdown() {
   const n = mateNumber();
   const drawn = !info || info.value.outcome === 'draw';
   // Red when the agent is mating you, green when you are mating the agent, yellow for a draw.
-  const youAreMated = !!info && info.value.outcome === 'loss' && state.pos.stm === state.human;
+  const youAreMated = !state.watching && !!info && info.value.outcome === 'loss' && state.pos.stm === state.human;
   box.classList.toggle('drawn', drawn);
   box.classList.toggle('lost', youAreMated);
   box.classList.remove('tick');
@@ -241,15 +287,23 @@ function renderCountdown() {
     $('eg-cd-txt').textContent = 'checkmate';
     return;
   }
-  const who = state.human === WHITE ? 'you mate' : 'the agent mates you';
+  const who = state.watching ? 'White mates' : state.human === WHITE ? 'you mate' : 'the agent mates you';
   $('eg-cd-num').textContent = String(n);
   $('eg-cd-txt').textContent = `${n === 1 ? 'move' : 'moves'} left: ${who}, with best play from both sides`;
   void box.offsetWidth; // restart the tick animation
   box.classList.add('tick');
 }
 
+// The reason the tablebase picks its move, by the side it plays.
+function tablebaseWhy(stm) {
+  return stm === WHITE
+    ? 'The tablebase has the king and the piece, so it picks the move that leaves the fewest plies to mate.'
+    : 'The tablebase is the lone king, so it picks the move that lasts longest: a drawing move if there is one, '
+      + 'otherwise the largest distance to mate.';
+}
+
 // THE AGENT IS THINKING: what the table says about this position, why the agent picks what it picks,
-// and the alternatives it compared.
+// and the alternatives it compared. For chance, the alternatives are listed with their odds.
 function renderThink() {
   const body = $('think-body');
   const title = $('think-title');
@@ -275,15 +329,23 @@ function renderThink() {
   }
 
   const ranked = info.moves.slice().sort((a, b) => compareRank(b, a));
-  if (isAgentTurn() && info.best) {
-    add(agentSide() === WHITE
-      ? 'I have the king and the piece, so I pick the move that leaves you the fewest plies to mate.'
-      : 'I am the lone king, so I pick the move that lasts longest: a drawing move if there is one, otherwise the largest distance to mate.',
-    'eg-why');
+  const who = isAgentTurn() ? opponentFor(state.pos.stm) : null;
+  // Chance: each legal move's odds, largest first. The tablebase: its ranking, with its best move marked.
+  const odds = new Map();
+  if (who === 'chance') {
+    const probs = probabilities(info.moves, state.pos.wp);
+    info.moves.forEach((mv, i) => odds.set(mv.uci, probs[i]));
+    ranked.sort((a, b) => odds.get(b.uci) - odds.get(a.uci));
+    const ways = info.moves.length;
+    add(`Chance (fixed odds) draws this move at random. Each legal move's weight is its kind's odds: captures 4, `
+      + `checks 2, king steps toward the centre 2, other moves 1. Its chance is that weight over the total of the `
+      + `${ways} legal ${ways === 1 ? 'move' : 'moves'}. It does not search and does not read the tablebase.`, 'eg-why');
+  } else if (who === 'tablebase' && info.best) {
+    add(tablebaseWhy(state.pos.stm), 'eg-why');
   }
   const list = document.createElement('div');
   list.className = 'eg-alt-list';
-  const bestUci = info.best ? info.best.uci : null;
+  const bestUci = who === 'tablebase' && info.best ? info.best.uci : null;
   const shown = state.showHint ? ranked : ranked.slice(0, 6);
   for (const mv of shown) {
     const row = document.createElement('div');
@@ -292,7 +354,9 @@ function renderThink() {
     name.textContent = mv.san;
     const d = document.createElement('span');
     d.className = 'eg-alt-d';
-    d.textContent = describeMove(mv);
+    d.textContent = odds.has(mv.uci)
+      ? `${(odds.get(mv.uci) * 100).toFixed(1)}% · ${describeMove(mv)}`
+      : describeMove(mv);
     row.append(name, d);
     list.appendChild(row);
   }
@@ -406,7 +470,7 @@ async function show(pos, info = null) {
       piece: state.piece, wk: pos.wk, wp: pos.wp, bk: pos.bk, stm: pos.stm,
     }));
     state.pos = pos;
-    if (state.heat) {
+    if (state.heat && !state.watching) { // watch mode skips the heat map: it would double the requests per move
       state.heatData = await getJSON('/api/endgame/heatmap', {
         piece: state.piece, wk: pos.wk, wp: pos.wp, stm: pos.stm,
       });
@@ -414,6 +478,7 @@ async function show(pos, info = null) {
   } catch (err) {
     log(`✗ ${err.message}`, 'log-err');
     state.busy = false;
+    if (state.watching) pauseWatch(`paused: ${err.message}`); // usually the move rate limit: PLAY resumes
     paint();
     return false;
   }
@@ -433,6 +498,10 @@ async function show(pos, info = null) {
 // No legal moves: checkmate when the side to move is in check (the table's value is loss in 0), else stalemate.
 function endFromNoMoves() {
   if (state.info.value.outcome === 'loss') {
+    if (state.watching) {
+      finish('checkmate', `${sideName(state.pos.stm)} is checkmated.`, null);
+      return;
+    }
     const youLost = state.pos.stm === state.human;
     finish('checkmate', youLost ? 'The agent mates you.' : 'You mate the agent.', youLost);
   } else {
@@ -440,7 +509,13 @@ function endFromNoMoves() {
   }
 }
 
-// End the game. `youLost` is true or false for checkmate, null for a draw.
+// The tablebase's result for a watched game that ended as kind: it wins when the chance side is mated.
+function watchResult(kind) {
+  if (kind === 'checkmate') return state.pos.stm === state.tbSide ? 'loss' : 'win';
+  return kind === 'unfinished' ? 'unfinished' : 'draw';
+}
+
+// End the game. `youLost` is true or false for checkmate, null for a draw or a watched game.
 function finish(kind, text, youLost) {
   state.over = kind;
   stopTimer();
@@ -448,6 +523,11 @@ function finish(kind, text, youLost) {
   note(text);
   log(`★ ${text}`, 'log-best');
   paint();
+  if (state.watching) {
+    state.score[watchResult(kind)] += 1;
+    renderScore();
+    if (state.autoRestart) state.timer = setTimeout(newWatchGame, WATCH_RESTART_DELAY);
+  }
   if (youLost === false) {
     burst($('eg-board'), { count: 150, colors: ['#00ff88', '#00f5ff', '#ffe600'] });
     shake($('eg-board'), 'big');
@@ -455,9 +535,12 @@ function finish(kind, text, youLost) {
   } else if (youLost === true) {
     shake($('eg-board'), 'big');
     banner('CHECKMATE', text, '#ff00a0');
+  } else if (kind === 'checkmate') {
+    shake($('eg-board'), 'big');
+    banner('CHECKMATE', text, '#00f5ff');
   } else {
     shake($('eg-board'), 'small');
-    banner(kind === 'stalemate' ? 'STALEMATE' : 'DRAWN', text, '#ffe600');
+    banner(kind === 'stalemate' ? 'STALEMATE' : kind === 'unfinished' ? 'UNFINISHED' : 'DRAWN', text, '#ffe600');
   }
 }
 
@@ -468,18 +551,33 @@ function stopTimer() {
 
 function scheduleAgent() {
   stopTimer();
-  state.timer = setTimeout(agentMove, AGENT_DELAY);
+  if (state.watching) {
+    note(state.paused
+      ? 'Paused. STEP plays the next move, PLAY resumes.'
+      : 'Watching: the tablebase and the chance opponent take turns. PAUSE stops after the current move.');
+    if (state.paused) return;
+  }
+  state.timer = setTimeout(agentMove, state.watching ? state.speed : AGENT_DELAY);
 }
 
-// The agent plays the first move of the table's ranking, which is what the analyze reply names as best.
+// The move the side to move plays: the tablebase's best move, or a draw from the chance odds. The label in
+// the log says which, so a watched game reads clearly.
 function agentMove() {
   state.timer = 0;
   const info = state.info;
   if (!info || state.over || !info.best) return;
-  const mv = info.moves.find((m) => m.uci === info.best.uci);
+  if (state.watching && state.plies >= WATCH_MAX_PLIES) {
+    finish('unfinished', `Stopped after ${WATCH_MAX_PLIES} plies: neither side has finished.`, null);
+    return;
+  }
+  const who = opponentFor(state.pos.stm);
+  const mv = who === 'chance'
+    ? pickAt(info.moves, state.pos.wp, state.roll())
+    : info.moves.find((m) => m.uci === info.best.uci);
   if (!mv) return;
+  state.plies += 1;
   state.last = { from: mv.from, to: mv.to };
-  log(`agent: ${mv.san}  (${describeMove(mv)})`, 'log-adv');
+  log(`${OPP_SHORT[who].toLowerCase()}: ${mv.san}  (${describeMove(mv)})`, 'log-adv');
   if (mv.capture) {
     captured(mv);
     return;
@@ -503,6 +601,7 @@ function humanMove(mv) {
   state.history.push({ pos: state.pos, info, last: state.last, moves: state.moves });
   if (state.history.length > HISTORY_LIMIT) state.history.shift();
   state.moves += 1;
+  state.plies += 1;
   state.last = { from: mv.from, to: mv.to };
 
   let verdict = '';
@@ -601,7 +700,8 @@ async function newPosition() {
   }
 }
 
-// Take a reply from the random or FEN endpoint as the new game.
+// Take a reply from the random or FEN endpoint as the new game. Each game gets the next seed, so the chance
+// opponent's draws in it can be repeated.
 async function showReply(reply, what) {
   stopTimer();
   state.piece = reply.piece;
@@ -609,9 +709,104 @@ async function showReply(reply, what) {
   state.over = null;
   state.history = [];
   state.moves = 0;
+  state.plies = 0;
   state.last = null;
+  state.seed += 1;
+  state.roll = seededRandom(state.seed);
   await show({ wk: reply.wk, wp: reply.wp, bk: reply.bk, stm: reply.stm }, reply);
   log(`${what}: ${reply.fen}`, 'log-info');
+}
+
+// Watch mode: a random winning position for the piece side, with the tablebase on tbSide and chance on the other.
+async function newWatchGame() {
+  stopTimer();
+  state.tbSide = Number($('eg-watch-seat').value);
+  try {
+    const reply = await getJSON('/api/endgame/random', { piece: state.piece, want: 'strong_wins' });
+    state.games += 1;
+    await showReply(reply, `game ${state.games}`);
+  } catch (err) {
+    log(`✗ ${err.message}`, 'log-err');
+    pauseWatch(`paused: ${err.message}`);
+  }
+}
+
+// The big button: a new position in play mode, the next game in watch mode.
+function startNew() {
+  return state.watching ? newWatchGame() : newPosition();
+}
+
+function renderScore() {
+  const s = state.score;
+  const finished = s.win + s.draw + s.loss;
+  $('eg-score').textContent = `Tablebase: ${s.win} won · ${s.draw} drawn · ${s.loss} lost`
+    + (s.unfinished ? ` · ${s.unfinished} unfinished` : '');
+  $('eg-score-note').textContent = finished
+    ? `Tablebase win rate ${Math.round((100 * s.win) / finished)}% over ${finished} finished ${finished === 1 ? 'game' : 'games'}.`
+    : 'Games appear here as they finish.';
+}
+
+function resetScore() {
+  state.score = { win: 0, draw: 0, loss: 0, unfinished: 0 };
+  state.games = 0;
+  renderScore();
+}
+
+// Watch mode pauses itself on an error (usually the move rate limit) so the next request is the user's choice.
+function pauseWatch(text) {
+  state.paused = true;
+  stopTimer();
+  updatePauseUI();
+  note(text);
+}
+
+function updatePauseUI() {
+  $('btn-pause').querySelector('.btn-txt').textContent = state.paused ? '▶ PLAY' : '❚❚ PAUSE';
+}
+
+function togglePause() {
+  if (!state.watching) return;
+  state.paused = !state.paused;
+  updatePauseUI();
+  if (state.paused) {
+    stopTimer();
+    note('Paused. STEP plays the next move, PLAY resumes.');
+  } else if (state.over) {
+    if (state.autoRestart) newWatchGame();
+  } else if (state.info && !state.busy) {
+    scheduleAgent();
+  }
+}
+
+// STEP: pause if running, then play one move.
+function stepWatch() {
+  if (!state.watching || state.busy || state.over || !state.info) return;
+  if (!state.paused) togglePause();
+  agentMove();
+}
+
+// MODE: play against the agent, or watch the tablebase and chance play each other.
+async function setMode(mode) {
+  stopTimer();
+  state.watching = mode === 'watch';
+  state.paused = false;
+  state.over = null;
+  $('eg-side-wrap').hidden = state.watching;
+  $('eg-opp-wrap').hidden = state.watching;
+  $('eg-watch-wrap').hidden = !state.watching;
+  $('eg-watch-controls').hidden = !state.watching;
+  $('eg-score-box').hidden = !state.watching;
+  $('btn-heat').disabled = state.watching;
+  $('btn-undo').disabled = state.watching;
+  $('btn-random').querySelector('.btn-txt').textContent = state.watching ? '↺ NEXT GAME' : '↺ RANDOM';
+  updatePauseUI();
+  if (state.watching) {
+    if (state.heat) await toggleHeat();
+    resetScore();
+    await newWatchGame();
+  } else {
+    await newPosition();
+  }
 }
 
 async function setFen() {
@@ -642,6 +837,7 @@ function undo() {
 }
 
 async function toggleHeat() {
+  if (state.watching) return; // the heat map is for playing: it doubles the requests of a watched move
   state.heat = !state.heat;
   $('btn-heat').setAttribute('aria-pressed', String(state.heat));
   $('btn-heat').querySelector('.btn-txt').textContent = state.heat ? '■ HEAT MAP' : '▦ HEAT MAP';
@@ -671,23 +867,45 @@ function toggleHint() {
 async function init() {
   buildBoard();
   wireBoard();
-  $('btn-random').onclick = newPosition;
+  $('btn-random').onclick = startNew;
   $('btn-undo').onclick = undo;
   $('btn-hint').onclick = toggleHint;
   $('btn-heat').onclick = toggleHeat;
   $('btn-fen').onclick = setFen;
+  $('btn-pause').onclick = togglePause;
+  $('btn-step').onclick = stepWatch;
   $('eg-fen').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') setFen();
   });
   $('eg-piece').onchange = (e) => {
     state.piece = e.target.value;
-    newPosition();
+    startNew();
   };
   $('eg-side').onchange = (e) => {
     state.human = Number(e.target.value);
     newPosition();
   };
   $('eg-side').value = String(state.human);
+  $('eg-mode').onchange = (e) => setMode(e.target.value);
+  // The opponent can change mid-game: the next agent move is drawn from the new one.
+  $('eg-opponent').onchange = (e) => {
+    state.opponent = e.target.value;
+    paint();
+  };
+  $('eg-opponent').value = state.opponent;
+  $('eg-watch-seat').onchange = () => {
+    resetScore();
+    newWatchGame();
+  };
+  $('eg-speed').onchange = (e) => {
+    state.speed = Number(e.target.value);
+  };
+  state.speed = Number($('eg-speed').value);
+  $('eg-auto').onchange = (e) => {
+    state.autoRestart = e.target.checked;
+  };
+  state.autoRestart = $('eg-auto').checked;
+  renderScore();
   try {
     state.meta = await getJSON('/api/endgame/meta');
   } catch (err) {

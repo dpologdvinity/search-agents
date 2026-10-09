@@ -84,12 +84,12 @@ def lock(board, rot: Rotation, px: int, py: int) -> tuple[tuple[int, ...], int, 
 
 
 def render(board, overlays=()) -> str:
-    h = len(board)
     """Plain-text picture of a board, top row first, with '#' filled and '.' empty.
 
     overlays is a sequence of (rot, px, py, char): each piece is drawn over the board with that character.
     The terminal game uses it for the falling piece ('@') and the agent's hint ('o').
     """
+    h = len(board)
     marks: dict[tuple[int, int], str] = {}
     for rot, px, py, ch in overlays:
         for i, m in enumerate(rot.masks):

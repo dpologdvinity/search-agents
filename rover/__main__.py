@@ -58,6 +58,7 @@ def play(size: int, density: float, seed: int, radius: int, driver: str, delay: 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
+        prog="python -m rover",
         description="Rover exploring an unknown maze: D* Lite (incremental replanning) versus A* from scratch.")
     parser.add_argument("command", nargs="?", default="play", choices=["play", "benchmark"],
                         help="play (default) animates one route; benchmark runs the seeded comparison")

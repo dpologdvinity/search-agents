@@ -1,0 +1,612 @@
+{
+  "config": {
+    "size": 15,
+    "ghosts": 2,
+    "play_seeds": 12,
+    "convergence_seeds": 6,
+    "turn_cap": 300,
+    "stay_p": 0.1,
+    "straight_p": 0.8,
+    "beta": 1.0,
+    "sigmas": {
+      "low": 0.5,
+      "med": 1.0,
+      "high": 2.0
+    },
+    "bust_threshold": 0.5
+  },
+  "play": [
+    {
+      "model": "random",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "exact",
+      "turns_mean": 61.0,
+      "turns_median": 58,
+      "all_busted": 1.0,
+      "true_mass": 0.5974615894809092,
+      "seconds_per_game": 0.09029662916812715
+    },
+    {
+      "model": "random",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-10",
+      "turns_mean": 133.91666666666666,
+      "turns_median": 111,
+      "all_busted": 0.8333333333333334,
+      "true_mass": 0.3061516117605632,
+      "seconds_per_game": 0.052479816501848596
+    },
+    {
+      "model": "random",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-50",
+      "turns_mean": 60.333333333333336,
+      "turns_median": 56,
+      "all_busted": 1.0,
+      "true_mass": 0.6397266701523778,
+      "seconds_per_game": 0.0591402214995469
+    },
+    {
+      "model": "random",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-200",
+      "turns_mean": 81.0,
+      "turns_median": 58,
+      "all_busted": 0.9166666666666666,
+      "true_mass": 0.49396980444500754,
+      "seconds_per_game": 0.21209519583256528
+    },
+    {
+      "model": "random",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "exact",
+      "turns_mean": 95.08333333333333,
+      "turns_median": 77,
+      "all_busted": 1.0,
+      "true_mass": 0.2786949601748415,
+      "seconds_per_game": 0.09237946125055412
+    },
+    {
+      "model": "random",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-10",
+      "turns_mean": 160.33333333333334,
+      "turns_median": 152,
+      "all_busted": 0.9166666666666666,
+      "true_mass": 0.17496277027769414,
+      "seconds_per_game": 0.0759591442498883
+    },
+    {
+      "model": "random",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-50",
+      "turns_mean": 123.16666666666667,
+      "turns_median": 82,
+      "all_busted": 0.8333333333333334,
+      "true_mass": 0.24486652276746276,
+      "seconds_per_game": 0.10191951208374424
+    },
+    {
+      "model": "random",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-200",
+      "turns_mean": 102.5,
+      "turns_median": 95,
+      "all_busted": 0.9166666666666666,
+      "true_mass": 0.2872125171521537,
+      "seconds_per_game": 0.260030437916915
+    },
+    {
+      "model": "random",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "exact",
+      "turns_mean": 295.4166666666667,
+      "turns_median": 300,
+      "all_busted": 0.08333333333333333,
+      "true_mass": 0.17555329183890336,
+      "seconds_per_game": 0.3571082630824094
+    },
+    {
+      "model": "random",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-10",
+      "turns_mean": 183.08333333333334,
+      "turns_median": 187,
+      "all_busted": 0.5833333333333334,
+      "true_mass": 0.1351155434333478,
+      "seconds_per_game": 0.061779887833836256
+    },
+    {
+      "model": "random",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-50",
+      "turns_mean": 288.4166666666667,
+      "turns_median": 300,
+      "all_busted": 0.16666666666666666,
+      "true_mass": 0.16949757894626616,
+      "seconds_per_game": 0.2567160264170525
+    },
+    {
+      "model": "random",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-200",
+      "turns_mean": 300.0,
+      "turns_median": 300,
+      "all_busted": 0.0,
+      "true_mass": 0.17885643322572195,
+      "seconds_per_game": 0.8094363536668728
+    },
+    {
+      "model": "lurker",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "exact",
+      "turns_mean": 33.5,
+      "turns_median": 39,
+      "all_busted": 1.0,
+      "true_mass": 0.6727783578753941,
+      "seconds_per_game": 0.1802847175010053
+    },
+    {
+      "model": "lurker",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-10",
+      "turns_mean": 34.25,
+      "turns_median": 39,
+      "all_busted": 1.0,
+      "true_mass": 0.4641946942415249,
+      "seconds_per_game": 0.1831398967503143
+    },
+    {
+      "model": "lurker",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-50",
+      "turns_mean": 33.583333333333336,
+      "turns_median": 39,
+      "all_busted": 1.0,
+      "true_mass": 0.6410285790009232,
+      "seconds_per_game": 0.22346468400064623
+    },
+    {
+      "model": "lurker",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-200",
+      "turns_mean": 33.916666666666664,
+      "turns_median": 39,
+      "all_busted": 1.0,
+      "true_mass": 0.6658352140586822,
+      "seconds_per_game": 0.3357538197493947
+    },
+    {
+      "model": "lurker",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "exact",
+      "turns_mean": 34.833333333333336,
+      "turns_median": 40,
+      "all_busted": 1.0,
+      "true_mass": 0.37615000913841107,
+      "seconds_per_game": 0.2950902211662954
+    },
+    {
+      "model": "lurker",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-10",
+      "turns_mean": 36.333333333333336,
+      "turns_median": 42,
+      "all_busted": 1.0,
+      "true_mass": 0.29082272064657394,
+      "seconds_per_game": 0.29906000041713315
+    },
+    {
+      "model": "lurker",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-50",
+      "turns_mean": 34.833333333333336,
+      "turns_median": 41,
+      "all_busted": 1.0,
+      "true_mass": 0.3688260996564658,
+      "seconds_per_game": 0.21082409199940835
+    },
+    {
+      "model": "lurker",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-200",
+      "turns_mean": 35.0,
+      "turns_median": 41,
+      "all_busted": 1.0,
+      "true_mass": 0.3778546239667749,
+      "seconds_per_game": 0.2580593214164158
+    },
+    {
+      "model": "lurker",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "exact",
+      "turns_mean": 35.833333333333336,
+      "turns_median": 41,
+      "all_busted": 1.0,
+      "true_mass": 0.24649608926323852,
+      "seconds_per_game": 0.28021454141647456
+    },
+    {
+      "model": "lurker",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-10",
+      "turns_mean": 36.833333333333336,
+      "turns_median": 41,
+      "all_busted": 1.0,
+      "true_mass": 0.20580715155106832,
+      "seconds_per_game": 0.2637949774992497
+    },
+    {
+      "model": "lurker",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-50",
+      "turns_mean": 36.083333333333336,
+      "turns_median": 41,
+      "all_busted": 1.0,
+      "true_mass": 0.24318659258499367,
+      "seconds_per_game": 0.26419513333288097
+    },
+    {
+      "model": "lurker",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-200",
+      "turns_mean": 36.75,
+      "turns_median": 40,
+      "all_busted": 1.0,
+      "true_mass": 0.25329914029466394,
+      "seconds_per_game": 0.25531501999951917
+    },
+    {
+      "model": "patrol",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "exact",
+      "turns_mean": 82.33333333333333,
+      "turns_median": 68,
+      "all_busted": 1.0,
+      "true_mass": 0.8812379549525486,
+      "seconds_per_game": 0.1141943444993861
+    },
+    {
+      "model": "patrol",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-10",
+      "turns_mean": 266.0,
+      "turns_median": 300,
+      "all_busted": 0.16666666666666666,
+      "true_mass": 0.10395879915589334,
+      "seconds_per_game": 0.08101615950060174
+    },
+    {
+      "model": "patrol",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-50",
+      "turns_mean": 228.08333333333334,
+      "turns_median": 300,
+      "all_busted": 0.3333333333333333,
+      "true_mass": 0.2293811720488688,
+      "seconds_per_game": 0.13263080766652516
+    },
+    {
+      "model": "patrol",
+      "noise": "low",
+      "sigma": 0.5,
+      "filter": "particles-200",
+      "turns_mean": 137.66666666666666,
+      "turns_median": 81,
+      "all_busted": 0.75,
+      "true_mass": 0.5015885435046897,
+      "seconds_per_game": 0.23286326524915543
+    },
+    {
+      "model": "patrol",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "exact",
+      "turns_mean": 63.083333333333336,
+      "turns_median": 64,
+      "all_busted": 1.0,
+      "true_mass": 0.5854773129964856,
+      "seconds_per_game": 0.06226119099968249
+    },
+    {
+      "model": "patrol",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-10",
+      "turns_mean": 267.0833333333333,
+      "turns_median": 300,
+      "all_busted": 0.16666666666666666,
+      "true_mass": 0.12133771375096442,
+      "seconds_per_game": 0.0799877265841739
+    },
+    {
+      "model": "patrol",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-50",
+      "turns_mean": 226.41666666666666,
+      "turns_median": 300,
+      "all_busted": 0.3333333333333333,
+      "true_mass": 0.24353929159866605,
+      "seconds_per_game": 0.1441029087491188
+    },
+    {
+      "model": "patrol",
+      "noise": "med",
+      "sigma": 1.0,
+      "filter": "particles-200",
+      "turns_mean": 79.66666666666667,
+      "turns_median": 63,
+      "all_busted": 0.9166666666666666,
+      "true_mass": 0.3572470213400791,
+      "seconds_per_game": 0.123210480499741
+    },
+    {
+      "model": "patrol",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "exact",
+      "turns_mean": 151.91666666666666,
+      "turns_median": 141,
+      "all_busted": 0.8333333333333334,
+      "true_mass": 0.2117235270948709,
+      "seconds_per_game": 0.14724206141545437
+    },
+    {
+      "model": "patrol",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-10",
+      "turns_mean": 274.75,
+      "turns_median": 300,
+      "all_busted": 0.16666666666666666,
+      "true_mass": 0.09434064647289632,
+      "seconds_per_game": 0.09964249899955273
+    },
+    {
+      "model": "patrol",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-50",
+      "turns_mean": 300.0,
+      "turns_median": 300,
+      "all_busted": 0.0,
+      "true_mass": 0.09225296679876865,
+      "seconds_per_game": 0.15222464141697856
+    },
+    {
+      "model": "patrol",
+      "noise": "high",
+      "sigma": 2.0,
+      "filter": "particles-200",
+      "turns_mean": 215.91666666666666,
+      "turns_median": 268,
+      "all_busted": 0.5833333333333334,
+      "true_mass": 0.1569325419875391,
+      "seconds_per_game": 0.3051335510851156
+    }
+  ],
+  "viterbi": [
+    {
+      "model": "random",
+      "noise": "low",
+      "sigma": 0.5,
+      "viterbi_acc": 0.8155012636899748,
+      "filtered_map_acc": 0.6823925863521483,
+      "scored_turns": 1187
+    },
+    {
+      "model": "random",
+      "noise": "med",
+      "sigma": 1.0,
+      "viterbi_acc": 0.42752808988764046,
+      "filtered_map_acc": 0.37808988764044943,
+      "scored_turns": 1780
+    },
+    {
+      "model": "random",
+      "noise": "high",
+      "sigma": 2.0,
+      "viterbi_acc": 0.28475336322869954,
+      "filtered_map_acc": 0.2982062780269058,
+      "scored_turns": 446
+    },
+    {
+      "model": "lurker",
+      "noise": "low",
+      "sigma": 0.5,
+      "viterbi_acc": 0.7720706260032103,
+      "filtered_map_acc": 0.7544141252006421,
+      "scored_turns": 623
+    },
+    {
+      "model": "lurker",
+      "noise": "med",
+      "sigma": 1.0,
+      "viterbi_acc": 0.4906832298136646,
+      "filtered_map_acc": 0.5108695652173914,
+      "scored_turns": 644
+    },
+    {
+      "model": "lurker",
+      "noise": "high",
+      "sigma": 2.0,
+      "viterbi_acc": 0.328335832083958,
+      "filtered_map_acc": 0.35082458770614694,
+      "scored_turns": 667
+    },
+    {
+      "model": "patrol",
+      "noise": "low",
+      "sigma": 0.5,
+      "viterbi_acc": 0.9800235017626322,
+      "filtered_map_acc": 0.8918918918918919,
+      "scored_turns": 1702
+    },
+    {
+      "model": "patrol",
+      "noise": "med",
+      "sigma": 1.0,
+      "viterbi_acc": 0.8933333333333333,
+      "filtered_map_acc": 0.68,
+      "scored_turns": 1200
+    },
+    {
+      "model": "patrol",
+      "noise": "high",
+      "sigma": 2.0,
+      "viterbi_acc": 0.6435030937648739,
+      "filtered_map_acc": 0.3331746787244169,
+      "scored_turns": 2101
+    }
+  ],
+  "convergence": [
+    {
+      "noise": "low",
+      "sigma": 0.5,
+      "particles": 10,
+      "kl_mean": 5.593181977237925,
+      "true_mass_pf": 0.4736503792976289,
+      "true_mass_exact": 0.6259213933080469
+    },
+    {
+      "noise": "low",
+      "sigma": 0.5,
+      "particles": 30,
+      "kl_mean": 5.766116909815531,
+      "true_mass_pf": 0.3754916266572155,
+      "true_mass_exact": 0.6259213933080469
+    },
+    {
+      "noise": "low",
+      "sigma": 0.5,
+      "particles": 100,
+      "kl_mean": 3.1723356439370045,
+      "true_mass_pf": 0.5123943086912797,
+      "true_mass_exact": 0.6259213933080469
+    },
+    {
+      "noise": "low",
+      "sigma": 0.5,
+      "particles": 300,
+      "kl_mean": 0.5389466290648842,
+      "true_mass_pf": 0.5952330955818844,
+      "true_mass_exact": 0.6259213933080469
+    },
+    {
+      "noise": "low",
+      "sigma": 0.5,
+      "particles": 1000,
+      "kl_mean": 0.01689101227405634,
+      "true_mass_pf": 0.6324645643294737,
+      "true_mass_exact": 0.6259213933080469
+    },
+    {
+      "noise": "med",
+      "sigma": 1.0,
+      "particles": 10,
+      "kl_mean": 4.905595020157361,
+      "true_mass_pf": 0.25118550807926293,
+      "true_mass_exact": 0.28073868989559053
+    },
+    {
+      "noise": "med",
+      "sigma": 1.0,
+      "particles": 30,
+      "kl_mean": 4.018037857720659,
+      "true_mass_pf": 0.2274832235613328,
+      "true_mass_exact": 0.28073868989559053
+    },
+    {
+      "noise": "med",
+      "sigma": 1.0,
+      "particles": 100,
+      "kl_mean": 0.423613047664112,
+      "true_mass_pf": 0.2818340237434113,
+      "true_mass_exact": 0.28073868989559053
+    },
+    {
+      "noise": "med",
+      "sigma": 1.0,
+      "particles": 300,
+      "kl_mean": 0.05880766523165589,
+      "true_mass_pf": 0.27384642592530795,
+      "true_mass_exact": 0.28073868989559053
+    },
+    {
+      "noise": "med",
+      "sigma": 1.0,
+      "particles": 1000,
+      "kl_mean": 0.01604379025715817,
+      "true_mass_pf": 0.28480507163689356,
+      "true_mass_exact": 0.28073868989559053
+    },
+    {
+      "noise": "high",
+      "sigma": 2.0,
+      "particles": 10,
+      "kl_mean": 5.309958941046819,
+      "true_mass_pf": 0.148795965600289,
+      "true_mass_exact": 0.17750459899473273
+    },
+    {
+      "noise": "high",
+      "sigma": 2.0,
+      "particles": 30,
+      "kl_mean": 2.2968740103604532,
+      "true_mass_pf": 0.16858793056168755,
+      "true_mass_exact": 0.17750459899473273
+    },
+    {
+      "noise": "high",
+      "sigma": 2.0,
+      "particles": 100,
+      "kl_mean": 0.2883225581112199,
+      "true_mass_pf": 0.17449140435296367,
+      "true_mass_exact": 0.17750459899473273
+    },
+    {
+      "noise": "high",
+      "sigma": 2.0,
+      "particles": 300,
+      "kl_mean": 0.1035167437196277,
+      "true_mass_pf": 0.17342696568408736,
+      "true_mass_exact": 0.17750459899473273
+    },
+    {
+      "noise": "high",
+      "sigma": 2.0,
+      "particles": 1000,
+      "kl_mean": 0.020087480929160004,
+      "true_mass_pf": 0.17955876620162398,
+      "true_mass_exact": 0.17750459899473273
+    }
+  ]
+}

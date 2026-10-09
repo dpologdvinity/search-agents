@@ -4,12 +4,15 @@ Most rule tests use tiny one-corridor layouts registered with the `tiny` helper,
 expected score and collision can be worked out by hand from the layout.
 """
 
+import json
 import random
 
 import pytest
 
 from pacman import mazes
+from pacman.__main__ import main as cli_main
 from pacman.agents import QAgent, RandomAgent, load_weights, make_agent
+from pacman.benchmark import BENCH_SEED_BASE
 from pacman.engine import (
     DEATH_PENALTY,
     GHOST_POINTS,
@@ -27,14 +30,15 @@ from pacman.engine import (
 )
 from pacman.episode import run_episode
 from pacman.features import FEATURE_NAMES, state_features, successor
-from pacman.ghosts import Ghost, choose_move, target_for
+from pacman.ghosts import CHANCE_ODDS, NO_HEADING, Ghost, chance_move, choose_move, target_for
 from pacman.lookahead import SURVIVAL_HORIZON, survival_depths
+from pacman.match import match_markdown, run_match
 from pacman.mazes import ACTIONS, LAYOUTS, parse
 from pacman.qlearning import td_update, train
 from pacman.search import astar, distances
-from pacman.terminal import play_human, render
+from pacman.terminal import play_human, render, watch
 
-E = ACTIONS.index("E")
+N, E, S, W = (ACTIONS.index(letter) for letter in "NESW")
 
 
 def tiny(monkeypatch, name, rows):
@@ -356,3 +360,151 @@ def test_human_play_refuses_bad_keys_and_quits():
     out = []
     assert play_human("lanes", 0, read=lambda _: next(inputs), out=out.append) == "quit"
     assert any("use w" in line for line in out)
+
+
+# ── chance ghosts ────────────────────────────────────────────────────────
+
+# A 5x5 cross: the ghost stands at the centre with all four arms open, Pac-Man at the north arm.
+CROSS = ("#####", "##P##", "##.##", "#.G.#", "##.##")
+# The same cross with the south arm walled off, so a ghost heading north has no way back.
+TEE = ("#####", "##P##", "##.##", "#.G.#", "#####")
+
+
+def _draws(maze, ghost, n, seed=0):
+    """Count how often each direction index comes up in n chance draws from the same ghost."""
+    rng = random.Random(seed)
+    counts = {}
+    for _ in range(n):
+        _, d = chance_move(maze, ghost, rng)
+        counts[d] = counts.get(d, 0) + 1
+    return {d: c / n for d, c in counts.items()}
+
+
+def test_chance_odds_are_a_probability_table():
+    assert set(CHANCE_ODDS) == {"straight", "left", "right", "back"}
+    assert all(p > 0 for p in CHANCE_ODDS.values())
+    assert sum(CHANCE_ODDS.values()) == pytest.approx(1.0)
+    assert CHANCE_ODDS == {"straight": 0.60, "left": 0.15, "right": 0.15, "back": 0.10}
+
+
+def test_chance_draws_match_the_table_when_all_four_ways_are_open(monkeypatch):
+    m = tiny(monkeypatch, "cross", CROSS)
+    centre = m.ghost_starts[0]
+    freq = _draws(m, Ghost(centre, "chaser", centre, heading=N), 20_000)
+    # Heading north: straight is N, right is E, left is W, back is S.
+    expected = {N: 0.60, E: 0.15, W: 0.15, S: 0.10}
+    assert set(freq) == set(expected)
+    for d, p in expected.items():
+        assert freq[d] == pytest.approx(p, abs=0.015)
+
+
+def test_chance_renormalises_over_the_open_directions(monkeypatch):
+    m = tiny(monkeypatch, "tee", TEE)
+    centre = m.ghost_starts[0]
+    freq = _draws(m, Ghost(centre, "chaser", centre, heading=N), 20_000)
+    # South is a wall, so the 10% for going back is shared out: 0.6, 0.15, 0.15 over 0.9.
+    assert set(freq) == {N, E, W}
+    assert freq[N] == pytest.approx(0.6 / 0.9, abs=0.015)
+    assert freq[E] == pytest.approx(0.15 / 0.9, abs=0.015)
+    assert freq[W] == pytest.approx(0.15 / 0.9, abs=0.015)
+
+
+def test_chance_turns_are_relative_to_the_heading(monkeypatch):
+    m = tiny(monkeypatch, "cross", CROSS)
+    centre = m.ghost_starts[0]
+    # Heading east: straight is E, a right turn is S (clockwise), a left turn is N, back is W.
+    freq = _draws(m, Ghost(centre, "chaser", centre, heading=E), 20_000)
+    assert freq[E] == pytest.approx(0.60, abs=0.015)
+    assert freq[S] == pytest.approx(0.15, abs=0.015)
+    assert freq[N] == pytest.approx(0.15, abs=0.015)
+    assert freq[W] == pytest.approx(0.10, abs=0.015)
+
+
+def test_chance_without_a_heading_is_uniform_over_open_directions(monkeypatch):
+    m = tiny(monkeypatch, "cross", CROSS)
+    centre = m.ghost_starts[0]
+    freq = _draws(m, Ghost(centre, "chaser", centre), 20_000)
+    for d in (N, E, S, W):
+        assert freq[d] == pytest.approx(0.25, abs=0.015)
+
+
+def test_chance_only_plays_legal_moves_and_seeds_replay(monkeypatch):
+    m = mazes.get("lanes")
+    for seed in range(5):
+        a = Game(m, seed=seed, ghosts="chance")
+        b = Game(m, seed=seed, ghosts="chance")
+        while not a.state.over:
+            action = a.legal_actions()[0]
+            before = [g.pos for g in a.state.ghosts]
+            ta, tb = a.step(action), b.step(action)
+            assert ta.after == tb.after  # same seed and moves, same game
+            for old, g in zip(before, a.state.ghosts, strict=True):
+                # Each ghost moves to a neighbour of its old cell, or home if it was eaten. A ghost stays
+                # put on a turn where Pac-Man walks into it first, because that collision ends the turn.
+                assert g.pos == old or g.pos in m.nbr[old] or g.pos == g.home
+                assert m.is_open[g.pos]
+    assert a.state.turn > 0
+
+
+def test_chance_records_each_ghosts_heading_and_has_no_route(monkeypatch):
+    m = tiny(monkeypatch, "cross", CROSS)
+    g = Game(m, seed=3, ghosts="chance")
+    turn = g.step(S)  # Pac-Man steps south from the north arm; the north side is a wall
+    moved = 0
+    for before, after in zip(turn.before.ghosts, turn.after.ghosts, strict=True):
+        if after.pos != before.pos:
+            moved += 1
+            assert after.heading == m.nbr[before.pos].index(after.pos)
+    assert moved >= 1
+    assert all(p.target is None and p.path == () for p in turn.plans)
+
+
+def test_chance_ghost_policy_is_recorded_and_unknown_policies_refused():
+    assert Game("lanes", seed=0).ghost_policy == "ai"
+    assert Game("lanes", seed=0, ghosts="chance").ghost_policy == "chance"
+    with pytest.raises(ValueError, match="unknown ghost policy"):
+        Game("lanes", seed=0, ghosts="nope")
+
+
+def test_ai_ghosts_never_record_a_heading():
+    # The A* ghosts ignore headings, and leaving them unset keeps their lookahead memo keys unchanged.
+    g = Game("lanes", seed=2)
+    while not g.state.over and g.legal_actions():
+        g.step(g.legal_actions()[0])
+    assert all(gh.heading == NO_HEADING for gh in g.state.ghosts)
+
+
+def test_chance_episode_is_recorded_and_watchable(monkeypatch):
+    lines = []
+    status = watch("random", "lanes", 4, delay=0, out=lines.append, sleep=lambda _: None,
+                   clear=False, ghosts="chance")
+    assert status in ("won", "lost", "timeout")
+    assert lines[-1].startswith("random vs Chance (fixed odds): ")
+    ep = run_episode(make_agent("random"), mazes.get("lanes"), 4, "random", ghosts="chance")
+    assert ep.ghosts == "chance" and ep.final.status == status
+
+
+def test_chance_human_play_uses_the_chance_ghosts():
+    inputs = iter(["d", "q"])
+    out = []
+    assert play_human("lanes", 0, read=lambda _: next(inputs), out=out.append, ghosts="chance") == "quit"
+
+
+def test_run_match_reports_both_ghost_policies_on_the_same_seeds():
+    result = run_match(2, "random", mazes=("lanes",))
+    assert list(result["ghosts"]) == ["ai", "chance"]
+    assert result["seeds"] == [BENCH_SEED_BASE, BENCH_SEED_BASE + 1]
+    for block in result["ghosts"].values():
+        assert block["overall"]["games"] == 2
+        assert set(block["mazes"]) == {"lanes"}
+    text = match_markdown(result)
+    assert "AI ghosts (A* routes)" in text and "Chance (fixed odds)" in text
+    assert "straight 60%, left 15%, right 15%, back 10%" in text
+
+
+def test_match_command_writes_results_quickly(tmp_path):
+    out = tmp_path / "match.json"
+    assert cli_main(["match", "--games", "1", "--agent", "random", "--out", str(out)]) == 0
+    doc = json.loads(out.read_text())
+    assert set(doc["ghosts"]) == {"ai", "chance"}
+    assert out.with_suffix(".md").read_text().startswith("Pac-Man agent: Random")

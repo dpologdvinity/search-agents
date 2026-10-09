@@ -228,6 +228,8 @@ def learning_summary(returns: list[int]) -> dict:
 def train_and_save(algo: str, seeds: list[int], episodes: int, data_dir: Path = DATA_DIR, log=print) -> dict:
     """Train each seed, keep the weights of the seed whose final 50 episodes did best, and merge curves.
 
+    Ties go to the seed listed first: `max` keeps the first of equal scores. Several seeds often reach the
+    500-step cap, so their last-50 means tie at 500 and the first listed seed is shipped.
     Selection uses training episodes only, so the benchmark's evaluation seeds stay unseen.
     The curves file keeps every seed, which is what the learning-curve chart shows.
     """

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TREE LAB // SEARCH AGENTS</title>
+<meta name="description" content="Paint points on a plane and watch a decision tree carve it up split by split, then grow a random forest and see its averaged boundary, out-of-bag accuracy and overfitting.">
+<meta property="og:title" content="TREE LAB // SEARCH AGENTS">
+<meta property="og:description" content="Paint two to four classes. Watch CART split the plane with laser cuts, then train a random forest on bootstrap samples.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/treelab.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="treelab.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page tl-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">09 // CART · BAGGING · RANDOM FOREST</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="TREE LAB">TREE LAB</h1>
+      <div class="proj-pg-sub">Paint the plane. A decision tree cuts it with one laser per split, then a random forest of bootstrap trees averages its way to a smooth boundary.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip">MODE <span class="val" id="chip-mode">TREE</span></span>
+        <span class="stat-chip green">LEAVES <span class="val" id="chip-leaves">0</span></span>
+        <span class="stat-chip pink">DEPTH <span class="val" id="chip-depth">0</span></span>
+        <span class="stat-chip">TRAIN <span class="val" id="chip-train">—</span></span>
+        <span class="stat-chip green">TEST <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip">STATUS <span class="val" id="chip-status">READY</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="tl-tabs" role="tablist" aria-label="Model">
+        <button class="cyber-btn tl-tab act" id="tab-tree" role="tab" type="button" aria-selected="true" data-mode="tree"><span class="btn-txt">CART TREE</span></button>
+        <button class="cyber-btn tl-tab" id="tab-forest" role="tab" type="button" aria-selected="false" data-mode="forest"><span class="btn-txt">RANDOM FOREST</span></button>
+      </div>
+
+      <div class="tl-stage">
+        <div class="tl-plane-wrap">
+          <canvas id="tl-plane" role="img" aria-label="Painted points on the plane, shaded by the model's prediction"></canvas>
+        </div>
+        <div class="tl-readout-line" id="tl-hint" aria-live="polite">Paint points below, or load a preset. Hover the plane or a tree node to see the region it covers.</div>
+        <div class="tl-paint">
+          <div class="tl-swatches" role="radiogroup" aria-label="Class to paint">
+            <button class="tl-swatch" type="button" role="radio" aria-checked="true" data-c="0" style="--sw:var(--cyan)" title="Class A"><span>A</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="1" style="--sw:var(--pink)" title="Class B"><span>B</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="2" style="--sw:var(--green)" title="Class C" hidden><span>C</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="3" style="--sw:var(--yellow)" title="Class D" hidden><span>D</span></button>
+          </div>
+          <label class="tl-inline-lbl">BRUSH <input class="cyber-range" id="tl-brush" type="range" min="1" max="10" step="1" value="4"></label>
+          <button class="cyber-btn" id="tl-erase" type="button" aria-pressed="false"><span class="btn-txt">ERASE</span></button>
+          <button class="cyber-btn pink" id="tl-clear" type="button"><span class="btn-txt">CLEAR</span></button>
+        </div>
+      </div>
+
+      <div id="tl-diagram">
+      <div class="tl-section-head">
+        <div class="section-title">TREE DIAGRAM</div>
+        <div class="tl-zoom" role="group" aria-label="Diagram zoom">
+          <button class="cyber-btn" id="tl-zoom-out" type="button" aria-label="Zoom out"><span class="btn-txt">−</span></button>
+          <span class="tl-zoom-val" id="tl-zoom-val">100%</span>
+          <button class="cyber-btn" id="tl-zoom-in" type="button" aria-label="Zoom in"><span class="btn-txt">+</span></button>
+          <button class="cyber-btn" id="tl-zoom-fit" type="button"><span class="btn-txt">FIT</span></button>
+        </div>
+      </div>
+      <div class="tl-tree-wrap" id="tl-tree-wrap">
+        <svg id="tl-svg" role="img" aria-label="Decision tree diagram. Hover a node to highlight its region on the plane."></svg>
+        <div class="tl-tree-empty" id="tl-tree-empty">Paint at least two classes to grow a tree.</div>
+      </div>
+      <div class="tl-legend field-hint">Each box: the split rule, impurity, sample count, and class bars. Pure leaves light up. Dashed boxes are still waiting in the queue.</div>
+      </div>
+
+      <div class="tl-section-head">
+        <div class="section-title pink-ttl">ACCURACY VS DEPTH</div>
+        <div class="tl-legend-keys field-hint"><span class="tl-key" style="--k:var(--cyan)"></span>train <span class="tl-key" style="--k:var(--pink)"></span>test</div>
+      </div>
+      <div class="tl-curve-wrap"><canvas id="tl-curve" role="img" aria-label="Train and test accuracy against maximum depth"></canvas></div>
+      <div class="field-hint" id="tl-curve-note">Deeper trees fit the training rows better. Test accuracy stops improving, then falls: that gap is overfitting.</div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title">DATA</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PRESET</div>
+            <div class="inline">
+              <select class="cyber-select" id="tl-preset" style="flex:1">
+                <option value="blobs">Blobs (3 classes)</option>
+                <option value="xor" selected>XOR</option>
+                <option value="checkerboard">Checkerboard</option>
+                <option value="spiral">Spirals</option>
+                <option value="nested">Nested rings (3 classes)</option>
+                <option value="diagonal">Noisy diagonal</option>
+              </select>
+              <button class="cyber-btn green" id="tl-load" type="button"><span class="btn-txt">LOAD</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same points)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="tl-seed" type="number" min="0" max="2147483647" value="1" style="flex:1">
+              <button class="cyber-btn" id="tl-random-seed" type="button"><span class="btn-txt">RANDOM</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">TEST SHARE <span class="field-hint" id="tl-test-val"></span></div>
+            <input class="cyber-range" id="tl-test" type="range" min="0.1" max="0.5" step="0.05" value="0.3" style="width:100%">
+            <div class="field-hint" id="tl-split-note">Rows outside the test set train the model; the test set is shuffled with a fixed seed.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">SPLITTING</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">IMPURITY</div>
+            <select class="cyber-select" id="tl-criterion" style="width:100%">
+              <option value="gini" selected>Gini (1 − Σp²)</option>
+              <option value="entropy">Entropy (−Σp log₂p)</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">MAX DEPTH <span class="field-hint" id="tl-depth-val"></span></div>
+            <input class="cyber-range" id="tl-depth" type="range" min="1" max="12" step="1" value="5" style="width:100%">
+          </div>
+          <div>
+            <div class="field-lbl">MIN SAMPLES PER LEAF <span class="field-hint" id="tl-minleaf-val"></span></div>
+            <input class="cyber-range" id="tl-minleaf" type="range" min="1" max="20" step="1" value="3" style="width:100%">
+          </div>
+          <label class="tl-check"><input type="checkbox" id="tl-extras" checked> <span>Extra features: x·y and x²+y² (curved cuts)</span></label>
+        </div>
+      </div>
+
+      <div id="tl-tree-panel">
+        <div class="section-title green-ttl">TREE</div>
+        <div class="stack">
+          <div class="inline tl-playback">
+            <button class="cyber-btn" id="tl-step" type="button"><span class="btn-txt">› STEP</span></button>
+            <button class="cyber-btn green" id="tl-play" type="button" aria-pressed="false"><span class="btn-txt">▶ PLAY</span></button>
+            <button class="cyber-btn pink" id="tl-grow" type="button"><span class="btn-txt">» GROW FULLY</span></button>
+            <button class="cyber-btn" id="tl-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
+          </div>
+          <div>
+            <div class="field-lbl">PRUNE α <span class="field-hint" id="tl-alpha-val"></span></div>
+            <input class="cyber-range" id="tl-alpha" type="range" min="0" max="0.1" step="0.0005" value="0" style="width:100%">
+            <div class="inline" style="margin-top:0.4rem">
+              <button class="cyber-btn" id="tl-sweep" type="button"><span class="btn-txt">SWEEP α</span></button>
+              <span class="field-hint" id="tl-prune-note">Cost-complexity pruning: raise α to collapse the weakest splits first.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tl-forest-panel" hidden>
+        <div class="section-title pink-ttl">FOREST</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">TREES <span class="field-hint" id="tl-trees-val"></span></div>
+            <input class="cyber-range" id="tl-trees" type="range" min="1" max="100" step="1" value="25" style="width:100%">
+          </div>
+          <div>
+            <div class="field-lbl">FEATURES TRIED PER SPLIT</div>
+            <select class="cyber-select" id="tl-maxf" style="width:100%">
+              <option value="sqrt" selected>√(features), the usual choice</option>
+              <option value="all">All features (bagging only)</option>
+              <option value="1">One at random (most diverse)</option>
+            </select>
+          </div>
+          <label class="tl-check"><input type="checkbox" id="tl-boot" checked> <span>Bootstrap rows (sample with replacement)</span></label>
+          <div>
+            <div class="field-lbl">SHOW INDIVIDUAL TREES <span class="field-hint" id="tl-show-val"></span></div>
+            <input class="cyber-range" id="tl-show" type="range" min="0" max="25" step="1" value="8" style="width:100%">
+          </div>
+          <button class="cyber-btn green" id="tl-train-forest" type="button"><span class="btn-txt">▶ TRAIN FOREST</span></button>
+          <div class="viz-panel tl-forest-stats">
+            <div class="viz-title">OUT-OF-BAG ACCURACY</div>
+            <div class="tl-big" id="tl-oob">—</div>
+            <div class="field-hint" id="tl-oob-note">Each row is scored only by the trees whose bootstrap sample left it out.</div>
+            <div class="viz-title">TEST ACCURACY</div>
+            <div class="tl-big green" id="tl-ftest">—</div>
+            <div class="field-hint" id="tl-single">Single deep tree: —</div>
+          </div>
+          <div class="viz-panel">
+            <div class="viz-title">FEATURE IMPORTANCE (mean impurity decrease)</div>
+            <div class="tl-imp" id="tl-imp"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">READOUT</div>
+        <div class="viz-panel tl-readout" id="tl-readout"></div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">HOW IT DECIDES</div>
+        <div class="stack">
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">ONE SPLIT AT A TIME</div>
+            <div class="field-hint">Each box asks one yes/no question about a feature, x &lt; t. The tree tries every midpoint and keeps the question that makes its two sides purest.</div>
+          </div>
+          <div class="heuristic-card" style="padding:0.7rem">
+            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">FOREST</div>
+            <div class="field-hint">Each tree sees a random sample of the rows and only some of the features at each split. Their votes average into one boundary that is smoother than any single tree.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">A decision tree answers a chain of yes/no questions about the features. Each question is a split x &lt; t that cuts the region in two; the tree keeps splitting while a split makes its pieces purer. A random forest trains many such trees on random samples and averages them. The page runs a JavaScript port of the Python trees that builds the same tree for the same seed.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Decision trees</h3>
+      <p class="hiw-plain"><b>New to this?</b> Play twenty questions with the plane. "Is x less than 0.4?" tells you which half to look in, and the next question narrows it further. A tree is a whole list of these questions, arranged so that each answer leads to the next. The last question in each branch gives a class.</p>
+      <p>Each internal node stores a feature and a threshold. A point goes left when feature &lt; threshold, right otherwise. Each leaf predicts the majority class of the training rows that reach it, and its confidence is that majority's share.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Gini vs entropy</h3>
+      <p class="hiw-plain"><b>New to this?</b> Impurity measures how mixed a group is. A group of only one class scores zero. A 50/50 group scores the worst. Both measures agree on the extremes; they differ only in the middle.</p>
+      <p>Gini impurity is 1 − Σp², the chance that two random rows from a node disagree on the class if you labelled one at random by the node's mix. Entropy is −Σp log₂p, the average surprise in bits. Gini needs no logarithm, so it is faster; entropy punishes mixed nodes a little more. A split is scored by how much it lowers the size-weighted impurity of its two children.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy splitting and the search</h3>
+      <p class="hiw-plain"><b>New to this?</b> Greedy means: take the best question right now and never reconsider it. It is not always the best tree overall, but finding the best tree exactly is hopeless, and the greedy choice works well in practice.</p>
+      <p>At a node, sort its rows on each feature. Test the midpoint between every pair of neighbouring values, count the classes on each side, and keep the threshold with the largest gain. Growth is breadth-first: each step splits the next node in the queue. A node stops when it is pure, has reached the depth limit, or would leave a child with fewer than the minimum samples per leaf.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Overfitting and pruning</h3>
+      <p class="hiw-plain"><b>New to this?</b> A tree can keep asking questions until every point has its own box. That memorises the training rows, including their noise. A test set, rows the tree never saw, shows when that stops helping.</p>
+      <p>Cost-complexity pruning scores each internal node by how much error it saves per extra leaf: g(t) = (R(t) − R(subtree)) / (leaves − 1), where R is the misclassification rate. The weakest link is collapsed first, and α sets the price of a leaf. The sequence of trees shrinks monotonically as α rises. Depth and minimum leaf size are the simpler brakes; the chart shows the depth at which test accuracy peaks.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Bagging and random forests</h3>
+      <p class="hiw-plain"><b>New to this?</b> One tree is unstable: move a few points and its questions change. Train many trees on slightly different data and average their votes, and the random wobbles cancel out.</p>
+      <p>Bagging draws n rows with replacement for each tree, so about 37% of rows are left out of each sample. Those out-of-bag rows score the tree without a separate test set. A random forest adds one more source of variety: at each split only a random subset of features, usually √p, is considered. The averaged class probabilities form the glowing forest boundary; the faint jagged lines are the individual trees.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Parameters, defaults and why</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why</th></tr></thead><tbody>
+    <tr><td>Impurity</td><td>Gini</td><td>Same ranking as entropy in most cases, and no logarithm: cheaper for every candidate threshold. Switch to entropy to see the difference in the middle.</td></tr>
+    <tr><td>Max depth</td><td>5</td><td>Deep enough to show the structure of blobs and XOR, shallow enough that the diagram stays readable. The accuracy-vs-depth chart shows where going deeper stops helping.</td></tr>
+    <tr><td>Min samples per leaf</td><td>3</td><td>A leaf of one or two points is a single noisy row. Three keeps each region backed by a few neighbours without blocking the clean splits.</td></tr>
+    <tr><td>Test share</td><td>0.3</td><td>A common split: enough held-out rows to see the train/test gap, while most of the data still trains the model.</td></tr>
+    <tr><td>Extra features</td><td>On</td><td>x·y and x²+y² let an axis-aligned tree draw curved boundaries. Without them, XOR and rings need many small steps. The forest tries √4 = 2 of the 4 features per split.</td></tr>
+    <tr><td>Prune α</td><td>0</td><td>No pruning until asked. Pruning is a view: the full tree stays grown underneath.</td></tr>
+    <tr><td>Trees</td><td>25</td><td>Enough votes that the averaged boundary is smooth and the out-of-bag estimate settles; the slider goes to 100 to compare.</td></tr>
+    <tr><td>Bootstrap rows</td><td>On</td><td>Bootstrapping gives each tree a different sample and supplies the out-of-bag estimate. Off means every tree sees the same rows, so the forest differs only by feature subsets.</td></tr>
+  </tbody></table></div>
+
+  <p class="hiw-note"><b>Reading the numbers:</b> Train accuracy only goes up as the tree deepens. Test accuracy rises, peaks, and falls. The forest's out-of-bag accuracy is a free estimate of its test accuracy. Noisy diagonal labels are flipped 15% of the time, so no model can exceed about 85%; a single deep tree usually scores below a forest there because it fits the flipped rows.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py">treelab/tree.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py">treelab/forest.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py">treelab/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/rng.py">treelab/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/cli.py">treelab/cli.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js">web/js/treelab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js">web/js/treelab.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_treelab_parity.py">tests/test_treelab_parity.py</a></p>
+</section>
+</div>
+</div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/treelab.js"></script>
+</body>
+</html>

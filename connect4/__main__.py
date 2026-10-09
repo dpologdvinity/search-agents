@@ -3,19 +3,25 @@
     python -m connect4                         # you (X) vs AlphaZero, you move first
     python -m connect4 --agent minimax --level 3 --ai-first
     python -m connect4 --watch alphazero minimax
+    python -m connect4 --match 20 --agent alphazero --level 1   # record over 20 games vs chance
 
 During your turn, type a column number (1-7), "h" for a hint, or "q" to quit.
+The "chance" opponent picks columns from fixed odds with no search, as a baseline.
 """
 
 from __future__ import annotations
 
 import argparse
+import random
 import sys
 
-from .agents import AGENTS
-from .board import COLS, Board
+import numpy as np
 
-NAMES = {"alphazero": "AlphaZero", "minimax": "Minimax", "mcts": "MCTS"}
+from .agents import AGENTS, ALPHAZERO_SIMS, MCTS_SIMS, MINIMAX_SECONDS, chance_move
+from .board import COLS, Board
+from .evaluate import match
+
+NAMES = {"alphazero": "AlphaZero", "minimax": "Minimax", "mcts": "MCTS", "chance": "Chance"}
 
 
 def render(board: Board, first_symbol="X", second_symbol="O") -> str:
@@ -47,6 +53,9 @@ def describe(result: dict) -> str:
         best = a["best"]
         verdict = {"win": "a forced win", "loss": "a forced loss"}.get(best["result"], f"score {best.get('score')}")
         return f"searched {a['depth']} plies, {a['nodes']:,} positions; sees {verdict}"
+    if a["kind"] == "chance":
+        # No search: the move was a draw from fixed odds, so say how likely that column was.
+        return f"drawn from fixed odds, {100 * a['odds'][result['move']]:.1f}% for that column"
     return f"{a['simulations']} random playouts"
 
 
@@ -63,6 +72,35 @@ def ask_column(board: Board, agent: str, level: int, read=input) -> int | None:
         if text.isdigit() and board.can_play(int(text) - 1):
             return int(text) - 1
         print("  that column is full or not a column number")
+
+
+def run_match(agent: str, level: int, games: int, seed: int = 0) -> dict:
+    """`games` games of `agent` against the chance opponent, colours alternating. Returns win/draw/loss counts.
+
+    Each game opens with two random moves (see connect4.evaluate.play_game), so the games differ even
+    though the search agents are deterministic. The seed fixes both the openings and the chance draws.
+    """
+    def agent_move(board: Board) -> int:
+        return AGENTS[agent](board, level)["move"]
+
+    chance_rng = random.Random(seed)
+    return match(agent_move, lambda board: chance_move(board, 1, chance_rng)["move"], games,
+                 np.random.default_rng(seed))
+
+
+def match_table(agent: str, level: int, games: int, counts: dict) -> str:
+    """A markdown table with W/D/L for the agent and for the chance opponent, naming each algorithm."""
+    budget = {"alphazero": f"{ALPHAZERO_SIMS[level]} simulations per move",
+              "minimax": f"{MINIMAX_SECONDS[level]} s per move",
+              "mcts": f"{MCTS_SIMS[level]} simulations per move"}.get(agent, "no search")
+    lines = [f"Connect Four: {NAMES[agent]} (level {level}, {budget}) vs Chance (fixed odds), "
+             f"{games} games, colours alternating",
+             "",
+             "| Algorithm | Wins | Draws | Losses |",
+             "|---|---|---|---|",
+             f"| {NAMES[agent]} ({agent}) | {counts['win']} | {counts['draw']} | {counts['loss']} |",
+             f"| Chance (chance, fixed odds) | {counts['loss']} | {counts['draw']} | {counts['win']} |"]
+    return "\n".join(lines)
 
 
 def play(players: dict, level: int, read=input) -> int:
@@ -100,7 +138,17 @@ def main(argv=None) -> int:
     parser.add_argument("--ai-first", action="store_true", help="let the agent move first")
     parser.add_argument("--watch", nargs=2, metavar=("FIRST", "SECOND"), choices=sorted(AGENTS),
                         help="watch two agents play each other")
+    parser.add_argument("--match", type=int, metavar="GAMES",
+                        help="play GAMES games of --agent against chance and print the W/D/L table")
+    parser.add_argument("--seed", type=int, default=0, help="seed for --match (default 0)")
     args = parser.parse_args(argv)
+
+    if args.match is not None:
+        if args.agent == "chance":
+            parser.error("--match needs a search agent to play against chance")
+        counts = run_match(args.agent, args.level, args.match, args.seed)
+        print(match_table(args.agent, args.level, args.match, counts))
+        return 0
 
     if args.watch:
         players = {1: args.watch[0], 2: args.watch[1]}

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -17,11 +17,12 @@ from pydantic import BaseModel, Field
 from game2048.agents import BUDGET, DESCRIPTIONS, choose
 from game2048.board import DIRECTIONS, from_grid, legal_moves
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 class MoveRequest(BaseModel):
-    grid: list[list[int]] = Field(min_length=4, max_length=4)
+    # The board is 4x4: exactly 4 rows, each with exactly 4 tiles.
+    grid: list[Annotated[list[int], Field(min_length=4, max_length=4)]] = Field(min_length=4, max_length=4)
     agent: Literal["expectimax", "ntuple", "ntuple_search"] = "expectimax"
 
 
@@ -38,7 +39,7 @@ async def meta():
 @router.post("/api/2048/move")
 async def move(req: MoveRequest, request: Request):
     app = request.app
-    key = request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    key = client_key(request)
     if not app.state.move_rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     if any(len(row) != 4 for row in req.grid):

@@ -8,14 +8,17 @@
 // the player's turn). The response says who won (and the winning chain), and if the game is open and an
 // agent was named, that agent's move and the search behind it.
 
-import { postJSON } from './api.js';
+import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
 const DOWN = 1, ACROSS = 2, SWAP = -1;
-const AGENT_NAME = { rave: 'RAVE-MCTS', uct: 'UCT', shortest: 'SHORTEST', random: 'RANDOM' };
-const WATCH_MS = 450;     // pause between moves when two agents play
+const AGENT_NAME = {
+  rave: 'RAVE-MCTS', uct: 'UCT', shortest: 'SHORTEST', random: 'RANDOM', chance: 'Chance (fixed odds)',
+};
+const WATCH_MS = 450;     // default pause between moves when two agents play (the Normal speed)
+const GAME_PAUSE_MS = 1200; // minimum time the finished board stays on screen before the next game
 const K_RAVE = 300;       // the server's RAVE equivalence parameter, used only to explain beta on the page
 
 const state = {
@@ -30,6 +33,11 @@ const state = {
   chain: null,
   busy: false,
   watching: false,
+  paused: false,       // watch mode: hold before the next move until RESUME or STEP
+  stepRequested: false, // watch mode: STEP was pressed while paused, so let one move through
+  autoRestart: true,   // watch mode: deal a new game after each finished one
+  delay: WATCH_MS,     // watch mode: milliseconds between moves (the speed control)
+  score: { w: 0, d: 0, l: 0 }, // watch mode: results of the DOWN agent across games; Hex has no draws, so d stays 0
   analysis: null,      // the last search shown in the panel
   analysisSide: null,  // the side that search was for
   hintCell: null,
@@ -37,7 +45,28 @@ const state = {
   heat: 'visits',
   sims: null,
   speed: null,
+  agents: {},          // agent name -> description, from /api/hexgame/meta
+  ringWeights: null,   // the chance agent's weight per hex ring from the centre, from meta
 };
+
+// Table headers for the candidate panel: a search shows visits and win rates, while the chance agent only has odds.
+const SEARCH_HEAD = '<tr><th>MOVE</th><th>VISITS</th><th>WIN</th><th>RAVE</th><th></th></tr>';
+const CHANCE_HEAD = '<tr><th>MOVE</th><th>ODDS</th><th></th><th></th><th></th></tr>';
+
+// The name of an agent as the page shows it.
+const agentLabel = (key) => AGENT_NAME[key] || key;
+
+// The chance agent's per-cell odds for the move on screen, or null when the last analysis was a search.
+function chanceOdds() {
+  const an = state.analysis;
+  return an && an.agent === 'chance' && Array.isArray(an.odds) ? an.odds : null;
+}
+
+// Which algorithm each side uses, for the matchup line and the watch notes.
+function matchupLabel() {
+  if (state.mode === 'watch') return `${agentLabel($('agent').value)} (DOWN) vs ${agentLabel($('agent2').value)} (ACROSS)`;
+  return `You vs ${agentLabel($('agent').value)}`;
+}
 
 // ── Geometry ─────────────────────────────────────────────────────────────
 // Pointy-top hexagons. Row r is shifted right by half a hexagon per row, which makes the rhombus.
@@ -134,10 +163,15 @@ function drawBoard() {
   defs(svg);
   const an = state.analysis;
   const haveSearch = an && an.visits;
+  // After a chance move the heat shows the fixed odds instead of visits (they are the only numbers it has).
+  const odds = chanceOdds();
   // Heat is scaled between the least and most visited empty cell, so the colours separate the candidates.
   const emptyVisits = haveSearch ? an.visits.filter((v, i) => state.cells[i] === 0) : [];
   const minVisits = emptyVisits.length ? Math.min(...emptyVisits) : 0;
   const maxVisits = emptyVisits.length ? Math.max(1, ...emptyVisits) : 1;
+  const emptyOdds = odds ? odds.filter((p, i) => state.cells[i] === 0) : [];
+  const minOdds = emptyOdds.length ? Math.min(...emptyOdds) : 0;
+  const maxOdds = emptyOdds.length ? Math.max(...emptyOdds) : 1;
   const pvIndex = new Map(haveSearch && an.pv ? an.pv.map((c, i) => [c, i + 1]) : []);
   const chainIndex = new Map(state.chain ? state.chain.map((c, i) => [c, i]) : []);
 
@@ -165,8 +199,8 @@ function drawBoard() {
   }
 
   // Heat overlay and principal variation, drawn over the cells but never clickable.
-  if (haveSearch && !state.winner) {
-    const rave = an.rave_rate || [];
+  if ((haveSearch || odds) && !state.winner) {
+    const rave = (an && an.rave_rate) || [];
     const overlay = el('g', { class: 'hx-heat-layer' }, svg);
     for (let r = 0; r < n; r++) {
       for (let c = 0; c < n; c++) {
@@ -174,7 +208,12 @@ function drawBoard() {
         if (state.cells[i] !== 0) continue;
         const x = L.cx(r, c), y = L.cy(r);
         let t = null, text = '';
-        if (state.heat === 'visits') {
+        if (odds) {
+          // Heat runs from the least to the most likely empty cell; the label is the odds in percent.
+          const p = odds[i];
+          t = maxOdds > minOdds ? (p - minOdds) / (maxOdds - minOdds) : 1;
+          text = (100 * p).toFixed(1);
+        } else if (state.heat === 'visits') {
           const v = an.visits[i];
           if (v > 0) {
             t = maxVisits > minVisits ? (v - minVisits) / (maxVisits - minVisits) : 1;
@@ -231,10 +270,28 @@ function renderPanel() {
     return;
   }
   const who = state.analysisSide === DOWN ? 'DOWN' : 'ACROSS';
-  const agentName = AGENT_NAME[an.agent] || an.agent;
-  $('think-title').textContent = `${agentName} searched ${an.sims} simulations for ${who} (${an.playouts} random playouts).`;
+  const agentName = agentLabel(an.agent);
+  const odds = chanceOdds();
+  // The chance agent runs no search, so its title and table describe the odds instead.
+  $('think-title').textContent = odds
+    ? `${agentName} drew its move for ${who} from fixed odds. No search ran.`
+    : `${agentName} searched ${an.sims} simulations for ${who} (${an.playouts} random playouts).`;
+  $('cand-table').querySelector('thead').innerHTML = odds ? CHANCE_HEAD : SEARCH_HEAD;
 
-  if (an.visits) {
+  if (odds) {
+    // The most likely cells, with their odds as a bar relative to the most likely one.
+    const rows = odds.map((p, i) => [i, p]).filter(([, p]) => p > 0);
+    rows.sort((a, b) => b[1] - a[1]);
+    const maxP = Math.max(1e-9, rows.length ? rows[0][1] : 0);
+    tbody.innerHTML = '';
+    for (const [i, p] of rows.slice(0, 6)) {
+      const tr = document.createElement('tr');
+      if (i === an.move) tr.className = 'top';
+      tr.innerHTML = `<td>${label(i, n)}</td><td class="num">${(100 * p).toFixed(1)}%</td><td></td><td></td>`
+        + `<td><div class="bar"><i style="width:${(100 * p / maxP).toFixed(1)}%"></i></div></td>`;
+      tbody.appendChild(tr);
+    }
+  } else if (an.visits) {
     const rows = [];
     an.visits.forEach((v, i) => { if (v > 0) rows.push([i, v]); });
     rows.sort((a, b) => b[1] - a[1]);
@@ -264,6 +321,11 @@ function renderPanel() {
       + 'and most shortens its own.';
   } else if (an.agent === 'random') {
     note.textContent = 'This agent plays a uniformly random legal move.';
+  } else if (odds) {
+    // The weights come from the server's meta, so the note stays right if the table is retuned.
+    const rings = state.ringWeights ? state.ringWeights.join(' / ') : 'fixed';
+    note.textContent = `Each empty cell is weighted by its hex ring from the centre (${rings} for rings 0 / 1 / 2 / 3+), `
+      + 'renormalised over the empty cells, and one is drawn. No search, evaluation or lookahead.';
   } else if (an.swap) {
     const s = an.swap;
     note.textContent = `Swap check: win chance ${Math.round(100 * s.swap)}% after swapping, ${Math.round(100 * s.stay)}% if it stays. `
@@ -301,9 +363,25 @@ function renderGauge() {
 
 function statusText() {
   if (state.winner) return 'FINISHED';
+  // While watching, the loop is busy between moves too, so check the watch state first.
+  if (state.watching) return state.paused ? 'PAUSED' : 'WATCHING';
   if (state.busy) return 'THINKING';
-  if (state.watching) return 'WATCHING';
   return 'PLAYING';
+}
+
+// The score line: W and L are DOWN's results (the first agent's), and D is always 0 because Hex has no draws.
+function scoreText() {
+  const { w, d, l } = state.score;
+  const games = w + d + l;
+  const a = agentLabel($('agent').value), b = agentLabel($('agent2').value);
+  if (!games) return `${a} (DOWN) vs ${b} (ACROSS): no games finished yet.`;
+  return `${a} (DOWN) vs ${b} (ACROSS): W ${w} · D ${d} · L ${l} over ${games} game${games === 1 ? '' : 's'}`;
+}
+
+// Put the agent descriptions from meta under each selector, so the page says what each side does.
+function updateDescriptions() {
+  $('desc-a').textContent = state.agents[$('agent').value] || '';
+  $('desc-b').textContent = state.agents[$('agent2').value] || '';
 }
 
 function renderChrome() {
@@ -328,6 +406,17 @@ function renderChrome() {
   $('agent-lbl').textContent = state.mode === 'watch' ? 'DOWN AGENT' : 'AGENT';
   $('heat-visits').setAttribute('aria-pressed', String(state.heat === 'visits'));
   $('heat-rave').setAttribute('aria-pressed', String(state.heat === 'rave'));
+  // The heat toggle only means something for a search, so it is hidden after a chance move.
+  // (.hx-toggle sets display:flex, which would beat the hidden attribute, so set the style directly.)
+  $('heat-visits').parentElement.style.display = chanceOdds() ? 'none' : '';
+  // Watch controls: shown only in watch mode; pause is live while watching, and STEP only while paused.
+  $('watch-bar').hidden = state.mode !== 'watch';
+  $('btn-pause').disabled = !state.watching;
+  $('btn-pause').querySelector('.btn-txt').textContent = state.paused ? '▶ RESUME' : '❚❚ PAUSE';
+  $('btn-pause').setAttribute('aria-pressed', String(state.paused));
+  $('btn-step').disabled = !(state.watching && state.paused);
+  $('score').textContent = scoreText();
+  $('matchup').textContent = matchupLabel();
 }
 
 function render() {
@@ -344,11 +433,16 @@ function render() {
 function noteText() {
   if (state.winner) {
     if (state.mode === 'watch') return `${NAME(state.winner)} connected its edges.`;
-    return state.winner === state.you ? 'You connected your edges. You win.' : 'The agent connected its edges. The agent wins.';
+    return state.winner === state.you
+      ? 'You connected your edges. You win.'
+      : `${agentLabel($('agent').value)} connected its edges. It wins.`;
   }
-  if (state.mode === 'watch') return state.watching ? 'Two agents are playing.' : 'Press START to watch the two agents.';
+  if (state.mode === 'watch') {
+    if (!state.watching) return `${matchupLabel()}. Press START to watch them play.`;
+    return state.paused ? 'Paused. Press RESUME to go on, or STEP for one move.' : `${matchupLabel()}: playing.`;
+  }
   if (state.to_move === state.you) return 'Your move. Click a hexagon. Your goal is the coloured edges.';
-  return 'The agent is thinking.';
+  return `${agentLabel($('agent').value)} is thinking.`;
 }
 
 const NAME = (side) => (side === DOWN ? 'DOWN' : 'ACROSS');
@@ -387,11 +481,19 @@ async function request(agent) {
 }
 
 // Ask for the next move and apply it, until the game ends or it is the player's turn (or watching stops).
+// In watch mode the loop also holds while paused, lets one move through per STEP, and deals the next game
+// after a finished one when auto-restart is on.
 async function play() {
   setBusy(true);
   renderChrome();
   try {
     for (;;) {
+      if (state.mode === 'watch') {
+        // Wait while paused; a STEP press lets exactly one move through, then the loop pauses again.
+        while (state.paused && !state.stepRequested && state.watching) await sleep(80);
+        state.stepRequested = false;
+        if (!state.watching) break;
+      }
       if (state.winner) break;
       const side = state.to_move;
       const agent = agentFor(side);
@@ -399,14 +501,23 @@ async function play() {
       const res = await request(agent);
       if (res.winner) {
         finish(res);
-        break;
+        if (!(state.mode === 'watch' && state.watching && state.autoRestart)) {
+          state.watching = false;
+          break;
+        }
+        // Leave the result on screen a moment, then deal the next game and keep watching.
+        await sleep(Math.max(state.delay, GAME_PAUSE_MS));
+        if (!state.watching) break;
+        startNextGame();
+        continue;
       }
       if (res.move === null || res.move === undefined) break; // the player's turn
       const swapped = res.move === SWAP;
       state.moves.push(res.move);
       state.lastMove = swapped ? null : res.move;
       state.hintCell = null;
-      state.analysis = res.analysis;
+      // The chance analysis has no move of its own, so the move from the response is added to it for the panel.
+      state.analysis = { move: res.move, ...res.analysis };
       state.analysisSide = side;
       state.sims = res.analysis && res.analysis.sims ? res.analysis.sims : state.sims;
       if (res.analysis && res.analysis.seconds > 0 && res.analysis.sims) {
@@ -423,7 +534,7 @@ async function play() {
         const cell = document.querySelector(`#hx-board polygon[data-cell="${res.move}"]`);
         if (cell) pop(cell, res.label, side === DOWN ? '#ff00a0' : '#00f5ff');
       }
-      if (state.mode === 'watch') await sleep(WATCH_MS);
+      if (state.mode === 'watch') await sleep(state.delay);
     }
   } catch (e) {
     log(`error: ${e.message}`, 'hx-pink');
@@ -435,10 +546,15 @@ async function play() {
   }
 }
 
+// Record a finished game. In watch mode the score counts DOWN's results: a DOWN win is W, otherwise L.
+// Hex has no draws, so D is never counted here.
 function finish(res) {
   state.winner = res.winner;
   state.chain = res.chain;
-  state.watching = false;
+  if (state.mode === 'watch') {
+    if (res.winner === DOWN) state.score.w += 1;
+    else state.score.l += 1;
+  }
   const who = state.mode === 'watch' ? `${NAME(res.winner)} wins`
     : res.winner === state.you ? 'YOU WIN' : 'AGENT WINS';
   const sub = `${NAME(res.winner)} connected in ${state.moves.length} moves`;
@@ -450,8 +566,8 @@ function finish(res) {
   banner(who, sub, res.winner === DOWN ? '#ff00a0' : '#00f5ff');
 }
 
-function newGame() {
-  if (state.watching) state.watching = false;
+// Clear the board and the per-game readouts, but keep the score and the watch settings.
+function clearGame() {
   state.moves = [];
   state.winner = null;
   state.chain = null;
@@ -461,9 +577,27 @@ function newGame() {
   state.lastMove = null;
   state.sims = null;
   state.speed = null;
+}
+
+// Auto-restart: the next game of a watch series starts on the same board size, with a separator in the log.
+function startNextGame() {
+  const game = state.score.w + state.score.d + state.score.l + 1;
+  clearGame();
+  log(`— game ${game} —`, 'hx-cyan');
+  render();
+}
+
+function newGame() {
+  if (state.watching) { state.watching = false; state.paused = false; }
+  clearGame();
   $('log').innerHTML = '';
   render();
   if (state.mode === 'vs' && state.you === ACROSS) play(); // the agent opens as DOWN
+}
+
+function resetScore() {
+  state.score = { w: 0, d: 0, l: 0 };
+  render();
 }
 
 async function clickCell(i) {
@@ -530,20 +664,38 @@ function init() {
   $('mode').addEventListener('change', () => {
     state.mode = $('mode').value;
     state.watching = false;
+    state.paused = false;
+    resetScore();
     newGame();
   });
+  // Changing either agent starts a new matchup, so the score (which is per matchup) starts again.
+  // The descriptions under the selectors follow the choice.
+  const onAgentChange = () => { updateDescriptions(); resetScore(); };
+  $('agent').addEventListener('change', onAgentChange);
+  $('agent2').addEventListener('change', onAgentChange);
   $('you').addEventListener('change', () => { state.you = Number($('you').value); newGame(); });
   $('swap-rule').addEventListener('change', () => { state.swap = $('swap-rule').checked; newGame(); });
   $('btn-new').addEventListener('click', () => newGame());
   $('btn-hint').addEventListener('click', () => hint());
   $('btn-swap').addEventListener('click', () => swapByPlayer());
   $('btn-watch').addEventListener('click', () => {
-    if (state.watching) { state.watching = false; renderChrome(); return; }
+    if (state.watching) { state.watching = false; state.paused = false; renderChrome(); return; }
     if (state.winner) newGame();
     state.watching = true;
     renderChrome();
-    play();
+    // If the old loop is still finishing its last request, it sees watching is on again and carries on,
+    // so starting a second loop here would double the moves.
+    if (!state.busy) play();
   });
+  $('btn-pause').addEventListener('click', () => { state.paused = !state.paused; renderChrome(); });
+  $('btn-step').addEventListener('click', () => {
+    if (!(state.watching && state.paused)) return;
+    state.stepRequested = true;
+    renderChrome();
+  });
+  $('watch-speed').addEventListener('change', () => { state.delay = Number($('watch-speed').value); renderChrome(); });
+  $('auto-restart').addEventListener('change', () => { state.autoRestart = $('auto-restart').checked; });
+  $('btn-score-reset').addEventListener('click', () => resetScore());
   $('heat-visits').addEventListener('click', () => { state.heat = 'visits'; render(); });
   $('heat-rave').addEventListener('click', () => { state.heat = 'rave'; render(); });
 
@@ -557,6 +709,17 @@ function init() {
     const t = e.target.closest('[data-cell]');
     if (t) { e.preventDefault(); clickCell(Number(t.dataset.cell)); }
   });
+  state.delay = Number($('watch-speed').value);
+  state.autoRestart = $('auto-restart').checked;
+  // Agent descriptions and the chance table come from the server, so the page never repeats them by hand.
+  // If the request fails the selectors still work; only the descriptions stay blank.
+  getJSON('/api/hexgame/meta').then((meta) => {
+    state.agents = Object.fromEntries(meta.agents.map((a) => [a.name, a.description]));
+    state.ringWeights = meta.chance ? meta.chance.ring_weights : null;
+    updateDescriptions();
+    render();
+  }).catch(() => {});
+  updateDescriptions();
   newGame();
 }
 

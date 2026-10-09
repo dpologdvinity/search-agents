@@ -123,13 +123,17 @@ def solve_summary(n: int, agent: str, seed: int | None, time_limit: float | None
     ]
     if res.solved:
         lines.append(f"  checked: {'no two queens attack each other' if is_solution(res.cols) else 'INVALID'}")
+    elif res.reason == "exhausted":
+        # Backtracking searched every row and found no board, so there are no conflicts to count: it is a proof.
+        lines.append("  no solution exists")
     else:
         lines.append(f"  conflicts left: {res.conflicts:,}")
     return "\n".join(lines), res
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="N-Queens: four agents on one board, and the benchmark.")
+    parser = argparse.ArgumentParser(prog="python -m queens",
+                                     description="N-Queens: four agents on one board, and the benchmark.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("play", help="place the queens yourself on an 8x8 board")
     p_solve = sub.add_parser("solve", help="solve an N-Queens board with one agent")

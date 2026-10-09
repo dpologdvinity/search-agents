@@ -23,6 +23,11 @@ Three layers, each one stronger than the last:
 
 Nothing here is sampled or approximated. A layout counted here is one that agrees with every number on
 the board and with the mine count, so the deductions are proofs, not guesses.
+
+The exact count can blow up on a wide frontier with long chains of numbers (the memo has a state per
+pattern of open residual needs). So the count runs under a work budget (WORK_BUDGET). If a board
+goes over it, the analysis keeps the layer-1 proofs, which are cheap and still exact, and reports
+estimated probabilities instead (`exact` is False). The estimates are never used to prove anything.
 """
 
 from __future__ import annotations
@@ -40,6 +45,28 @@ LEVEL_PROBABILITY = 3
 # Cache of component results. Components that do not change between two moves are not recounted.
 _CACHE: dict[tuple, ComponentStats] = {}
 _CACHE_LIMIT = 4096
+
+# Work one analysis may spend on the exact count, in units of roughly one elementary Python operation (see
+# _count_layouts and _convolve). It caps the wall time: on the laptop a full budget takes about a second or
+# two, so a crafted board cannot hold a server worker for long. Most real expert positions fit inside it,
+# and the ones that do not fall back to estimates.
+WORK_BUDGET = 2_000_000
+
+
+class BudgetExceeded(Exception):
+    """The exact count needs more work than its budget allows."""
+
+
+class Budget:
+    """Work left for one analysis. `spend` raises BudgetExceeded once it runs out."""
+
+    def __init__(self, steps: int):
+        self.left = steps
+
+    def spend(self, n: int = 1) -> None:
+        self.left -= n
+        if self.left < 0:
+            raise BudgetExceeded
 
 
 @dataclass(frozen=True)
@@ -68,6 +95,9 @@ class Analysis:
     `safe` and `mines` are proven facts, each with a short reason in `why`. At level 3 (and level 2)
     `numerator` holds, for every covered cell that is not a proven mine, the weight of layouts in
     which it is a mine, and `total` is the weight of all layouts. Probability = numerator / total.
+
+    When the exact count ran out of budget, `exact` is False: `numerator` is empty and `estimate` holds
+    an estimated mine probability per covered cell instead. The proofs in `safe` and `mines` still hold.
     """
 
     view: View
@@ -81,9 +111,13 @@ class Analysis:
     components: tuple[Component, ...] = ()
     numerator: dict[int, int] = field(default_factory=dict)
     total: int = 0
+    exact: bool = True
+    estimate: dict[int, float] = field(default_factory=dict)
 
     def probability(self, cell: int) -> float | None:
-        """Exact mine probability of a covered cell, or None when this level did not compute it."""
+        """Mine probability of a covered cell: exact when `exact`, else an estimate. None when not computed."""
+        if not self.exact:
+            return self.estimate.get(cell)
         if not self.total or cell not in self.numerator:
             return None
         return self.numerator[cell] / self.total
@@ -99,8 +133,9 @@ def _choose(n: int, k: int) -> int:
     return math.comb(n, k) if 0 <= k <= n else 0
 
 
-def _convolve(a: Sequence[int], b: Sequence[int]) -> list[int]:
+def _convolve(a: Sequence[int], b: Sequence[int], budget: Budget) -> list[int]:
     """Combine two layout-count tables: counts[k] = layouts with k mines, for independent pieces."""
+    budget.spend(len(a) * len(b))
     out = [0] * (len(a) + len(b) - 1)
     for i, x in enumerate(a):
         if x:
@@ -172,7 +207,7 @@ class ComponentStats:
 
 
 def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int, ...], int]],
-                   fixed: tuple[int, int] | None = None) -> list[int]:
+                   budget: Budget, fixed: tuple[int, int] | None = None) -> list[int]:
     """Count the layouts of `order` (cells in search order) that satisfy every constraint.
 
     Backtracking assigns cells one at a time, in `order`. After each assignment every constraint
@@ -184,6 +219,9 @@ def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int
     the residual needs of the constraints still open at that index, not on the choices that led there.
     So each (index, residual needs) state is solved once, and its per-mine-count table is reused.
     `fixed=(cell, value)` forces one cell, which gives the layouts with that cell as a mine.
+
+    Every new memo state is charged to `budget` for the work it does, so a wide frontier stops here
+    instead of running on.
     """
     m = len(order)
     pos = {c: i for i, c in enumerate(order)}
@@ -215,6 +253,9 @@ def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int
         hit = memo.get(key)
         if hit is not None:
             return hit
+        # A new state costs what it builds: a result list with one entry per remaining mine count, and
+        # the open constraints it copies.
+        budget.spend(m - i + len(open_at[i]) + len(touch[i]))
         cur = dict(zip(open_at[i], state))
         values = (0, 1)
         if fixed_idx is not None and fixed_idx[0] == i:
@@ -237,18 +278,19 @@ def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int
     return solve(0, ())
 
 
-def component_stats(order: tuple[int, ...], constraints: tuple[tuple[tuple[int, ...], int], ...]) -> ComponentStats:
+def component_stats(order: tuple[int, ...], constraints: tuple[tuple[tuple[int, ...], int], ...],
+                    budget: Budget) -> ComponentStats:
     """Layout counts for one component: the total, and the count with each covered cell forced to a mine.
 
     Results are cached on the exact component (cells and constraints), so a component that did not
-    change since the last move costs nothing.
+    change since the last move costs nothing. A count cut short by the budget is not cached.
     """
     key = (order, constraints)
     hit = _CACHE.get(key)
     if hit is not None:
         return hit
-    total = _count_layouts(order, constraints)
-    with_mine = {c: _count_layouts(order, constraints, fixed=(c, 1)) for c in order}
+    total = _count_layouts(order, constraints, budget)
+    with_mine = {c: _count_layouts(order, constraints, budget, fixed=(c, 1)) for c in order}
     stats = ComponentStats(order, total, with_mine)
     if len(_CACHE) >= _CACHE_LIMIT:
         _CACHE.clear()
@@ -284,12 +326,16 @@ def _search_order(cells: list[int]) -> tuple[int, ...]:
     return tuple(sorted(cells))
 
 
-def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
+def analyse(view: View, level: int = LEVEL_PROBABILITY, budget: int = WORK_BUDGET) -> Analysis:
     """Everything the agent can prove about `view`, at the requested level.
 
     Level 1 returns the single-cell rule deductions only. Levels 2 and 3 add the component analysis
     and the exact layout weights. Level 3 and level 2 share the same numbers: level 2 uses only the
     zero and full cases, level 3 uses the whole ranking when it guesses.
+
+    `budget` caps the exact count in work units. A board over the cap keeps its rule proofs and gets
+    estimated probabilities instead (`exact` is False, see `_estimate`). Only the exact count can see that
+    no layout fits the numbers, so an over-budget board that contradicts itself gets estimates, not an error.
     """
     known_mine: set[int] = set()
     known_safe: set[int] = set()
@@ -299,7 +345,15 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
         covered = tuple(i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine)
         return Analysis(view, level, tuple(sorted(known_safe)), tuple(sorted(known_mine)), why, covered,
                         view.mines - len(known_mine))
+    try:
+        return _exact(view, level, known_mine, known_safe, why, Budget(budget))
+    except BudgetExceeded:
+        return _estimate(view, level, known_mine, known_safe, why)
 
+
+def _exact(view: View, level: int, known_mine: set[int], known_safe: set[int], why: dict[int, str],
+           bud: Budget) -> Analysis:
+    """Levels 2 and 3: count the layouts of every component, then weight them by the mine count."""
     constraints = build_constraints(view, known_mine, known_safe)
     frontier = {c for con in constraints for c in con.cells}
     covered_all = [i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine
@@ -314,7 +368,7 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
         cells = sorted({c for con in group for c in con.cells})
         order = _search_order(cells)
         cons_key = tuple(sorted((tuple(sorted(con.cells)), con.need) for con in group))
-        st = component_stats(order, cons_key)
+        st = component_stats(order, cons_key, bud)
         stats.append((order, st))
         components.append(Component(tuple(order), len(group), sum(st.total)))
 
@@ -325,7 +379,7 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
     # G: layouts of all components together, by total frontier mines. Z: weight of every valid layout.
     G = [1]
     for _, st in stats:
-        G = _convolve(G, st.total)
+        G = _convolve(G, st.total, bud)
     total = sum(G[t] * weight(t) for t in range(len(G)))
     if total == 0:
         raise ValueError("the revealed numbers and the mine count cannot all be true")
@@ -336,7 +390,7 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
         others = [1]
         for jdx, (_, other) in enumerate(stats):
             if jdx != idx:
-                others = _convolve(others, other.total)
+                others = _convolve(others, other.total, bud)
         # R[j]: weight of the full layouts when this component uses j mines.
         R = [sum(others[s] * weight(j + s) for s in range(len(others))) for j in range(len(st.total))]
         for c in order:
@@ -365,4 +419,37 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY) -> Analysis:
         view=view, level=level, safe=tuple(sorted(safe)), mines=tuple(sorted(mines)), why=why,
         covered=covered, remaining=remaining, interior=interior, components=tuple(components),
         numerator=numerator, total=total,
+    )
+
+
+def _estimate(view: View, level: int, known_mine: set[int], known_safe: set[int],
+              why: dict[int, str]) -> Analysis:
+    """The fallback when the exact count is over budget: the rule proofs stand, and every other covered
+    cell gets an estimated mine probability instead of an exact one.
+
+    A cell next to numbers gets the average density of the constraints it sits in (need over cells).
+    Interior cells, which touch no number, share the mines that the frontier estimates leave over. These
+    are estimates: they never add a proof, and `best_guess` only uses them to pick a guess.
+    """
+    constraints = build_constraints(view, known_mine, known_safe)
+    frontier = {c for con in constraints for c in con.cells}
+    covered_all = tuple(i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine
+                        and i not in known_safe)
+    interior = tuple(i for i in covered_all if i not in frontier)
+    remaining = view.mines - len(known_mine)
+
+    density: dict[int, list[float]] = {}
+    for con in constraints:
+        for c in con.cells:
+            density.setdefault(c, []).append(con.need / len(con.cells))
+    estimate = {c: min(1.0, sum(ps) / len(ps)) for c, ps in density.items()}
+    if interior:
+        # The mines the frontier estimates do not account for, spread evenly over the interior.
+        left = remaining - sum(estimate.values())
+        share = min(1.0, max(0.0, left / len(interior)))
+        for c in interior:
+            estimate[c] = share
+    return Analysis(
+        view=view, level=level, safe=tuple(sorted(known_safe)), mines=tuple(sorted(known_mine)), why=why,
+        covered=covered_all, remaining=remaining, interior=interior, exact=False, estimate=estimate,
     )

@@ -1,6 +1,6 @@
-"""The committed GA result: tetris/tuned.json, plus the hand-picked weights as a fallback.
+"""The committed tuned weights (cross-entropy v3, the default AI), plus the hand-picked weights as a fallback.
 
-tuned.json holds the nine weights in FEATURES order, the GA settings that produced them, the training
+tuned.json holds the nine weights in FEATURES order, the cross-entropy settings that produced them, the training
 fitness, and the per-generation history that the web page plots. If the file is missing (a fresh
 checkout before `python -m tetris evolve`), the hand-picked weights are used and the history is empty.
 """

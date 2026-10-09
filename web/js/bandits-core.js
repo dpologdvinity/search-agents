@@ -128,6 +128,17 @@ export function laiRobbinsRate(means, kind, sigma = CONSTANTS.sigma) {
 
 const letter = (i) => String.fromCharCode(65 + i);
 
+// Python's format(x, '.Nf') rounds an exact tie to the even digit (0.625 -> 0.62), where toFixed rounds it up
+// (0.63). The reasons use this so the page prints the same text as watch mode. x is never negative here.
+function fixed(x, digits) {
+  // toFixed(100) writes the double's exact decimal value, so a tie shows up as a 5 followed only by zeros.
+  const exact = x.toFixed(100);
+  const cut = digits ? exact.indexOf('.') + 1 + digits : exact.indexOf('.');
+  const kept = exact.slice(0, cut);
+  if (/^50*$/.test(exact.slice(cut).replace('.', '')) && Number(kept.slice(-1)) % 2 === 0) return kept;
+  return x.toFixed(digits);
+}
+
 function argmax(xs) {
   let best = 0;
   for (let i = 1; i < xs.length; i++) if (xs[i] > xs[best]) best = i;
@@ -171,7 +182,7 @@ class Greedy extends Agent {
     const m = this.means();
     this.scores = m;
     const arm = argmax(m);
-    this.reason = `exploit: machine ${letter(arm)} has the best average so far (${m[arm].toFixed(2)})`;
+    this.reason = `exploit: machine ${letter(arm)} has the best average so far (${fixed(m[arm], 2)})`;
     return arm;
   }
 }
@@ -196,10 +207,10 @@ class EpsilonGreedy extends Agent {
     let arm;
     if (this.rng.uniform() < eps) {
       arm = this.rng.index(this.k);
-      this.reason = `explore: a random machine (${letter(arm)}), with epsilon ${eps.toFixed(3)}`;
+      this.reason = `explore: a random machine (${letter(arm)}), with epsilon ${fixed(eps, 3)}`;
     } else {
       arm = argmax(m);
-      this.reason = `exploit: machine ${letter(arm)} has the best average (${m[arm].toFixed(2)}); epsilon ${eps.toFixed(3)}`;
+      this.reason = `exploit: machine ${letter(arm)} has the best average (${fixed(m[arm], 2)}); epsilon ${fixed(eps, 3)}`;
     }
     return arm;
   }
@@ -221,8 +232,8 @@ class UCB1 extends Agent {
     this.scores = idx;
     const arm = argmax(idx);
     const bonus = idx[arm] - m[arm];
-    this.reason = `highest optimistic bound: machine ${letter(arm)} has mean ${m[arm].toFixed(2)} `
-      + `plus a bonus of ${bonus.toFixed(2)} for its ${this.counts[arm]} pulls`;
+    this.reason = `highest optimistic bound: machine ${letter(arm)} has mean ${fixed(m[arm], 2)} `
+      + `plus a bonus of ${fixed(bonus, 2)} for its ${this.counts[arm]} pulls`;
     return arm;
   }
 }
@@ -246,8 +257,8 @@ class Thompson extends Agent {
     const arm = argmax(samples);
     const [a, b] = post[arm];
     this.reason = this.bernoulli
-      ? `sampled ${samples[arm].toFixed(2)} from machine ${letter(arm)}'s Beta(${a.toFixed(0)}, ${b.toFixed(0)}) posterior, the best sample this round`
-      : `sampled ${samples[arm].toFixed(2)} from machine ${letter(arm)}'s posterior (mean ${a.toFixed(2)}, sd ${b.toFixed(2)}), the best sample this round`;
+      ? `sampled ${fixed(samples[arm], 2)} from machine ${letter(arm)}'s Beta(${fixed(a, 0)}, ${fixed(b, 0)}) posterior, the best sample this round`
+      : `sampled ${fixed(samples[arm], 2)} from machine ${letter(arm)}'s posterior (mean ${fixed(a, 2)}, sd ${fixed(b, 2)}), the best sample this round`;
     return arm;
   }
 }
@@ -280,7 +291,7 @@ class EXP3 extends Agent {
         break;
       }
     }
-    this.reason = `sample machine ${letter(arm)} with probability ${probs[arm].toFixed(2)}`;
+    this.reason = `sample machine ${letter(arm)} with probability ${fixed(probs[arm], 2)}`;
     return arm;
   }
 
@@ -328,7 +339,7 @@ class SlidingWindowUCB extends Agent {
     this.scores = idx;
     const arm = argmax(idx);
     this.reason = `highest window index: machine ${letter(arm)} averages `
-      + `${(this.wsums[arm] / this.wcounts[arm]).toFixed(2)} over its last ${this.wcounts[arm]} pulls in the window`;
+      + `${fixed(this.wsums[arm] / this.wcounts[arm], 2)} over its last ${this.wcounts[arm]} pulls in the window`;
     return arm;
   }
 }

@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from queens.agents import run
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -59,11 +59,6 @@ class SolveRequest(BaseModel):
     n: int = Field(8, ge=1, le=MAX_N)
     seed: int = Field(1, ge=0, le=2**31 - 1)
     frames: bool = False
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def solve_json(req: SolveRequest) -> dict:
@@ -106,7 +101,7 @@ async def meta():
 @router.post("/api/queens/solve")
 async def solve(req: SolveRequest, request: Request):
     app = request.app
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     if req.n > LIMITS[req.agent]:
         raise HTTPException(400, f"{LABELS[req.agent]} is served up to {LIMITS[req.agent]:,} queens")

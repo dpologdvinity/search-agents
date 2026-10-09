@@ -8,8 +8,9 @@ Each turn Pac-Man picks one open neighbour and every ghost then moves one step:
     (points, and it returns to its home cell). A normal ghost kills Pac-Man. Because
     ghosts always move, this check also catches a ghost that swaps places with him.
  3. If no pellets remain, Pac-Man has won and the ghosts do not move.
- 4. Each ghost chooses a move from the same snapshot (ghosts.choose_move), then all of
-    them move together.
+ 4. Each ghost chooses a move from the same snapshot, then all of them move together. With
+    the "ai" policy (the default) that is the A* route (ghosts.choose_move). With the
+    "chance" policy it is a draw from fixed odds that ignore the board (ghosts.chance_move).
  5. Collision check again for ghosts that stepped onto Pac-Man's cell.
  6. Scared timers count down, the turn counter advances, and the game times out
     after max_turns.
@@ -24,7 +25,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, replace
 
-from .ghosts import Ghost, choose_move, personality_for
+from .ghosts import GHOST_POLICIES, NO_HEADING, Ghost, chance_move, choose_move, personality_for
 from .mazes import NO_CELL, Maze, get
 from .search import distances
 
@@ -111,7 +112,7 @@ def _meet(ghosts: tuple[Ghost, ...], cell: int) -> tuple[tuple[Ghost, ...], int,
         if g.pos != cell:
             out.append(g)
         elif g.scared:
-            out.append(replace(g, pos=g.home, scared=0))  # eaten: back to its home cell
+            out.append(replace(g, pos=g.home, scared=0, heading=NO_HEADING))  # eaten: back home, no heading
             gained += GHOST_POINTS
             events.append("ghost")
         else:
@@ -121,12 +122,19 @@ def _meet(ghosts: tuple[Ghost, ...], cell: int) -> tuple[tuple[Ghost, ...], int,
 
 
 class Game:
-    """One game of Pac-Man on a named maze, deterministic for a given seed."""
+    """One game of Pac-Man on a named maze, deterministic for a given seed.
 
-    def __init__(self, maze: Maze | str, seed: int = 0, max_turns: int = MAX_TURNS):
+    `ghosts` picks the ghost policy: "ai" (A* routes, the default and the one the agents were
+    trained on) or "chance" (every ghost moves by the fixed odds in ghosts.CHANCE_ODDS).
+    """
+
+    def __init__(self, maze: Maze | str, seed: int = 0, max_turns: int = MAX_TURNS, ghosts: str = "ai"):
+        if ghosts not in GHOST_POLICIES:
+            raise ValueError(f"unknown ghost policy {ghosts!r}; choose from {', '.join(GHOST_POLICIES)}")
         self.maze = get(maze) if isinstance(maze, str) else maze
         self.seed = seed
         self.max_turns = max_turns
+        self.ghost_policy = ghosts
         self.rng = random.Random(seed)
         self.state = initial_state(self.maze)
 
@@ -169,12 +177,20 @@ class Game:
             return self._finish(before, action, pac, ghosts, pellets, points + WIN_POINTS, events, WON, eaten, ())
 
         # Step 4: every ghost picks a move from the same snapshot, then they all move.
-        # Scared ghosts flee from the BFS distances out of Pac-Man's new cell.
+        # Under the "ai" policy, scared ghosts flee from the BFS distances out of Pac-Man's new cell.
+        # Under the "chance" policy, every ghost draws its move from the fixed odds instead, and
+        # has no route to show (an empty path).
         pac_dist = distances(maze, pac) if any(g.scared for g in ghosts) else None
         moved, plans = [], []
         for i, g in enumerate(ghosts):
-            nxt, target, route = choose_move(maze, g, i, pac, action, self.rng, pac_dist or [])
-            moved.append(replace(g, pos=nxt))
+            if self.ghost_policy == "chance":
+                nxt, heading = chance_move(maze, g, self.rng)
+                target, route = None, ()
+            else:
+                nxt, target, route = choose_move(maze, g, i, pac, action, self.rng, pac_dist or [])
+                heading = g.heading  # A* ghosts never read a heading; leaving it alone keeps their states unchanged
+            # Chance ghosts record the direction of this move, so their next draw can keep going.
+            moved.append(replace(g, pos=nxt, heading=heading))
             plans.append(Plan(ghost=i, target=target, path=route))
 
         # Step 5: collisions with ghosts that just stepped onto Pac-Man's cell.

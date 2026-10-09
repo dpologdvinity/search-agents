@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from .retro import DRAW, ILLEGAL, N_CODES, index, position, solve
-from .rules import BLACK, WHITE, apply_move, is_legal, legal_moves, move_name, square_name, to_fen
+from .rules import BLACK, WHITE, apply_move, in_check, is_legal, legal_moves, move_name, square_name, to_fen
 
 DATA = Path(__file__).resolve().parent / "data"
 
@@ -40,6 +40,7 @@ class MoveInfo:
 
     outcome is 'win', 'draw' or 'loss' for the side that moved; plies is the distance to mate from the
     position after the move, counted from the mover's own move (1 = mate in one), or None for a draw.
+    check says the move leaves the other side in check (mate implies check); the chance opponent reads it.
     """
 
     move: tuple[str, int, int]
@@ -48,6 +49,7 @@ class MoveInfo:
     outcome: str
     plies: int | None
     mate: bool  # the move gives checkmate
+    check: bool = False  # the move gives check
 
     @property
     def moves(self) -> int | None:
@@ -101,8 +103,9 @@ class Tablebase:
             after = apply_move(pos, move)
             if after is None:
                 # The black king took the piece: king against king.
-                outcome, plies, mate = "draw", None, False
+                outcome, plies, mate, check = "draw", None, False, False
             else:
+                check = in_check(self.piece, after)
                 # The codes are the opponent's view after the move, so flip them: a loss for them is a win for us.
                 # A code of 0 is checkmate, the opponent to move and mated.
                 outcome, theirs = describe(self.value(after))
@@ -115,7 +118,7 @@ class Tablebase:
             if mate:
                 san += "#"
             uci = square_name(move[1]) + square_name(move[2])
-            infos.append(MoveInfo(move, san, uci, outcome, plies, mate))
+            infos.append(MoveInfo(move, san, uci, outcome, plies, mate, check))
         return infos
 
     def best_move(self, pos) -> MoveInfo | None:

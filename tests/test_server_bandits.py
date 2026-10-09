@@ -109,3 +109,9 @@ def test_benchmark_is_served_when_present(client, tmp_path, monkeypatch):
         assert client.get("/api/bandits/benchmark").json() == {"seeds": 1, "settings": {}}
     finally:
         bandits_api._benchmark_bytes.cache_clear()
+
+
+def test_shipped_benchmark_lives_inside_the_package():
+    # The Docker image copies the bandits package, so the committed benchmark must sit under it, not in results/.
+    assert bandits_api.BENCHMARK.is_file()
+    assert bandits_api.BENCHMARK.parent.parent.name == "bandits"

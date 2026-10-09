@@ -1,5 +1,6 @@
 import itertools
 import random
+import time
 
 import pytest
 
@@ -113,6 +114,14 @@ def test_budget_stops_the_search_with_unknown():
     assert DPLL(3, clauses).solve(max_propagations=0) == UNKNOWN
 
 
+def test_deadline_stops_the_solver_and_is_reported_apart_from_the_budget():
+    clauses = [[1], [2, 3], [-2, -3]]
+    solver = DPLL(3, clauses)
+    assert solver.solve(deadline=0.0) == UNKNOWN and solver.timed_out
+    solver = DPLL(3, clauses)
+    assert solver.solve(max_propagations=0) == UNKNOWN and not solver.timed_out
+
+
 def test_encoding_models_are_exactly_the_solutions():
     # A 2x2 diagonal has two solutions; any model of the encoding must be one of them.
     p = Puzzle.from_picture("tiny", ["#.", ".#"])
@@ -181,6 +190,31 @@ def test_two_solutions_are_reported_as_multiple_by_every_method():
         assert res.solution != res.second
         assert verify(p, res.solution) and verify(p, res.second)
     assert solve(p, "line").status == "undecided"  # line solving cannot choose between the two
+
+
+def picture_puzzle(n: int, seed: int) -> Puzzle:
+    """The clues of a random n x n picture. Not necessarily unique, so it is a stress input for the solvers."""
+    rng = random.Random(seed)
+    picture = [[1 if rng.random() < 0.5 else 0 for _ in range(n)] for _ in range(n)]
+    rows, cols = clues_of(picture)
+    return Puzzle("random", rows, cols)
+
+
+def test_time_limit_stops_a_hard_25x25_near_the_limit():
+    # Seed 1 needs several seconds at 25x25 for both methods, so a 0.2 s limit must end it early.
+    p = picture_puzzle(25, 1)
+    for method in ("hybrid", "sat"):
+        start = time.perf_counter()
+        res = solve(p, method, time_limit=0.2)
+        elapsed = time.perf_counter() - start
+        assert res.status == "undecided" and res.timed_out, method
+        assert elapsed < 0.2 + 1.0, (method, elapsed)
+
+
+def test_guess_budget_stop_is_not_reported_as_a_time_out():
+    p = Puzzle("diagonals", ((1,), (1,)), ((1,), (1,)))
+    res = solve(p, "hybrid", max_guesses=0, time_limit=60)
+    assert res.status == "undecided" and not res.timed_out
 
 
 def test_contradictory_clues_are_reported_as_contradictions():
@@ -282,6 +316,14 @@ def test_cli_random_is_repeatable(capsys):
     first = capsys.readouterr().out
     cli.main(["random", "8x8", "--seed", "5"])
     assert first == capsys.readouterr().out
+
+
+def test_cli_sizes_outside_the_random_range_fail_fast(capsys):
+    assert cli._parse_size("5x20") == (5, 20)
+    with pytest.raises(SystemExit):
+        cli.main(["random", "99x2"])
+    err = capsys.readouterr().err
+    assert "python -m nonogram" in err and "each side must be 5 to 20" in err
 
 
 def test_render_shows_column_clues_above_the_grid():

@@ -11,132 +11,64 @@
   "lines"
  ],
  "weights": [
-  -0.3466,
-  -0.7809,
-  0.1253,
-  -0.984,
-  -1.1847,
-  -0.1618,
-  -0.9153,
-  -0.4355,
-  0.7549
+  -2.4951,
+  2.5103,
+  -1.6173,
+  -5.5022,
+  -5.0067,
+  -2.4728,
+  -0.2381,
+  1.3207,
+  -0.1877
  ],
- "train_fitness": 804.5,
+ "train_fitness": 6869.444,
  "config": {
-  "population": 16,
-  "generations": 16,
-  "elites": 2,
-  "tournament": 3,
-  "crossover_rate": 0.8,
-  "mutation_rate": 0.2,
-  "sigma": 0.3,
-  "train_games": 6,
-  "train_pieces": 2500,
-  "board_height": 10,
-  "seed": 0
+  "iterations": 6,
+  "samples": 20,
+  "elite_frac": 0.15,
+  "games": 3,
+  "cap": 100000,
+  "height": 10,
+  "init_sigma": 1.0,
+  "noise0": 1.0,
+  "noise_decay": 20.0,
+  "noise_min": 0.05,
+  "checkpoint_every": 3,
+  "seed": 0,
+  "method": "noisy cross-entropy (Szita and Lorincz 2006)",
+  "start": "hand-picked weights"
  },
  "history": [
   {
    "gen": 0,
-   "best": 55.5,
-   "mean": 4.042,
-   "worst": 0.0
+   "best": 2280.0,
+   "mean": 170.367
   },
   {
    "gen": 1,
-   "best": 54.167,
-   "mean": 13.427,
-   "worst": 0.0
+   "best": 1089.0,
+   "mean": 164.25
   },
   {
    "gen": 2,
-   "best": 84.667,
-   "mean": 31.406,
-   "worst": 0.0
+   "best": 3722.333,
+   "mean": 633.2
   },
   {
    "gen": 3,
-   "best": 128.5,
-   "mean": 50.802,
-   "worst": 0.5
+   "best": 28140.333,
+   "mean": 3432.25
   },
   {
    "gen": 4,
-   "best": 311.333,
-   "mean": 79.906,
-   "worst": 2.833
+   "best": 39997.333,
+   "mean": 3064.467
   },
   {
    "gen": 5,
-   "best": 163.0,
-   "mean": 71.729,
-   "worst": 3.833
-  },
-  {
-   "gen": 6,
-   "best": 240.0,
-   "mean": 96.823,
-   "worst": 2.167
-  },
-  {
-   "gen": 7,
-   "best": 338.0,
-   "mean": 117.385,
-   "worst": 0.0
-  },
-  {
-   "gen": 8,
-   "best": 499.167,
-   "mean": 126.979,
-   "worst": 0.0
-  },
-  {
-   "gen": 9,
-   "best": 526.5,
-   "mean": 172.823,
-   "worst": 0.0
-  },
-  {
-   "gen": 10,
-   "best": 205.167,
-   "mean": 133.865,
-   "worst": 4.333
-  },
-  {
-   "gen": 11,
-   "best": 450.167,
-   "mean": 241.323,
-   "worst": 5.833
-  },
-  {
-   "gen": 12,
-   "best": 552.167,
-   "mean": 260.677,
-   "worst": 81.167
-  },
-  {
-   "gen": 13,
-   "best": 554.333,
-   "mean": 280.562,
-   "worst": 14.833
-  },
-  {
-   "gen": 14,
-   "best": 632.0,
-   "mean": 281.135,
-   "worst": 49.167
-  },
-  {
-   "gen": 15,
-   "best": 584.333,
-   "mean": 295.479,
-   "worst": 14.5
-  },
-  {
-   "gen": 16,
-   "best": 804.5,
-   "mean": 365.417,
-   "worst": 7.333
+   "best": 14926.0,
+   "mean": 1539.983
   }
- ]
+ ],
+ "summary": "noisy cross-entropy: 6 iterations run of 20 planned (stopped for time), 20 samples per iteration, 3 fresh games per sample, 10-row board, game-over cap 100000. Fitness is the last elite mean."
 }

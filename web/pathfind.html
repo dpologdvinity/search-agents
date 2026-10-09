@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PATHFIND // SEARCH AGENTS</title>
+<meta name="description" content="Draw walls and swamps, generate mazes, then race BFS, DFS, Dijkstra, greedy, A*, weighted A* and bidirectional search on the same map.">
+<meta property="og:title" content="PATHFIND // SEARCH AGENTS">
+<meta property="og:description" content="Draw walls and swamps, generate mazes, then race BFS, DFS, Dijkstra, greedy, A*, weighted A* and bidirectional search on the same map.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/pathfind.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="pathfind.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page pf-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">08 // PATHFINDING ARENA · SEVEN SEARCHES</div>
+      <h1 class="proj-pg-title neon-cyan glitch" data-text="PATHFIND">PATHFIND</h1>
+      <div class="proj-pg-sub">Draw walls, paint swamps, generate a maze, then race seven searches on the same map. Each one shows what it touched and what it cost.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip">MAP <span class="val" id="chip-map">41×41</span></span>
+        <span class="stat-chip green">RACERS <span class="val" id="chip-racers">7</span></span>
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">READY</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="pf-stage">
+        <div class="pf-tools" id="pf-tools" role="group" aria-label="Map tools">
+          <button class="cyber-btn pf-tool" type="button" data-tool="wall" aria-pressed="true"><span class="btn-txt">▇ WALL</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="swamp" aria-pressed="false"><span class="btn-txt">≈ SWAMP ×5</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="mud" aria-pressed="false"><span class="btn-txt">~ MUD ×3</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="erase" aria-pressed="false"><span class="btn-txt">⌫ ERASE</span></button>
+          <button class="cyber-btn green pf-tool" type="button" data-tool="start" aria-pressed="false"><span class="btn-txt">S START</span></button>
+          <button class="cyber-btn pink pf-tool" type="button" data-tool="goal" aria-pressed="false"><span class="btn-txt">G GOAL</span></button>
+        </div>
+        <div class="pf-frame">
+          <canvas id="pf-grid" role="img" aria-label="Map editor. Drag to paint with the selected tool; hover a cell for its coordinates and cost."></canvas>
+        </div>
+        <div class="field-hint" id="pf-hint">Drag on the map to paint. Hover any cell for its terrain and its distance to the goal.</div>
+        <div class="inline pf-controls" style="justify-content:center">
+          <button class="cyber-btn green" id="btn-race" type="button"><span class="btn-txt">▶ RACE</span></button>
+          <button class="cyber-btn" id="btn-pause" type="button" disabled><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ RESET RACE</span></button>
+        </div>
+      </div>
+
+      <div class="pf-race-head">
+        <div class="section-title">RACE</div>
+        <div class="pf-view" role="group" aria-label="Race view">
+          <button class="cyber-btn" id="mode-panels" type="button" aria-pressed="true"><span class="btn-txt">PANELS</span></button>
+          <button class="cyber-btn" id="mode-focus" type="button" aria-pressed="false"><span class="btn-txt">FOCUS</span></button>
+          <select class="cyber-select" id="focus-algo" aria-label="Algorithm to show large">
+            <option value="bfs">Breadth-first</option>
+            <option value="dfs">Depth-first</option>
+            <option value="ucs">Uniform cost</option>
+            <option value="greedy">Greedy best-first</option>
+            <option value="astar" selected>A*</option>
+            <option value="wastar">Weighted A*</option>
+            <option value="bidi">Bidirectional BFS</option>
+          </select>
+        </div>
+      </div>
+      <div class="pf-panels" id="pf-panels"></div>
+      <div class="pf-focus" id="pf-focus" hidden>
+        <div class="pf-focus-stats" id="pf-focus-stats"></div>
+        <canvas id="pf-focus-canvas" role="img" aria-label="Large view of the selected search"></canvas>
+      </div>
+
+      <div class="pf-board-wrap">
+        <div class="section-title pink-ttl">LEADERBOARD</div>
+        <div class="field-hint" id="pf-board-note">Race to see the ranking. Optimal means the cost equals the Dijkstra reference on this map.</div>
+        <div class="pf-scroll"><table class="cmp-table pf-board" id="pf-board">
+          <thead><tr><th class="num">#</th><th>ALGORITHM</th><th class="num">EXPANDED</th><th class="num">PEAK FRONTIER</th><th class="num">PATH COST</th><th>OPTIMAL</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title">MAP</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PRESET</div>
+            <select class="cyber-select" id="preset" style="width:100%" aria-label="Preset map"></select>
+            <div class="heuristic-card pf-card"><div class="field-hint" id="preset-note"></div></div>
+          </div>
+          <div class="pf-two">
+            <div>
+              <div class="field-lbl">GENERATOR</div>
+              <select class="cyber-select" id="kind" style="width:100%">
+                <option value="recursive">Recursive backtracker</option>
+                <option value="prim">Prim's</option>
+                <option value="scatter">Random scatter</option>
+                <option value="rooms">Rooms</option>
+                <option value="open">Open ground</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-lbl">SIZE</div>
+              <select class="cyber-select" id="size" style="width:100%">
+                <option value="21">21</option>
+                <option value="31">31</option>
+                <option value="41" selected>41</option>
+                <option value="61">61</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same map)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="3" style="flex:1">
+              <button class="cyber-btn" id="btn-seed" type="button" title="random seed"><span class="btn-txt">RANDOM</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">SWAMP <span id="swamp-val" class="field-hint">0%</span></div>
+            <input class="cyber-range" id="swamp" type="range" min="0" max="40" step="1" value="0" style="width:100%" aria-label="Percent of open cells that become swamp">
+          </div>
+          <button class="cyber-btn green" id="btn-gen" type="button" style="width:100%"><span class="btn-txt">⟲ GENERATE</span></button>
+          <div class="field-hint" id="map-note"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">SEARCH</div>
+        <div class="stack">
+          <fieldset class="pf-algos" id="algos">
+            <legend class="field-lbl">ALGORITHMS IN THE RACE</legend>
+            <label><input type="checkbox" value="bfs" checked> Breadth-first</label>
+            <label><input type="checkbox" value="dfs" checked> Depth-first</label>
+            <label><input type="checkbox" value="ucs" checked> Uniform cost (Dijkstra)</label>
+            <label><input type="checkbox" value="greedy" checked> Greedy best-first</label>
+            <label><input type="checkbox" value="astar" checked> A*</label>
+            <label><input type="checkbox" value="wastar" checked> Weighted A*</label>
+            <label><input type="checkbox" value="bidi" checked> Bidirectional BFS</label>
+          </fieldset>
+          <label class="pf-check"><input type="checkbox" id="diag"> Diagonal moves (8 directions, no corner cutting)</label>
+          <div>
+            <div class="field-lbl">HEURISTIC <span class="field-hint">(greedy, A*, weighted A*)</span></div>
+            <select class="cyber-select" id="heur" style="width:100%">
+              <option value="manhattan">Manhattan</option>
+              <option value="euclidean">Euclidean</option>
+              <option value="octile" selected>Octile</option>
+            </select>
+            <div class="field-hint" id="heur-note"></div>
+          </div>
+          <div>
+            <div class="field-lbl">WEIGHT w <span id="weight-val" class="field-hint">2.0</span></div>
+            <input class="cyber-range" id="weight" type="range" min="1" max="3" step="0.1" value="2" style="width:100%" aria-label="Weight w for weighted A*">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">PLAYBACK</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="speed" type="range" min="0" max="96" step="1" value="36" style="width:100%" aria-label="Expansions per frame">
+          </div>
+          <div class="heuristic-card pf-card"><div class="field-hint" id="algo-desc"></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title pink-ttl">HOVER A CELL</div>
+        <div class="viz-panel pf-explain">
+          <div class="field-hint">Hover a cell on the map or in any panel. Racer cells show g (cost so far), h (estimate to the goal), and f = g + w·h, the value that orders the frontier.</div>
+          <div class="field-hint" id="explain-note">Start a race to see how each search scores the cells it reaches.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">Every search keeps a frontier of cells it has found but not yet expanded, and expands one cell at a time. The seven racers differ only in how they choose the next cell. All of them run on the same map, with the same neighbour order and the same tie-breaking, so the counts are directly comparable.</p>
+  <div class="hiw-grid">
+    <article class="hiw-card">
+      <h3>Breadth-first (BFS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Explore in rings: first every cell one step from the start, then every cell two steps away, and so on. The first time you reach the goal is the shortest route in steps.</p>
+      <p>A first-in, first-out queue. It is optimal when every step costs the same. On swamp, it still returns the fewest steps, which can be an expensive path.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Depth-first (DFS)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Pick a road and follow it as far as it goes, then back up to the last fork. It is quick to write and uses little memory, but the first route it finds is rarely the shortest.</p>
+      <p>A last-in, first-out stack. The path is whatever branch reached the goal first, so it is not optimal in general.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Uniform cost (Dijkstra)</h3>
+      <p class="hiw-plain"><b>New to this?</b> Always expand the cell that is cheapest to reach from the start so far. Swamp makes some roads dearer, so it goes around them. It is slow to aim: it spreads evenly in every direction.</p>
+      <p>Priority is g, the cost from the start. Optimal for any positive costs. The lab uses it as the reference: its cost is the optimum every other path is compared with.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Greedy best-first</h3>
+      <p class="hiw-plain"><b>New to this?</b> Head for the goal as if the map were empty: always expand the cell that looks closest to the goal by the heuristic. Very fast, but it can walk into a dead end and back out.</p>
+      <p>Priority is h alone. Not optimal: it ignores the cost already paid and the terrain entirely, so it will walk straight through swamp if that is the shortest-looking way.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>A* (the workhorse)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A* balances the cost already paid (g) against the estimate of what remains (h). Its priority is f = g + h, so it expands the cells that look best overall, and it can still find the cheapest route.</p>
+      <p>Optimal when h never overestimates the true remaining cost. Each cell it expands has f no bigger than the optimal cost, so the search never wanders into routes that are already too expensive.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Weighted A* (w)</h3>
+      <p class="hiw-plain"><b>New to this?</b> A* with a bias toward the goal. Priority is g + w·h. A bigger w is greedier: fewer cells are expanded, and the route may be a little longer.</p>
+      <p>With an admissible h, its path costs at most w times the optimum. The default is <b>w = 2</b>: the bound is loose enough to save many expansions on big mazes, and a route is never more than twice the best one. w = 1 is plain A*.</p>
+    </article>
+    <article class="hiw-card">
+      <h3>Bidirectional BFS</h3>
+      <p class="hiw-plain"><b>New to this?</b> Start two searches, one from the start and one from the goal, and stop when their frontiers touch. Two small circles of search can cover far less map than one big one.</p>
+      <p>Each side is a BFS, and the side with the smaller next level expands that whole level first. It finds the fewest steps, like BFS, even with diagonals. It counts steps, not terrain cost, so it is not optimal on swamp. The search keeps going after the first meeting until no shorter route can exist.</p>
+    </article>
+  </div>
+
+  <h3 class="hiw-sub">Heuristics: admissible and consistent</h3>
+  <p class="hiw-note"><b>Admissible</b> means h never overestimates the true remaining cost; that is what makes A* optimal. <b>Consistent</b> (monotone) means h(n) ≤ cost(n, n′) + h(n′) for every step, so a cell is never reopened once expanded. Every terrain cost is at least 1, so the estimates below use a unit cost per cell.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>Formula</th><th>4-way moves</th><th>8-way moves</th></tr></thead><tbody>
+    <tr><td>Manhattan</td><td>dx + dy</td><td>admissible, consistent</td><td>overestimates a diagonal: <b>not admissible</b>, so A* can return a longer path</td></tr>
+    <tr><td>Euclidean</td><td>√(dx² + dy²)</td><td>admissible, consistent (weaker than Manhattan)</td><td>admissible, consistent (weaker)</td></tr>
+    <tr><td>Octile</td><td>max(dx, dy) + (√2 − 1)·min(dx, dy)</td><td>admissible, consistent</td><td>exact on empty ground, <b>admissible and consistent</b></td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The lab uses octile by default. With diagonal moves off, Manhattan is the tightest admissible choice; with diagonals on, octile is. Manhattan with diagonals still runs, and the leaderboard marks any path it makes suboptimal.</p>
+
+  <h3 class="hiw-sub">Complexity and what to watch</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Algorithm</th><th>Time (cells)</th><th>Memory</th><th>Optimal on this map?</th></tr></thead><tbody>
+    <tr><td>BFS</td><td>O(V + E)</td><td>O(V) frontier</td><td>fewest steps; cost only on plain ground</td></tr>
+    <tr><td>DFS</td><td>O(V + E)</td><td>O(V) closed set; this version's stack holds up to O(E) entries</td><td>no</td></tr>
+    <tr><td>Dijkstra</td><td>O(E log V)</td><td>O(V)</td><td>yes</td></tr>
+    <tr><td>Greedy</td><td>O(E log V) worst case</td><td>O(V)</td><td>no</td></tr>
+    <tr><td>A*</td><td>O(E log V) with a good h</td><td>O(V)</td><td>yes, with an admissible h</td></tr>
+    <tr><td>Weighted A* (w)</td><td>fewer expansions as w grows</td><td>O(V)</td><td>within w times the optimum</td></tr>
+    <tr><td>Bidirectional BFS</td><td>about 2·b^(d/2) instead of b^d</td><td>O(V)</td><td>fewest steps only</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">V is the number of cells, E the number of moves, b the branching factor (4, or 8 with diagonals) and d the length of the route in steps. The lab counts expansions and generated cells, which is what these bounds count.</p>
+
+  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py">pathfind/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/grid.py">pathfind/grid.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/mazes.py">pathfind/mazes.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/race.py">pathfind/race.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js">web/js/pathfind-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py">tests/test_pathfind.py</a></p>
+</section>
+</div>
+</div>
+
+<div class="pf-tip" id="pf-tip" role="status" aria-live="off" hidden></div>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/pathfind.js"></script>
+</body>
+</html>

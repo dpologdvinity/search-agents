@@ -182,6 +182,26 @@ def test_solve_command_exit_code_reports_failure(capsys):
     assert "exhausted" in capsys.readouterr().out
 
 
+def test_exhausted_backtrack_says_no_solution_exists_not_zero_conflicts(capsys):
+    # M6: an exhausted search proves there is no board, so it must not print "conflicts left: 0".
+    assert main(["solve", "-n", "2", "--agent", "backtrack"]) == 1
+    out = capsys.readouterr().out
+    assert "no solution exists" in out and "conflicts left" not in out
+
+
+def test_capped_search_still_reports_conflicts_left(capsys):
+    assert main(["solve", "-n", "32", "--agent", "backtrack", "--time-limit", "0.01"]) == 1
+    out = capsys.readouterr().out
+    assert "conflicts left:" in out and "no solution exists" not in out
+
+
+def test_queens_help_names_the_module(capsys):
+    # M3: argparse shows the command the user typed, not the script name.
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    assert capsys.readouterr().out.startswith("usage: python -m queens")
+
+
 def test_benchmark_writes_json_and_markdown(tmp_path):
     plan = [
         ("backtrack", 8, 1, 5.0, 100_000),

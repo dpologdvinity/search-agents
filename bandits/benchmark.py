@@ -32,6 +32,9 @@ LAST = 1000  # "% best machine" is measured over the last LAST pulls, after the 
 def run_benchmark(seeds: int = SEEDS, horizon: int = HORIZON, k: int = K, kinds: tuple[str, ...] = KINDS,
                   checkpoints: tuple[int, ...] | None = None, progress=None) -> dict:
     """Run every lineup on every kind for seeds 0..seeds-1. Returns the JSON-ready result dict."""
+    # The lai-robbins floor is averaged over the seeds, so zero seeds would divide by zero.
+    if seeds < 1:
+        raise ValueError("the benchmark needs at least one seed")
     if horizon <= 1000:
         raise ValueError("the benchmark horizon must be more than 1000 pulls (the table reports T=1000 and T=horizon)")
     if checkpoints is None:

@@ -1,14 +1,19 @@
 """Pac-Man API: whole games for the animated watch mode, and replayed moves for human play.
 
 GET  /api/pacman/meta
-    Mazes, agents, feature names with their learned weights, ghost personalities, and the rule constants.
+    Mazes, agents, feature names with their learned weights, ghost personalities, the two ghost
+    policies with the chance odds, and the rule constants.
 
-POST /api/pacman/episode  {"agent": "q" | "reflex" | "random", "maze": "lanes" | "vault", "seed": int}
+POST /api/pacman/episode  {"agent": "q" | "reflex" | "random", "maze": "lanes" | "vault", "seed": int,
+                           "ghosts": "ai" | "chance"}
     Plays a whole game on the server and returns every turn: positions before and after, each
     ghost's target and planned route, the events, and for the Q-agent the Q-value and feature
     vector of every legal move. The browser animates the list; Python is the only game logic.
+    "ghosts" picks the opponent: "ai" (A* routes, the default) or "chance" (fixed odds). The
+    chance moves are drawn on the server from the game's seed, so the page never needs the odds.
 
-POST /api/pacman/play  {"maze": ..., "seed": int, "actions": ["N" | "E" | "S" | "W", ...]}
+POST /api/pacman/play  {"maze": ..., "seed": int, "actions": ["N" | "E" | "S" | "W", ...],
+                        "ghosts": "ai" | "chance"}
     Human play. The game is deterministic given the seed and the moves, so the browser sends
     the whole move history and gets back the state after it, plus the legal moves next. The
     server does no per-session bookkeeping.
@@ -42,10 +47,10 @@ from pacman.engine import (
 )
 from pacman.episode import Episode, run_episode
 from pacman.features import FEATURE_DOCS, FEATURE_NAMES
-from pacman.ghosts import PERSONALITY_DOCS
+from pacman.ghosts import CHANCE_ODDS, GHOST_DOCS, GHOST_LABELS, GHOST_POLICIES, PERSONALITY_DOCS
 from pacman.mazes import ACTIONS, Maze, get, names
 
-from .limits import Busy, RateLimiter
+from .limits import Busy, RateLimiter, client_key
 
 router = APIRouter()
 
@@ -60,12 +65,14 @@ class EpisodeRequest(BaseModel):
     maze: str = Field("lanes", max_length=20)
     seed: int = Field(0, ge=0, le=2**31 - 1)
     max_turns: int = Field(MAX_TURNS, ge=10, le=MAX_TURNS)
+    ghosts: str = Field("ai", pattern="^(ai|chance)$")
 
 
 class PlayRequest(BaseModel):
     maze: str = Field("lanes", max_length=20)
     seed: int = Field(0, ge=0, le=2**31 - 1)
     actions: list[Literal["N", "E", "S", "W"]] = Field(default_factory=list, max_length=MAX_TURNS)
+    ghosts: str = Field("ai", pattern="^(ai|chance)$")
 
 
 def _xy(maze: Maze, cell: int) -> list[int]:
@@ -132,6 +139,8 @@ def _episode_json(ep: Episode) -> dict:
     return {
         "agent": ep.agent,
         "description": DESCRIPTIONS.get(ep.agent, ""),
+        "ghosts": ep.ghosts,
+        "ghosts_label": GHOST_LABELS[ep.ghosts],
         "seed": ep.seed,
         "maze": _maze_json(maze),
         "start": {
@@ -150,13 +159,9 @@ def _check_maze(name: str) -> Maze:
     return get(name)
 
 
-def _client_key(request: Request) -> str:
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
-def _episode(agent_name: str, maze: Maze, seed: int, max_turns: int) -> dict:
+def _episode(agent_name: str, maze: Maze, seed: int, max_turns: int, ghosts: str) -> dict:
     """Runs in a worker thread: the whole game is pure Python and can take a few hundred milliseconds."""
-    ep = run_episode(make_agent(agent_name), maze, seed, agent_name, max_turns=max_turns)
+    ep = run_episode(make_agent(agent_name), maze, seed, agent_name, max_turns=max_turns, ghosts=ghosts)
     payload = _episode_json(ep)
     if agent_name == "q":
         # The learned weights, so the page can show each feature's share of every Q-value.
@@ -164,9 +169,9 @@ def _episode(agent_name: str, maze: Maze, seed: int, max_turns: int) -> dict:
     return payload
 
 
-def _replay(maze: Maze, seed: int, actions: list[str]) -> dict:
+def _replay(maze: Maze, seed: int, actions: list[str], ghosts: str) -> dict:
     """Runs in a worker thread: applies the move history to a fresh game and reports the new state."""
-    game = Game(maze, seed=seed)
+    game = Game(maze, seed=seed, ghosts=ghosts)
     last = None
     for i, letter in enumerate(actions):
         if game.state.over:
@@ -180,6 +185,7 @@ def _replay(maze: Maze, seed: int, actions: list[str]) -> dict:
         "legal": [ACTIONS[a] for a in legal_actions(game.state)] if not game.state.over else [],
         "last": _turn_json(last) if last is not None else None,
         "maze": _maze_json(maze),
+        "ghosts": ghosts,
     }
 
 
@@ -193,6 +199,10 @@ async def meta():
     return {
         "mazes": [_maze_json(get(n)) for n in names()],
         "agents": [{"name": a, "description": DESCRIPTIONS[a]} for a in AGENTS],
+        "ghost_policies": [
+            {"name": p, "label": GHOST_LABELS[p], "description": GHOST_DOCS[p]} for p in GHOST_POLICIES
+        ],
+        "chance_odds": CHANCE_ODDS,
         "features": [{"name": n, "description": FEATURE_DOCS[n]} for n in FEATURE_NAMES],
         "weights": weights,
         "personalities": PERSONALITY_DOCS,
@@ -209,12 +219,12 @@ async def meta():
 
 @router.post("/api/pacman/episode")
 async def episode(req: EpisodeRequest, request: Request):
-    if not _episode_rate.allow(_client_key(request)):
+    if not _episode_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     maze = _check_maze(req.maze)
     try:
         async with request.app.state.slots.acquire():
-            return await asyncio.to_thread(_episode, req.agent, maze, req.seed, req.max_turns)
+            return await asyncio.to_thread(_episode, req.agent, maze, req.seed, req.max_turns, req.ghosts)
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None
     except FileNotFoundError as e:  # Q-agent weights not trained yet
@@ -223,11 +233,11 @@ async def episode(req: EpisodeRequest, request: Request):
 
 @router.post("/api/pacman/play")
 async def play(req: PlayRequest, request: Request):
-    if not _play_rate.allow(_client_key(request)):
+    if not _play_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     maze = _check_maze(req.maze)
     try:
         async with request.app.state.slots.acquire():
-            return await asyncio.to_thread(_replay, maze, req.seed, req.actions)
+            return await asyncio.to_thread(_replay, maze, req.seed, req.actions, req.ghosts)
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None

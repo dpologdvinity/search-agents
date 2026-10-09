@@ -438,7 +438,8 @@ function bigStatus() {
   if (big.solved) {
     $('big-status').textContent = `Solved: ${big.n.toLocaleString('en-US')} queens with ${s.steps} repairs (${s.restarts} restarts).`;
   } else {
-    $('big-status').textContent = `${big.n.toLocaleString('en-US')} queens, ${s.conflicts.toLocaleString('en-US')} conflicts left, ${s.steps.toLocaleString('en-US')} repairs so far.`;
+    const left = s.conflicts.toLocaleString('en-US');
+    $('big-status').textContent = `${big.n.toLocaleString('en-US')} queens, ${left} conflict${s.conflicts === 1 ? '' : 's'} left, ${s.steps.toLocaleString('en-US')} repairs so far.`;
   }
 }
 

@@ -165,5 +165,9 @@ def run(seed: int | None = None, weights=None, stdin=None, stdout=None) -> int:
             break
         show(msg)
     show()
-    print(f"game over: {game.lines} lines in {game.pieces} pieces.", file=stdout)
+    if game.over:
+        print(f"game over: {game.lines} lines in {game.pieces} pieces.", file=stdout)
+    else:
+        # The loop also ends when stdin closes (a pipe that ran out, or Ctrl-D): that is not a game over.
+        print(f"input ended after {game.lines} lines in {game.pieces} pieces.", file=stdout)
     return 0

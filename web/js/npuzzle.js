@@ -5,6 +5,7 @@
 
 import { SearchSocket, formatNumber, formatSeconds, getJSON } from './api.js';
 import { banner, burst, shake } from './fx.js';
+import { expand } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 const socket = new SearchSocket('/ws/npuzzle');
@@ -343,6 +344,7 @@ async function solve() {
   try {
     const result = await socket.solve(req, (msg) => {
       if (msg.type !== 'progress') return;
+      expand(Math.log10(msg.nodes + 1) / 6); // the pitch climbs as the search expands more nodes
       maxFrontier = Math.max(maxFrontier, msg.frontier);
       $('st-nodes').textContent = formatNumber(msg.nodes);
       $('st-rate').textContent = msg.elapsed > 0 ? formatNumber(msg.nodes / msg.elapsed) : '—';

@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from routes.tsp import HELD_KARP_LIMIT, SOLVERS, held_karp
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -92,7 +92,7 @@ async def meta():
 @router.post("/api/routes/solve")
 async def solve(req: SolveRequest, request: Request):
     app = request.app
-    key = request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    key = client_key(request)
     if not app.state.rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     if any(not (0 <= x <= 1 and 0 <= y <= 1) for x, y in req.cities):

@@ -1,0 +1,17 @@
+Match: alphabeta vs chance, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: alpha-beta search, iterative deepening, 3,000 nodes vs White: chance (fixed odds)
+Game  Red         White       Result
+   1  alphabeta   chance      alphabeta wins (red)
+   2  chance      alphabeta   alphabeta wins (white)
+   3  alphabeta   chance      alphabeta wins (red)
+   4  chance      alphabeta   alphabeta wins (white)
+   5  alphabeta   chance      alphabeta wins (red)
+   6  chance      alphabeta   alphabeta wins (white)
+   7  alphabeta   chance      alphabeta wins (red)
+   8  chance      alphabeta   alphabeta wins (white)
+   9  alphabeta   chance      alphabeta wins (red)
+  10  chance      alphabeta   alphabeta wins (white)
+
+Agent         Wins  Draws  Losses
+alphabeta       10      0       0
+chance           0      0      10

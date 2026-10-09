@@ -4,6 +4,7 @@
     python -m hexgame play -n 9 --you across --agent uct --swap
     python -m hexgame watch --red rave --blue uct --sims 1000 --seed 3
     python -m hexgame benchmark --write        # the full run committed under results/
+    python -m hexgame match --agent rave --level 1 --games 20   # record against the chance player
 
 Moves are typed as cells: "c4" is column c, row 4, counted from the top left. In play, "h" shows the
 hint (the top moves with visits and win rates), "swap" takes the first stone when the swap rule allows
@@ -18,7 +19,7 @@ import random
 import sys
 
 from .agents import AGENTS, HINT_SIMS, LEVELS, choose, describe_move
-from .benchmark import run, to_markdown, write_results
+from .benchmark import match, run, to_markdown, write_results
 from .board import ACROSS, DOWN, MAX_N, MIN_N, NAME, SWAP, Board, chain_marks, label, parse_cell, render
 from .mcts import search
 
@@ -97,6 +98,29 @@ def watch(n: int, red: str, blue: str, sims: int, seed: int, swap: bool, out=pri
     return w
 
 
+def match_table(n: int, agent: str, level: int, games: int, result: dict) -> str:
+    """A markdown table of wins and losses for the agent and for the chance player, naming both algorithms.
+
+    Each algorithm's name is the part of its AGENTS description before the colon. Hex has no draws, so
+    the draws column is always 0, and the chance row is the mirror image of the agent row.
+    """
+    lo, hi = result["ci95"]
+    sims = LEVELS[level]["sims"]
+    wins = result["a_wins"]
+    agent_name = AGENTS[agent].split(":")[0]
+    chance_name = AGENTS["chance"].split(":")[0]
+    lines = [f"Hex {n}x{n}: {agent_name} vs {chance_name}, level {level} ({sims} simulations per move), "
+             f"{games} games, colours alternating",
+             "",
+             "| Algorithm | Wins | Draws | Losses | Win rate, 95% CI |",
+             "|---|---|---|---|---|",
+             f"| {agent_name} | {wins} | 0 | {games - wins} | "
+             f"{round(100 * result['a_rate'])}% ({round(100 * lo)}-{round(100 * hi)}%) |",
+             f"| {chance_name} | {games - wins} | 0 | {wins} | "
+             f"{round(100 * (1 - result['a_rate']))}% |"]
+    return "\n".join(lines)
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0].startswith("-"):
@@ -107,7 +131,7 @@ def main(argv=None) -> int:
     p = sub.add_parser("play", help="play against an agent")
     p.add_argument("-n", "--size", type=int, default=7, help=f"board size, {MIN_N}..{MAX_N} (default 7)")
     p.add_argument("--you", choices=["down", "across"], default="down", help="which side you play (default down)")
-    p.add_argument("--agent", choices=["rave", "uct", "shortest", "random"], default="rave")
+    p.add_argument("--agent", choices=list(AGENTS), default="rave")
     p.add_argument("--level", type=int, choices=sorted(LEVELS), default=2, help="search budget (default 2)")
     p.add_argument("--swap", action="store_true", help="use the swap rule")
     p.add_argument("--seed", type=int, help="seed the agent for a repeatable game")
@@ -119,6 +143,12 @@ def main(argv=None) -> int:
     w.add_argument("--sims", type=int, default=LEVELS[2]["sims"], help="simulations per move")
     w.add_argument("--swap", action="store_true", help="use the swap rule")
     w.add_argument("--seed", type=int, default=0)
+
+    m = sub.add_parser("match", help="games of one agent against the chance player, alternating colours")
+    m.add_argument("-n", "--size", type=int, default=7)
+    m.add_argument("--agent", choices=[a for a in AGENTS if a != "chance"], default="rave")
+    m.add_argument("--level", type=int, choices=sorted(LEVELS), default=2, help="search budget (default 2)")
+    m.add_argument("--games", type=int, default=20, help="games in the match (default 20)")
 
     b = sub.add_parser("benchmark", help="head-to-head results and speed")
     b.add_argument("-n", "--size", type=int, default=7)
@@ -136,6 +166,10 @@ def main(argv=None) -> int:
         return 0
     if args.command == "watch":
         watch(args.size, args.red, args.blue, args.sims, args.seed, args.swap)
+        return 0
+    if args.command == "match":
+        result = match(args.size, args.agent, "chance", args.games, LEVELS[args.level]["sims"])
+        print(match_table(args.size, args.agent, args.level, args.games, result))
         return 0
     result = run(size=args.size, sims=args.sims, games=args.games)
     print(to_markdown(result))

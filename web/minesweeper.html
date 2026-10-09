@@ -26,6 +26,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -97,7 +98,7 @@
       <div>
         <div class="section-title green-ttl">OVERLAYS</div>
         <div class="stack">
-          <label class="ms-toggle"><input type="checkbox" id="heat"> <span>HEAT MAP: exact mine probability per covered cell</span></label>
+          <label class="ms-toggle"><input type="checkbox" id="heat"> <span>HEAT MAP: mine probability per covered cell</span></label>
           <label class="ms-toggle"><input type="checkbox" id="comps"> <span>CONSTRAINT COMPONENTS: independent groups, each counted alone</span></label>
           <div class="field-hint" id="ms-analysis">No analysis yet.</div>
         </div>
@@ -151,7 +152,7 @@
     <article class="hiw-card">
       <h3>Exact mine probability (level 3, default)</h3>
       <p class="hiw-plain"><b>New to this?</b> Treat every layout of mines that fits the clues as equally likely. A square's chance of being a mine is the share of those layouts that put a mine on it. It is like checking every seating plan that obeys a rule, then asking how often a particular seat is taken.</p>
-      <p>Covered squares that touch no number (the interior) take the leftover mines in C(n, k) ways. All weights are integers until the final division, so comparisons are exact. When nothing is proven, the agent guesses the covered square with the lowest probability.</p>
+      <p>Covered squares that touch no number (the interior) take the leftover mines in C(n, k) ways. All weights are integers until the final division, so comparisons are exact. When nothing is proven, the agent guesses the covered square with the lowest probability. The count has a work budget: a board too wide to count within it keeps its proofs, shows estimated odds instead, and the page says so.</p>
       <ul>
         <li>Ties go to the square with the most covered neighbours, since revealing it would open the most, then to the lowest cell number.</li>
       </ul>

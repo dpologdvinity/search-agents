@@ -2,7 +2,7 @@
 
 GET  /api/bandits/meta                                   kinds, agents, lineups and the shared constants
 GET  /api/bandits/machines?kind=&k=&pulls=&seed=         the hidden means, segment by segment
-GET  /api/bandits/benchmark                              results/bandits_benchmark.json (404 until it exists)
+GET  /api/bandits/benchmark                              bandits/data/bandits_benchmark.json (404 if missing)
 POST /api/bandits/score  {"kind", "k", "seed", "arms"}   regret of a player's pulls next to every agent's
 
 The page simulates the agents in JavaScript for the live race. The score endpoint runs the Python
@@ -13,13 +13,12 @@ reference implementation. Nothing is stored: a score is returned and forgotten.
 from __future__ import annotations
 
 import asyncio
-import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from bandits.agents import AGENTS, LINEUP, SlidingWindowUCB
@@ -37,7 +36,7 @@ from bandits.env import (
 )
 from bandits.sim import AGENT_OFFSET, play, score_pulls
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -45,7 +44,9 @@ MAX_PULLS = 1000  # a game on the page is at most this long; the benchmark runs 
 MAX_MACHINES = 20
 MIN_MACHINES = 2
 SEED_MAX = 2**31 - 1
-BENCHMARK = Path(__file__).resolve().parent.parent / "results" / "bandits_benchmark.json"
+# Shipped inside the package so the Docker image has it. It is a copy of results/bandits_benchmark.json: after
+# `python -m bandits benchmark`, copy the file here again.
+BENCHMARK = Path(__file__).resolve().parent.parent / "bandits" / "data" / "bandits_benchmark.json"
 
 
 class ScoreRequest(BaseModel):
@@ -53,11 +54,6 @@ class ScoreRequest(BaseModel):
     k: int = Field(K, ge=MIN_MACHINES, le=MAX_MACHINES)
     seed: int = Field(0, ge=0, le=SEED_MAX)
     arms: list[int] = Field(min_length=1, max_length=MAX_PULLS)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _meta() -> dict:
@@ -112,7 +108,7 @@ async def benchmark():
     body = _benchmark_bytes()
     if body is None:
         raise HTTPException(404, "the benchmark has not been run: python -m bandits benchmark")
-    return JSONResponse(content=json.loads(body))
+    return Response(content=body, media_type="application/json")  # already JSON text: no parse per request
 
 
 def score_json(req: ScoreRequest) -> dict:
@@ -142,7 +138,7 @@ def score_json(req: ScoreRequest) -> dict:
 @router.post("/api/bandits/score")
 async def score(req: ScoreRequest, request: Request):
     app = request.app
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
         async with app.state.slots.acquire():

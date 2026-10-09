@@ -1,0 +1,85 @@
+/* The 404 page: a tic-tac-toe game beside the agent's search tree, then links to every game. */
+
+.nf-page { max-width: 1120px; margin: 0 auto; padding: 2.2rem 1.1rem 4rem; box-sizing: border-box; }
+.nf-head { margin-bottom: 1.6rem; }
+.nf-title { font-size: clamp(2.2rem, 6.5vw, 4.4rem); margin: 0.4rem 0 0.8rem; }
+.nf-sub { font-family: var(--raj); font-size: 1rem; color: var(--dim); max-width: 60ch; margin: 0; }
+
+.nf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 1.2rem; align-items: start; }
+.nf-panel { position: relative; border: 1px solid var(--border); background: rgba(0,0,0,0.28); padding: 1rem; min-width: 0; }
+.nf-panel::before, .nf-panel::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border-color: var(--cyan); border-style: solid; filter: drop-shadow(0 0 4px var(--cyan));
+}
+.nf-panel::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.nf-panel::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+.nf-panel .section-title { margin-top: 0; }
+
+/* Board */
+.nf-board-wrap { display: flex; justify-content: center; margin: 0.4rem 0 0.8rem; }
+.ttt-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: min(270px, 72vw);
+  padding: 6px; border: 2px solid var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.3), inset 0 0 30px rgba(0,0,0,0.6); }
+.ttt-cell { aspect-ratio: 1; font-family: var(--orb); font-weight: 900; font-size: clamp(1.6rem, 6vw, 2.4rem); line-height: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  background: rgba(0,245,255,0.04); border: 1px solid var(--border); color: var(--text); cursor: pointer; }
+.ttt-cell:hover:not(:disabled) { background: rgba(0,245,255,0.14); box-shadow: 0 0 14px rgba(0,245,255,0.35); }
+.ttt-cell:disabled { cursor: default; }
+.ttt-cell:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.ttt-cell.is-x { color: var(--pink); text-shadow: 0 0 12px var(--pink); }
+.ttt-cell.is-o { color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+.ttt-cell.just { animation: cellPop 0.35s ease-out; }
+@keyframes cellPop { 0% { transform: scale(0.6); opacity: 0.4; } 65% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+
+.nf-status { font-family: var(--mono); font-size: 0.72rem; color: var(--dim); text-align: center; min-height: 1.2em; letter-spacing: 0.06em; }
+.nf-verdict { font-family: var(--orb); font-size: 0.95rem; line-height: 1.5; text-align: center; min-height: 3.6em;
+  margin: 0.6rem 0 0.8rem; padding: 0 0.3rem; }
+.nf-verdict a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.nf-verdict.impossible { color: var(--pink); text-shadow: 0 0 12px var(--pink); }
+.nf-verdict.loss { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+.nf-verdict.draw { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+
+/* Search tree */
+.nf-panel .field-hint { font-size: 0.78rem; line-height: 1.45; margin-bottom: 0.6rem; }
+.nf-tree-wrap { width: 100%; min-width: 0; }
+.nf-tree { display: block; width: 100%; height: auto; overflow: visible; }
+.t-root { font-family: var(--mono); font-size: 11px; fill: var(--cyan); letter-spacing: 0.08em; }
+.t-edge { stroke: rgba(0,245,255,0.35); stroke-width: 1; fill: none; }
+.t-node rect { fill: rgba(2,6,16,0.9); stroke-width: 1.2; }
+.t-node text { font-family: var(--mono); font-size: 11px; fill: var(--text); }
+.t-node.win rect { stroke: var(--green); filter: drop-shadow(0 0 3px var(--green)); }
+.t-node.draw rect { stroke: var(--yellow); }
+.t-node.loss rect { stroke: var(--pink); }
+.t-node.win text { fill: var(--green); }
+.t-node.draw text { fill: var(--yellow); }
+.t-node.loss text { fill: var(--pink); }
+.t-node.refuted { opacity: 0.5; }
+.t-node.refuted rect { stroke: var(--dim); stroke-dasharray: 3 2; }
+.t-node.refuted text { fill: var(--dim); }
+.t-node.pruned rect { stroke: rgba(74,122,155,0.45); fill: rgba(2,6,16,0.6); }
+.t-node.pruned text { fill: rgba(74,122,155,0.7); }
+.t-strike { stroke: rgba(255,59,59,0.7); stroke-width: 1.2; }
+.t-node.move.chosen rect { stroke-width: 2; filter: drop-shadow(0 0 6px var(--green)); }
+.t-node.move.chosen text { font-weight: 700; }
+
+.nf-readout { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; margin-top: 0.6rem;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; }
+.nf-readout b { font-family: var(--orb); font-size: 0.95rem; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); margin-left: 0.25rem; }
+
+/* Quick links */
+.nf-links { margin-top: 2.2rem; }
+.nf-links .section-title { margin-top: 0; }
+.nf-link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem; }
+.nf-link { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; color: var(--text); padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.25); }
+.nf-link:hover, .nf-link:focus-visible { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 12px rgba(255,0,160,0.3); outline: none; }
+
+@media (max-width: 860px) {
+  .nf-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .nf-page { padding: 1.4rem 0.8rem 3rem; }
+  .nf-readout { gap: 0.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttt-cell.just { animation: none; }
+}

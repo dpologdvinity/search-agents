@@ -1,0 +1,94 @@
+{
+  "agent": "q",
+  "agent_label": "Q-learning (learned)",
+  "agent_description": "Approximate Q-learning: a linear model scores each move from hand-built features (pellet distance, ghost distance, power pellets, and how long the ghosts' real moves let Pac-Man survive). Its weights were learned from self-play.",
+  "games_per_maze": 200,
+  "seeds": [
+    10000,
+    10199
+  ],
+  "chance_odds": {
+    "straight": 0.6,
+    "left": 0.15,
+    "right": 0.15,
+    "back": 0.1
+  },
+  "ghosts": {
+    "ai": {
+      "label": "AI ghosts (A* routes)",
+      "overall": {
+        "games": 400,
+        "win_rate": 0.6425,
+        "mean_score": 1350.3,
+        "mean_turns": 193.9,
+        "outcomes": {
+          "won": 257,
+          "lost": 47,
+          "timeout": 96
+        }
+      },
+      "mazes": {
+        "lanes": {
+          "games": 200,
+          "win_rate": 0.435,
+          "mean_score": 1218.0,
+          "mean_turns": 235.8,
+          "outcomes": {
+            "won": 87,
+            "lost": 19,
+            "timeout": 94
+          }
+        },
+        "vault": {
+          "games": 200,
+          "win_rate": 0.85,
+          "mean_score": 1482.5,
+          "mean_turns": 152.1,
+          "outcomes": {
+            "won": 170,
+            "lost": 28,
+            "timeout": 2
+          }
+        }
+      }
+    },
+    "chance": {
+      "label": "Chance (fixed odds)",
+      "overall": {
+        "games": 400,
+        "win_rate": 0.4625,
+        "mean_score": 1513.7,
+        "mean_turns": 110.8,
+        "outcomes": {
+          "won": 185,
+          "lost": 215,
+          "timeout": 0
+        }
+      },
+      "mazes": {
+        "lanes": {
+          "games": 200,
+          "win_rate": 0.325,
+          "mean_score": 1302.2,
+          "mean_turns": 94.7,
+          "outcomes": {
+            "won": 65,
+            "lost": 135,
+            "timeout": 0
+          }
+        },
+        "vault": {
+          "games": 200,
+          "win_rate": 0.6,
+          "mean_score": 1725.2,
+          "mean_turns": 126.9,
+          "outcomes": {
+            "won": 120,
+            "lost": 80,
+            "timeout": 0
+          }
+        }
+      }
+    }
+  }
+}

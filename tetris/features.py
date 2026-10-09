@@ -34,8 +34,8 @@ FEATURES = (
     "lines",
 )
 
-# Hand-picked baseline: Dellacherie-style signs and sizes on the five classic features, zero on the
-# four extra ones. These are the values from the Dellacherie feature set as commonly reported
+# Hand-picked baseline: Dellacherie-style signs and sizes on the six classic features, zero on the
+# other three. These are the values from the Dellacherie feature set as commonly reported
 # (e.g. Thiery & Scherrer 2009); they were not tuned here.
 HAND_WEIGHTS = (-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0, 0.0)
 

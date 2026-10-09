@@ -9,7 +9,9 @@
 
 Every solution returned is checked against the clues before it is reported, so a bug shows up as a
 failed check rather than as a wrong picture. Budgets (guesses, propagations) are counted, not timed,
-so a result does not depend on machine speed. A run that hits a budget reports status "undecided".
+so a result does not depend on machine speed. The server also passes a wall-clock time limit: the cost
+of one guess grows with the picture, so a count alone can take minutes at 25x25. A run that hits a budget
+or the time limit reports status "undecided"; `timed_out` says which of those stopped it.
 """
 
 from __future__ import annotations
@@ -27,9 +29,14 @@ METHODS = ("line", "hybrid", "sat")
 MAX_EVENTS = 4000  # cap on the replay log sent to the page
 
 # Budgets. Counted in work, not seconds, so results do not depend on the machine.
-SAT_PROPAGATIONS_SERVER = 600_000  # about 6 s of DPLL on this machine, the most a request may spend
+# Measured on 25x25 random pictures: DPLL does about 0.7 million propagations a second, and a hybrid guess
+# costs 5 to 25 ms. The counts are backstops for small pictures; SECONDS_SERVER binds first on large ones.
+SAT_PROPAGATIONS_SERVER = 6_000_000  # about 8 s of DPLL at that rate
 SAT_PROPAGATIONS_BENCH = 5_000_000
-GUESSES_SERVER = 2_000  # about 6 s of hybrid search (roughly 3 ms per guess)
+GUESSES_SERVER = 2_000  # 10 to 50 s of hybrid search at that rate
+# The server's wall-clock limit for one solve, checked inside the search loops. Only the server passes it:
+# the benchmark runs without it, so its rows stay reproducible.
+SECONDS_SERVER = 10.0
 
 
 @dataclass
@@ -72,6 +79,7 @@ class Result:
     rounds: list | None = None  # line method, traced: the cells each line pass fixed
     events: list | None = None  # hybrid and sat, traced: ["d", r, c, v], ["c"], ["b"]
     events_truncated: bool = False
+    timed_out: bool = False  # "undecided" because the time limit passed, not a budget
     stats: Stats = field(default_factory=lambda: Stats("line"))
 
     def as_dict(self) -> dict:
@@ -86,6 +94,7 @@ class Result:
             "rounds": self.rounds,
             "events": self.events,
             "events_truncated": self.events_truncated,
+            "timed_out": self.timed_out,
             "stats": self.stats.as_dict(),
         }
 
@@ -183,8 +192,13 @@ def _solve_line(puzzle: Puzzle, trace: bool, stats: Stats) -> Result:
                   partial=[row[:] for row in grid], rounds=rounds, stats=stats)
 
 
-def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: _Events, stats: Stats):
-    """Depth-first search with line propagation at every node. Returns (solutions, budget_hit)."""
+def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: _Events, stats: Stats,
+                   deadline: float | None = None):
+    """Depth-first search with line propagation at every node.
+
+    Returns (solutions, stop). `stop` is None when the search finished, "guesses" when the guess budget ran
+    out, or "time" when `deadline` (a time.perf_counter() value) passed. Every node checks both.
+    """
     solutions: list = []
 
     class OutOfBudget(Exception):
@@ -194,7 +208,10 @@ def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: 
         if len(solutions) >= limit:
             return
         if max_guesses is not None and stats.decisions > max_guesses:
-            raise OutOfBudget
+            raise OutOfBudget("guesses")
+        # A node costs tens of milliseconds at 25x25, so one clock read per node is negligible.
+        if deadline is not None and time.perf_counter() > deadline:
+            raise OutOfBudget("time")
         if not propagate(puzzle, grid, None, stats):
             stats.conflicts += 1
             events.add(["c"])
@@ -232,15 +249,16 @@ def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: 
 
     try:
         dfs(empty_grid(puzzle.rows, puzzle.cols))
-    except OutOfBudget:
-        return solutions, True
-    return solutions, False
+    except OutOfBudget as stop:
+        return solutions, stop.args[0]
+    return solutions, None
 
 
-def _solve_hybrid(puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: Stats) -> Result:
+def _solve_hybrid(puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: Stats,
+                  deadline: float | None = None) -> Result:
     events = _Events(trace)
-    solutions, budget_hit = _search_hybrid(puzzle, 2, max_guesses, events, stats)
-    if budget_hit:
+    solutions, stop = _search_hybrid(puzzle, 2, max_guesses, events, stats, deadline)
+    if stop is not None:
         status = "undecided"
     elif not solutions:
         status = "contradiction"
@@ -251,10 +269,12 @@ def _solve_hybrid(puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: S
     return Result("hybrid", status, puzzle.rows, puzzle.cols,
                   solution=solutions[0] if solutions else None,
                   second=solutions[1] if len(solutions) > 1 else None,
-                  events=events.items if trace else None, events_truncated=events.truncated, stats=stats)
+                  events=events.items if trace else None, events_truncated=events.truncated,
+                  timed_out=stop == "time", stats=stats)
 
 
-def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats: Stats) -> Result:
+def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats: Stats,
+               deadline: float | None = None) -> Result:
     cnf = encode(puzzle)
     stats.variables = cnf.nvars
     stats.clauses = len(cnf.clauses)
@@ -288,11 +308,11 @@ def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats:
             stats.pure_eliminated = s.pure_eliminated
 
     first = DPLL(cnf.nvars, cnf.clauses, priority=cells, trace=trace_sink)
-    status = first.solve(max_propagations)
+    status = first.solve(max_propagations, deadline)
     absorb(first)
     if status == UNKNOWN:
         return Result("sat", "undecided", puzzle.rows, puzzle.cols, events=events.items if trace else None,
-                      events_truncated=events.truncated, stats=stats)
+                      events_truncated=events.truncated, timed_out=first.timed_out, stats=stats)
     if status == UNSAT:
         return Result("sat", "contradiction", puzzle.rows, puzzle.cols, events=events.items if trace else None,
                       events_truncated=events.truncated, stats=stats)
@@ -306,11 +326,12 @@ def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats:
             var = cnf.cell_var[r][c]
             blocking.append(-var if solution[r][c] else var)
     second_solver = DPLL(cnf.nvars, cnf.clauses + [blocking], priority=cells, trace=trace_sink)
-    status2 = second_solver.solve(max_propagations)
+    status2 = second_solver.solve(max_propagations, deadline)
     absorb(second_solver)
     if status2 == UNKNOWN:
         return Result("sat", "undecided", puzzle.rows, puzzle.cols, solution=solution,
-                      events=events.items if trace else None, events_truncated=events.truncated, stats=stats)
+                      events=events.items if trace else None, events_truncated=events.truncated,
+                      timed_out=second_solver.timed_out, stats=stats)
     if status2 == UNSAT:
         return Result("sat", "unique", puzzle.rows, puzzle.cols, solution=solution,
                       events=events.items if trace else None, events_truncated=events.truncated, stats=stats)
@@ -319,8 +340,11 @@ def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats:
 
 
 def solve(puzzle: Puzzle, method: str = "hybrid", *, trace: bool = False, max_guesses: int | None = None,
-          max_propagations: int | None = None) -> Result:
+          max_propagations: int | None = None, time_limit: float | None = None) -> Result:
     """Solve with one method. `trace` records the replay (rounds for line, events for hybrid and sat).
+
+    `time_limit` is a wall-clock limit in seconds for the search; past it the result is "undecided" with
+    timed_out set. The line method is a single pass, so it ignores the limit.
 
     Every solution is verified against the clues; a failed check raises, because it means a bug.
     """
@@ -328,12 +352,13 @@ def solve(puzzle: Puzzle, method: str = "hybrid", *, trace: bool = False, max_gu
         raise ValueError(f"method must be one of {', '.join(METHODS)}")
     stats = Stats(method)
     start = time.perf_counter()
+    deadline = start + time_limit if time_limit is not None else None
     if method == "line":
         result = _solve_line(puzzle, trace, stats)
     elif method == "hybrid":
-        result = _solve_hybrid(puzzle, trace, max_guesses, stats)
+        result = _solve_hybrid(puzzle, trace, max_guesses, stats, deadline)
     else:
-        result = _solve_sat(puzzle, trace, max_propagations, stats)
+        result = _solve_sat(puzzle, trace, max_propagations, stats, deadline)
     stats.seconds = time.perf_counter() - start
     for grid in (result.solution, result.second):
         if grid is not None and not verify(puzzle, grid):
@@ -344,8 +369,8 @@ def solve(puzzle: Puzzle, method: str = "hybrid", *, trace: bool = False, max_gu
 def count_solutions(puzzle: Puzzle, limit: int = 2, max_guesses: int | None = None):
     """Count solutions up to `limit` with the hybrid search. Returns (status, solutions found, guesses)."""
     stats = Stats("hybrid")
-    solutions, budget_hit = _search_hybrid(puzzle, limit, max_guesses, _Events(False), stats)
-    status = "undecided" if budget_hit and len(solutions) < limit else (
+    solutions, stop = _search_hybrid(puzzle, limit, max_guesses, _Events(False), stats)
+    status = "undecided" if stop is not None and len(solutions) < limit else (
         "contradiction" if not solutions else "unique" if len(solutions) == 1 else "multiple")
     return status, solutions, stats.decisions
 

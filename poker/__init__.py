@@ -7,5 +7,6 @@ cfr.py             vanilla CFR and CFR+ (regret matching on the tree, average st
 train.py           training runs and the committed files (strategy table, exploitability curves)
 strategy.py        the trained table: JSON on disk, sampling for the bot, hint text
 bots.py            the CFR bot, three baselines, and the seeded head-to-head runner
+chance.py          the chance opponent: fixed action odds, no card and no search
 benchmark.py       the benchmark table written to results/
 """

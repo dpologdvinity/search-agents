@@ -1,0 +1,108 @@
+{
+ "features": [
+  "landing_height",
+  "eroded_cells",
+  "row_transitions",
+  "column_transitions",
+  "holes",
+  "wells",
+  "aggregate_height",
+  "bumpiness",
+  "lines"
+ ],
+ "weights": [
+  -2.4951,
+  2.5103,
+  -1.6173,
+  -5.5022,
+  -5.0067,
+  -2.4728,
+  -0.2381,
+  1.3207,
+  -0.1877
+ ],
+ "config": {
+  "iterations": 6,
+  "samples": 20,
+  "elite_frac": 0.15,
+  "games": 3,
+  "cap": 100000,
+  "height": 10,
+  "init_sigma": 1.0,
+  "noise0": 1.0,
+  "noise_decay": 20.0,
+  "noise_min": 0.05,
+  "checkpoint_every": 3,
+  "seed": 0
+ },
+ "history": [
+  {
+   "iteration": 0,
+   "best_sample": 2280.0,
+   "elite_mean": 977.556,
+   "population_mean": 170.367,
+   "mean_sigma": 1.2611
+  },
+  {
+   "iteration": 1,
+   "best_sample": 1089.0,
+   "elite_mean": 672.667,
+   "population_mean": 164.25,
+   "mean_sigma": 1.1882
+  },
+  {
+   "iteration": 2,
+   "best_sample": 3722.333,
+   "elite_mean": 2368.444,
+   "population_mean": 633.2,
+   "mean_sigma": 1.4293
+  },
+  {
+   "iteration": 3,
+   "best_sample": 28140.333,
+   "elite_mean": 18629.556,
+   "population_mean": 3432.25,
+   "mean_sigma": 1.1228
+  },
+  {
+   "iteration": 4,
+   "best_sample": 39997.333,
+   "elite_mean": 16199.222,
+   "population_mean": 3064.467,
+   "mean_sigma": 1.0932
+  },
+  {
+   "iteration": 5,
+   "best_sample": 14926.0,
+   "elite_mean": 6869.444,
+   "population_mean": 1539.983,
+   "mean_sigma": 1.0308
+  }
+ ],
+ "sigma": [
+  0.9375,
+  1.0692,
+  0.9033,
+  1.36,
+  1.1163,
+  1.0549,
+  0.9036,
+  0.9339,
+  0.9984
+ ],
+ "best_sample": {
+  "fitness": 39997.333,
+  "weights": [
+   -0.883,
+   0.7116,
+   -1.7198,
+   -5.5163,
+   -5.2561,
+   -1.8748,
+   -0.2917,
+   0.6192,
+   0.0007
+  ],
+  "iteration": 4
+ }
+}

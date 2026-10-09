@@ -14,9 +14,9 @@ makes the current strategy settle faster, and averages with weight t on iteratio
 averaging), so later, better strategies count more.
 
 Each iteration walks the tree once for each seat. A walk for seat i updates the regrets and the
-average strategy of seat i's information sets only. The strategy used during an iteration is fixed
-at its start, and the regret updates are applied after both walks, so both seats see the same
-strategy in an iteration.
+average strategy of seat i's information sets only. The updates alternate: seat 1's walk runs after
+seat 0's regrets are updated, so it best-responds to seat 0's newest strategy (not a simultaneous
+update from the start of the iteration).
 """
 
 from __future__ import annotations

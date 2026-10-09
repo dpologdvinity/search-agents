@@ -29,6 +29,24 @@ def test_batch_features_match_scalar():
     np.testing.assert_allclose(features_batch(np.array(boards, dtype=np.uint64)), expected)
 
 
+def test_every_feature_is_oriented_so_larger_is_better():
+    # Penalties (monotonic, smooth) are zero or negative; rewards are zero or positive.
+    # With non-negative weights the evaluation can then never reward disorder.
+    for b in random_boards(300, 5):
+        empty, monotonic, smooth, corner, merges, peak = features(b)
+        assert monotonic <= 0 and smooth <= 0
+        assert empty >= 0 and corner >= 0 and merges >= 0 and peak >= 0
+
+
+def test_smoothness_sign_convention():
+    # Two single-row boards with the same tiles: the alternating row is rougher.
+    smooth_row = from_grid([[8, 16, 32, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
+    rough_row = from_grid([[2, 64, 2, 64], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
+    assert features(smooth_row)[2] > features(rough_row)[2]
+    only_smooth = (0.0, 0.0, 1.0, 0.0, 0.0, 0.0)  # a positive smooth weight rewards smoothness
+    assert evaluate(smooth_row, only_smooth) > evaluate(rough_row, only_smooth)
+
+
 @pytest.mark.parametrize("seed", range(5))
 def test_cache_does_not_change_values(seed):
     rng = random.Random(seed)

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from cartpole.agents import load_agent
-from cartpole.env import MAX_STEPS, run_episode
+from cartpole.env import INIT_RANGE, MAX_STEPS, CartPole, run_episode
 from server import cartpole_api
 from server.limits import RateLimiter, SearchSlots
 
@@ -66,6 +66,13 @@ def test_rollout_matches_the_python_physics(client):
     assert body["steps"] == expected_steps == len(body["actions"])
     assert len(body["states"]) == body["steps"] + 1
     assert body["fell"] == (expected_steps < 200)
+
+
+def test_rollout_starts_from_the_python_reset(client):
+    # The page verifies from the server's states[0], so it must be the Python start state for that seed.
+    body = client.post("/api/cartpole/rollout", json={"agent": "reinforce", "seed": 12, "steps": 5}).json()
+    assert body["states"][0] == pytest.approx(list(CartPole(12).reset(12)))
+    assert all(abs(v) <= INIT_RANGE for v in body["states"][0])
 
 
 def test_rollout_rejects_bad_requests(client):

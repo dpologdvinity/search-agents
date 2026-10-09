@@ -6,6 +6,8 @@
     python -m endgame analyze "<FEN>"         # every move with its distance to mate, and the agent's choice
     python -m endgame stats [--piece Q] [--json]   # counts by result, DTM histograms, build time
     python -m endgame build [--piece Q]       # re-solve the tables into endgame/data and verify them
+    python -m endgame match --games 100 --piece Q   # tablebase vs the chance opponent, no prompts
+    python -m endgame --opponent chance       # the agent picks its moves by fixed odds, not the table
 
 While playing, type a move (Qd4, Kc3, or d1d4 for a move that needs its from square), h for a hint with
 every legal move's distance to mate, or q to quit. The countdown above the board is the number of moves the
@@ -20,6 +22,8 @@ import random
 import re
 import sys
 
+from . import chance
+from .match import match_lines, run_match
 from .retro import check_positions, legal_positions
 from .rules import BLACK, PIECES, WHITE, apply_move, in_check, parse_fen, parse_square
 from .tablebase import MoveInfo, Tablebase, build, load, rank_key
@@ -122,19 +126,26 @@ def hint_lines(tb: Tablebase, pos) -> list[str]:
             for info in infos]
 
 
-def play(tb: Tablebase, pos, human: int, read=input, out=print) -> str:
+def play(tb: Tablebase, pos, human: int, read=input, out=print, opponent: str = chance.TABLEBASE_KEY,
+         seed: int | None = None) -> str:
     """Interactive game from pos. `human` is BLACK (the lone king) or WHITE (king and piece).
 
-    The agent answers with the table's move every time it is its turn. Returns how the game ended:
-    'checkmate', 'stalemate', 'draw' (a capture of the piece, or a drawn position), or 'quit'.
+    The agent answers every time it is its turn: with the table's move when opponent is 'tablebase', or with
+    a move drawn from the chance odds when it is 'chance' (seeded by `seed`, so a game can be repeated).
+    Returns how the game ended: 'checkmate', 'stalemate', 'draw' (a capture of the piece, or a drawn
+    position), or 'quit'.
     """
     agent = 1 - human
     piece = tb.piece
     strong = human == WHITE
+    rng = random.Random(seed)
+    agent_name = chance.LABEL if opponent == chance.KEY else chance.TABLEBASE_LABEL
     if strong:
         out(f"K{piece}K. You have the king and the {piece}: mate as fast as you can. The agent defends.")
     else:
         out(f"K{piece}K. You are the lone king: survive as long as you can. The agent has the king and the {piece}.")
+    out(f"Agent: {agent_name}." + (" It draws each move from fixed odds: captures 4, checks 2, king steps toward "
+                                  "the centre 2, other moves 1." if opponent == chance.KEY else ""))
     out("Type a move (Qd4, Kc3, d1d4), h for a hint with every move's distance to mate, q to quit.")
     while True:
         out("")
@@ -149,7 +160,7 @@ def play(tb: Tablebase, pos, human: int, read=input, out=print) -> str:
             return "stalemate"
 
         if pos[3] == agent:
-            best = tb.best_move(pos)
+            best = tb.best_move(pos) if opponent == chance.TABLEBASE_KEY else chance.pick(infos, pos, rng)
             out(f"agent plays {best.san}  ({describe_info(best)})")
             nxt = apply_move(pos, best.move)
             if nxt is None:
@@ -249,17 +260,20 @@ def _pieces(choice: str) -> list[str]:
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] in ("analyze", "stats", "build"):
+    if argv and argv[0] in ("analyze", "stats", "build", "match"):
         return _subcommand(argv[0], argv[1:])
     if argv and argv[0] == "play":
         argv = argv[1:]
-    parser = argparse.ArgumentParser(description="Play the solved king and queen / king and rook endgames.")
+    parser = argparse.ArgumentParser(prog="python -m endgame",
+                                     description="Play the solved king and queen / king and rook endgames.")
     parser.add_argument("--piece", choices=PIECES, default="Q",
                         help="the white piece for a random position (default Q)")
     parser.add_argument("--as", dest="side", choices=("weak", "strong"), default="weak",
                         help="weak: you are the lone king and try to survive; strong: you have the piece")
     parser.add_argument("--fen", help="set up this position instead of a random one (the piece is read from it)")
     parser.add_argument("--seed", type=int, help="seed the random position, for a repeatable game")
+    parser.add_argument("--opponent", choices=(chance.TABLEBASE_KEY, chance.KEY), default=chance.TABLEBASE_KEY,
+                        help="tablebase: the agent plays the exact best move; chance: it draws moves from fixed odds")
     args = parser.parse_args(argv)
 
     if args.fen:
@@ -274,7 +288,7 @@ def main(argv=None) -> int:
     if pos is None:
         # A random position the strong side wins, so there is a mate to count down to, with either side to move.
         pos = tb.random_position(random.Random(args.seed), want="strong_wins")
-    play(tb, pos, WHITE if args.side == "strong" else BLACK)
+    play(tb, pos, WHITE if args.side == "strong" else BLACK, opponent=args.opponent, seed=args.seed)
     return 0
 
 
@@ -304,6 +318,25 @@ def _subcommand(name: str, argv: list[str]) -> int:
             for tb in tables:
                 print("\n".join(stats_lines(tb)))
                 print()
+        return 0
+
+    if name == "match":
+        parser = argparse.ArgumentParser(prog="python -m endgame match",
+                                         description="Tablebase against the chance opponent over random winning "
+                                                     "positions, with no prompts.")
+        parser.add_argument("--piece", choices=("Q", "R", "both"), default="Q")
+        parser.add_argument("--games", type=int, default=100, help="positions per seat (default 100)")
+        parser.add_argument("--seed", type=int, default=0, help="seed for the positions and the chance rolls")
+        parser.add_argument("--as", dest="seat", choices=("strong", "weak", "both"), default="both",
+                            help="the tablebase's seat: strong (White, with the piece), weak (the lone king), or both")
+        parser.add_argument("--json", action="store_true", help="print the report as JSON instead of text")
+        args = parser.parse_args(argv)
+        seats = ("strong", "weak") if args.seat == "both" else (args.seat,)
+        reports = [run_match(p, args.games, seed=args.seed, seats=seats) for p in _pieces(args.piece)]
+        if args.json:
+            print(json.dumps(reports[0] if len(reports) == 1 else reports, indent=2))
+        else:
+            print("\n\n".join("\n".join(match_lines(r)) for r in reports))
         return 0
 
     parser = argparse.ArgumentParser(prog="python -m endgame build",

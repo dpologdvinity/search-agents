@@ -1,5 +1,6 @@
 import itertools
 import random
+import time
 
 import pytest
 
@@ -307,3 +308,86 @@ def test_cli_bare_options_mean_play(monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda prompt="": "q")
     assert main(["-p", "beginner", "--seed", "1"]) == 0
     assert "Minesweeper beginner" in capsys.readouterr().out
+
+
+def test_cli_benchmark_writes_only_when_asked(tmp_path, monkeypatch, capsys):
+    # Without --out the run only prints: a run from the repo root must not rewrite the committed results.
+    monkeypatch.chdir(tmp_path)
+    assert main(["benchmark", "--games", "1"]) == 0
+    assert list(tmp_path.iterdir()) == []
+    assert "Expert" in capsys.readouterr().out
+
+
+def test_a_centre_first_click_on_a_tiny_board_still_places_mines():
+    # On 3x3 the click's neighbourhood is the whole board, so only the click itself stays clear.
+    g = Game(3, 3, 2, random.Random(0))
+    g.reveal(4)
+    assert len(g.mine_set()) == 2 and 4 not in g.mine_set()
+
+
+def crafted_board(rows: int, cols: int, mines: int, shows, seed: int) -> View:
+    """A consistent board: random mines, and only the covered-or-revealed pattern `shows(r, c)` picks.
+
+    Patterns such as every other row leave long chains of covered cells between numbers, which is what
+    makes the exact count expensive. Every number agrees with the layout, so the board is a real one.
+    """
+    rng = random.Random(seed)
+    layout = set(rng.sample(range(rows * cols), mines))
+    table = neighbour_table(rows, cols)
+    cells = []
+    for i in range(rows * cols):
+        r, c = divmod(i, cols)
+        if i not in layout and shows(r, c):
+            cells.append(sum(1 for n in table[i] if n in layout))
+        else:
+            cells.append(UNKNOWN)
+    return View(rows, cols, mines, tuple(cells))
+
+
+# Two wide-frontier patterns. Before the work budget these ran for over a minute on the 16x30 board.
+WIDE_PATTERNS = {
+    "every other row": lambda r, c: r % 2 == 0,
+    "checkerboard": lambda r, c: (r + c) % 2 == 0,
+}
+
+
+@pytest.mark.parametrize("name", list(WIDE_PATTERNS))
+def test_wide_frontier_boards_stop_at_the_work_budget(name):
+    view = crafted_board(16, 30, 99, WIDE_PATTERNS[name], seed=1)
+    start = time.perf_counter()
+    a = analyse(view, LEVEL_PROBABILITY)
+    # The budget keeps this near a second; the bound is loose so a slow machine does not fail the test.
+    assert time.perf_counter() - start < 15
+    assert a.exact is False
+    assert all(a.probability(c) is not None and 0 <= a.probability(c) <= 1 for c in a.covered)
+
+
+def test_within_budget_the_count_is_exact_and_matches_an_unlimited_one():
+    g = Game(16, 16, 40, random.Random(3))
+    g.reveal(136)
+    for _ in range(40):  # a few real-play positions, each with its own frontier
+        view = g.view()
+        a = analyse(view, LEVEL_PROBABILITY)
+        b = analyse(view, LEVEL_PROBABILITY, budget=10**9)
+        assert a.exact and b.exact
+        assert (a.numerator, a.total, a.safe, a.mines) == (b.numerator, b.total, b.safe, b.mines)
+        covered = [i for i, v in enumerate(view.cells) if v == UNKNOWN]
+        if a.safe:
+            g.reveal(a.safe[0])
+        elif covered:
+            g.reveal(best_guess(a))
+        if g.over:
+            break
+
+
+def test_over_budget_keeps_the_proofs_and_gives_estimates_instead():
+    view = crafted_board(9, 9, 10, WIDE_PATTERNS["checkerboard"], seed=2)
+    exact = analyse(view, LEVEL_PROBABILITY, budget=10**9)
+    fallback = analyse(view, LEVEL_PROBABILITY, budget=1)
+    assert exact.exact and not fallback.exact
+    assert set(fallback.safe) <= set(exact.safe) and set(fallback.mines) <= set(exact.mines)
+    assert fallback.numerator == {}
+    assert all(fallback.probability(c) is not None and 0 <= fallback.probability(c) <= 1
+               for c in fallback.covered)
+    guess = best_guess(fallback)
+    assert fallback.estimate[guess] == min(fallback.estimate[c] for c in fallback.covered)

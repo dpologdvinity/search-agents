@@ -1,4 +1,10 @@
 import math
+import os
+import pty
+import subprocess
+import sys
+import tty
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -268,6 +274,15 @@ def test_play_turns_scripted_keys_and_quit():
     assert out[-1] == "stopped after 2 steps"
 
 
+def test_play_turns_treats_end_of_input_as_quit():
+    def read(_):
+        raise EOFError
+    out = []
+    steps = cli.play_turns(5, read=read, out=out.append)
+    assert steps == 0
+    assert out[-1] == "stopped after 0 steps"
+
+
 def test_play_turns_ends_when_the_pole_falls():
     out = []
     steps = cli.play_turns(5, read=lambda _: "a" * 50, out=out.append)
@@ -279,6 +294,40 @@ def test_watch_runs_one_episode_and_reports_it():
     steps = cli.watch("pd", 10_000, delay=0.0, out=out.append, sleep=lambda _: None)
     assert steps == MAX_STEPS
     assert "500-step cap" in out[-1]
+
+
+def test_play_slow_without_a_terminal_exits_with_a_message():
+    # Piped stdin is not a tty. The command must say so instead of failing with a raw termios error.
+    root = Path(__file__).resolve().parent.parent
+    proc = subprocess.run([sys.executable, "-m", "cartpole", "play", "--slow"], input="", capture_output=True,
+                          text=True, timeout=60, cwd=root)
+    assert proc.returncode == 1 and "needs a terminal" in proc.stderr
+    assert "Traceback" not in proc.stderr and "termios" not in proc.stderr
+
+
+def test_play_slow_on_q_prints_the_outcome(monkeypatch):
+    # A pseudo-terminal stands in for the user: 'q' is waiting, so the loop ends at once and reports it.
+    master, slave = pty.openpty()
+    class Terminal:
+        def fileno(self):
+            return slave
+
+        def isatty(self):
+            return True
+
+    # The pty must be in cbreak mode before the key is written, or the key waits for a newline. play_slow's own
+    # setcbreak call uses TCSAFLUSH, which would drop the key, so that call is stubbed out after this point.
+    tty.setcbreak(slave)
+    monkeypatch.setattr(tty, "setcbreak", lambda fd: None)
+    try:
+        os.write(master, b"q")
+        monkeypatch.setattr(sys, "stdin", Terminal())
+        out = []
+        steps = cli.play_slow(5, tick=0.5, out=out.append)
+    finally:
+        os.close(master)
+        os.close(slave)
+    assert steps == 0 and out[-1] == "stopped after 0 steps"
 
 
 def test_cli_help_and_bad_command_exit_cleanly():

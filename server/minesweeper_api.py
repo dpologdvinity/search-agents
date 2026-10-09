@@ -8,8 +8,10 @@ mines and applies the moves itself. This endpoint sees only what a player sees, 
 the layout. The counting lives in minesweeper.inference; this file validates input, applies the
 abuse guards, and shapes the JSON.
 
-A request costs a few milliseconds on a typical expert board. The worst single position seen in
-testing took about half a second, which is why the search runs in a thread behind the slot limit.
+Real play costs a few milliseconds per position, and most expert positions are counted exactly. The
+exact count runs under a work budget (minesweeper.inference.WORK_BUDGET), so a crafted wide-frontier
+board cannot hold a worker for long. A board over budget keeps its proofs, gets estimated odds, and
+the response says so with "exact": false. The search still runs in a thread behind the slot limit.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from minesweeper.agents import AGENT_NAMES, DESCRIPTIONS, best_guess
 from minesweeper.board import PRESETS, UNKNOWN, View, label
 from minesweeper.inference import LEVEL_PROBABILITY, LEVEL_RULES, analyse
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -39,11 +41,6 @@ class AnalyseRequest(BaseModel):
     mines: int = Field(ge=1)
     cells: list[int] = Field(max_length=MAX_ROWS * MAX_COLS)
     level: int = Field(LEVEL_PROBABILITY, ge=LEVEL_RULES, le=LEVEL_PROBABILITY)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _check_view(req: AnalyseRequest) -> View:
@@ -61,8 +58,9 @@ def _check_view(req: AnalyseRequest) -> View:
 def analysis_json(view: View, level: int) -> dict:
     """Run the agent's analysis and describe it in the shape the page reads.
 
-    `probability` has one entry per cell: null for a revealed cell, otherwise the exact mine probability
-    rounded to six places (1.0 for a proven mine, 0.0 for a proven safe cell).
+    `probability` has one entry per cell: null for a revealed cell, otherwise the mine probability rounded
+    to six places (1.0 for a proven mine, 0.0 for a proven safe cell). It is exact when `exact` is true;
+    when the work budget ran out it is an estimate, and the page labels it so.
     """
     a = analyse(view, level)
     probability: list[float | None] = []
@@ -77,7 +75,7 @@ def analysis_json(view: View, level: int) -> dict:
             p = a.probability(c)
             probability.append(None if p is None else round(p, 6))
     guess = None
-    if level >= LEVEL_PROBABILITY and not a.safe and any(c in a.numerator for c in a.covered):
+    if level >= LEVEL_PROBABILITY and not a.safe and any(a.probability(c) is not None for c in a.covered):
         cell = best_guess(a)
         guess = {"cell": cell, "label": label(view.cols, cell), "probability": probability[cell]}
     why = {str(c): a.why[c] for c in (*a.safe, *a.mines) if c in a.why}
@@ -90,6 +88,7 @@ def analysis_json(view: View, level: int) -> dict:
         "cols": view.cols,
         "mines": view.mines,
         "level": level,
+        "exact": a.exact,  # false: the work budget ran out, so probability and guess are estimates
         "safe": list(a.safe),
         "certain_mines": list(a.mines),
         "why": why,
@@ -117,7 +116,7 @@ async def meta():
 @router.post("/api/minesweeper/analyze")
 async def analyze_board(req: AnalyseRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     view = _check_view(req)
     try:

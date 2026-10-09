@@ -1,11 +1,12 @@
 """Connect Four API: ask an agent for its move and see how it decided.
 
 POST /api/connect4/move
-  {"moves": "4453", "agent": "alphazero" | "minimax" | "mcts", "level": 1-3}
+  {"moves": "4453", "agent": "alphazero" | "minimax" | "mcts" | "chance", "level": 1-3}
   -> {"move": 3, "analysis": {...}, "seconds": ...}
 
 `moves` lists the columns played so far, 1-based, as in Connect Four solver
-test sets. `level` scales the search budget.
+test sets. `level` scales the search budget. The "chance" agent ignores the
+level: it draws a column from fixed odds and reports those odds in `analysis`.
 """
 
 from __future__ import annotations
@@ -17,16 +18,26 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
-from connect4.agents import AGENTS, ALPHAZERO_SIMS, DESCRIPTIONS, MCTS_SIMS, MINIMAX_SECONDS, board_from
+from connect4.agents import (
+    AGENTS,
+    ALPHAZERO_SIMS,
+    CHANCE_WEIGHTS,
+    DESCRIPTIONS,
+    MCTS_SIMS,
+    MINIMAX_SECONDS,
+    board_from,
+    chance_odds,
+)
+from connect4.board import Board
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
 
 class MoveRequest(BaseModel):
     moves: str = Field("", max_length=42)
-    agent: Literal["alphazero", "minimax", "mcts"] = "alphazero"
+    agent: Literal["alphazero", "minimax", "mcts", "chance"] = "alphazero"
     level: int = Field(2, ge=1, le=3)
 
     @field_validator("moves")
@@ -35,7 +46,6 @@ class MoveRequest(BaseModel):
         if any(c not in "1234567" for c in v):
             raise ValueError("moves must be digits 1-7")
         return v
-
 
 
 @router.get("/api/connect4/meta")
@@ -47,13 +57,15 @@ async def meta():
                    for k, v in DESCRIPTIONS.items()],
         "levels": {"alphazero_simulations": ALPHAZERO_SIMS, "minimax_seconds": MINIMAX_SECONDS,
                    "mcts_simulations": MCTS_SIMS},
+        # The chance table: the raw weights, and the odds on an empty board (every column open).
+        "chance": {"weights": list(CHANCE_WEIGHTS), "odds": [round(p, 4) for p in chance_odds(Board())]},
     }
 
 
 @router.post("/api/connect4/move")
 async def move(req: MoveRequest, request: Request):
     app = request.app
-    key = request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    key = client_key(request)
     if not app.state.move_rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:

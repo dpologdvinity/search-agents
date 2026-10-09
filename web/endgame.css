@@ -134,3 +134,10 @@ canvas.eg-hist {
   .eg-board { animation: none; }
   .eg-countdown.tick .eg-cd-num { animation: none; }
 }
+
+/* Chance opponent and watch mode: the live line naming each side's algorithm, the watch score, and controls. */
+[hidden] { display: none !important; }
+.eg-sides { font-family: var(--mono); font-size: 0.72rem; color: var(--cyan); letter-spacing: 0.03em; text-align: center; }
+.eg-score { font-family: var(--raj); font-size: 1rem; color: var(--text); }
+.eg-auto { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
+.eg-auto input { accent-color: var(--green); }

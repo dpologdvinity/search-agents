@@ -2,8 +2,10 @@
 //
 // The board, the mines, and the flood fill run here. The mines are placed on the first click, around it,
 // and stay in the page. The server only ever sees what a player sees (the numbers and the covered cells).
-// It answers with the cells the agent can prove safe or a mine, and the exact probability of every covered
-// cell. The page animates those answers: a certain move glows green, and a guess glows pink with its odds.
+// It answers with the cells the agent can prove safe or a mine, and the mine probability of every covered
+// cell (exact, or an estimate when the board is too wide to count within the server's work budget; the
+// reply says which). The page animates those answers: a certain move glows green, and a guess glows pink
+// with its odds.
 //
 // Proofs stay true as the game goes on. A cell proven safe is still safe after other cells are revealed,
 // so one analysis can drive a whole round of reveals, one per animation beat.
@@ -254,13 +256,14 @@ function renderThinking() {
   } else if (a.safe.length) {
     title.textContent = `${a.safe.length} cell(s) proven safe, ${a.certain_mines.length} proven mine(s). Those are certain, not odds.`;
   } else if (a.guess) {
-    title.textContent = `Nothing is certain. The safest guess is ${a.guess.label} at ${(a.guess.probability * 100).toFixed(1)}% mine chance.`;
+    const odds = a.exact ? 'at' : 'at an estimated';
+    title.textContent = `Nothing is certain. The safest guess is ${a.guess.label} ${odds} ${(a.guess.probability * 100).toFixed(1)}% mine chance.`;
   } else {
     title.textContent = 'Nothing left to decide.';
   }
   const info = $('ms-analysis');
   info.textContent = a
-    ? `${a.components.length} component(s); ${a.interior} covered cell(s) touch no number; ${a.remaining} mine(s) left to place.`
+    ? `${a.components.length} component(s); ${a.interior} covered cell(s) touch no number; ${a.remaining} mine(s) left to place.${a.exact ? '' : ' The board was too wide to count within the work budget, so the odds are estimates. The proofs still hold.'}`
     : 'No analysis yet.';
 }
 
@@ -393,7 +396,8 @@ async function aiStep() {
     const p = a.guess.probability;
     state.guesses += 1;
     state.guessCell = c;
-    log(`? guess: ${labelOf(c)} at ${(p * 100).toFixed(1)}%, the lowest odds on the board.`, 'log-adv');
+    const kind = a.exact ? 'the lowest odds on the board' : 'the lowest estimated odds (over the work budget)';
+    log(`? guess: ${labelOf(c)} at ${(p * 100).toFixed(1)}%, ${kind}.`, 'log-adv');
     const opened = revealCell(c);
     state.flashCell = c;
     state.flashKind = 'guess';

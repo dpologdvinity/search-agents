@@ -3,10 +3,13 @@
 Each agent function takes a position and a strength level (1-3) and returns
 {"move": column, "analysis": {...}}, where the analysis explains how the
 agent decided (network priors and visit counts, minimax scores, or MCTS
-visit counts).
+visit counts). The "chance" agent is the no-skill baseline: it draws a column
+from fixed odds (see CHANCE_WEIGHTS) and returns the odds as its analysis.
 """
 
 from __future__ import annotations
+
+import random
 
 from .board import COLS, Board
 from .mcts import MCTS
@@ -17,10 +20,20 @@ ALPHAZERO_SIMS = {1: 50, 2: 200, 3: 800}
 MINIMAX_SECONDS = {1: 0.1, 2: 0.5, 3: 2.0}
 MCTS_SIMS = {1: 300, 2: 1500, 3: 5000}
 
+# Fixed column weights for the chance opponent, which picks a move with no search at all.
+# The weights rise toward the centre column because the centre sits in the most four-in-a-row
+# lines, so a player that favours it looks like a casual human rather than a uniform coin toss.
+# They are relative: the weight of column c is CHANCE_WEIGHTS[c] / sum, renormalised over the
+# columns that still have room. The total is 16, so the open-board odds are 6.25%, 12.5%,
+# 18.75%, 25%, 18.75%, 12.5%, 6.25% (shown rounded as 6%/12%/19%/25%/19%/12%/6%).
+CHANCE_WEIGHTS = (1, 2, 3, 4, 3, 2, 1)
+
 DESCRIPTIONS = {
     "alphazero": "PUCT search guided by a policy-value network trained only by self-play.",
     "minimax": "Alpha-beta negamax with a transposition table and a hand-built window evaluation.",
     "mcts": "Monte Carlo tree search with random rollouts and no learned knowledge.",
+    "chance": "Chance (fixed odds): picks a column from fixed odds 6%/12%/19%/25%/19%/12%/6%, "
+              "renormalised over open columns. No search, evaluation or lookahead.",
 }
 
 
@@ -99,4 +112,28 @@ def mcts_move(board: Board, level: int) -> dict:
     }
 
 
-AGENTS = {"alphazero": alphazero_move, "minimax": minimax_move, "mcts": mcts_move}
+def chance_odds(board: Board) -> list[float]:
+    """Probability of each column under the fixed weights, renormalised over the open columns.
+
+    Full columns get 0. The list always has COLS entries and sums to 1 (the board is not full).
+    """
+    weights = [0 if not board.can_play(c) else CHANCE_WEIGHTS[c] for c in range(COLS)]
+    total = sum(weights)
+    return [w / total for w in weights]
+
+
+def chance_move(board: Board, level: int = 1, rng: random.Random | None = None) -> dict:
+    """Pick a column by sampling from chance_odds. No search, evaluation or lookahead.
+
+    `level` is accepted so the agent has the same signature as the others, and is ignored.
+    `rng` makes the draw reproducible: the same seed and position always give the same column.
+    With no rng, a fresh unseeded generator is used.
+    """
+    if rng is None:
+        rng = random.Random()
+    odds = chance_odds(board)
+    move = rng.choices(range(COLS), weights=odds)[0]
+    return {"move": move, "analysis": {"kind": "chance", "odds": [round(p, 4) for p in odds]}}
+
+
+AGENTS = {"alphazero": alphazero_move, "minimax": minimax_move, "mcts": mcts_move, "chance": chance_move}

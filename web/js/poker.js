@@ -1,9 +1,15 @@
-// Poker page: heads-up Leduc hold'em against the CFR+ bot.
+// Poker page: heads-up Leduc hold'em against the CFR+ bot or against chance, plus a watch mode where the
+// CFR+ AI plays chance.
 //
-// The server holds each hand (so the bot's card stays on the server until showdown) and runs the bot's
-// move as a lookup in the committed average strategy. This page renders what comes back: the table,
-// the bot's probability bars for each decision it made, the explainer for its bets, and the training
-// chart. The strategy table is fetched once, so the explainer can compare the bot's mix across cards.
+// The server holds each hand (so the bot's card and mix stay on the server until showdown). A CFR+ bot's
+// move is a lookup in the committed average strategy; a chance bot's move is drawn by the server from fixed
+// odds that ignore the card. This page renders what comes back: the table, the bot's actions, its
+// probability bars once the showdown reveals them, the explainer for its bets, and the training chart.
+// The strategy table is fetched once, so the explainer can compare the bot's mix across cards in the same
+// betting spot without knowing which card the bot holds.
+//
+// Watch mode has no human. The page plays the CFR+ seat itself: each move is sampled from the table row
+// the server already sends for seat 0 (view.hint), and the chance seat is answered by the server.
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
@@ -15,6 +21,15 @@ const NAME = { f: 'fold', k: 'check', c: 'call', b: 'bet', r: 'raise' };
 const LABEL = { f: 'FOLD', k: 'CHECK', c: 'CALL', b: 'BET', r: 'RAISE' };
 const ORDER = ['f', 'k', 'c', 'b', 'r'];
 const BIG_BLIND = 2;
+const BOT_VERB = { f: 'folds', k: 'checks', c: 'calls', b: 'bets', r: 'raises' };
+// The chance table groups actions into three kinds (see poker/chance.py): fold, call or check, bet or raise.
+const KIND = { f: 'fold', k: 'call', c: 'call', b: 'bet', r: 'bet' };
+const KIND_LABEL = { fold: 'FOLD', call: 'CALL / CHECK', bet: 'BET / RAISE' };
+const KIND_ORDER = ['fold', 'call', 'bet'];
+// Pause after each move in watch mode. The server allows about 120 moves a minute, so the slowest setting
+// is the fastest that stays under the limit; the gap between hands keeps deals under 30 a minute.
+const WATCH_MS = { slow: 1500, normal: 1000, fast: 600 };
+const HAND_GAP_MS = 2200;
 
 const S = {
   hand: null,      // id of the hand on the server
@@ -22,16 +37,42 @@ const S = {
   meta: null,
   table: null,     // the committed strategy: {information set: {action: probability}}
   training: null,  // exploitability curves
-  net: 0,          // your winnings over the session, in chips
-  hands: 0,        // hands settled
+  mode: 'play',    // 'play' (you act) or 'watch' (the CFR+ AI acts, against chance)
+  opponent: 'cfr', // who you play in play mode: 'cfr' or 'chance'
+  // Session totals per mode. Net is in chips for seat 0 of the server: you in play mode, the CFR+ AI in watch.
+  play: { net: 0, hands: 0 },
+  watch: { net: 0, hands: 0, wins: 0, losses: 0, splits: 0 },
   busy: false,
-  handMoves: [],   // the bot's decisions in this hand, with their mixes
+  handMoves: [],   // the bot's decisions in this hand: actions and spots, plus the full mixes after the showdown
   lastBot: null,   // the bot's most recent decision
   hintMode: false, // the mix panel shows your equilibrium mix instead of the bot's
 };
 
 const pct = (p) => `${Math.round(p * 100)}%`;
 const mbb = (chips) => (chips * 1000 / BIG_BLIND).toFixed(3);
+const stats = () => (S.mode === 'watch' ? S.watch : S.play);
+const opponent = () => (S.mode === 'watch' ? 'chance' : S.opponent); // watch mode always pits chance against the AI
+const chanceOdds = () => S.meta?.opponents.find((o) => o.name === 'chance')?.action_odds;
+
+/** Draw one action from a {action: probability} row, the same way the server's sample() does. */
+function sampleRow(row) {
+  const r = Math.random();
+  let acc = 0;
+  let last = null;
+  for (const [a, p] of Object.entries(row)) {
+    acc += p;
+    last = a;
+    if (r < acc) return a;
+  }
+  return last; // float round-off can leave acc just under one
+}
+
+/** A mix as text for the log, most likely action first, e.g. "bet 40%, check 60%". Actions it never plays are left out. */
+const mixText = (row) => Object.entries(row)
+  .filter(([, p]) => p > 0.0005)
+  .sort((x, y) => y[1] - x[1])
+  .map(([a, p]) => `${NAME[a]} ${pct(p)}`)
+  .join(', ');
 
 // ── Cards and table ─────────────────────────────────────────────────────
 
@@ -74,11 +115,15 @@ function renderTable(v) {
 
 function setButtons(v) {
   const busy = S.busy;
+  const watch = S.mode === 'watch'; // in watch mode the page plays the AI, so the human controls stay off
   const legal = new Set(v?.legal || []);
-  for (const a of ['k', 'b', 'c', 'r', 'f']) $(`btn-${a}`).disabled = busy || !legal.has(a);
-  $('btn-deal').disabled = busy || (v !== null && v !== undefined && !v.terminal);
-  $('btn-hint').disabled = busy || !(v && v.hint);
+  for (const a of ['k', 'b', 'c', 'r', 'f']) $(`btn-${a}`).disabled = busy || watch || !legal.has(a);
+  $('btn-deal').disabled = busy || watch || (v !== null && v !== undefined && !v.terminal);
+  $('btn-hint').disabled = busy || watch || !(v && v.hint);
   $('btn-hint').setAttribute('aria-pressed', String(S.hintMode));
+  // The opponent cannot change in the middle of a hand, or while watching.
+  for (const b of document.querySelectorAll('[data-opp]')) b.disabled = busy || watch || Boolean(S.hand);
+  updateWatchControls();
 }
 
 function say(text, cls = '') {
@@ -98,17 +143,17 @@ function log(text, cls = '') {
 
 // ── The bot's mix and the hint ─────────────────────────────────────────
 
-/** Probability bars for a set of actions; the chosen one is highlighted. */
-function renderBars(probs, chosen = null) {
+/** Probability bars for a set of actions; the chosen one is highlighted. Labels and order default to actions. */
+function renderBars(probs, chosen = null, labels = LABEL, order = ORDER) {
   const box = $('mix-bars');
   box.replaceChildren();
-  for (const a of ORDER) {
+  for (const a of order) {
     if (!(a in probs)) continue;
     const row = document.createElement('div');
     row.className = `pk-bar-row${a === chosen ? ' chosen' : ''}`;
     const name = document.createElement('span');
     name.className = 'pk-bar-name';
-    name.textContent = LABEL[a];
+    name.textContent = labels[a];
     const track = document.createElement('div');
     track.className = 'pk-bar-track';
     const fill = document.createElement('div');
@@ -123,6 +168,19 @@ function renderBars(probs, chosen = null) {
   }
 }
 
+/** Chance's mix: the same three kinds at every card. Shown before the showdown, with the kind it chose highlighted. */
+function renderChanceMix() {
+  const odds = chanceOdds();
+  if (!odds) return;
+  const m = S.lastBot;
+  const probs = { fold: odds.fold, call: odds.call_or_check, bet: odds.bet_or_raise };
+  $('mix-title').textContent = m
+    ? `CHANCE'S ROUND ${m.round} DECISION: it chose ${LABEL[m.action]}`
+    : "CHANCE'S FIXED ODDS: the same at every card";
+  renderBars(probs, m ? KIND[m.action] : null, KIND_LABEL, KIND_ORDER);
+  $('mix-note').textContent = 'Chance reads no card. It draws each action from these odds, renormalised over the legal actions: check or bet when nothing is owed, fold, call or raise when a bet is owed, and no raise once the cap is reached.';
+}
+
 function renderMix() {
   const v = S.view;
   if (S.hintMode && v && v.hint) {
@@ -131,12 +189,21 @@ function renderMix() {
     $('mix-note').textContent = 'Equilibrium says play this mix. Any single action is a best response only in spots where the bot is indifferent, so mixing is part of the equilibrium, not a hedge.';
     return;
   }
+  if (opponent() === 'chance') return renderChanceMix();
   if (S.lastBot) {
     const m = S.lastBot;
     const round = m.round === 1 ? 'round 1' : 'round 2';
-    $('mix-title').textContent = `THE BOT'S ${round.toUpperCase()} DECISION: it chose ${LABEL[m.action]}, ${pct(m.probs[m.action])} of the time`;
+    const title = `THE BOT'S ${round.toUpperCase()} DECISION: it chose ${LABEL[m.action]}`;
+    if (!m.probs) {
+      // Mid-hand the mix depends on the bot's hidden card, so the page shows the action and nothing else.
+      $('mix-title').textContent = `${title}. Its mix is shown at the showdown.`;
+      $('mix-note').textContent = 'The bot draws each move from a mix that depends on its own card, and that card stays hidden until the showdown. The explainer shows how often it bets with each card in this same spot.';
+      $('mix-bars').replaceChildren();
+      return;
+    }
+    $('mix-title').textContent = `${title}, ${pct(m.probs[m.action])} of the time`;
     renderBars(m.probs, m.action);
-    $('mix-note').textContent = 'Its card is not shown during the hand. The mix only depends on what the bot can see: its own card, the public card once it is turned up, and the betting so far.';
+    $('mix-note').textContent = 'Its card is shown now. The mix only depends on what the bot can see: its own card, the public card once it is turned up, and the betting so far.';
     return;
   }
   $('mix-title').textContent = 'Waiting for the bot\'s first decision.';
@@ -145,16 +212,30 @@ function renderMix() {
 
 // ── Explainer ───────────────────────────────────────────────────────────
 
-/** Share of the time the bot bets (or raises) with each card in the same spot. Uses the committed table. */
+/** Share of the time the bot bets (or raises) with each card in the same spot. Uses the committed table.
+ *  The spot has its card replaced by "?", so this works before the showdown too. */
 function aggression(move) {
   return RANKS.map((r) => {
-    const key = move.infoset.replace(/^[JQK]/, r);
+    const key = move.spot.replace('?', r);
     const row = S.table[key];
     return { rank: r, p: row ? (row.b || 0) + (row.r || 0) : null };
   });
 }
 
+/** Chance's bets come from fixed odds, so there is no bluff to explain: the same odds apply to every card. */
+function renderChanceExplain() {
+  const el = $('explain');
+  const v = S.view;
+  const odds = chanceOdds();
+  let html = `<p><span class="value">Chance is a dice roll.</span> Its odds come from one table, ${odds ? `fold ${pct(odds.fold)}, call or check ${pct(odds.call_or_check)}, bet or raise ${pct(odds.bet_or_raise)}` : 'a fixed table'}, whatever card it holds. A bet tells you nothing about its hand, so there is no bluff to explain.</p>`;
+  if (v && v.terminal) {
+    html += `<p>It held <b>${v.bot_card}</b>. That card did not change its odds: every decision in this hand was drawn from the same table, renormalised over the actions it could take.</p>`;
+  }
+  el.innerHTML = html;
+}
+
 function renderExplain() {
+  if (opponent() === 'chance') return renderChanceExplain();
   const el = $('explain');
   const v = S.view;
   const bets = S.handMoves.filter((m) => m.action === 'b' || m.action === 'r');
@@ -190,23 +271,52 @@ function renderExplain() {
 
 // ── Settling a hand and the session ────────────────────────────────────
 
+function renderChips() {
+  const st = stats();
+  $('chip-net').textContent = `${st.net >= 0 ? '+' : ''}${st.net}`;
+  $('chip-hands').textContent = String(st.hands);
+}
+
+/** Watch mode's running score: wins, losses and splits of the CFR+ AI, and its chip total. */
+function renderScore() {
+  const el = $('score');
+  if (S.mode !== 'watch') {
+    el.textContent = '';
+    return;
+  }
+  const w = S.watch;
+  const net = `${w.net >= 0 ? '+' : ''}${w.net}`;
+  el.textContent = `CFR+ vs Chance over ${w.hands} hands: ${w.wins} won, ${w.losses} lost, ${w.splits} split, net ${net} chips.`;
+}
+
 function settle(v) {
+  // Seat 0 is the human in play mode and the CFR+ AI in watch mode, so p is that seat's chips in both.
   const p = v.payoff;
-  S.net += p;
-  S.hands += 1;
-  $('chip-net').textContent = `${S.net >= 0 ? '+' : ''}${S.net}`;
-  $('chip-hands').textContent = String(S.hands);
-  const verdict = v.result === 'win' ? `You win ${p} chips.` : v.result === 'lose' ? `You lose ${-p} chips.` : 'Split pot.';
+  const watch = S.mode === 'watch';
+  const st = stats();
+  st.net += p;
+  st.hands += 1;
+  if (watch) {
+    if (p > 0) st.wins += 1;
+    else if (p < 0) st.losses += 1;
+    else st.splits += 1;
+  }
+  renderChips();
+  renderScore();
+  const win = watch ? 'CFR+ wins' : 'You win';
+  const lose = watch ? 'CFR+ loses' : 'You lose';
+  const verdict = v.result === 'win' ? `${win} ${p} chips.` : v.result === 'lose' ? `${lose} ${-p} chips.` : 'Split pot.';
+  const who = opponent() === 'chance' ? 'Chance' : 'The bot';
   // A fold ends the hand before the public card is turned up, so the showdown details only apply when it was.
   const shown = v.public ? `, and the public card was ${v.public}` : ' (the hand ended before the public card)';
   const cls = v.result === 'win' ? 'win' : v.result === 'lose' ? 'lose' : '';
-  say(`${verdict} The bot held ${v.bot_card}${shown}.`, cls);
-  log(`${verdict} The bot held ${v.bot_card}${v.public ? `; public ${v.public}` : ''}.`, cls);
-  if (v.result === 'win') {
+  say(`${verdict} ${who} held ${v.bot_card}${shown}.`, cls);
+  log(`${verdict} ${who} held ${v.bot_card}${v.public ? `; public ${v.public}` : ''}.`, cls);
+  if (!watch && v.result === 'win') {
     const botFolded = S.handMoves.some((m) => m.action === 'f');
     banner(`+${p} CHIPS`, botFolded ? 'the bot folded' : 'showdown', '#00ff88');
     burst($('table'));
-  } else if (v.result === 'lose') {
+  } else if (!watch && v.result === 'lose') {
     shake($('table'), 'small');
   }
   renderExplain();
@@ -216,9 +326,10 @@ function settle(v) {
 function render(v) {
   S.view = v;
   renderTable(v);
-  const status = v.terminal ? 'HAND OVER' : v.to_act === 0 ? 'YOUR TURN' : 'BOT THINKING';
+  const watch = S.mode === 'watch';
+  const status = v.terminal ? 'HAND OVER' : v.to_act === 0 ? (watch ? 'CFR+ TO MOVE' : 'YOUR TURN') : 'BOT THINKING';
   $('chip-status').textContent = status;
-  if (!v.terminal && v.to_act === 0) {
+  if (!v.terminal && v.to_act === 0 && !watch) {
     say(v.round === 2
       ? `The public card is ${v.public}. Your turn in round 2.`
       : 'Your turn. Check, bet, call, raise or fold.');
@@ -229,40 +340,60 @@ function render(v) {
 
 // Each action runs one round trip; the bot's answers arrive with the reply.
 async function deal() {
-  if (S.busy || S.hand) return; // a hand in progress must finish first
+  if (S.mode === 'watch') return; // watch mode deals its own hands
+  await dealHand();
+}
+
+/** Deal a hand against the current opponent. Returns false if it could not be dealt. */
+async function dealHand() {
+  if (S.busy || S.hand) return false; // a hand in progress must finish first
   S.busy = true;
   $('chip-status').textContent = 'DEALING';
   setButtons(S.view);
   try {
-    const v = await postJSON('/api/poker/deal', {});
+    const v = await postJSON('/api/poker/deal', { opponent: opponent() });
     S.hand = v.hand;
     S.handMoves = [];
     S.lastBot = null;
     S.hintMode = false;
-    log(`HAND ${S.hands + 1}: you act first`, 'hand');
+    log(`HAND ${stats().hands + 1}: ${S.mode === 'watch' ? 'the CFR+ AI acts first' : 'you act first'}`, 'hand');
     render(v);
     renderExplain();
+    return true;
   } catch (e) {
     say(`Could not deal: ${e.message}`, 'lose');
+    return false;
   } finally {
     S.busy = false;
     setButtons(S.view);
   }
 }
 
-async function act(action) {
-  if (S.busy || !S.hand) return;
+/** One move. `actor` names the CFR+ seat in watch mode; otherwise the action is yours. Returns success. */
+async function act(action, actor = null) {
+  if (S.busy || !S.hand) return false;
   S.busy = true;
-  $('chip-status').textContent = 'BOT THINKING'; // shown until the reply says whose move it is
+  const round = S.view ? S.view.round : 1;
+  const size = action === 'b' || action === 'r' ? ` ${round === 1 ? 2 : 4}` : '';
+  // The CFR+ seat's mix comes from the table row the server sent with this turn (view.hint).
+  const mix = actor && S.view?.hint ? S.view.hint.probs : null;
+  $('chip-status').textContent = actor ? 'CHANCE THINKING' : 'BOT THINKING'; // shown until the reply says whose move it is
   setButtons(S.view);
   try {
     const v = await postJSON('/api/poker/act', { hand: S.hand, action });
-    log(`you ${NAME[action]}`, 'you');
+    if (actor) log(`${actor} ${BOT_VERB[action]}${size}${mix ? ` (its mix: ${mixText(mix)})` : ''}`, 'you');
+    else log(`you ${NAME[action]}`, 'you');
+    const who = opponent() === 'chance' ? 'chance' : 'the bot';
     for (const m of v.bot_moves) {
       S.handMoves.push(m);
       S.lastBot = m;
-      log(`the bot ${NAME[m.action]}${m.action === 'b' || m.action === 'r' ? ` ${m.round === 1 ? 2 : 4}` : ''}  (${pct(m.probs[m.action])})`, 'bot');
+      log(`${who} ${NAME[m.action]}${m.action === 'b' || m.action === 'r' ? ` ${m.round === 1 ? 2 : 4}` : ''}`, 'bot');
       if (m.action === 'b' || m.action === 'r') pop($('bot-cards'), m.action === 'b' ? 'BET' : 'RAISE', '#ff00a0');
+    }
+    if (v.terminal) {
+      // The showdown reveals every decision of the hand, with the bot's card and the mix behind each one.
+      S.handMoves = v.bot_reveal;
+      S.lastBot = v.bot_reveal.at(-1) || null;
     }
     S.hintMode = false;
     render(v);
@@ -271,13 +402,159 @@ async function act(action) {
       S.hand = null;
       settle(v);
     }
+    return true;
   } catch (e) {
     say(e.message, 'lose');
-    if (S.view && !S.view.terminal) $('chip-status').textContent = 'YOUR TURN'; // the request failed: the hand is still live
+    if (S.view && !S.view.terminal) $('chip-status').textContent = S.mode === 'watch' ? 'CFR+ TO MOVE' : 'YOUR TURN'; // the request failed: the hand is still live
+    return false;
   } finally {
     S.busy = false;
     setButtons(S.view);
   }
+}
+
+// ── Watch mode: the CFR+ AI plays chance ────────────────────────────────
+
+let watchTimer = null;     // the next watch tick, when one is scheduled
+let watchRunning = false;  // START was pressed and PAUSE has not been
+let watchOnce = false;     // STEP: run one tick while paused
+
+function scheduleWatch(ms) {
+  clearTimeout(watchTimer);
+  watchTimer = setTimeout(watchTick, ms);
+}
+
+/** One tick: deal a hand if none is live, otherwise make the CFR+ seat's move. Then schedule the next tick. */
+async function watchTick() {
+  watchTimer = null;
+  if (!watchRunning && !watchOnce) return;
+  watchOnce = false;
+  // The CFR+ seat draws its move from the row the server sent for this turn; chance answers inside the reply.
+  const ok = S.hand ? await act(sampleRow(S.view.hint.probs), 'CFR+') : await dealHand();
+  if (S.mode !== 'watch' || !watchRunning) return; // switched away, or paused while the request was in flight
+  if (!ok) return scheduleWatch(3000); // e.g. rate limited: wait, then try the same step again
+  if (S.hand) return scheduleWatch(WATCH_MS[$('watch-speed').value]);
+  // The hand just settled: deal the next one after a short gap, or stop here when auto-restart is off.
+  if ($('watch-auto').checked) return scheduleWatch(HAND_GAP_MS);
+  stopWatch();
+}
+
+function startWatch() {
+  watchRunning = true;
+  updateWatchControls();
+  scheduleWatch(0);
+}
+
+function stopWatch() {
+  watchRunning = false;
+  watchOnce = false;
+  clearTimeout(watchTimer);
+  watchTimer = null;
+  updateWatchControls();
+}
+
+function stepWatch() {
+  if (watchRunning) return;
+  watchOnce = true;
+  scheduleWatch(0);
+}
+
+function updateWatchControls() {
+  const toggle = $('watch-toggle');
+  toggle.querySelector('.btn-txt').textContent = watchRunning ? '❚❚ PAUSE' : '▶ START';
+  toggle.classList.toggle('green', !watchRunning);
+  toggle.classList.toggle('pink', watchRunning);
+  toggle.setAttribute('aria-pressed', String(watchRunning));
+  $('watch-step').disabled = watchRunning || S.busy;
+}
+
+// ── Modes, opponents, and the live line that names each side ────────────
+
+/** Switch between playing a hand yourself and watching the CFR+ AI play chance. Ignored mid-request. */
+function setMode(mode) {
+  if (mode === S.mode || S.busy) return;
+  stopWatch();
+  S.mode = mode;
+  S.hand = null; // a live hand is left on the server to expire; the table starts clean
+  S.view = null;
+  S.handMoves = [];
+  S.lastBot = null;
+  S.hintMode = false;
+  $('log').replaceChildren();
+  renderTable(null);
+  $('chip-status').textContent = 'READY';
+  $('watch-bar').hidden = mode !== 'watch';
+  $('opp-group').hidden = mode === 'watch';
+  for (const [id, on] of [['mode-play', mode === 'play'], ['mode-watch', mode === 'watch']]) {
+    $(id).classList.toggle('active', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+  say(mode === 'watch'
+    ? 'Press START. The CFR+ AI plays its average strategy against chance, and the score builds below the log.'
+    : 'Deal a hand to start. You act first in both rounds.');
+  renderChips();
+  renderScore();
+  renderSides();
+  renderMix();
+  renderExplain();
+  setButtons(null);
+}
+
+/** Choose the opponent for play mode. Only between hands. */
+function setOpponent(opp) {
+  if (opp === S.opponent || S.busy || S.hand) return;
+  S.opponent = opp;
+  for (const b of document.querySelectorAll('[data-opp]')) {
+    const on = b.dataset.opp === opp;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  }
+  S.hintMode = false;
+  renderSides();
+  renderMix();
+  renderExplain();
+}
+
+/** Name the algorithm on each side: in the description under the title and in the live line above the table. */
+function renderSides() {
+  const meta = S.meta;
+  if (!meta) return;
+  // The exploitability chip measures the committed CFR+ table, so it only applies when that bot is the opponent.
+  $('expl-chip').style.display = S.mode === 'play' && S.opponent === 'cfr' ? '' : 'none';
+  const cfr = meta.opponents.find((o) => o.name === 'cfr');
+  const chance = meta.opponents.find((o) => o.name === 'chance');
+  if (S.mode === 'watch') {
+    $('pg-sub').textContent = 'Watch the CFR+ AI play against chance. The AI draws each move from its committed average strategy. Chance draws from fixed odds and never reads its card. Pause or step whenever you like; the score builds as hands finish.';
+    $('sides').textContent = `CFR+ AI: ${cfr.label}  ·  OPPONENT: ${chance.label}`;
+    $('you-name').textContent = 'CFR+ AI';
+    $('bot-name').textContent = 'CHANCE';
+    return;
+  }
+  const chanceMode = S.opponent === 'chance';
+  const opp = chanceMode ? chance : cfr;
+  $('you-name').textContent = 'YOU';
+  $('bot-name').textContent = chanceMode ? 'CHANCE' : 'BOT';
+  $('pg-sub').textContent = chanceMode
+    ? "Heads-up Leduc hold'em against chance, which draws each action from fixed odds and never reads its card. You play every decision yourself; the hint still shows the equilibrium mix for your card."
+    : "Heads-up Leduc hold'em against a bot that plays its CFR+ average strategy. It never reads your card, and it bluffs on purpose, at the frequency that keeps you guessing.";
+  $('sides').textContent = `YOU  ·  OPPONENT: ${opp.label}`;
+}
+
+/** The chance table under HOW IT WORKS, filled from the same numbers the server uses. */
+function renderChanceOdds() {
+  const odds = chanceOdds();
+  if (!odds) return;
+  const items = [
+    `Fold ${pct(odds.fold)}`,
+    `Call or check ${pct(odds.call_or_check)}`,
+    `Bet or raise ${pct(odds.bet_or_raise)}`,
+    'Renormalised over the legal actions at each decision, so the chosen shares always sum to one.',
+  ];
+  $('chance-odds').replaceChildren(...items.map((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    return li;
+  }));
 }
 
 // ── Training chart ──────────────────────────────────────────────────────
@@ -351,6 +628,8 @@ async function init() {
     S.meta = meta;
     S.training = training;
     S.table = table;
+    renderChanceOdds();
+    renderSides();
     $('chip-expl').textContent = `${mbb(meta.exploitability)} mbb/hand`;
     $('chip-value').textContent = `${meta.value_seat0.toFixed(4)} chips`;
     const runs = training.runs.map((r) => `${r.algorithm} ${r.iterations.at(-1)}`).join(' · ');
@@ -369,6 +648,11 @@ async function init() {
 
 $('btn-deal').addEventListener('click', deal);
 for (const a of ['k', 'b', 'c', 'r', 'f']) $(`btn-${a}`).addEventListener('click', () => act(a));
+$('mode-play').addEventListener('click', () => setMode('play'));
+$('mode-watch').addEventListener('click', () => setMode('watch'));
+for (const b of document.querySelectorAll('[data-opp]')) b.addEventListener('click', () => setOpponent(b.dataset.opp));
+$('watch-toggle').addEventListener('click', () => (watchRunning ? stopWatch() : startWatch()));
+$('watch-step').addEventListener('click', stepWatch);
 $('btn-hint').addEventListener('click', () => {
   if (!S.view || !S.view.hint) return;
   S.hintMode = !S.hintMode;

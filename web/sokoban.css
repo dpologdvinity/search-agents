@@ -4,6 +4,10 @@
 
 .sok-stage { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
 
+/* On phones the grid column must shrink so layout() sizes the cells to the column, not to a board that
+   widened it. Without this the board overflows the page on every level wider than the viewport allows. */
+.proj-game-col { min-width: 0; }
+
 /* The frame around the grid. Padding leaves room for the overlay SVG, which sits at the same origin. */
 .sok-wrap {
   position: relative; padding: 14px; max-width: 100%;
@@ -95,7 +99,9 @@
 @keyframes sok-thump { from { scale: 1.12; } to { scale: 1; } }
 
 /* Matching lines, drawn in board pixels over the grid. */
-.sok-svg { position: absolute; top: 14px; left: 14px; pointer-events: none; overflow: visible; z-index: 3; }
+/* The overlay has the board's pixel size, so it only scales with the board: max-width and height: auto are a clamp
+   that does nothing while layout() fits the cells to the column. */
+.sok-svg { position: absolute; top: 14px; left: 14px; max-width: 100%; height: auto; pointer-events: none; overflow: visible; z-index: 3; }
 .no-pairs .sok-svg { display: none; }
 .sok-svg line { stroke: var(--cyan); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 6 5; opacity: 0.85; }
 .sok-svg circle { fill: var(--cyan); }

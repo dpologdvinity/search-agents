@@ -1,0 +1,432 @@
+{
+ "command": "PYTHONPATH=. .venv/bin/python -c 'import json, random, statistics, sys; from checkers.board import START, RED, legal_moves, notation; from checkers.search import AlphaBeta, Minimax; rows = []\\nfor seed in range(1, 11):\\n    rng = random.Random(seed); board, side = START, RED\\n    for _ in range(8):\\n        board, side = rng.choice(legal_moves(board, side)).result, -side\\n    forced = len(legal_moves(board, side)) == 1\\n    row = {\"seed\": seed, \"forced_root\": forced}\\n    for d in (4, 5, 6):\\n        m = Minimax(d).search(board, side); a = AlphaBeta(max_depth=d, max_seconds=1e9).search(board, side)\\n        root = {notation(x): s for x, s in m.root}\\n        row[\"depth%d\" % d] = {\"minimax_nodes\": m.nodes, \"alphabeta_nodes\": a.nodes, \"alphabeta_depth\": a.depth, \"minimax_move\": notation(m.move), \"alphabeta_move\": notation(a.move), \"minimax_score\": m.score, \"alphabeta_score\": a.score, \"same_score\": m.score == a.score, \"same_move\": notation(m.move) == notation(a.move), \"alphabeta_move_minimax_score\": root.get(notation(a.move))}\\n    rows.append(row)\\ndef tally(d):\\n    k = \"depth%d\" % d\\n    free = [r for r in rows if not r[\"forced_root\"]]\\n    mism = [r[k] for r in free if not r[k][\"same_move\"]]\\n    return {\"minimax_nodes_median\": statistics.median(r[k][\"minimax_nodes\"] for r in rows), \"alphabeta_nodes_median\": statistics.median(r[k][\"alphabeta_nodes\"] for r in rows), \"same_score_nonforced\": \"%d of %d\" % (sum(r[k][\"same_score\"] for r in free), len(free)), \"same_move_nonforced\": \"%d of %d\" % (sum(r[k][\"same_move\"] for r in free), len(free)), \"move_mismatches_all_ties\": all(x[\"alphabeta_move_minimax_score\"] == x[\"minimax_score\"] for x in mism)}\\nprint(json.dumps({\"command\": \"PYTHONPATH=. .venv/bin/python -c \" + repr(sys.argv[1]), \"position\": \"8 random legal plies from the opening: random.Random(seed).choice over legal_moves at each ply; red to move after 8 plies; seeds 1-10\", \"minimax\": \"Minimax(d): fixed depth d, no pruning, node count = _negamax calls\", \"alphabeta\": \"AlphaBeta(max_depth=d, max_seconds=1e9): iterative deepening, node count summed over depths 1..d (what the agent reports)\", \"notes\": \"forced_root positions (one legal move) use AlphaBeta forced_depth=4 scoring, so their scores are not comparable to depth d\", \"summary\": {\"depth%d\" % d: tally(d) for d in (4, 5, 6)}, \"rows\": rows}, indent=1))'",
+ "position": "8 random legal plies from the opening: random.Random(seed).choice over legal_moves at each ply; red to move after 8 plies; seeds 1-10",
+ "minimax": "Minimax(d): fixed depth d, no pruning, node count = _negamax calls",
+ "alphabeta": "AlphaBeta(max_depth=d, max_seconds=1e9): iterative deepening, node count summed over depths 1..d (what the agent reports)",
+ "notes": "forced_root positions (one legal move) use AlphaBeta forced_depth=4 scoring, so their scores are not comparable to depth d",
+ "summary": {
+  "depth4": {
+   "minimax_nodes_median": 3373.0,
+   "alphabeta_nodes_median": 498.0,
+   "same_score_nonforced": "8 of 8",
+   "same_move_nonforced": "7 of 8",
+   "move_mismatches_all_ties": true
+  },
+  "depth5": {
+   "minimax_nodes_median": 15541.0,
+   "alphabeta_nodes_median": 1287.0,
+   "same_score_nonforced": "8 of 8",
+   "same_move_nonforced": "7 of 8",
+   "move_mismatches_all_ties": true
+  },
+  "depth6": {
+   "minimax_nodes_median": 90072.5,
+   "alphabeta_nodes_median": 2676.0,
+   "same_score_nonforced": "8 of 8",
+   "same_move_nonforced": "7 of 8",
+   "move_mismatches_all_ties": true
+  }
+ },
+ "rows": [
+  {
+   "seed": 1,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 2962,
+    "alphabeta_nodes": 618,
+    "alphabeta_depth": 4,
+    "minimax_move": "26-23",
+    "alphabeta_move": "26-23",
+    "minimax_score": 13,
+    "alphabeta_score": 13,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 13
+   },
+   "depth5": {
+    "minimax_nodes": 16845,
+    "alphabeta_nodes": 1252,
+    "alphabeta_depth": 5,
+    "minimax_move": "26-23",
+    "alphabeta_move": "26-23",
+    "minimax_score": 13,
+    "alphabeta_score": 13,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 13
+   },
+   "depth6": {
+    "minimax_nodes": 92608,
+    "alphabeta_nodes": 3566,
+    "alphabeta_depth": 6,
+    "minimax_move": "26-23",
+    "alphabeta_move": "26-23",
+    "minimax_score": 2,
+    "alphabeta_score": 2,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 2
+   }
+  },
+  {
+   "seed": 2,
+   "forced_root": true,
+   "depth4": {
+    "minimax_nodes": 112,
+    "alphabeta_nodes": 29,
+    "alphabeta_depth": 4,
+    "minimax_move": "20x11",
+    "alphabeta_move": "20x11",
+    "minimax_score": 124,
+    "alphabeta_score": 124,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 124
+   },
+   "depth5": {
+    "minimax_nodes": 810,
+    "alphabeta_nodes": 29,
+    "alphabeta_depth": 4,
+    "minimax_move": "20x11",
+    "alphabeta_move": "20x11",
+    "minimax_score": 124,
+    "alphabeta_score": 124,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 124
+   },
+   "depth6": {
+    "minimax_nodes": 4373,
+    "alphabeta_nodes": 29,
+    "alphabeta_depth": 4,
+    "minimax_move": "20x11",
+    "alphabeta_move": "20x11",
+    "minimax_score": 111,
+    "alphabeta_score": 124,
+    "same_score": false,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 111
+   }
+  },
+  {
+   "seed": 3,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 4445,
+    "alphabeta_nodes": 602,
+    "alphabeta_depth": 4,
+    "minimax_move": "24-19",
+    "alphabeta_move": "24-19",
+    "minimax_score": 6,
+    "alphabeta_score": 6,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 6
+   },
+   "depth5": {
+    "minimax_nodes": 28472,
+    "alphabeta_nodes": 1569,
+    "alphabeta_depth": 5,
+    "minimax_move": "24-19",
+    "alphabeta_move": "24-19",
+    "minimax_score": 12,
+    "alphabeta_score": 12,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 12
+   },
+   "depth6": {
+    "minimax_nodes": 187646,
+    "alphabeta_nodes": 4915,
+    "alphabeta_depth": 6,
+    "minimax_move": "24-19",
+    "alphabeta_move": "24-19",
+    "minimax_score": 0,
+    "alphabeta_score": 0,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 0
+   }
+  },
+  {
+   "seed": 4,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 4395,
+    "alphabeta_nodes": 496,
+    "alphabeta_depth": 4,
+    "minimax_move": "28-24",
+    "alphabeta_move": "28-24",
+    "minimax_score": -108,
+    "alphabeta_score": -108,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -108
+   },
+   "depth5": {
+    "minimax_nodes": 25107,
+    "alphabeta_nodes": 1364,
+    "alphabeta_depth": 5,
+    "minimax_move": "25-22",
+    "alphabeta_move": "28-24",
+    "minimax_score": -102,
+    "alphabeta_score": -102,
+    "same_score": true,
+    "same_move": false,
+    "alphabeta_move_minimax_score": -102
+   },
+   "depth6": {
+    "minimax_nodes": 147554,
+    "alphabeta_nodes": 2169,
+    "alphabeta_depth": 6,
+    "minimax_move": "28-24",
+    "alphabeta_move": "28-24",
+    "minimax_score": -102,
+    "alphabeta_score": -102,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -102
+   }
+  },
+  {
+   "seed": 5,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 2662,
+    "alphabeta_nodes": 533,
+    "alphabeta_depth": 4,
+    "minimax_move": "22-17",
+    "alphabeta_move": "22-17",
+    "minimax_score": 112,
+    "alphabeta_score": 112,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 112
+   },
+   "depth5": {
+    "minimax_nodes": 14222,
+    "alphabeta_nodes": 1349,
+    "alphabeta_depth": 5,
+    "minimax_move": "22-17",
+    "alphabeta_move": "22-17",
+    "minimax_score": 118,
+    "alphabeta_score": 118,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 118
+   },
+   "depth6": {
+    "minimax_nodes": 44216,
+    "alphabeta_nodes": 3180,
+    "alphabeta_depth": 6,
+    "minimax_move": "22-17",
+    "alphabeta_move": "22-17",
+    "minimax_score": 109,
+    "alphabeta_score": 109,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 109
+   }
+  },
+  {
+   "seed": 6,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 3784,
+    "alphabeta_nodes": 437,
+    "alphabeta_depth": 4,
+    "minimax_move": "26-23",
+    "alphabeta_move": "26-23",
+    "minimax_score": 4,
+    "alphabeta_score": 4,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 4
+   },
+   "depth5": {
+    "minimax_nodes": 14237,
+    "alphabeta_nodes": 1322,
+    "alphabeta_depth": 5,
+    "minimax_move": "25-21",
+    "alphabeta_move": "25-21",
+    "minimax_score": 7,
+    "alphabeta_score": 7,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 7
+   },
+   "depth6": {
+    "minimax_nodes": 87537,
+    "alphabeta_nodes": 3117,
+    "alphabeta_depth": 6,
+    "minimax_move": "25-21",
+    "alphabeta_move": "25-21",
+    "minimax_score": -2,
+    "alphabeta_score": -2,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -2
+   }
+  },
+  {
+   "seed": 7,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 740,
+    "alphabeta_nodes": 253,
+    "alphabeta_depth": 4,
+    "minimax_move": "23-18",
+    "alphabeta_move": "25-22",
+    "minimax_score": -112,
+    "alphabeta_score": -112,
+    "same_score": true,
+    "same_move": false,
+    "alphabeta_move_minimax_score": -112
+   },
+   "depth5": {
+    "minimax_nodes": 4030,
+    "alphabeta_nodes": 591,
+    "alphabeta_depth": 5,
+    "minimax_move": "27-24",
+    "alphabeta_move": "27-24",
+    "minimax_score": -109,
+    "alphabeta_score": -109,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -109
+   },
+   "depth6": {
+    "minimax_nodes": 21622,
+    "alphabeta_nodes": 2235,
+    "alphabeta_depth": 6,
+    "minimax_move": "23-18",
+    "alphabeta_move": "23-18",
+    "minimax_score": -118,
+    "alphabeta_score": -118,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -118
+   }
+  },
+  {
+   "seed": 8,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 9362,
+    "alphabeta_nodes": 598,
+    "alphabeta_depth": 4,
+    "minimax_move": "24-19",
+    "alphabeta_move": "24-19",
+    "minimax_score": -18,
+    "alphabeta_score": -18,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -18
+   },
+   "depth5": {
+    "minimax_nodes": 75915,
+    "alphabeta_nodes": 4209,
+    "alphabeta_depth": 5,
+    "minimax_move": "26-23",
+    "alphabeta_move": "26-23",
+    "minimax_score": -6,
+    "alphabeta_score": -6,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -6
+   },
+   "depth6": {
+    "minimax_nodes": 395831,
+    "alphabeta_nodes": 6170,
+    "alphabeta_depth": 6,
+    "minimax_move": "26-22",
+    "alphabeta_move": "26-23",
+    "minimax_score": -6,
+    "alphabeta_score": -6,
+    "same_score": true,
+    "same_move": false,
+    "alphabeta_move_minimax_score": -6
+   }
+  },
+  {
+   "seed": 9,
+   "forced_root": false,
+   "depth4": {
+    "minimax_nodes": 5482,
+    "alphabeta_nodes": 500,
+    "alphabeta_depth": 4,
+    "minimax_move": "24-19",
+    "alphabeta_move": "24-19",
+    "minimax_score": -22,
+    "alphabeta_score": -22,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -22
+   },
+   "depth5": {
+    "minimax_nodes": 24840,
+    "alphabeta_nodes": 1199,
+    "alphabeta_depth": 5,
+    "minimax_move": "26-22",
+    "alphabeta_move": "26-22",
+    "minimax_score": -1,
+    "alphabeta_score": -1,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -1
+   },
+   "depth6": {
+    "minimax_nodes": 145757,
+    "alphabeta_nodes": 1604,
+    "alphabeta_depth": 6,
+    "minimax_move": "26-22",
+    "alphabeta_move": "26-22",
+    "minimax_score": -1,
+    "alphabeta_score": -1,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": -1
+   }
+  },
+  {
+   "seed": 10,
+   "forced_root": true,
+   "depth4": {
+    "minimax_nodes": 536,
+    "alphabeta_nodes": 266,
+    "alphabeta_depth": 4,
+    "minimax_move": "19x12",
+    "alphabeta_move": "19x12",
+    "minimax_score": 113,
+    "alphabeta_score": 113,
+    "same_score": true,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 113
+   },
+   "depth5": {
+    "minimax_nodes": 3793,
+    "alphabeta_nodes": 266,
+    "alphabeta_depth": 4,
+    "minimax_move": "19x12",
+    "alphabeta_move": "19x12",
+    "minimax_score": 116,
+    "alphabeta_score": 113,
+    "same_score": false,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 116
+   },
+   "depth6": {
+    "minimax_nodes": 28084,
+    "alphabeta_nodes": 266,
+    "alphabeta_depth": 4,
+    "minimax_move": "19x12",
+    "alphabeta_move": "19x12",
+    "minimax_score": 107,
+    "alphabeta_score": 113,
+    "same_score": false,
+    "same_move": true,
+    "alphabeta_move_minimax_score": 107
+   }
+  }
+ ]
+}

@@ -1,3 +1,5 @@
+import json
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -83,18 +85,59 @@ def test_illegal_and_out_of_turn_actions_are_refused():
     assert client.post("/api/poker/act", json={"hand": view["hand"], "action": "x"}).status_code == 422
 
 
-def test_bot_moves_carry_the_mix_it_played_from():
+def _play(client: TestClient, seed: int, fold_when_able: bool = False) -> list[dict]:
+    """Play one hand to the end (calling what is owed, or folding on request) and return every response."""
+    views = [client.post("/api/poker/deal", json={"seed": seed}).json()]
+    for _ in range(30):
+        view = views[-1]
+        if view["terminal"]:
+            break
+        if fold_when_able and "f" in view["legal"]:
+            action = "f"
+        else:
+            action = "c" if "c" in view["legal"] else "k"
+        views.append(client.post("/api/poker/act", json={"hand": view["hand"], "action": action}).json())
+    assert views[-1]["terminal"]
+    return views
+
+
+def test_bot_moves_carry_the_spot_until_showdown_and_the_mix_after():
     client = TestClient(make_app())
+    bot_acted = 0
     for seed in range(40):
-        view = client.post("/api/poker/deal", json={"seed": seed}).json()
-        if view["legal"] and "b" in view["legal"]:
-            view = client.post("/api/poker/act", json={"hand": view["hand"], "action": "k"}).json()
+        views = _play(client, seed)
+        public = [m for v in views[1:] for m in v["bot_moves"]]
+        for move in public:
+            assert set(move) == {"round", "spot", "action"}  # no probabilities before the showdown
+            assert move["spot"].startswith("?")
+        reveal = views[-1]["bot_reveal"]
+        assert [d["action"] for d in reveal] == [m["action"] for m in public]
+        for decision in reveal:
+            assert decision["action"] in decision["probs"]
+            assert abs(sum(decision["probs"].values()) - 1.0) < 1e-6
+            assert decision["spot"] == "?" + decision["infoset"][1:]
+        bot_acted += bool(public)
+    assert bot_acted > 0
+
+
+def test_no_response_before_showdown_carries_the_bot_card_or_its_mix():
+    """Scan every field of every response before the showdown for the bot's information sets and mixes.
+
+    The bot's information sets are read from the reveal in the last response of the same hand, which the
+    server withholds until then, so the scan knows exactly which keys must stay hidden.
+    """
+    client = TestClient(make_app())
+    for seed in range(30):
+        views = _play(client, seed, fold_when_able=seed % 3 == 0)
+        bot_infosets = [d["infoset"] for d in views[-1]["bot_reveal"]]
+        for view in views[:-1]:
+            assert view["bot_card"] is None and view["bot_reveal"] is None
+            text = json.dumps({k: v for k, v in view.items() if k != "hint"})  # the hint is the human's own mix
+            assert '"probs"' not in text and '"infoset"' not in text
+            for key in bot_infosets:
+                assert f'"{key}"' not in text
             for move in view["bot_moves"]:
-                assert move["action"] in move["probs"]
-                assert abs(sum(move["probs"].values()) - 1.0) < 1e-6
-            if view["bot_moves"]:
-                return
-    raise AssertionError("no hand where the bot acted after a check")
+                assert set(move) == {"round", "spot", "action"}
 
 
 def test_the_deal_is_rate_limited():

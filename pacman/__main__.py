@@ -3,8 +3,10 @@
     python -m pacman                          play in the terminal (w/a/s/d + Enter each turn)
     python -m pacman --maze vault --seed 7    the same, on another maze or seed
     python -m pacman --watch q                watch an agent play: q, reflex, or random
+    python -m pacman --ghosts chance          play against chance ghosts (fixed odds) instead of the A* ghosts
     python -m pacman train --episodes 3000    learn the Q-agent's weights into pacman/data/weights.json
     python -m pacman benchmark --games 200    win rate and average score for each agent
+    python -m pacman match --games 200        the agent against the A* ghosts and against chance ghosts
 """
 
 from __future__ import annotations
@@ -17,6 +19,8 @@ from pathlib import Path
 
 from .agents import AGENTS, WEIGHTS_PATH, save_weights
 from .benchmark import run_benchmark, to_markdown
+from .ghosts import GHOST_POLICIES
+from .match import match_markdown, run_match
 from .mazes import names
 from .qlearning import train
 from .terminal import play_human, watch
@@ -64,12 +68,30 @@ def cmd_benchmark(argv: list[str]) -> int:
     return 0
 
 
+def cmd_match(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(prog="python -m pacman match",
+                                 description="Play an agent against the A* ghosts and against chance ghosts.")
+    ap.add_argument("--games", type=int, default=200, help="games per maze per ghost policy")
+    ap.add_argument("--agent", choices=AGENTS, default="q", help="the Pac-Man agent (default q)")
+    ap.add_argument("--out", type=Path, default=RESULTS / "pacman_chance_match.json")
+    args = ap.parse_args(argv)
+
+    result = run_match(args.games, args.agent)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(result, indent=2) + "\n")
+    args.out.with_suffix(".md").write_text(match_markdown(result))
+    print(match_markdown(result))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:1] == ["train"]:
         return cmd_train(argv[1:])
     if argv[:1] == ["benchmark"]:
         return cmd_benchmark(argv[1:])
+    if argv[:1] == ["match"]:
+        return cmd_match(argv[1:])
 
     ap = argparse.ArgumentParser(prog="python -m pacman", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -77,14 +99,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=None, help="game seed (default: random)")
     ap.add_argument("--watch", choices=AGENTS, help="watch an agent instead of playing")
     ap.add_argument("--delay", type=float, default=0.25, help="seconds between turns when watching")
+    ap.add_argument("--ghosts", choices=GHOST_POLICIES, default="ai",
+                    help="ghost policy: ai (A* routes, default) or chance (fixed odds)")
     args = ap.parse_args(argv)
 
     seed = args.seed if args.seed is not None else random.randrange(1_000_000)
     try:
         if args.watch:
-            watch(args.watch, args.maze, seed, delay=args.delay)
+            watch(args.watch, args.maze, seed, delay=args.delay, ghosts=args.ghosts)
         else:
-            status = play_human(args.maze, seed)
+            status = play_human(args.maze, seed, ghosts=args.ghosts)
             print({"won": "You cleared the maze!", "lost": "Caught by a ghost.",
                    "timeout": "Out of turns.", "quit": "You quit."}[status])
     except FileNotFoundError as e:  # Q-agent weights not trained yet

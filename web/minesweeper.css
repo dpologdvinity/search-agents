@@ -2,6 +2,8 @@
    minesweeper.js sets on the board for each preset. Revealed numbers use the neon palette: 1 cyan, 2 green,
    3 pink, 4 purple, 5 yellow, 6 cyan, 7 white, 8 red. */
 
+/* On phones the grid column must shrink so the board scrolls inside .ms-wrap instead of widening the page. */
+.proj-game-col { min-width: 0; }
 .ms-wrap { max-width: 100%; overflow-x: auto; padding: 4px; }
 
 .ms-board {

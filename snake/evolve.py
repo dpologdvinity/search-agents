@@ -44,6 +44,8 @@ SURVIVAL_BONUS = 0.25
 STEP_COST = 0.0002  # per move beyond SURVIVAL_STEPS
 STARVE_PENALTY = 0.5
 # Fixed boards for choosing the champion: fresh per-generation boards make scores incomparable across generations.
+# These seeds fall inside the training range above, so the champion's validation score is a same-distribution
+# check, not a held-out one. The committed net was trained and selected this way; it is not retrained.
 VALIDATION_SEEDS = list(range(20_000, 20_016))
 
 
@@ -61,6 +63,7 @@ class Settings:
     init_sigma: float = 0.5
     seed: int = 1
     workers: int = 2
+    starve_penalty: float = STARVE_PENALTY
     board: int = BOARD
 
 
@@ -83,22 +86,23 @@ def play_net(net: Net, seed: int, size: int = BOARD) -> Game:
     return game
 
 
-def game_score(game: Game) -> float:
+def game_score(game: Game, starve_penalty: float = STARVE_PENALTY) -> float:
     """The per-game fitness described in the module docstring."""
     if game.cause == "starved":
-        return game.apples - STARVE_PENALTY
+        return game.apples - starve_penalty
     bonus = SURVIVAL_BONUS * min(game.steps, SURVIVAL_STEPS) / SURVIVAL_STEPS
     cost = STEP_COST * max(0, game.steps - SURVIVAL_STEPS)
     return game.apples + bonus - cost
 
 
-def evaluate(genome: np.ndarray, seeds: list[int], size: int = BOARD) -> Score:
+def evaluate(genome: np.ndarray, seeds: list[int], size: int = BOARD,
+             starve_penalty: float = STARVE_PENALTY) -> Score:
     """Average fitness over the given seeded games. Every genome sees exactly the same boards."""
     net = Net.from_genome(genome)
     total, apples, steps, deaths, starved = 0.0, 0, 0, 0, 0
     for seed in seeds:
         game = play_net(net, seed, size)
-        total += game_score(game)
+        total += game_score(game, starve_penalty)
         apples += game.apples
         steps += game.steps
         deaths += game.cause in ("wall", "body")
@@ -127,7 +131,8 @@ def _child(rng, pop, fitness, s: Settings) -> np.ndarray:
 def evolve(s: Settings, on_generation=None) -> tuple[np.ndarray, Score, list[dict], int]:
     """Run the GA. Returns (champion genome, its validation score, one log record per generation, its generation).
 
-    `on_generation(record)` is called after each generation, so the CLI can print progress as it goes.
+    `on_generation(record, best_genome)` is called after each generation with the best-ever training genome,
+    so the CLI can print progress and write checkpoints as it goes.
     Candidates for champion are the best genome of every generation and the top five of the last one.
     They are re-scored on VALIDATION_SEEDS, a fixed board set, and the best of them is the champion.
     """
@@ -141,7 +146,7 @@ def evolve(s: Settings, on_generation=None) -> tuple[np.ndarray, Score, list[dic
     try:
         for gen in range(s.generations):
             seeds = [int(v) for v in rng.integers(TRAIN_LO, TRAIN_HI, size=s.games)]
-            args = [(g, seeds, s.board) for g in pop]
+            args = [(g, seeds, s.board, s.starve_penalty) for g in pop]
             scores = pool.starmap(evaluate, args) if pool else [evaluate(*a) for a in args]
             fitness = np.array([sc.fitness for sc in scores])
             order = np.argsort(-fitness, kind="stable")
@@ -160,7 +165,7 @@ def evolve(s: Settings, on_generation=None) -> tuple[np.ndarray, Score, list[dic
             }
             history.append(record)
             if on_generation is not None:
-                on_generation(record)
+                on_generation(record, best_genome)
             if gen == s.generations - 1:
                 candidates = [(pop[i].copy(), gen + 1) for i in order[:5]]
                 break

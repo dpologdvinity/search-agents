@@ -1,0 +1,34 @@
+/* Regression lab: the plane, the charts, and the mode switch. Shared look comes from style.css and app.css. */
+
+.rg-stage { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.rg-frame {
+  position: relative; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; contain: paint;
+  border: 1px solid var(--border); background: #020610;
+  box-shadow: 0 0 28px rgba(0,245,255,0.08), inset 0 0 40px rgba(155,0,255,0.05);
+}
+#plane {
+  display: block; width: 100%; height: auto; aspect-ratio: 3 / 2;
+  touch-action: none; /* a finger drags points instead of scrolling the page */
+  -webkit-user-select: none; user-select: none;
+}
+#loss-chart, #sweep-chart {
+  display: block; width: 100%; height: auto; aspect-ratio: 12 / 5;
+}
+.viz-panel canvas#loss-chart, .viz-panel canvas#sweep-chart { height: auto; }
+.proj-game-col, .proj-ctrl-col, .viz-panel { min-width: 0; max-width: 100%; }
+.proj-ctrl-col .viz-panel { gap: 0.6rem; }
+.proj-ctrl-col .viz-panel > div { display: flex; flex-direction: column; gap: 0.3rem; }
+.proj-ctrl-col label.inline { gap: 0.4rem; }
+#holdout { accent-color: var(--green); }
+
+/* Only the controls for the active model are shown. */
+body[data-mode="reg"] [data-mode="log"] { display: none; }
+body[data-mode="log"] [data-mode="reg"] { display: none; }
+
+/* A flash on the squares is drawn on the canvas; the frame just gets a brief glow. */
+.rg-frame.flash { box-shadow: 0 0 40px rgba(255,255,255,0.25); }
+
+@media (max-width: 480px) {
+  .rg-frame { margin: 0 -0.2rem; }
+  .proj-ctrl-col .inline .cyber-btn { flex: 1 1 auto; }
+}

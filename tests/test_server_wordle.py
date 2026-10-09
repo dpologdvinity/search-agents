@@ -113,3 +113,35 @@ def test_new_games_are_rate_limited():
     with TestClient(make_app(moves=2)) as c:
         codes = [c.post("/api/wordle/new").status_code for _ in range(3)]
     assert codes == [200, 200, 429]
+
+
+def test_concurrent_guesses_cannot_pass_the_six_guess_limit(monkeypatch):
+    """Eight guesses sent at once to one game: at most six are scored, numbered 1 to 6 with no gaps."""
+    import asyncio
+
+    import httpx
+
+    from wordle.lexicon import get_lexicon
+
+    words = get_lexicon().guesses[:8]
+    real_lexicon = wordle_api._lexicon
+
+    async def yielding_lexicon():
+        await asyncio.sleep(0)  # a real lookup suspends here, which is where the requests interleaved
+        return await real_lexicon()
+
+    monkeypatch.setattr(wordle_api, "_lexicon", yielding_lexicon)
+    app_ = make_app(rate=1000, moves=1000)
+    with TestClient(app_) as c:
+        game_id = new_game(c)
+
+    async def race():
+        transport = httpx.ASGITransport(app=app_)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+            return await asyncio.gather(*(ac.post("/api/wordle/guess", json={"game_id": game_id, "word": w})
+                                          for w in words))
+
+    responses = asyncio.run(race())
+    assert all(r.status_code in (200, 409) for r in responses)
+    scored = sorted(r.json()["guess_no"] for r in responses if r.status_code == 200)
+    assert len(scored) <= 6 and scored == list(range(1, len(scored) + 1))

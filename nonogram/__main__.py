@@ -19,7 +19,7 @@ import argparse
 import sys
 
 from .benchmark import run, to_markdown, write_results
-from .generate import NoUniquePicture, random_puzzle
+from .generate import RANDOM_MAX, RANDOM_MIN, NoUniquePicture, random_puzzle
 from .library import get, library
 from .puzzle import EMPTY, FILLED, UNKNOWN, Puzzle, clues_of, empty_grid, picture_text, render
 from .solvers import METHODS, hint, solve, verify
@@ -29,10 +29,14 @@ HELP = ("commands: f r c fill | x r c cross | e r c clear | r c fill | h hint | 
 
 
 def _parse_size(text: str) -> tuple[int, int]:
+    """A RxC size for the random generator. Each side must be in the range the server offers, so a
+    request like 99x2 fails fast instead of running for minutes."""
     try:
         rows, cols = (int(v) for v in text.lower().split("x"))
     except ValueError:
         raise argparse.ArgumentTypeError(f"size must look like 10x12, got {text!r}") from None
+    if not all(RANDOM_MIN <= side <= RANDOM_MAX for side in (rows, cols)):
+        raise argparse.ArgumentTypeError(f"each side must be {RANDOM_MIN} to {RANDOM_MAX}, got {text!r}")
     return rows, cols
 
 
@@ -164,7 +168,8 @@ def cmd_benchmark(args) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Nonograms: play, solve, generate, benchmark.")
+    parser = argparse.ArgumentParser(prog="python -m nonogram",
+                                     description="Nonograms: play, solve, generate, benchmark.")
     sub = parser.add_subparsers(dest="cmd")
 
     p_play = sub.add_parser("play", help="play a puzzle in the terminal")

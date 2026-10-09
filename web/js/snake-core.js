@@ -1,9 +1,10 @@
 // Snake core: the rules, the senses, and the network's forward pass, with no DOM.
 //
-// This file mirrors snake/board.py, snake/net.py, and snake/agents.py. The evolved champion is
-// fetched as JSON and run here with the same arithmetic as NumPy: the features, one tanh layer,
-// then the argmax over three outputs. Keeping it DOM-free lets the Node check in the repo's
-// notes compare it with the Python implementation step for step.
+// This file mirrors snake/board.py, snake/net.py, snake/evaluator.py, and the baselines in snake/agents.py.
+// The evolved net is fetched as JSON and run here with the same arithmetic as NumPy: the features, one
+// tanh layer, then the argmax over three outputs. The evaluation function (the eight weights from
+// snake/cem.py) is the same kind of arithmetic over move features. Keeping it DOM-free lets the Node
+// parity tests (tests/test_snake_eval_parity.py and the notes) compare it with Python step for step.
 
 // Headings clockwise from north. Turning right adds one; turning left subtracts one.
 export const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -213,4 +214,91 @@ export function decide(net, game) {
   const { h, logits } = forward(net, x);
   const action = argmax(logits);
   return { x, h, logits, probs: softmax(logits), action, attr: attribution(net, x, h, action) };
+}
+
+// ── The evaluation-function agent (snake/evaluator.py) ────────────────────────────────────────
+// Eight features of the position each safe move leads to, weighted and summed. The move with the
+// largest sum is taken; ties keep the earlier move in ACTION_ORDER (straight, then left, then right).
+export const EVAL_FEATURES = [
+  'apple', 'food near', 'food reachable', 'area', 'room for body', 'tail reachable', 'exits', 'length',
+];
+const ACTION_ORDER = [STRAIGHT, LEFT, RIGHT];
+
+// The features of the position after `action`, as snake/evaluator.py move_features. The body after the
+// move is the new head, then the old body minus the tail unless the snake ate; the tail is an escape goal.
+export function moveFeatures(game, action) {
+  const size = game.size, cells = size * size;
+  const head = nextCell(game, action);
+  const eats = game.food !== null && head[0] === game.food[0] && head[1] === game.food[1];
+  const body2 = [head, ...(eats ? game.body : game.body.slice(0, -1))];
+  const key = (x, y) => x + ',' + y;
+  const occupied = new Set(body2.map(([x, y]) => key(x, y)));
+  const tail = body2[body2.length - 1];
+  const tailKey = key(tail[0], tail[1]);
+  const blocked = new Set(body2.slice(0, -1).map(([x, y]) => key(x, y)));
+  const nEmpty = cells - body2.length;
+  // One breadth-first search from the head over empty cells: food distance, reachable area, tail reach.
+  const dist = new Map([[key(head[0], head[1]), 0]]);
+  const queue = [head];
+  let qi = 0, tailOk = false;
+  while (qi < queue.length) {
+    const [cx, cy] = queue[qi++];
+    const d = dist.get(key(cx, cy));
+    for (const [dx, dy] of DIRS) {
+      const nx = cx + dx, ny = cy + dy, k = key(nx, ny);
+      if (dist.has(k) || !(nx >= 0 && nx < size && ny >= 0 && ny < size)) continue;
+      if (k === tailKey) { tailOk = true; continue; }
+      if (blocked.has(k)) continue;
+      dist.set(k, d + 1);
+      queue.push([nx, ny]);
+    }
+  }
+  const reach = dist.size - 1;
+  let foodNear = 0, foodReach = 0;
+  if (eats) { foodNear = 1; foodReach = 1; }
+  else if (game.food !== null && dist.has(key(game.food[0], game.food[1]))) {
+    foodNear = Math.max(0, 1 - dist.get(key(game.food[0], game.food[1])) / (2 * size));
+    foodReach = 1;
+  }
+  const [hx, hy] = head;
+  let exits = 0;
+  for (const [dx, dy] of DIRS) {
+    const nx = hx + dx, ny = hy + dy;
+    if (nx >= 0 && nx < size && ny >= 0 && ny < size && !occupied.has(key(nx, ny))) exits++;
+  }
+  const length = body2.length;
+  return [
+    eats ? 1 : 0,
+    foodNear,
+    foodReach,
+    nEmpty > 0 ? reach / nEmpty : 0,
+    Math.min(1, reach / length),
+    tailOk ? 1 : 0,
+    exits / 4,
+    length / cells,
+  ];
+}
+
+// Every move with its features, score, and whether it ends the game (score is null for those).
+export function moveTable(game, weights) {
+  return ACTION_ORDER.map((action) => {
+    const dies = wouldDie(game, action);
+    const features = moveFeatures(game, action);
+    let score = null;
+    if (!dies) {
+      score = 0;
+      for (let i = 0; i < features.length; i++) score += weights[i] * features[i];
+    }
+    return { action, features, score, dies };
+  });
+}
+
+// The chosen move: the safe move with the largest score, or straight when every move ends the game.
+export function chooseEval(weights, game) {
+  let best = STRAIGHT, bestScore = -Infinity;
+  for (const row of moveTable(game, weights)) {
+    if (row.dies) continue;
+    if (row.score > bestScore) { best = row.action; bestScore = row.score; }
+  }
+  return best;
 }

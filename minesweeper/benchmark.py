@@ -1,6 +1,6 @@
 """Benchmark: win rate and guesses per game for each agent on each classic size.
 
-    python -m minesweeper benchmark                    # the full run committed under results/
+    python -m minesweeper benchmark --out results      # the full run, written under results/
     python -m minesweeper benchmark --games 50         # a quick check
 
 Every agent plays the same seeded boards (BENCH_SEED_BASE + i for game i), so the comparison is

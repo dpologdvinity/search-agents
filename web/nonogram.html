@@ -26,6 +26,7 @@
 
 <div class="page act">
 <div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
     <div class="proj-header-left">
@@ -187,7 +188,7 @@
       <div class="hiw-card">
         <h3>4. Hybrid</h3>
         <p class="hiw-plain"><b>New to this?</b> Hybrid is the middle ground. It uses the cheap line rules as often as possible and only guesses when they stall. A guess that breaks a line is caught right away, so the search tree stays small.</p>
-        <p>Propagation runs line solving to a fixed point. If cells are still unknown, the solver picks the first unknown cell of the line with the fewest unknowns, tries 1 and then 0, and recurses. Each branch re-runs propagation, and a line with no placement left is a contradiction that undoes the guess. A node budget stops the search, and the answer is then reported as undecided rather than guessed.</p>
+        <p>Propagation runs line solving to a fixed point. If cells are still unknown, the solver picks the first unknown cell of the line with the fewest unknowns, tries 1 and then 0, and recurses. Each branch re-runs propagation, and a line with no placement left is a contradiction that undoes the guess. On the server a time limit and a node budget can stop the search, and the answer is then reported as undecided rather than guessed.</p>
       </div>
 
       <div class="hiw-card">
@@ -207,7 +208,8 @@
           <tr><td>VSIDS decay</td><td>0.95 per conflict</td><td>DPLL branching (SAT)</td></tr>
           <tr><td>Initial activity</td><td>1.0 for cell variables, 0 for automaton helpers</td><td>DPLL branching (SAT)</td></tr>
           <tr><td>Default phase</td><td>false, then phase saving</td><td>DPLL (SAT)</td></tr>
-          <tr><td>Propagation budget, server SAT</td><td>600,000 propagations</td><td>SAT solve endpoint</td></tr>
+          <tr><td>Time limit, server solve</td><td>10 seconds, wall clock</td><td>SAT and hybrid solve endpoint</td></tr>
+          <tr><td>Propagation budget, server SAT</td><td>6,000,000 propagations</td><td>SAT solve endpoint</td></tr>
           <tr><td>Propagation budget, benchmark</td><td>5,000,000 propagations</td><td>benchmark runs</td></tr>
           <tr><td>Guess budget, server hybrid</td><td>2,000 search nodes</td><td>hybrid solve endpoint</td></tr>
           <tr><td>Event cap</td><td>4,000 recorded events</td><td>search replay on this page</td></tr>
@@ -221,7 +223,7 @@
         </tbody>
       </table>
     </div>
-    <p class="hiw-note">The budgets and thresholds were chosen by measuring the solver on the benchmark puzzles, with the server's 1 GB, shared-CPU limits in mind. They were not tuned to make a particular puzzle pass. A budget that is hit is reported as undecided, so a slow case never returns a wrong answer. The decay and the activity boost follow common SAT practice rather than a search over values. Run <code>python -m nonogram benchmark</code> to see the counts for the puzzles shipped here.</p>
+    <p class="hiw-note">The budgets and thresholds were chosen by measuring the solver on the benchmark puzzles, with the server's 1 GB, shared-CPU limits in mind. They were not tuned to make a particular puzzle pass. A budget or the time limit that is hit is reported as undecided, so a slow case never returns a wrong answer. The time limit is wall-clock, so the server's result for a picture can depend on how busy the machine is; the benchmark uses counts only, so its rows reproduce on any machine. The decay and the activity boost follow common SAT practice rather than a search over values. Run <code>python -m nonogram benchmark</code> to see the counts for the puzzles shipped here.</p>
 
     <div class="hiw-src">
       <a href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/automaton.py">nonogram/automaton.py</a>

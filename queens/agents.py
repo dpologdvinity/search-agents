@@ -368,8 +368,9 @@ def _start(n: int, rng: random.Random) -> tuple[_Lines, list[int], int, int]:
     Rows are filled top to bottom. Each row tries up to GREEDY_TRIES random unused columns and keeps the
     first one no queen attacks, or else the least attacked one tried. Near the end of the fill almost
     every column is used and a free diagonal is rare, so a row can miss; those misses are the conflicts
-    that the repair phase has to fix. Measured at 4,096 tries: about 10 conflicts are left at every size
-    from 1,000 to 1,000,000 queens, and the repairs take 26 to 87 steps.
+    that the repair phase has to fix. A one-off check at 4,096 tries (not committed) left about 10 conflicts
+    at 1,000 to 10,000 queens; the sizes above that were not checked for the conflict count. The committed
+    benchmark (results/queens_benchmark.md) has median repair counts of 24 to 116 steps from 8 to 1,000,000.
     """
     lines = _Lines(n)
     cols = [-1] * n

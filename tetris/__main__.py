@@ -3,13 +3,14 @@
     python -m tetris                       # play in the terminal (same as 'play')
     python -m tetris play --seed 7         # turn-based game, 'h' shows the agent's placement
     python -m tetris watch --pieces 300    # the agent plays a seeded game and prints every step
-    python -m tetris evolve --gens 30      # run the GA and write tetris/tuned.json + the log
+    python -m tetris evolve --gens 30      # run the GA and write results/tetris_ga_weights.json + the log
     python -m tetris benchmark --games 30  # the four-strategy comparison, written to results/
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -59,7 +60,6 @@ def cmd_watch(args) -> int:
 
 
 def cmd_evolve(args) -> int:
-    from . import tuned
     from .evolve import GAConfig, evolve, save_tuned
 
     cfg = GAConfig(population=args.pop, generations=args.gens, train_games=args.games,
@@ -72,9 +72,29 @@ def cmd_evolve(args) -> int:
     for name, w in zip(FEATURES, result["weights"]):
         print(f"  {name:18s} {w:+.4f}")
     print(f"training fitness (mean lines): {result['fitness']}")
-    out = Path(args.out) if args.out else tuned.TUNED_PATH
+    out = Path(args.out)
     save_tuned(result, out)
     print(f"wrote {out}")
+    return 0
+
+
+def cmd_cem(args) -> int:
+    """Noisy cross-entropy tuning (v3). Writes the log and the final mean as JSON; checkpoints as it goes."""
+    from .cem import CEMConfig, run_cem
+
+    cfg = CEMConfig(iterations=args.iters, samples=args.samples, games=args.games, cap=args.cap,
+                    height=args.height, seed=args.seed)
+    print(f"CEM: {cfg.iterations} iterations, {cfg.samples} samples, {cfg.games} games per sample (fresh seeds), "
+          f"cap {cfg.cap}, {cfg.height} rows, {args.workers} workers, start at the hand-picked weights")
+    result = run_cem(cfg, workers=args.workers, checkpoint=Path(args.checkpoint), log_path=Path(args.log),
+                     resume=args.resume)
+    print("final mean:")
+    for name, w in zip(FEATURES, result["weights"]):
+        print(f"  {name:18s} {w:+.4f}")
+    doc = {"features": list(FEATURES), "weights": result["weights"], "config": result["config"],
+           "history": result["history"], "sigma": result["sigma"], "best_sample": result["best"]}
+    Path(args.out).write_text(json.dumps(doc, indent=1) + "\n")
+    print(f"wrote {args.out}")
     return 0
 
 
@@ -83,8 +103,12 @@ def cmd_benchmark(args) -> int:
 
     t0 = time.time()
     strategies = ("random", "hand", "ga") if args.no_lookahead else ("random", "hand", "ga", "ga_lookahead")
+    ga_weights = None
+    if args.weights:
+        ga_weights = json.loads(Path(args.weights).read_text())["weights"]
     result = run_benchmark(games=args.games, cap=args.cap, workers=args.workers, strategies=strategies,
-                           height=args.height)
+                           ga_weights=ga_weights, height=args.height)
+    result["ga_source"] = args.weights or "tetris/tuned.json"
     print(to_markdown(result))
     print(f"hand-picked weights: {list(HAND_WEIGHTS)}")
     print(f"done in {time.time() - t0:.0f} s")
@@ -118,14 +142,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--log", default=str(RESULTS / "tetris_train_log.jsonl"))
-    p.add_argument("--out", default=None, help="default: tetris/tuned.json")
+    p.add_argument("--out", default=str(RESULTS / "tetris_ga_weights.json"),
+                   help="where the GA weights go (default results/tetris_ga_weights.json; tetris/tuned.json is kept)")
     p.set_defaults(fn=cmd_evolve)
+
+    p = sub.add_parser("cem", help="tune the weights with the noisy cross-entropy method (v3)")
+    p.add_argument("--iters", type=int, default=30)
+    p.add_argument("--samples", type=int, default=30)
+    p.add_argument("--games", type=int, default=3, help="fresh seeded games per sample per iteration")
+    p.add_argument("--cap", type=int, default=100000, help="piece cap per game (matches the benchmark)")
+    p.add_argument("--height", type=int, default=10)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--workers", type=int, default=2)
+    p.add_argument("--checkpoint", default="/tmp/tetris_cem/checkpoint.json")
+    p.add_argument("--resume", action="store_true")
+    p.add_argument("--log", default=str(RESULTS / "tetris_cem_log.jsonl"))
+    p.add_argument("--out", default=str(RESULTS / "tetris_cem_weights.json"))
+    p.set_defaults(fn=cmd_cem)
 
     p = sub.add_parser("benchmark", help="compare random, hand, GA and GA + lookahead on seeded games")
     p.add_argument("--games", type=int, default=30)
     p.add_argument("--cap", type=int, default=2000, help="piece cap per game")
     p.add_argument("--height", type=int, default=20, help="rows of the board (20 is the game board)")
     p.add_argument("--no-lookahead", action="store_true", help="leave out the lookahead strategy")
+    p.add_argument("--weights", default=None, help="weights JSON for the 'ga' row (default tetris/tuned.json)")
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--out", default=str(RESULTS / "tetris_benchmark"), help="writes .json and .md; '' to skip")
     p.set_defaults(fn=cmd_benchmark)

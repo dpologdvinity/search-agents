@@ -6,7 +6,7 @@
 // agent moves: it rotates and slides the piece to its chosen spot and drops it. Human mode uses the same
 // decisions as a hint ("show agent"), so the sliders always show what the agent would do right now.
 //
-// The weights come from /api/tetris/meta (the GA result). Nothing else touches the server.
+// The weights come from /api/tetris/meta (the tuned v3 weights). Nothing else touches the server.
 
 import { getJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
@@ -70,7 +70,7 @@ function buildSliders() {
     row.innerHTML = `
       <div class="tt-slider-head">
         <label for="tt-w${i}">${FEATURE_NAMES[name]}</label>
-        <span class="tt-tuned" id="tt-t${i}" title="the GA-tuned value"></span>
+        <span class="tt-tuned" id="tt-t${i}" title="the tuned value"></span>
         <output id="tt-v${i}"></output>
       </div>
       <input id="tt-w${i}" type="range" min="-10" max="10" step="0.05">
@@ -88,12 +88,12 @@ function buildSliders() {
   syncSliders();
 }
 
-// Each slider shows its live value and, beside it, the GA-tuned value, so the drift is visible while editing.
+// Each slider shows its live value and, beside it, the tuned value, so the drift is visible while editing.
 function syncSliders() {
   state.weights.forEach((w, i) => {
     $(`tt-w${i}`).value = w;
     $(`tt-v${i}`).textContent = w.toFixed(2);
-    $(`tt-t${i}`).textContent = `GA ${state.tuned[i].toFixed(2)}`;
+    $(`tt-t${i}`).textContent = `TUNED ${state.tuned[i].toFixed(2)}`;
   });
 }
 
@@ -111,7 +111,7 @@ function setWeights(w, preset) {
   state.dirty = true;
 }
 
-// Fitness chart: best and mean lines per generation from the GA log.
+// Fitness chart: best and mean lines per tuning iteration, from the tuning log.
 function drawFitness() {
   const canvas = $('tt-fitness');
   const hist = state.meta?.history || [];
@@ -125,7 +125,7 @@ function drawFitness() {
   const pad = { l: 38, r: 10, t: 12, b: 24 };
   if (hist.length < 2) {
     ctx.fillStyle = '#4a7a9b'; ctx.font = '12px JetBrains Mono, monospace';
-    ctx.fillText('no GA history yet', pad.l, h / 2);
+    ctx.fillText('no tuning history yet', pad.l, h / 2);
     return;
   }
   const maxY = Math.max(...hist.map((r) => r.best)) * 1.1 || 1;
@@ -557,16 +557,20 @@ async function init() {
     state.hand = meta.hand_weights.slice();
     $('tt-train-fit').textContent = meta.train_fitness == null ? '—' : meta.train_fitness.toFixed(1);
     const cfg = meta.config || {};
-    $('tt-cfg').textContent = cfg.population
-      ? `${cfg.population} genomes, ${cfg.generations} generations, ${cfg.train_games} games per genome on a `
-        + `${cfg.board_height}-row board, capped at ${cfg.train_pieces} pieces, fresh seeds each generation`
-      : 'no tuned weights yet';
+    $('tt-cfg').textContent = meta.summary
+      || (cfg.population
+        ? `${cfg.population} genomes, ${cfg.generations} generations, ${cfg.train_games} games per genome on a `
+          + `${cfg.board_height}-row board, capped at ${cfg.train_pieces} pieces, fresh seeds each generation`
+        : 'no tuned weights yet');
   } catch (err) {
     state.online = false;
     $('tt-cfg').textContent = 'offline: using the hand-picked weights';
     setStatus('OFFLINE');
   }
-  setWeights(state.hand, 'hand'); // the page's AI starts on the hand-picked weights, the stronger set on held-out games
+  // The AI starts on the tuned v3 weights, which beat the hand-picked set on held-out games. Offline there are no
+  // tuned weights to load, so it starts on the hand-picked set and the button says so.
+  if (state.online) setWeights(state.tuned, 'tuned');
+  else setWeights(state.hand, 'hand');
   bindControls();
   sizeBoard();
   drawFitness();

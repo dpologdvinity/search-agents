@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from lightsout.board import DEFAULT_N, MAX_N, MIN_N, label, random_board
 from lightsout.solver import Solution, solve
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -37,11 +37,6 @@ DESCRIPTION = (
 class SolveRequest(BaseModel):
     n: int = Field(DEFAULT_N, ge=MIN_N, le=MAX_N)
     board: list[int] = Field(max_length=MAX_N * MAX_N)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _check_board(req: SolveRequest) -> None:
@@ -112,7 +107,7 @@ async def random_puzzle(n: int = Query(DEFAULT_N, ge=MIN_N, le=MAX_N), solvable:
 @router.post("/api/lightsout/solve")
 async def solve_board(req: SolveRequest, request: Request):
     app = request.app
-    if not app.state.rate.allow(_client_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     _check_board(req)
     try:

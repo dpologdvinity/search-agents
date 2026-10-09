@@ -22,7 +22,8 @@ def test_meta_lists_sizes_agents_and_levels():
     with TestClient(make_app()) as client:
         body = client.get("/api/hexgame/meta").json()
     assert body["sizes"] == list(range(5, 12)) and body["default_size"] == 7
-    assert {a["name"] for a in body["agents"]} == {"rave", "uct", "shortest", "random"}
+    assert {a["name"] for a in body["agents"]} == {"rave", "uct", "shortest", "random", "chance"}
+    assert body["chance"] == {"ring_weights": [4, 3, 2, 1]}
     assert set(body["levels"]) == {"1", "2", "3"}
 
 
@@ -79,3 +80,19 @@ def test_rate_limit_answers_429():
         second = client.post("/api/hexgame/move", json={"size": 5, "moves": []})
     assert first.status_code == 200
     assert second.status_code == 429
+
+
+def test_chance_move_is_legal_and_reports_its_odds():
+    with TestClient(make_app()) as client:
+        r = client.post("/api/hexgame/move", json={"size": 7, "moves": [24], "agent": "chance"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["move"] not in (24,) and body["move"] != -1
+    odds = body["analysis"]["odds"]
+    assert len(odds) == 49 and odds[24] == 0 and abs(sum(odds) - 1) < 1e-3
+
+
+def test_unknown_agent_name_is_rejected():
+    with TestClient(make_app()) as client:
+        r = client.post("/api/hexgame/move", json={"size": 7, "moves": [], "agent": "nope"})
+    assert r.status_code == 422

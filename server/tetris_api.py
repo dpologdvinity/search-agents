@@ -23,7 +23,7 @@ from tetris.pieces import PIECES
 from tetris.search import best_move
 from tetris.tuned import load_tuned
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -41,11 +41,6 @@ class ChooseRequest(BaseModel):
     lookahead: bool = False
 
 
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
 @router.get("/api/tetris/meta")
 async def meta():
     doc = load_tuned()
@@ -61,6 +56,7 @@ async def meta():
         "train_fitness": doc.get("train_fitness"),
         "config": doc.get("config"),
         "history": doc.get("history", []),
+        "summary": doc.get("summary"),
         "lookahead_top_k": LOOKAHEAD_TOP_K,
     }
 
@@ -85,7 +81,7 @@ def choose_json(board: list[int], piece: str, preview: str | None, weights, look
 @router.post("/api/tetris/choose")
 async def choose(req: ChooseRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: slow down a little")
     if any(v < 0 or v > FULL for v in req.board):
         raise HTTPException(400, f"each row is a bitmask from 0 to {FULL}")

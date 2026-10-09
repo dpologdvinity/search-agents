@@ -104,6 +104,23 @@
 .pk-key.cfr { background: var(--pink); box-shadow: 0 0 6px var(--pink); }
 .pk-key.plus { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
 
+/* Mode and opponent switches, the watch bar, and the live line that names each side's algorithm. */
+.pk-modes { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-bottom: 0.7rem; }
+.pk-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--border); }
+.pk-seg-btn { font-family: var(--orb); font-size: 0.6rem; letter-spacing: 0.14em; padding: 0.45rem 0.8rem; background: rgba(0,0,0,0.4); color: var(--dim); border: 0; cursor: pointer; }
+.pk-seg-btn + .pk-seg-btn { border-left: 1px solid var(--border); }
+.pk-seg-btn.active { color: var(--cyan); background: rgba(0,245,255,0.1); box-shadow: inset 0 -2px 0 var(--cyan); }
+.pk-seg-btn:disabled { opacity: 0.35; cursor: default; }
+.pk-seg-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pk-sides { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); text-align: center; letter-spacing: 0.04em; margin-bottom: 0.8rem; min-height: 1.2em; }
+.pk-sides b { color: var(--text); font-weight: 400; }
+.pk-watch { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; justify-content: center; margin-bottom: 0.8rem; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; color: var(--dim); }
+.pk-watch[hidden] { display: none; }
+.pk-field { display: inline-flex; align-items: center; gap: 0.4rem; }
+.pk-field input { accent-color: var(--pink); }
+.pk-score { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); margin-top: 0.6rem; }
+.pk-score b { color: var(--yellow); font-weight: 400; }
+
 @media (max-width: 600px) {
   .pk-card { width: 58px; height: 84px; font-size: 1.3rem; }
   .pk-table { min-height: 380px; }

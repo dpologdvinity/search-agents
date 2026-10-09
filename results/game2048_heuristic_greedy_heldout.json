@@ -1,0 +1,40 @@
+{
+ "command": "python -m game2048.tune --evaluate game2048/data/heuristic_weights.json results/game2048_heuristic_weights_v2.json results/game2048_heuristic_weights_v3.json --games 3000 --seed 500000 --out results/game2048_heuristic_greedy_heldout.json",
+ "games": 3000,
+ "seed": 500000,
+ "results": [
+  {
+   "file": "game2048/data/heuristic_weights.json",
+   "smooth": -0.129,
+   "mean": 7074.421333333334,
+   "std": 4046.122811830402,
+   "ci95": [
+    6929.6326880142515,
+    7219.209978652416
+   ],
+   "recorded_greedy_mean_score": 7140.94
+  },
+  {
+   "file": "results/game2048_heuristic_weights_v2.json",
+   "smooth": 0.0,
+   "mean": 5822.701333333333,
+   "std": 3167.9632078714285,
+   "ci95": [
+    5709.337225860556,
+    5936.065440806111
+   ],
+   "recorded_greedy_mean_score": 5736.253333333333
+  },
+  {
+   "file": "results/game2048_heuristic_weights_v3.json",
+   "smooth": 0.0,
+   "mean": 5768.392,
+   "std": 3123.4793718114065,
+   "ci95": [
+    5656.619726156912,
+    5880.164273843087
+   ],
+   "recorded_greedy_mean_score": 5780.9
+  }
+ ]
+}

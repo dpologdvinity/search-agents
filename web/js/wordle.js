@@ -217,11 +217,11 @@ async function guess(word, source) {
     setMsg(`The word was ${result.answer.toUpperCase()}. Start a new one.`, 'err');
     log(`the word was ${result.answer.toUpperCase()}`, 'log-err');
   } else {
-    setMsg(`${result.remaining} words still possible.`);
+    setMsg(`${result.remaining} ${result.remaining === 1 ? 'word' : 'words'} still possible.`);
   }
   state.busy = false;
   render();
-  if (!state.over) await loadHint();
+  if (!state.over) await loadHintSafely();
   render();
   return true;
 }
@@ -271,6 +271,19 @@ async function loadHint() {
   renderHint(data);
 }
 
+// After a valid guess the hint is a bonus. If the server refuses it (rate limit, busy), the guess still
+// counts, so the panel says the hint is unavailable instead of leaving an unhandled rejection behind.
+async function loadHintSafely() {
+  try {
+    await loadHint();
+  } catch (err) {
+    state.hint = null;
+    $('wd-bars').innerHTML = '';
+    $('think-title').textContent = 'The hint is unavailable right now.';
+    $('think-text').textContent = `${err.message} Your guess still counts. The hint returns with the next move.`;
+  }
+}
+
 // The bars: one per guess, length = expected bits. The top row is the one the solver would play.
 function renderHint(data) {
   const bars = $('wd-bars');
@@ -291,7 +304,8 @@ function renderHint(data) {
   });
   const top = data.options[0];
   const sName = STRATEGY_NAME[data.strategy];
-  $('think-title').textContent = `${data.remaining} answers still possible. Ranked by ${sName} over ${state.meta.guesses} allowed guesses.`;
+  const left = data.remaining === 1 ? '1 answer' : `${data.remaining} answers`;
+  $('think-title').textContent = `${left} still possible. Ranked by ${sName} over ${state.meta.guesses} allowed guesses.`;
   if (data.strategy === 'random') {
     $('think-text').textContent = `Random consistent: the AI picks any word the feedback still allows. These are a few of them, in random order.`;
   } else if (top) {

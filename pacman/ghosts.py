@@ -10,6 +10,11 @@ Personalities echo the roles of the classic arcade ghosts:
 A scared ghost (after a power pellet) ignores its target and steps to the neighbour that
 is farthest from Pac-Man by walking distance. Ties are broken with the game's RNG, so a
 seeded game replays exactly.
+
+The chance policy (`chance_move`) replaces all of that with a fixed table of odds: every
+turn the ghost keeps going, turns left or right, or reverses, by the odds in CHANCE_ODDS.
+It does not look at Pac-Man, the pellets or the routes at all, so it is the opponent to
+beat when you want to know how much of a score comes from reading the ghosts.
 """
 
 from __future__ import annotations
@@ -30,14 +35,44 @@ AMBUSH_LEAD = 4
 SCATTER_RADIUS = 4
 
 
+GHOST_POLICIES = ("ai", "chance")  # "ai": A* routes and personalities (the default). "chance": fixed odds.
+GHOST_LABELS = {"ai": "AI ghosts (A* routes)", "chance": "Chance (fixed odds)"}
+GHOST_DOCS = {
+    "ai": (
+        "Each ghost picks a target (Pac-Man, a cell ahead of him, or its corner) and plans a shortest "
+        "route to it with A*. Scared ghosts flee."
+    ),
+    "chance": (
+        "No planning: each ghost keeps going 60% of the time, turns left 15%, turns right 15%, and "
+        "reverses 10%, renormalised over the directions that are open."
+    ),
+}
+NO_HEADING = -1  # a ghost that has not moved yet has no direction to keep going in
+
+# Fixed odds for a chance ghost, as the share of each turn's choice that goes each way, relative
+# to the direction the ghost last moved (its heading). Why these numbers: a ghost mostly keeps
+# going, turns left and right about equally often, and reverses least, since turning back is
+# the least common move of a wandering walker. They were set by hand, not fitted to any data,
+# and they sum to 1. Over the open directions only, the shares are renormalised (see chance_move).
+CHANCE_ODDS = {"straight": 0.60, "left": 0.15, "right": 0.15, "back": 0.10}
+# Name of each turn by its clockwise offset from the heading. ACTIONS is N, E, S, W, so one step
+# round that list is a right turn and three steps is a left turn.
+_RELATIVE = ("straight", "right", "back", "left")
+
+
 @dataclass(frozen=True)
 class Ghost:
-    """One ghost. `home` is where it respawns after being eaten; `scared` counts down the turns of fright left."""
+    """One ghost. `home` is where it respawns after being eaten; `scared` counts down the turns of fright left.
+
+    `heading` is the index (into ACTIONS) of the direction the ghost last moved, or NO_HEADING
+    before its first move. Only the chance policy reads it; the A* ghosts ignore it.
+    """
 
     pos: int
     personality: str
     home: int
     scared: int = 0
+    heading: int = NO_HEADING
 
 
 def personality_for(index: int) -> str:
@@ -95,3 +130,28 @@ def choose_move(
     # Only reached when the target is the ghost's own cell: step toward Pac-Man instead.
     nxt = min(options, key=lambda nb: (manhattan(maze, nb, pac), nb))
     return nxt, target, (ghost.pos, nxt)
+
+
+def chance_move(maze: Maze, ghost: Ghost, rng: random.Random) -> tuple[int, int]:
+    """Pick the next cell by the fixed odds, with no search. Returns (next cell, direction index).
+
+    The candidates are the directions that do not run into a wall. Each gets its share of
+    CHANCE_ODDS, read relative to the ghost's heading (straight on, a turn, or back), and the
+    shares are renormalised over the candidates only, so a ghost in a corridor with one way
+    out must take it. A ghost with no heading yet gives every candidate the same weight.
+    One draw from `rng` makes the choice, so a seeded game replays exactly.
+    """
+    nbrs = maze.nbr[ghost.pos]
+    open_dirs = [d for d in range(len(nbrs)) if nbrs[d] != NO_CELL]
+    if ghost.heading == NO_HEADING:
+        weights = [1.0] * len(open_dirs)
+    else:
+        weights = [CHANCE_ODDS[_RELATIVE[(d - ghost.heading) % len(nbrs)]] for d in open_dirs]
+    # Scale one uniform draw to the total weight, then walk the candidates until it is used up.
+    roll = rng.random() * sum(weights)
+    for d, w in zip(open_dirs, weights, strict=True):
+        roll -= w
+        if roll < 0:
+            return nbrs[d], d
+    # Only floating-point rounding can leave `roll` non-negative here; the last candidate takes it.
+    return nbrs[open_dirs[-1]], open_dirs[-1]

@@ -162,3 +162,15 @@ def test_cpu_short_run_resumes_without_losing_progress(tmp_path):
     with pytest.raises(SystemExit):  # --resume with no checkpoint must not silently start over
         main(["--resume", "--iterations", "1", "--device", "cpu",
               "--checkpoint", str(tmp_path / "missing.pt"), "--log", str(log)])
+
+
+def test_export_records_iteration_and_games(tmp_path):
+    from connect4.net import PolicyValueNet
+    from connect4.train_az import AZNet, export
+
+    torch.manual_seed(0)
+    path = tmp_path / "az.npz"
+    export(AZNet(channels=8, blocks=1), path, iteration=7, games=896)
+    with np.load(path) as w:
+        assert int(w["iteration"]) == 7 and int(w["games"]) == 896
+    assert PolicyValueNet(path).blocks == 1  # the serving loader ignores the metadata keys

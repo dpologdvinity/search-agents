@@ -131,6 +131,7 @@ def load_weights() -> QWeights:
 
 
 AGENTS = ("q", "reflex", "random")
+AGENT_LABELS = {"q": "Q-learning (learned)", "reflex": "Reflex (greedy rule)", "random": "Random"}
 DESCRIPTIONS = {
     "q": (
         "Approximate Q-learning: a linear model scores each move from hand-built features (pellet "

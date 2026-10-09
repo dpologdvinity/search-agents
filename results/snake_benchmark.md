@@ -6,9 +6,11 @@
 | greedy | 20.12 | 19 | 47 | 100.0% | 0 | 0 | 190.9 |
 | planner | 56.13 | 49.5 | 137 | 0.0% | 200 | 0 | 1241.3 |
 | evolved | 13.69 | 13 | 26 | 38.5% | 123 | 0 | 457.9 |
+| evolved-eval | 90.13 | 86 | 133 | 0.0% | 200 | 0 | 2436.4 |
 
 Agents:
 - random: uniform over left, straight, right; no sensing at all
 - greedy: the safe move that ends closest to the food
 - planner: BFS path to the food, with a tail-chasing safety check
 - evolved: the neural net evolved by the genetic algorithm (the committed champion)
+- evolved-eval: eight evolved weights over hand-built features of each move (the committed weights)

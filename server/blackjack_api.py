@@ -24,7 +24,7 @@ from blackjack.learner import exact_actions, learn
 from blackjack.rules import hard_and_ace, rank_value, total
 from blackjack.solver import ACTION_LETTERS, best, get_solver
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -76,10 +76,6 @@ def strategy_payload() -> dict:
     }
 
 
-def _key(request: Request) -> str:
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
-
-
 @router.get("/api/blackjack/strategy")
 async def strategy():
     return strategy_payload()
@@ -87,7 +83,7 @@ async def strategy():
 
 @router.post("/api/blackjack/advice")
 async def advice(req: AdviceRequest, request: Request):
-    if not request.app.state.move_rate.allow(_key(request)):
+    if not request.app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     if req.split_aces and not req.from_split:
         raise HTTPException(400, "split aces are only dealt to a hand from a split")
@@ -110,7 +106,7 @@ async def advice(req: AdviceRequest, request: Request):
 @router.post("/api/blackjack/learn")
 async def learn_route(req: LearnRequest, request: Request):
     app = request.app
-    if not app.state.rate.allow(_key(request)):
+    if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
         async with app.state.slots.acquire():

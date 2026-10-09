@@ -41,6 +41,17 @@ def test_random_draw_with_white_to_move_is_refused():
     assert r.status_code == 400
 
 
+def test_the_impossible_request_is_refused_at_once(monkeypatch):
+    """The refusal is decided up front, so it never reaches the sampler (which used to spin for 200,000 tries)."""
+    def no_sampling(*args, **kwargs):
+        raise AssertionError("the sampler should not run for an impossible request")
+    monkeypatch.setattr(endgame_api, "_table", no_sampling)
+    with TestClient(make_app()) as c:
+        for piece in ("Q", "R"):
+            r = c.get("/api/endgame/random", params={"piece": piece, "want": "draw", "stm": 0})
+            assert r.status_code == 400
+
+
 def test_analyze_by_fen_and_by_squares_agree():
     fen = "8/8/8/5k2/8/8/1Q6/K7 w - - 0 1"
     squares = {"piece": "Q", "wk": parse_square("a1"), "wp": parse_square("b2"),
@@ -78,3 +89,36 @@ def test_analyze_is_rate_limited():
         codes = [c.post("/api/endgame/analyze", json={"piece": "R", "wk": 0, "wp": 9, "bk": 36, "stm": 1}).status_code
                  for _ in range(3)]
     assert codes[:2] == [200, 200] and codes[2] == 429
+
+
+def test_meta_lists_both_opponents_and_the_chance_odds():
+    with TestClient(make_app()) as c:
+        body = c.get("/api/endgame/meta").json()
+    assert [o["key"] for o in body["opponents"]] == ["tablebase", "chance"]
+    assert body["opponents"][1]["label"] == "Chance (fixed odds)"
+    chance = body["chance"]
+    assert chance["key"] == "chance"
+    weights = {w["category"]: w["weight"] for w in chance["weights"]}
+    assert weights == {"capture": 4, "check": 2, "king_centre": 2, "other": 1}
+
+
+def test_analyze_marks_checks_and_captures():
+    # White to move from "8/8/8/5k2/8/8/1Q6/K7": the queen has checks on the file and rank of the black king
+    # on f5, and no move is a capture because the black king is not next to the queen.
+    with TestClient(make_app()) as c:
+        body = c.post("/api/endgame/analyze", json={"fen": "8/8/8/5k2/8/8/1Q6/K7 w - - 0 1"}).json()
+    assert all("check" in m for m in body["moves"])
+    assert any(m["check"] for m in body["moves"])
+    assert not any(m["capture"] for m in body["moves"])
+    mated = [m for m in body["moves"] if m["mate"]]
+    assert all(m["check"] for m in mated)  # checkmate implies check
+
+
+def test_analyze_validation_is_422_for_bad_fields_and_400_for_illegal_positions():
+    with TestClient(make_app()) as c:
+        bad_piece = c.post("/api/endgame/analyze", json={"piece": "K", "wk": 0, "wp": 9, "bk": 36, "stm": 0})
+        bad_square = c.post("/api/endgame/analyze", json={"piece": "Q", "wk": 64, "wp": 9, "bk": 36, "stm": 0})
+        bad_random = c.get("/api/endgame/random", params={"piece": "Q", "want": "lost"})
+        illegal = c.post("/api/endgame/analyze", json={"piece": "Q", "wk": 0, "wp": 9, "bk": 9, "stm": 0})
+    assert bad_piece.status_code == 422 and bad_square.status_code == 422 and bad_random.status_code == 422
+    assert illegal.status_code == 400

@@ -1,0 +1,66 @@
+/* Neural network lab. Loaded after style.css and app.css. The plane and the network are canvases sized by
+   CSS, so they scale with the panel; the JavaScript draws at the device pixel ratio. Touch targets are at
+   least 44px tall, and the two panels stack below 900px. */
+
+.nl-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.nl-top > .viz-panel { min-width: 0; }
+.nl-canvas { display: block; width: 100%; max-width: 100%; min-width: 0; background: rgba(2,6,16,0.9); }
+
+/* The plane is square. The heat map is drawn to an offscreen grid and stretched, so the upscale is smooth. */
+.nl-board { position: relative; width: 100%; max-width: 560px; }
+.nl-plane { aspect-ratio: 1 / 1; height: auto; cursor: crosshair; touch-action: none;
+  border: 1px solid rgba(0,245,255,0.35); box-shadow: 0 0 24px rgba(0,245,255,0.12), inset 0 0 40px rgba(0,0,0,0.6); }
+.nl-plane.erase { cursor: not-allowed; }
+.nl-net { height: 300px; border: 1px solid rgba(0,255,136,0.25); cursor: default; }
+.nl-loss { height: 190px; border: 1px solid rgba(255,0,160,0.25); }
+
+.nl-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; align-items: center; }
+.nl-sw { display: inline-block; width: 18px; height: 4px; margin-right: 0.35rem; vertical-align: middle; box-shadow: 0 0 8px currentColor; }
+.nl-sw.pink { background: var(--pink); color: var(--pink); }
+.nl-sw.cyan { background: var(--cyan); color: var(--cyan); }
+
+/* Neuron detector: its heat map beside a short explanation. */
+.nl-detail-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.nl-detail { width: 200px; height: 200px; flex: 0 0 200px; border: 1px solid rgba(155,0,255,0.45); }
+.nl-detail-text { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.nl-detail-text .section-title { margin-bottom: 0; }
+
+/* Dataset presets: a 3-column grid of cabinets. */
+.nl-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.nl-presets .cyber-btn { min-height: 44px; width: 100%; padding-left: 4px; padding-right: 4px; font-size: 0.7rem; }
+.nl-seg { display: flex; gap: 8px; }
+.nl-seg .cyber-btn { flex: 1 1 0; min-height: 44px; }
+.nl-seg .cyber-btn[data-class="0"] { border-color: var(--cyan); color: var(--cyan); }
+.nl-seg .cyber-btn[data-class="0"]:hover { box-shadow: 0 0 20px var(--cyan); }
+.nl-seg .cyber-btn[data-brush="erase"] { border-color: var(--red); color: var(--red); }
+
+/* Pressed toggles glow, so the active brush or feature reads at a glance. */
+.cyber-btn[aria-pressed="true"] { box-shadow: 0 0 16px currentColor, inset 0 0 14px rgba(255,255,255,0.06); }
+.cyber-btn[aria-pressed="false"] { opacity: 0.7; }
+.cyber-btn:focus-visible, .nl-chip:focus-visible, .nl-range:focus-visible, .cyber-select:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+
+/* Input feature chips. */
+.nl-feats { display: flex; flex-wrap: wrap; gap: 8px; }
+.nl-chip { min-height: 40px; min-width: 52px; padding: 0.35rem 0.7rem; font-family: var(--mono); font-size: 0.8rem;
+  color: var(--dim); background: rgba(0,0,0,0.4); border: 1px solid var(--border); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s; }
+.nl-chip:hover { color: var(--text); border-color: var(--cyan); }
+.nl-chip[aria-pressed="true"] { color: var(--cyan); border-color: var(--cyan); text-shadow: 0 0 8px var(--cyan);
+  box-shadow: 0 0 12px rgba(0,245,255,0.35), inset 0 0 10px rgba(0,245,255,0.08); }
+
+.nl-range { width: 100%; min-height: 44px; accent-color: var(--green); }
+
+/* Loss curve and detector sit on the same grid as the top row. */
+.nl-loss-panel, .nl-detail-panel { margin-top: 1rem; }
+
+/* Mobile: one column, and the plane first. */
+@media (max-width: 900px) {
+  .nl-top { grid-template-columns: minmax(0, 1fr); }
+  .nl-board { max-width: 100%; }
+}
+@media (max-width: 600px) {
+  .nl-net { height: 240px; }
+  .nl-detail { width: 160px; height: 160px; flex-basis: 160px; }
+  .nl-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nl-loss { height: 170px; }
+}

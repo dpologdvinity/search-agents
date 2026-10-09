@@ -23,7 +23,7 @@ from rover.astar import AStar
 from rover.dstar import INF, DStarLite
 from rover.world import generate
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 
@@ -42,11 +42,6 @@ class PlanRequest(BaseModel):
     walls: list[int] = Field(max_length=MAX_SIZE * MAX_SIZE)
     start: int = Field(0, ge=0)
     goal: int = Field(-1)
-
-
-def _client_key(request: Request) -> str:
-    # Behind Fly.io's proxy the client address arrives in a header.
-    return request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
 
 
 def _check(req: PlanRequest) -> int:
@@ -108,7 +103,7 @@ async def seeded_map(size: int = Query(21, ge=MIN_SIZE, le=MAX_SIZE),
 @router.post("/api/rover/plan")
 async def plan(req: PlanRequest, request: Request):
     app = request.app
-    if not app.state.move_rate.allow(_client_key(request)):
+    if not app.state.move_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     goal = _check(req)
     try:

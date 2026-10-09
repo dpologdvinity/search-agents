@@ -19,7 +19,7 @@ from sudoku.__main__ import HARD
 from sudoku.generate import load_puzzles
 from sudoku.solver import SOLVERS, parse
 
-from .limits import Busy
+from .limits import Busy, client_key
 
 router = APIRouter()
 MAX_NODES = 200_000
@@ -74,7 +74,7 @@ async def puzzle(set: Literal["generated", "hard"] = "generated", index: int | N
 @router.post("/api/sudoku/solve")
 async def solve(req: SolveRequest, request: Request):
     app = request.app
-    key = request.headers.get("fly-client-ip") or (request.client.host if request.client else "unknown")
+    key = client_key(request)
     if not app.state.rate.allow(key):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
