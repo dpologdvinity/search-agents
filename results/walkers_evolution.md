@@ -35,7 +35,7 @@ No creature exploded in any run. Species at generation 300: 23, 26, 28 (flat) an
 | inchworm | seed 3 flat, gen 300 | 14.07 | 15.30 m (1.5 m/s) | 11, 19, 5 | no hops; the centre of mass never more than 0.31 m up; spine rotation 3.1 rad |
 | (best hills) | seed 1 hills, gen 282 | 3.14 | 3.83 m | 8, 13, 8 | slower, uneven ground |
 
-- Every flat run moved from flailing (generation 1, mean score near zero) to bodies that cover 13 m or more in 10 s.
+- Every flat run moved from flailing (generation 1, mean score near zero) to bodies that cover about 13 m or more in 10 s (the seed 2 champion: 12.9 m).
 - The two best flat bodies come from different seeds and body plans: a 10-node skipper, and an 11-node low crawler.
 - Growth had not stopped at generation 300: the best score rose about 3 m between generations 250 and 300 in the flat
   runs. The study is not converged, so longer runs would likely go further. No body hops three times, so there is no
@@ -54,8 +54,8 @@ No creature exploded in any run. Species at generation 300: 23, 26, 28 (flat) an
 
 Friction is a sensitive part of the gait. The best flat inchworm of the earlier study travels 0.76 m at friction 0.1,
 0.75 m at 0.3, 1.07 m at 0.6, 1.53 m at 0.8 and 0.84 m at 1.2. The stick threshold is the static coefficient
-(1.2 times friction) times (1 + restitution) times the normal speed, so a foot grips in proportion to how hard it is
-pressed, and push-off works at the default 0.8. Friction is not the limit of the gait.
+(1.2 times friction) times (1 + e) times the normal speed, where e is the restitution (0.2) for impacts faster than
+0.5 m/s and 0 for slower ones, so a foot grips in proportion to how hard it is pressed, and push-off works at the default 0.8. Friction is not the limit of the gait.
 
 ## Time per generation
 

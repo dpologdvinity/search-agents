@@ -24,8 +24,13 @@ from bandits.rng import Rng
 # non-space character is its own token, so punctuation is modelled too. The JavaScript regex is the same.
 WORD_RE = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)*|[^\sA-Za-z]")
 
-# Longest verbatim run that the copy check looks for. Windows longer than this are not measured.
+# Longest verbatim run that the longest-run stat measures. Longer runs are reported as this length.
 MAX_RUN = 20
+
+# Shortest verbatim run that counts as copied, per token level. A token is copied when it lies in a run of at
+# least this many tokens that occurs in the corpus. The values are set by hand, not tuned on any text: 8 words is
+# a short phrase, and 20 characters is about three words of English. Both must stay at or below MAX_RUN.
+COPY_RUN = {"word": 8, "char": 20}
 
 # Punctuation that hugs the word before it when the text is rebuilt for display.
 NO_SPACE_BEFORE = frozenset(".,;:!?)")
@@ -173,30 +178,42 @@ def ngram_sets(tokens: list[str], max_len: int = MAX_RUN) -> list[set[tuple[str,
 
 @dataclass(frozen=True)
 class CopyReport:
-    copied: list[bool]     # per pick: does the order-n window ending here occur verbatim in the corpus?
-    copied_pct: float      # share of picks whose order-n window is copied
+    copied: list[bool]     # per pick: does the token lie in a copied window (a verbatim run of COPY_RUN tokens)?
+    copied_pct: float      # share of picks that are copied
     longest_run: int       # longest verbatim run ending at a pick, capped at MAX_RUN
 
 
-def copy_report(gen: Generation, sets: list[set[tuple[str, ...]]], order: int) -> CopyReport:
+def run_ending_at(out: list[str], p: int, sets: list[set[tuple[str, ...]]]) -> int:
+    """Length of the longest run of verbatim corpus tokens that ends at out[p], capped at MAX_RUN.
+
+    The suffix out[p - length .. p] grows while it occurs in the corpus. The check can stop at the first miss,
+    because a suffix can occur only if every shorter suffix ending at p occurs too.
+    """
+    length = 0
+    while length < min(MAX_RUN, p + 1) and tuple(out[p - length : p + 1]) in sets[length]:
+        length += 1
+    return length
+
+
+def copy_report(gen: Generation, sets: list[set[tuple[str, ...]]], min_run: int) -> CopyReport:
     """How much of the generated text is copied verbatim from the corpus.
 
-    An order-n window that occurs in the corpus is a copy. The longest run ending at each pick is the longest
-    suffix that occurs in the corpus. The check can stop at the first miss because a window can only occur if
-    every shorter window ending at the same place occurs too.
+    A token is copied when it lies in at least one window of min_run consecutive output tokens that occurs in
+    the corpus. That is the same as lying in a verbatim run of at least min_run tokens: every such run contains a
+    window of that length, and every such window is itself a run. The prompt and the restart windows are part of
+    the output, so a window can cover them, but copied_pct counts only picks.
     """
     out = gen.tokens
-    copied: list[bool] = []
-    longest = 0
-    for pick in gen.picks:
-        p = pick.index
-        # Order-n window ending at this pick. Every pick has at least n-1 tokens before it.
-        copied.append(tuple(out[p - order + 1 : p + 1]) in sets[order - 1])
-        length = 1
-        while length <= min(MAX_RUN, p + 1) and tuple(out[p - length + 1 : p + 1]) in sets[length - 1]:
-            length += 1
-        longest = max(longest, length - 1)
+    marked = [False] * len(out)
+    windows = sets[min_run - 1]
+    for q in range(min_run - 1, len(out)):
+        # The window of min_run tokens ending at q. Every token in a copied window is marked.
+        if tuple(out[q - min_run + 1 : q + 1]) in windows:
+            for t in range(q - min_run + 1, q + 1):
+                marked[t] = True
+    copied = [marked[pick.index] for pick in gen.picks]
     pct = 100.0 * sum(copied) / len(copied) if copied else 0.0
+    longest = max((run_ending_at(out, pick.index, sets) for pick in gen.picks), default=0)
     return CopyReport(copied, pct, longest)
 
 

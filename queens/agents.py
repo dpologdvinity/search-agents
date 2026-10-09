@@ -114,8 +114,9 @@ def backtrack(n: int, *, max_steps: int | None = None, time_limit: float | None 
 
     For row r the search keeps three n-bit masks built from the queens above:
       cols  columns already taken
-      ld    columns hit by the down-left diagonal from above; the mask shifts left one bit per row
-      rd    columns hit by the down-right diagonal from above; the mask shifts right one bit per row
+      ld    columns hit by the down-right diagonal from above; bit k is column k, so shifting the mask
+            left one bit per row moves each attack one column to the right
+      rd    columns hit by the down-left diagonal from above; the mask shifts right one bit per row
     so the open columns of row r are full & ~(cols | ld | rd). The lowest open bit is tried first.
     The search is iterative because a recursion of depth 10,000 would overflow Python's stack.
 

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="battleship.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,20 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">06 // PROBABILITY TARGETING · BAYESIAN SEARCH</div>
+      <div class="proj-pg-tag">06 // PROBABILITY TARGETING</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="BATTLESHIP">BATTLESHIP</h1>
-      <div class="proj-pg-sub">The Bayesian AI counts every fleet layout that still fits what it has seen and fires at the cell most likely to hold a ship. Chance (fixed odds) ignores what it has seen and draws each shot from a fixed table.</div>
+      <div class="proj-pg-sub">Fire at an opponent that counts the fleet layouts still possible, or at one that shoots from fixed odds.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip pink"><span id="lbl-you">YOUR FLEET</span> <span class="val" id="chip-you">0 / 5</span></span>
-        <span class="stat-chip"><span id="lbl-enemy">ENEMY</span> <span class="val" id="chip-enemy">?</span></span>
-        <span class="stat-chip green"><span id="lbl-shots">SHOTS</span> <span class="val" id="chip-shots">0 / 0</span></span>
-        <span class="stat-chip" id="chip-score-wrap" hidden>AI W / L <span class="val" id="chip-score">0 / 0</span></span>
         <span class="stat-chip">STATUS <span class="val" id="chip-status">PLACE YOUR FLEET</span></span>
+        <span class="stat-chip pink" title="Ships still afloat on your side"><span id="lbl-you">YOUR FLEET</span> <span class="val" id="chip-you">0 / 5</span></span>
+        <span class="stat-chip" title="Ships still afloat on the other side"><span id="lbl-enemy">ENEMY</span> <span class="val" id="chip-enemy">?</span></span>
+        <span class="stat-chip green" title="Shots fired by each side"><span id="lbl-shots">SHOTS</span> <span class="val" id="chip-shots">0 / 0</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Sink the opponent's five ships before it sinks yours. Place your fleet on your grid, then fire at the enemy waters, and the opponent fires back at your fleet.</p>
+    <p style="margin-top:0.5rem">Click a tray ship and then a square to place it, press R or ROTATE to turn it, and use RANDOM FLEET for a quick start. Click an enemy square to fire; the opponent answers once its reticle settles.</p>
+    <p style="margin-top:0.5rem">WATCH AI VS OPPONENT runs a race in which the AI and the opponent fire at each other's fleets, and AUTO-RESTART (under More settings) starts the next race. Choose AI ALONE in WATCH to see the AI hunt your fleet by itself.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -60,17 +67,17 @@
       </div>
       <div class="field-hint" id="bs-hint">Pick a ship from the tray, then click your grid. Click a placed ship to pick it up. R rotates.</div>
       <div class="inline" style="justify-content:center;margin-top:0.8rem">
-        <button class="cyber-btn pink" id="btn-launch" type="button" disabled><span class="btn-txt">▶ LAUNCH</span></button>
-        <button class="cyber-btn" id="btn-random" type="button"><span class="btn-txt">⟳ RANDOM FLEET</span></button>
-        <button class="cyber-btn" id="btn-rotate" type="button"><span class="btn-txt">↻ ROTATE</span></button>
-        <button class="cyber-btn green" id="btn-watch" type="button"><span class="btn-txt">◉ WATCH AI VS OPPONENT</span></button>
-        <button class="cyber-btn" id="btn-pause" type="button" hidden><span class="btn-txt">❚❚ PAUSE</span></button>
-        <button class="cyber-btn" id="btn-step" type="button" hidden><span class="btn-txt">▸ STEP</span></button>
-        <button class="cyber-btn purple" id="btn-new" type="button"><span class="btn-txt">↺ NEW MATCH</span></button>
+        <button class="cyber-btn pink" id="btn-launch" type="button" disabled title="Start a battle: you fire at the opponent's fleet, and it fires at yours" aria-label="Launch a battle"><span class="btn-txt">▶ LAUNCH</span></button>
+        <button class="cyber-btn" id="btn-random" type="button" title="Place the five ships at random"><span class="btn-txt">⟳ RANDOM FLEET</span></button>
+        <button class="cyber-btn" id="btn-rotate" type="button" title="Turn the selected ship (R)"><span class="btn-txt">↻ ROTATE</span></button>
+        <button class="cyber-btn green" id="btn-watch" type="button" title="Watch the AI in the mode chosen under WATCH"><span class="btn-txt">◉ WATCH AI VS OPPONENT</span></button>
+        <button class="cyber-btn" id="btn-pause" type="button" hidden title="Hold the race between shots, or resume it"><span class="btn-txt">❚❚ PAUSE</span></button>
+        <button class="cyber-btn" id="btn-step" type="button" hidden title="While paused, play one shot"><span class="btn-txt">▸ STEP</span></button>
+        <button class="cyber-btn purple" id="btn-new" type="button" title="Start a new match with an empty grid"><span class="btn-txt">↺ NEW MATCH</span></button>
       </div>
 
       <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">WHAT THE SHOOTER SEES</div>
+        <div class="section-title pink-ttl" title="The odds the shooting side holds over your fleet (over the AI's target in a race)">WHAT THE SHOOTER SEES</div>
         <div class="viz-panel">
           <div class="viz-title" id="an-title">Its odds appear once the battle starts.</div>
           <div class="prune-meter">
@@ -83,136 +90,419 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">BATTLE LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Battle log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
       <div>
         <div class="section-title pink-ttl">FLEET</div>
         <div class="stack">
-          <div class="bs-tray" id="tray"></div>
-          <div class="field-hint">Five ships: Carrier 5, Battleship 4, Cruiser 3, Submarine 3, Destroyer 2. Ships may touch, not overlap.</div>
+          <div class="bs-tray" id="tray" title="Five ships: Carrier 5, Battleship 4, Cruiser 3, Submarine 3, Destroyer 2. Ships may touch, not overlap."></div>
         </div>
       </div>
       <div>
-        <div class="section-title pink-ttl">DISPLAY</div>
+        <div class="section-title pink-ttl">MATCH</div>
         <div class="stack">
-          <label class="bs-toggle"><input type="checkbox" id="heat" checked> ODDS GLOW OVER THE BOARDS</label>
           <div>
             <div class="field-lbl">WATCH</div>
-            <select class="cyber-select" id="watch-mode" style="width:100%">
+            <select class="cyber-select" id="watch-mode" style="width:100%" aria-label="Watch mode" title="AI alone: the AI hunts your fleet and nothing shoots back. AI vs opponent race: both sides fire at each other's fleets.">
               <option value="solo" selected>AI alone</option><option value="race">AI vs opponent race</option>
             </select>
           </div>
           <div>
-            <div class="field-lbl">OPPONENT (RACE AND BATTLE)</div>
-            <select class="cyber-select" id="opponent" style="width:100%">
+            <div class="field-lbl">OPPONENT</div>
+            <select class="cyber-select" id="opponent" style="width:100%" aria-label="Opponent" title="The side that fires at your fleet in a battle, or at the AI's target in a race. Probability counts layouts; Chance fires from fixed odds.">
               <option value="probability" selected>Probability (Bayesian)</option><option value="chance">Chance (fixed odds)</option>
             </select>
           </div>
+        </div>
+      </div>
+      <div id="chance-block" hidden>
+        <div class="section-title green-ttl">CHANCE'S FIXED TABLE</div>
+        <div class="viz-panel">
+          <div class="chance-table" id="chance-table" aria-label="Chance's cell weights"></div>
+        </div>
+      </div>
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <label class="bs-toggle" title="Shade each board with the odds of a ship in each cell"><input type="checkbox" id="heat" checked> ODDS GLOW OVER THE BOARDS</label>
           <div>
             <div class="field-lbl">WATCH SPEED</div>
-            <select class="cyber-select" id="speed" style="width:100%">
+            <select class="cyber-select" id="speed" style="width:100%" aria-label="Watch speed" title="Time between shots in a watched race">
               <option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option>
             </select>
           </div>
-          <label class="bs-toggle"><input type="checkbox" id="auto" checked> AUTO-RESTART WATCHED RACES</label>
+          <label class="bs-toggle" title="Start the next race with fresh random fleets when one ends"><input type="checkbox" id="auto" checked> AUTO-RESTART WATCHED RACES</label>
         </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">HOW IT CHOOSES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">COUNTING LAYOUTS</div>
-            <div class="field-hint">For every cell it asks: in how many ways can the ships still afloat be placed so that they fit its misses, its hits, and the ships it has sunk? The share of those layouts that use a cell is that cell's odds.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">A HIT IS A CLUE</div>
-            <div class="field-hint">A hit on a ship that is not yet sunk means a ship runs through that cell, so its neighbours rise. Two aligned hits show the ship's direction.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">COUNTING OR SAMPLING</div>
-            <div class="field-hint">Early on there are billions of layouts, so it samples them at random and weights each sample to keep the odds fair. Late in a game it counts every layout exactly.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CHANCE: FIXED ODDS</div>
-            <div class="field-hint" id="chance-desc"></div>
-            <div class="chance-table" id="chance-table" aria-label="Chance's cell weights"></div>
-            <div class="field-hint" id="chance-profile"></div>
-            <div class="field-hint">Chance never reads its hits or misses. Its table is fixed in advance, so the shooter is a dice roller and has no reasoning. Centre cells lie under more ship placements, which is why the table favours them.</div>
-          </div>
-          <div class="field-hint" id="agent-desc"></div>
-        </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The opponent fires at your fleet, and you fire at its fleet. A Bayesian opponent counts the fleet layouts that still fit what it has seen, then fires at the square that most of them cover. A chance opponent fires from a fixed table, whatever it has seen. In watch mode the AI and the opponent race each other's fleets, and the first fleet sunk loses.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Bayesian probability targeting</h3>
-      <p class="hiw-plain"><b>New to this?</b> Bayesian reasoning means updating a guess as evidence comes in. Picture drawing marbles from a bag one at a time: each one changes which colour mix still seems likely. Each miss and hit here rules out some fleet layouts, and the agent bets on the square most surviving layouts agree on.</p>
-      <p>The agent is the only one on this page. It keeps every legal placement of the ships still afloat that fits the evidence, and sets P(ship) = (kept layouts covering the cell) / (all kept layouts). It fires at the highest value; ties are broken at random.</p>
-      <ul>
-        <li>A layout is kept only if no ship covers a miss or a sunk ship, every open hit is covered, and no two ships overlap.</li>
-        <li>Every legal fleet is equally likely to start with, so each kept layout counts the same. The page's random fleets are drawn the same way.</li>
-        <li>Neighbours of an open hit rise on their own, because the ship through that hit must cover one of them.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Exact counting</h3>
-      <p class="hiw-plain"><b>New to this?</b> Counting every possibility looks hopeless, but a systematic search can skip most of them. It is like seating dinner guests one at a time and abandoning any arrangement where the remaining chairs cannot seat the people still waiting.</p>
-      <p>A depth-first search places the remaining ships one by one and drops a branch when the open hits still uncovered outnumber the cells the remaining ships can cover. Exact counting is tried only when the placements, ignoring overlaps, number 30,000 or fewer, and is abandoned past 60,000 candidate checks. While both 3-cell ships are afloat, the search treats them as ordered, so each layout counts twice; the odds are unaffected.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Importance sampling</h3>
-      <p class="hiw-plain"><b>New to this?</b> When a full list is too big, estimate from a random sample and weight each sample by how likely it was to be drawn. A pollster who surveys only one train station can correct for that by weighting answers by the station's traffic.</p>
-      <p>Early on there are too many layouts to count, so the agent draws 1,000 at random. Each ship goes uniformly on a placement that avoids used cells, and the sample's weight is multiplied by the number of options at each step. Samples that leave an open hit uncovered get weight 0. P(cell) is the weighted share of samples covering it.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like a die with fixed faces: the odds are printed on the die before the game starts, and rolling it tells you nothing about the board. Chance is the Battleship version of the 2048 tile spawner, which places a 2 nine times in ten and a 4 one time in ten whatever is on the board.</p>
-      <p>Each cell has a fixed weight, profile[row] × profile[col], with the profile (1, 2, 3, 4, 4, 4, 4, 3, 2, 1) rising to the middle. It fires at an unknown cell drawn in proportion to that weight, renormalised over the cells it has not fired at. No search, no lookahead, and no use of hits or misses. Ships are placed uniformly, so a centre cell does lie under more placements, which is why the middle is favoured.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Hunt and target (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> This is how most people play by hand: search a pattern until something is hit, then chase the wounded ship.</p>
-      <p>Used only by the benchmark, not the page. It fires on cells where row + column is even until it scores a hit. Every ship of length 2 or more covers an even cell, so one colour is always hit. After a hit it fires at unknown neighbours, and once two open hits share a row or column, only along that line.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Random (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like drawing from a shuffled deck: every card left is equally likely, and the cards already drawn do not change the odds of the next one. It is the floor any real strategy should beat.</p>
-      <p>Fires at a uniformly random unknown cell. It ignores every hit.</p>
-    </article>
+  <p class="hiw-lede">The two sides fire at each other's fleets. The AI uses <b>probability targeting</b>: it fires at the cell most likely to hold a ship, and it gets those probabilities by counting, or sampling, the fleet layouts that fit the shots so far. That counting is a <b>Bayesian</b> calculation, in which a belief is revised as evidence arrives. The opponent is either the same agent or <b>chance</b>, which fires from a fixed table and never reads its results. The first fleet sunk loses, so a race cannot end in a draw.</p>
+
+  <h3 class="hiw-sub">The board, the fleet and the rules</h3>
+  <p>The board is a 10 × 10 grid. Cells are numbered 0 to 99 row by row, so a cell in row <span class="math">r</span> and column <span class="math">k</span> has the number <span class="math">10r + k</span>, and players name it by a column letter and a row number. Cell 62 is C7 (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L3-L4" target="_blank" rel="noopener" title="battleship/board.py, lines 3–4" aria-label="Code on GitHub: battleship/board.py, lines 3 to 4">1</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L40-L42" target="_blank" rel="noopener" title="battleship/board.py, lines 40–42" aria-label="Code on GitHub: battleship/board.py, lines 40 to 42">2</a>).</p>
+  <p>The fleet has one ship of each length in the list 5, 4, 3, 3, 2: the Carrier, Battleship, Cruiser, Submarine and Destroyer, 17 cells in all. A ship is a straight run of consecutive cells, horizontal or vertical, lying wholly on the board. Ships may touch but may not overlap (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L22" target="_blank" rel="noopener" title="battleship/board.py, line 22" aria-label="Code on GitHub: battleship/board.py, line 22">3</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L73-L93" target="_blank" rel="noopener" title="battleship/board.py, lines 73–93" aria-label="Code on GitHub: battleship/board.py, lines 73 to 93">4</a>).</p>
+  <p>A <b>shot</b> is a miss or a hit. The shot that hits a ship's last unhit cell <b>sinks</b> the ship, and the shooter then learns every cell of it (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L130-L144" target="_blank" rel="noopener" title="battleship/board.py, lines 130–144" aria-label="Code on GitHub: battleship/board.py, lines 130 to 144">5</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L169-L203" target="_blank" rel="noopener" title="battleship/board.py, lines 169–203" aria-label="Code on GitHub: battleship/board.py, lines 169 to 203">6</a>).</p>
+  <p>A shooter's <b>knowledge</b> is the set of cells it has fired at, the misses, the hits, the cells of sunk ships, and the lengths of the ships sunk so far (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L155-L168" target="_blank" rel="noopener" title="battleship/board.py, lines 155–168" aria-label="Code on GitHub: battleship/board.py, lines 155 to 168">7</a>). Two derived sets matter. The <b>open hits</b> are the hits on ships not yet sunk, and each one is certainly part of a ship still afloat (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L205-L208" target="_blank" rel="noopener" title="battleship/board.py, lines 205–208" aria-label="Code on GitHub: battleship/board.py, lines 205 to 208">8</a>). The <b>remaining lengths</b> are the lengths of the ships still afloat, longest first (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L210-L215" target="_blank" rel="noopener" title="battleship/board.py, lines 210–215" aria-label="Code on GitHub: battleship/board.py, lines 210 to 215">9</a>).</p>
+  <p><em>Example.</em> Before any shot, the remaining lengths are 5, 4, 3, 3, 2 and all 100 cells are unknown.</p>
+
+  <h3 class="hiw-sub">Probability targeting</h3>
+  <p>The agent keeps a <b>belief</b> about each cell, the probability that it holds a ship given the shots so far. The belief is built from <b>configurations</b>. A configuration is one placement of each ship still afloat that agrees with everything observed: no ship covers a miss or a sunk cell, every open hit is covered by some ship, and no two ships overlap (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L3-L6" target="_blank" rel="noopener" title="battleship/probability.py, lines 3–6" aria-label="Code on GitHub: battleship/probability.py, lines 3 to 6">10</a>).</p>
+  <p>The model takes every legal fleet as equally likely to have been placed. The server draws the fleet that the AI fires at in exactly this way, by rejecting any random draw in which two ships overlap (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py#L96-L106" target="_blank" rel="noopener" title="battleship/board.py, lines 96–106" aria-label="Code on GitHub: battleship/board.py, lines 96 to 106">11</a>). The page's RANDOM FLEET, and the fleets its watch mode places, use the same rule. Each ship gets a uniformly drawn start cell and orientation, a draw that runs off the board is redrawn, and the whole fleet is redrawn if two ships overlap (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship-core.js#L20-L43" target="_blank" rel="noopener" title="web/js/battleship-core.js, lines 20–43" aria-label="Code on GitHub: web/js/battleship-core.js, lines 20 to 43">12</a>). So a fleet that the page draws is uniform too, and the uniform assumption holds for it. Under the assumption every configuration is equally likely, and the probability that a cell holds a ship is the share of configurations that cover it.</p>
+  <!-- probability.py:9 (definition), 191-203 (exact branch: weight_on = counts summed over configurations covering each cell, divided by the total) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L9" target="_blank" rel="noopener" title="battleship/probability.py, line 9" aria-label="Code on GitHub: battleship/probability.py, line 9">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L191-L203" target="_blank" rel="noopener" title="battleship/probability.py, lines 191–203" aria-label="Code on GitHub: battleship/probability.py, lines 191 to 203">14</a></span>
+    <div class="math math-block">P(c) = \frac{\left|\{\,x \in \mathcal{C} : c \in x\,\}\right|}{|\mathcal{C}|}</div>
   </div>
+  <p>Here <span class="math">c</span> is a cell, <span class="math">\mathcal{C}</span> is the set of configurations that agree with the knowledge, and <span class="math">x</span> is one configuration, viewed as the set of cells its ships cover. The numerator counts the configurations that cover <span class="math">c</span>, and the denominator counts all of them. Known cells are fixed: a hit, including a cell of a sunk ship, has probability 1, and a miss has probability 0 (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L167-L169" target="_blank" rel="noopener" title="battleship/probability.py, lines 167–169" aria-label="Code on GitHub: battleship/probability.py, lines 167 to 169">15</a>).</p>
+  <p>Every configuration covers exactly the cells of the ships still afloat. The probabilities of all cells therefore sum to the sum of the remaining lengths, and the unknown cells sum to that total minus the number of open hits. At the start the total is 17, so the average cell has probability 0.17.</p>
+  <p>An open hit makes its neighbours rise without any special rule. The ship through that hit has length 2 or more, so it must cover at least one orthogonal neighbour of the hit, and a neighbour is therefore covered by a larger share of the configurations.</p>
+  <p>The agent fires at the unknown cell with the highest belief. Ties are common in exact counts, so cells within <span class="math">10^{-12}</span> of the best value count as tied, and the choice among them is random (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L214-L223" target="_blank" rel="noopener" title="battleship/probability.py, lines 214–223" aria-label="Code on GitHub: battleship/probability.py, lines 214 to 223">16</a>).</p>
+
+  <div class="pseudo">
+    <!-- full version: battleship/agents.py:110-126 (ProbabilityAgent.choose), battleship/probability.py:214-223 (choose_cell) -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L110-L126" target="_blank" rel="noopener" title="battleship/agents.py, lines 110–126" aria-label="Code on GitHub: battleship/agents.py, lines 110 to 126">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L214-L223" target="_blank" rel="noopener" title="battleship/probability.py, lines 214–223" aria-label="Code on GitHub: battleship/probability.py, lines 214 to 223">16</a></span>
+    <pre class="pseudo-simple">function CHOOSE-SHOT(knowledge):
+    belief ← SHIP-PROBABILITIES(knowledge)
+    unknown ← the cells not yet fired at
+    if belief is "none" or unknown is empty:
+        return a random cell from unknown
+    best ← the largest belief[c] over the unknown cells c
+    ties ← the unknown cells c with belief[c] ≥ best − 1e-12
+    return a random cell from ties</pre>
+    <pre class="pseudo-full" hidden>function CHOOSE-SHOT(knowledge, rng):              # ProbabilityAgent.choose
+    belief ← SHIP-PROBABILITIES(knowledge, rng, SAMPLES, EXACT_BUDGET)
+    unknown ← UNKNOWN-CELLS(knowledge)             # cells not fired at, row by row
+    if belief.method = none or unknown is empty:
+        return rng.choice(unknown)                 # no consistent layout: uniform
+    best ← max(belief.probs[c] for c in unknown)
+    ties ← [c for c in unknown if belief.probs[c] ≥ best − 1e-12]
+    return rng.choice(ties)                        # ties are broken at random</pre>
+  </div>
+  <p><b>Ties</b> in the full version are matched with a small tolerance, so cells whose exact counts are equal are treated as equal despite floating-point rounding. The <b>none</b> case means no consistent layout was found, which happens only with inconsistent input, since a legal game always leaves at least one configuration. In that case the choice is uniform.</p>
+
+  <!-- full version: battleship/probability.py:164-211 (ship_probabilities); constants at 42 and 45; the bound at 179-185 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L164-L211" target="_blank" rel="noopener" title="battleship/probability.py, lines 164–211" aria-label="Code on GitHub: battleship/probability.py, lines 164 to 211">18</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L40-L45" target="_blank" rel="noopener" title="battleship/probability.py, lines 40–45" aria-label="Code on GitHub: battleship/probability.py, lines 40 to 45">19</a></span>
+    <pre class="pseudo-simple">function SHIP-PROBABILITIES(knowledge):
+    probs ← 0 for every cell, and 1 for every hit (sunk ships included)
+    lengths ← the lengths of the ships afloat, longest first
+    if lengths is empty:
+        return probs, method "done"
+    free[n] ← the placements of length n that avoid misses and sunk cells
+    if some free[n] is empty:
+        return probs, method "none"
+    if the product of the sizes of free[n] is at most 30,000:
+        counts ← COUNT-EXACT(lengths, free, open hits, 60,000)
+        if the count finished:
+            return the exact shares, method "exact"
+    return SAMPLE(lengths, free, open hits, 1,000), method "sampled"</pre>
+    <pre class="pseudo-full" hidden>function SHIP-PROBABILITIES(knowledge, rng, samples, budget):
+    probs ← 0 for every cell
+    for each hit c (sunk ships included): probs[c] ← 1.0
+    lengths ← remaining lengths, longest first
+    if lengths is empty:
+        return (probs, "done", 0)
+    free[n] ← placements of length n avoiding misses and sunk cells, for each n in lengths
+    if free[n] is empty for some n in lengths:
+        return (probs, "none", 0)
+    hits ← open hits
+    bound ← the product of |free[n]| over n in lengths     # ignores overlaps
+    counts ← none
+    if bound ≤ budget / 2:
+        try:
+            counts ← COUNT-EXACT(lengths, free, hits, budget)
+        on time-limit reached:
+            counts ← none                              # the bound is loose: sample instead
+    if counts is not none:
+        total ← sum of the values of counts
+        if total = 0:
+            return (probs, "none", 0)
+        for each cell c with a nonzero share:
+            probs[c] ← (sum of counts[U] over the sets U that contain c) / total
+        return (probs, "exact", total)
+    estimate ← SAMPLE(lengths, free, hits, rng, samples)
+    if estimate is none:
+        return (probs, "none", 0)
+    for each cell c that is not a hit: probs[c] ← estimate[c]
+    return (probs, "sampled", samples)</pre>
+  </div>
+  <p><b>Over budget</b> means the exact search did more work than allowed and was abandoned part-way. Its partial counts are discarded and the sampler runs instead, so the answer never depends on a half-finished count. <b>Done</b> means no ship is afloat, and then only the known cells have values.</p>
+
+  <h3 class="hiw-sub">Exact counting</h3>
+  <p><b>Exact counting</b> lists the configurations with a <b>depth-first search</b>. The search places the ships still afloat one at a time, in length order, and tries every free placement of each. A placement is free if it avoids every miss and every sunk cell (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L89-L92" target="_blank" rel="noopener" title="battleship/probability.py, lines 89–92" aria-label="Code on GitHub: battleship/probability.py, lines 89 to 92">20</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L95-L126" target="_blank" rel="noopener" title="battleship/probability.py, lines 95–126" aria-label="Code on GitHub: battleship/probability.py, lines 95 to 126">21</a>).</p>
+  <p>The search <b>prunes</b>, which means it stops exploring a branch that cannot succeed. A branch is cut when the open hits still uncovered outnumber the cells that the ships still to be placed can cover. Let <span class="math">T_i</span> be the total length of ships <span class="math">i</span> to the last, <span class="math">H</span> the open hits, and <span class="math">U_i</span> the cells covered by the ships placed before ship <span class="math">i</span>. The branch is cut when <span class="math">|H \setminus U_i| > T_i</span> (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L114-L116" target="_blank" rel="noopener" title="battleship/probability.py, lines 114–116" aria-label="Code on GitHub: battleship/probability.py, lines 114 to 116">22</a>).</p>
+  <!-- probability.py:179-185 (bound and gate); the search's work and budget at 117-120 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L179-L185" target="_blank" rel="noopener" title="battleship/probability.py, lines 179–185" aria-label="Code on GitHub: battleship/probability.py, lines 179 to 185">23</a></span>
+    <div class="math math-block">B = \prod_{n \in L} |F_n| \le \tfrac{1}{2} \cdot 60\,000 = 30\,000</div>
+  </div>
+  <p>Here <span class="math">L</span> is the list of remaining lengths and <span class="math">F_n</span> is the set of free placements of length <span class="math">n</span>. The bound counts the placements of every ship with overlaps ignored, so it is an upper limit on the work. Exact counting is attempted only when <span class="math">B</span> is at most 30,000, half of the budget of 60,000 candidate checks (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L40-L45" target="_blank" rel="noopener" title="battleship/probability.py, lines 40–45" aria-label="Code on GitHub: battleship/probability.py, lines 40 to 45">19</a>). Each node adds the number of options it examines to the work, and the search stops once the work passes the budget (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L117-L120" target="_blank" rel="noopener" title="battleship/probability.py, lines 117–120" aria-label="Code on GitHub: battleship/probability.py, lines 117 to 120">24</a>). The bound is loose, so the budget can still run out, and then the code samples.</p>
+  <p>While both 3-cell ships are afloat, the search places them in both orders. Each set of ships is therefore counted twice, which is the same factor for every configuration and so cancels from the shares (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L98-L100" target="_blank" rel="noopener" title="battleship/probability.py, lines 98–100" aria-label="Code on GitHub: battleship/probability.py, lines 98 to 100">25</a>).</p>
+  <p><em>Example.</em> With no shots fired, the free placements are 120 for the 5-cell ship, 140 for the 4-cell ship, 160 for each 3-cell ship and 180 for the 2-cell ship. Their product is 77,414,400,000, far above 30,000, so the start of a game is always sampled.</p>
+
+  <div class="pseudo">
+    <!-- full version: battleship/probability.py:95-126 (_count_exact); the gate at 179-185 -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L95-L126" target="_blank" rel="noopener" title="battleship/probability.py, lines 95–126" aria-label="Code on GitHub: battleship/probability.py, lines 95 to 126">21</a></span>
+    <pre class="pseudo-simple">function COUNT-EXACT(lengths, free, hits, budget):
+    counts ← an empty tally of cell sets
+    PLACE(ship 1, no cells used)
+    return counts
+
+function PLACE(i, used):
+    if every ship is placed:
+        if every open hit is in used: counts[used] ← counts[used] + 1
+        return
+    if more open hits are uncovered than the ships still to place can cover:
+        return                                         # prune
+    for each free placement m of ship i that does not overlap used:
+        PLACE(i + 1, used ∪ m)</pre>
+    <pre class="pseudo-full" hidden>function COUNT-EXACT(lengths, free, hits, budget):
+    tail[i] ← the total length of ships i to the last, and 0 after the last
+    counts ← an empty tally;  work ← 0
+    function PLACE(i, used):
+        if i is past the last ship:
+            if hits − used is empty:                   # every open hit is covered
+                counts[used] ← counts[used] + 1
+            return
+        if |hits − used| > tail[i]:                    # prune: too few cells left
+            return
+        options ← free[lengths[i]]
+        work ← work + |options|
+        if work > budget:
+            raise time-limit reached
+        for each placement m in options:
+            if m does not overlap used:
+                PLACE(i + 1, used ∪ m)
+    PLACE(first ship, no cells used)
+    return counts</pre>
+  </div>
+  <p><b>Pruning</b> is safe, because a cut branch cannot lead to any configuration that covers all the open hits. The <b>tail</b> is the most cells the remaining ships can cover, and it is the only bound the test needs. <b>Work</b> counts the placement options examined, which is the cost the budget caps.</p>
+
+  <h3 class="hiw-sub">Importance sampling</h3>
+  <p>When exact counting is too costly, the agent estimates the probabilities with <b>importance sampling</b>. It draws <span class="math">S = 1{,}000</span> random configurations and gives each a weight, so that the weighted sample stands in for the uniform set of all configurations (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L40-L42" target="_blank" rel="noopener" title="battleship/probability.py, lines 40–42" aria-label="Code on GitHub: battleship/probability.py, lines 40 to 42">26</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L129-L161" target="_blank" rel="noopener" title="battleship/probability.py, lines 129–161" aria-label="Code on GitHub: battleship/probability.py, lines 129 to 161">27</a>).</p>
+  <p>Each sample places the remaining ships in length order. Each ship goes on a placement chosen uniformly from those that avoid the cells already used, and the sample's weight is multiplied by the number of such placements, <span class="math">k</span>. A sample's weight is therefore <span class="math">w_s = \prod_i k_{s,i}</span>, which is the reciprocal of the probability with which the sampler drew it (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L139-L151" target="_blank" rel="noopener" title="battleship/probability.py, lines 139–151" aria-label="Code on GitHub: battleship/probability.py, lines 139 to 151">28</a>).</p>
+  <p>A sample is kept only if it covers every open hit. A discarded sample gets weight 0 (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L152-L156" target="_blank" rel="noopener" title="battleship/probability.py, lines 152–156" aria-label="Code on GitHub: battleship/probability.py, lines 152 to 156">29</a>). The probability of a cell is then the weighted share of the kept samples that cover it.</p>
+  <!-- probability.py:152-161 (keep, weighted sum, and division by the total) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L152-L161" target="_blank" rel="noopener" title="battleship/probability.py, lines 152–161" aria-label="Code on GitHub: battleship/probability.py, lines 152 to 161">30</a></span>
+    <div class="math math-block">P(c) \approx \frac{\sum_{s} \kappa_s\, w_s\, \mathbf{1}[c \in U_s]}{\sum_{s} \kappa_s\, w_s}</div>
+  </div>
+  <p>Here <span class="math">U_s</span> is the set of cells covered by sample <span class="math">s</span>, <span class="math">\kappa_s</span> is 1 if the sample is kept and 0 otherwise, and <span class="math">\mathbf{1}[\cdot]</span> is 1 when its condition holds and 0 otherwise. The code's error on a cell's probability is about 0.02 to 0.03 with 1,000 samples (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L40-L41" target="_blank" rel="noopener" title="battleship/probability.py, lines 40–41" aria-label="Code on GitHub: battleship/probability.py, lines 40 to 41">31</a>). Known hits keep their value of 1, and known misses stay at 0, since samples never cover a miss or a sunk cell (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L208-L210" target="_blank" rel="noopener" title="battleship/probability.py, lines 208–210" aria-label="Code on GitHub: battleship/probability.py, lines 208 to 210">32</a>).</p>
+
+  <div class="pseudo">
+    <!-- full version: battleship/probability.py:129-161 (_sample) -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L129-L161" target="_blank" rel="noopener" title="battleship/probability.py, lines 129–161" aria-label="Code on GitHub: battleship/probability.py, lines 129 to 161">27</a></span>
+    <pre class="pseudo-simple">function SAMPLE(lengths, free, hits, samples):
+    for each of the samples:
+        used ← no cells;  weight ← 1
+        for each ship length n in lengths:
+            valid ← the placements of length n in free that avoid used
+            weight ← weight × |valid|
+            if valid is not empty:
+                used ← used ∪ (a placement drawn uniformly from valid)
+        keep the sample if its weight is above 0 and it covers every open hit
+    return, for each cell, the weighted share of kept samples that cover it</pre>
+    <pre class="pseudo-full" hidden>function SAMPLE(lengths, free, hits, rng, samples):
+    gen ← a random generator seeded from rng
+    used[s] ← no cells;  weight[s] ← 1               # for all samples at once
+    for each ship length n in lengths:
+        cand ← free[n]
+        valid[s][p] ← placement p of cand does not overlap used[s]
+        weight[s] ← weight[s] × (the number of valid p)     # 0 if none fits
+        key[s][p] ← a random number in [0, 1) if valid, else −1
+        pick[s] ← the p with the largest key[s][p]     # uniform among the valid p
+        used[s] ← used[s] ∪ cand[pick[s]]
+    keep[s] ← weight[s] > 0 and used[s] covers every open hit
+    w[s] ← weight[s] if keep[s] else 0
+    total ← sum of w[s]
+    if total = 0:
+        return none
+    return, for each cell c, (sum over s of w[s] × [c in used[s]]) / total</pre>
+  </div>
+  <p><b>Uniform choice by random keys</b> gives each valid placement an independent random key and takes the largest, which picks one valid placement uniformly without building a list. A sample with no valid placement picks an invalid one, but its weight is already 0. <b>The membership matrix</b> unpacks each sample's cells into a row of 0s and 1s, so the weighted sum over samples is one matrix product (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py#L74-L81" target="_blank" rel="noopener" title="battleship/probability.py, lines 74–81" aria-label="Code on GitHub: battleship/probability.py, lines 74 to 81">33</a>).</p>
+
+  <h3 class="hiw-sub">The odds glow</h3>
+  <p>The glow shades each board in proportion to the odds of a ship in each unknown cell. The odds are nearly flat early in a game, so the shading is measured from the mean rather than from zero. The mean and the span are computed first, where <span class="math">U</span> is the set of unknown cells (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L158-L173" target="_blank" rel="noopener" title="web/js/battleship.js, lines 158–173" aria-label="Code on GitHub: web/js/battleship.js, lines 158 to 173">34</a>).</p>
+  <!-- battleship.js:169-171 (mean, top, span) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L169-L171" target="_blank" rel="noopener" title="web/js/battleship.js, lines 169–171" aria-label="Code on GitHub: web/js/battleship.js, lines 169 to 171">35</a></span>
+    <div class="math math-block">\mu = \frac{1}{|U|} \sum_{u \in U} P(u), \qquad \operatorname{span} = \max\!\big(10^{-9},\ \max_{u \in U} P(u) - \mu\big)</div>
+  </div>
+  <!-- battleship.js:172 (glow strength for each unknown cell) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L172" target="_blank" rel="noopener" title="web/js/battleship.js, line 172" aria-label="Code on GitHub: web/js/battleship.js, line 172">36</a></span>
+    <div class="math math-block">\alpha(c) = 0.8 \cdot \min\!\Big(1,\ \max\!\Big(0,\ \frac{P(c) - \mu}{\operatorname{span}}\Big)\Big)</div>
+  </div>
+  <p>Here <span class="math">\mu</span> is the mean of the unknown cells' odds, <span class="math">\operatorname{span}</span> is the distance from that mean to the highest odds, floored at <span class="math">10^{-9}</span>, <span class="math">\alpha(c)</span> is the opacity of the glow on cell <span class="math">c</span>, and <span class="math">P(c)</span> is its odds. Known cells never glow. Cells above the mean glow, the hottest one brightest, and cells at or below the mean stay clear. The cap of 0.8 keeps the glow from hiding the board.</p>
+
+  <h3 class="hiw-sub">Hunt and target and random (benchmark baselines)</h3>
+  <p>The page does not offer these, but the benchmark and the command-line race do. <b>Hunt and target</b> is the textbook method. It searches a <b>checkerboard</b>, the cells whose row and column sum to an even number, until a hit appears. Every ship of length 2 or more covers at least one such cell, so the checkerboard eventually touches every ship (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L61-L75" target="_blank" rel="noopener" title="battleship/agents.py, lines 61–75" aria-label="Code on GitHub: battleship/agents.py, lines 61 to 75">37</a>).</p>
+  <!-- agents.py:73-74 (the checkerboard test) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L73-L74" target="_blank" rel="noopener" title="battleship/agents.py, lines 73–74" aria-label="Code on GitHub: battleship/agents.py, lines 73 to 74">38</a></span>
+    <div class="math math-block">(r + k) \bmod 2 = 0</div>
+  </div>
+  <p>Here <span class="math">r</span> is the row and <span class="math">k</span> the column of a cell, counted from 0. Once a hit is open, the agent works on its line. If two open hits share a row or a column, it fires only along that line, at the unknown cells between the hits and the two cells just beyond them. Otherwise it fires at every unknown orthogonal neighbour of an open hit (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L78-L102" target="_blank" rel="noopener" title="battleship/agents.py, lines 78–102" aria-label="Code on GitHub: battleship/agents.py, lines 78 to 102">39</a>).</p>
+  <p><b>Random</b> fires at a uniformly random unknown cell and ignores every hit. It is the floor that a real strategy should beat (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L36-L43" target="_blank" rel="noopener" title="battleship/agents.py, lines 36–43" aria-label="Code on GitHub: battleship/agents.py, lines 36 to 43">40</a>).</p>
+
+  <div class="pseudo">
+    <!-- full version: battleship/agents.py:61-107 (HuntAgent.choose, _line_targets, _same_line) -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L61-L107" target="_blank" rel="noopener" title="battleship/agents.py, lines 61–107" aria-label="Code on GitHub: battleship/agents.py, lines 61 to 107">41</a></span>
+    <pre class="pseudo-simple">function HUNT-TARGET(knowledge):
+    targets ← LINE-TARGETS(knowledge)
+    if targets is not empty:
+        return a random cell from targets
+    unknown ← the cells not yet fired at
+    parity ← the cells in unknown whose row + column is even
+    return a random cell from parity, or from unknown if parity is empty
+
+function LINE-TARGETS(knowledge):
+    for each pair of open hits (a, b) with a before b:
+        if a and b share a row: the line is horizontal
+        else if they share a column: the line is vertical
+        else: skip this pair
+        cands ← the unfired cells from a to b on the line, and the two cells beyond
+        if cands is not empty: return cands
+    return the unfired orthogonal neighbours of every open hit</pre>
+    <pre class="pseudo-full" hidden>function HUNT-TARGET(knowledge, rng):
+    targets ← LINE-TARGETS(knowledge)
+    if targets is not empty:
+        return rng.choice(targets)
+    unknown ← the cells not yet fired at, row by row
+    parity ← [c in unknown if (row(c) + col(c)) mod 2 = 0]
+    return rng.choice(parity or unknown)           # parity is empty only when every even cell is fired
+
+function LINE-TARGETS(knowledge):
+    hits ← the open hits, in ascending order
+    if hits is empty: return []
+    for each pair (a, b) of hits, with a &lt; b:
+        if row(a) = row(b): step ← 1
+        else if col(a) = col(b): step ← 10
+        else: continue
+        line ← a, a + step, …, b
+        beyond ← [a − step, b + step]
+        cands ← [c in line + beyond if 0 ≤ c &lt; 100 and c is not fired
+                 and c is on the same row (step 1) or column (step 10) as a]
+        if cands is not empty: return cands
+    return sorted([n for h in hits for n in NEIGHBOURS(h) if n is not fired])</pre>
+  </div>
+  <p><b>The checkerboard</b> works because every ship of length 2 or more contains at least one even cell, so a search of the even cells cannot miss a ship. The odd cells are fired at only when the even cells are used up, or when they are neighbours of a hit. <b>Lines</b> turn a second hit into a direction. Once two hits are aligned, the code fires only along their line, and the two cells beyond the ends test whether the ship continues past either hit.</p>
+
+  <h3 class="hiw-sub">Chance (fixed odds)</h3>
+  <p><b>Chance</b> draws each shot from a fixed table of weights and never looks at its hits or misses. The weight of the cell in row <span class="math">r</span> and column <span class="math">k</span> is the product of two values from the profile <span class="math">p = (1, 2, 3, 4, 4, 4, 4, 3, 2, 1)</span>. The profile rises from the edge to the middle of the board (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L129-L135" target="_blank" rel="noopener" title="battleship/agents.py, lines 129–135" aria-label="Code on GitHub: battleship/agents.py, lines 129 to 135">42</a>).</p>
+  <!-- agents.py:134-135 (profile and weight), 160-163 (renormalised odds) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L134-L135" target="_blank" rel="noopener" title="battleship/agents.py, lines 134–135" aria-label="Code on GitHub: battleship/agents.py, lines 134 to 135">43</a></span>
+    <div class="math math-block">w(r,k) = p_r \cdot p_k</div>
+  </div>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L154-L164" target="_blank" rel="noopener" title="battleship/agents.py, lines 154–164" aria-label="Code on GitHub: battleship/agents.py, lines 154 to 164">44</a></span>
+    <div class="math math-block">q(c) = \frac{w(c)}{\sum_{u \in U} w(u)}</div>
+  </div>
+  <p>Here <span class="math">p_r</span> and <span class="math">p_k</span> are the profile values for the row and the column, and <span class="math">U</span> is the set of unknown cells. Chance fires at cell <span class="math">c</span> with probability <span class="math">q(c)</span>, so the weights are renormalised over the cells it has not fired at. A centre cell weighs 16 times a corner cell. The code explains the shape by the placements: a ship can lie under more placements through the middle of the board, so a centre cell is a little likelier to hold a ship. Chance does not know this; it fires where the table says (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L129-L133" target="_blank" rel="noopener" title="battleship/agents.py, lines 129–133" aria-label="Code on GitHub: battleship/agents.py, lines 129 to 133">45</a>).</p>
+
+  <div class="pseudo">
+    <!-- full version: battleship/agents.py:134-151 (CHANCE_WEIGHTS, ChanceAgent.choose), 154-164 (chance_odds) -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L134-L164" target="_blank" rel="noopener" title="battleship/agents.py, lines 134–164" aria-label="Code on GitHub: battleship/agents.py, lines 134 to 164">46</a></span>
+    <pre class="pseudo-simple">function CHANCE-SHOT(knowledge):
+    unknown ← the cells not yet fired at
+    return a cell from unknown, drawn with probability weight(c) / (the sum of weight(u) over unknown)</pre>
+    <pre class="pseudo-full" hidden>constants profile ← (1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
+
+function WEIGHT(c):
+    return profile[row(c)] × profile[col(c)]           # row(c) = c div 10, col(c) = c mod 10
+
+function CHANCE-SHOT(knowledge, rng):
+    unknown ← the cells not yet fired at, row by row
+    return rng.choices(unknown, weights = [WEIGHT(c) for c in unknown])[0]
+
+function CHANCE-ODDS(knowledge):
+    odds ← 0 for every cell
+    total ← the sum of WEIGHT(u) over the unknown cells u
+    for each unknown cell c: odds[c] ← WEIGHT(c) / total
+    return odds</pre>
+  </div>
+  <p>The table is fixed for the whole game, so the shooter is a dice roller with no reasoning. <b>Only unknown cells</b> are candidates, so every shot is legal and the weights are renormalised over them (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L138-L151" target="_blank" rel="noopener" title="battleship/agents.py, lines 138–151" aria-label="Code on GitHub: battleship/agents.py, lines 138 to 151">47</a>). The page's table is the same product, and its odds are the renormalised list shown in the odds panel (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py#L154-L164" target="_blank" rel="noopener" title="battleship/agents.py, lines 154–164" aria-label="Code on GitHub: battleship/agents.py, lines 154 to 164">44</a>).</p>
+
+  <h3 class="hiw-sub">The chance race and solo watch</h3>
+  <p>A <b>race</b> pits the AI against chance. Each side has a random legal fleet, and the two sides take turns firing at each other's fleets. The first side to sink the other's fleet wins. The first shooter alternates from one race to the next (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/match.py#L33-L56" target="_blank" rel="noopener" title="battleship/match.py, lines 33–56" aria-label="Code on GitHub: battleship/match.py, lines 33 to 56">48</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/match.py#L66" target="_blank" rel="noopener" title="battleship/match.py, line 66" aria-label="Code on GitHub: battleship/match.py, line 66">49</a>).</p>
+  <div class="pseudo">
+    <!-- full version: battleship/match.py:33-56 (race) -->
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/match.py#L33-L56" target="_blank" rel="noopener" title="battleship/match.py, lines 33–56" aria-label="Code on GitHub: battleship/match.py, lines 33 to 56">48</a></span>
+    <pre class="pseudo-simple">function RACE(ai, ai_first):
+    ai_fleet ← a random legal fleet            # chance fires at this one
+    chance_fleet ← a random legal fleet        # the AI fires at this one
+    turns ← the AI, then chance (reversed if not ai_first)
+    loop:
+        for each side in turns:
+            cell ← the side's choice from its own knowledge
+            the enemy fleet answers, and the side records the answer
+            if the enemy fleet has no ship afloat:
+                return the side as the winner</pre>
+    <pre class="pseudo-full" hidden>function RACE(ai_name, rng, ai_first):
+    ai_fleet ← Fleet(random_fleet(rng))       # chance fires at this
+    chance_fleet ← Fleet(random_fleet(rng))   # the AI fires at this
+    ai ← make_agent(ai_name, rng);  chance ← ChanceAgent(rng)
+    ai_k ← Knowledge();  chance_k ← Knowledge()
+    turns ← [(ai, ai_k, chance_fleet), (chance, chance_k, ai_fleet)], reversed if not ai_first
+    shots ← {ai: 0, chance: 0}
+    loop:
+        for each (side, agent, know, enemy) in turns:
+            cell ← agent.choose(know)
+            shot ← enemy.fire(cell)
+            know.observe(cell, shot.result, shot.ship)
+            shots[side] ← shots[side] + 1
+            if enemy.all_sunk:
+                return (side, shots)</pre>
+  </div>
+  <p>Shots alternate, so the side that sinks the other fleet first wins, and a race cannot be drawn. Each side keeps its own knowledge and sees only the answers to its own shots. The race's first shooter alternates by game index, so neither side always fires first, and every race is seeded, so a run repeats exactly (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/match.py#L6-L9" target="_blank" rel="noopener" title="battleship/match.py, lines 6–9" aria-label="Code on GitHub: battleship/match.py, lines 6 to 9">50</a>).</p>
+  <p>On the page, the race is split between the server and the browser. The AI's fleet lives on the server, and each AI shot is a request for the shot, followed by a request for the AI's next odds (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/battleship_api.py#L172-L200" target="_blank" rel="noopener" title="server/battleship_api.py, lines 172–200" aria-label="Code on GitHub: server/battleship_api.py, lines 172 to 200">51</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L405-L440" target="_blank" rel="noopener" title="web/js/battleship.js, lines 405–440" aria-label="Code on GitHub: web/js/battleship.js, lines 405 to 440">52</a>). The opponent's fleet is on the page, so the browser resolves the opponent's shots itself and sends only their results to the server for fresh odds (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L342-L362" target="_blank" rel="noopener" title="web/js/battleship.js, lines 342–362" aria-label="Code on GitHub: web/js/battleship.js, lines 342 to 362">53</a>). The server computes the odds from that history and never sees the player's fleet (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/battleship_api.py#L203-L216" target="_blank" rel="noopener" title="server/battleship_api.py, lines 203–216" aria-label="Code on GitHub: server/battleship_api.py, lines 203 to 216">54</a>).</p>
+  <p><b>Solo watch</b> (AI alone) runs the same loop with only one shooter: the AI fires at your fleet, and nothing fires back. The page then shows the AI's odds over your fleet (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L573-L615" target="_blank" rel="noopener" title="web/js/battleship.js, lines 573–615" aria-label="Code on GitHub: web/js/battleship.js, lines 573 to 615">55</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L673-L688" target="_blank" rel="noopener" title="web/js/battleship.js, lines 673–688" aria-label="Code on GitHub: web/js/battleship.js, lines 673 to 688">56</a>). A pause of 1,500, 1,000 or 800 ms separates shots, for slow, normal and fast. After a race, a fresh race starts after 1.8 s if auto-restart is on (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L23-L28" target="_blank" rel="noopener" title="web/js/battleship.js, lines 23–28" aria-label="Code on GitHub: web/js/battleship.js, lines 23 to 28">57</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/battleship.js#L458-L473" target="_blank" rel="noopener" title="web/js/battleship.js, lines 458–473" aria-label="Code on GitHub: web/js/battleship.js, lines 458 to 473">58</a>).</p>
 
   <h3 class="hiw-sub">Rules and parameters</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Constant</th><th>What it controls</th><th class="num">Value</th></tr></thead><tbody>
     <tr><td>Fleet</td><td>Ship lengths, straight and not overlapping (may touch)</td><td class="num">5, 4, 3, 3, 2 (17 cells) on a 10 × 10 grid</td></tr>
-    <tr><td>SAMPLES</td><td>Layouts drawn when exact counting is too large</td><td class="num">1,000</td></tr>
+    <tr><td>SAMPLES</td><td>Samples drawn when exact counting is too large</td><td class="num">1,000</td></tr>
     <tr><td>EXACT_BUDGET</td><td>Candidate checks the exact search may spend</td><td class="num">60,000</td></tr>
     <tr><td>Exact gate</td><td>Exact counting is tried only if the unpruned placement product fits</td><td class="num">≤ 30,000 (half the budget)</td></tr>
     <tr><td>Tie tolerance</td><td>Probabilities this close count as tied</td><td class="num">1e-12</td></tr>
-    <tr><td>Known cells</td><td>Probability assigned to a cell already shot: a hit, or a miss</td><td class="num">1.0 and 0.0</td></tr>
-    <tr><td>Checkerboard</td><td>Hunt baseline's search pattern</td><td class="num">(row + col) even</td></tr>
-    <tr><td>CHANCE_PROFILE</td><td>Chance's fixed weight per row and column; a cell weighs the product</td><td class="num">1, 2, 3, 4, 4, 4, 4, 3, 2, 1</td></tr>
+    <tr><td>Known cells</td><td>Probability of a cell already shot: a hit or a sunk cell, or a miss</td><td class="num">1.0 and 0.0</td></tr>
+    <tr><td>Sampling error</td><td>Typical error on one cell's probability with SAMPLES</td><td class="num">0.02 to 0.03</td></tr>
+    <tr><td>Checkerboard</td><td>Hunt and target's search pattern</td><td class="num">(row + column) even</td></tr>
+    <tr><td>CHANCE_PROFILE</td><td>Chance's weight per row and column; a cell weighs the product</td><td class="num">1, 2, 3, 4, 4, 4, 4, 3, 2, 1</td></tr>
+    <tr><td>Glow cap</td><td>Largest opacity of the odds glow</td><td class="num">0.8</td></tr>
+    <tr><td>Shot pause</td><td>Time between shots in a watched race, slow / normal / fast</td><td class="num">1,500 / 1,000 / 800 ms</td></tr>
+    <tr><td>MOVES_PER_MIN</td><td>Requests per minute per client on move endpoints</td><td class="num">120</td></tr>
+    <tr><td>GAME_TTL</td><td>How long an unfinished server game is kept</td><td class="num">30 minutes</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> CHANCE_PROFILE is a hand-picked shape: symmetric, rising from the edge to the middle, with four equal middle rows. Nothing is learned or tuned. The probabilities follow from the rules as a count under a uniform prior. SAMPLES and EXACT_BUDGET are hand-picked constants; the repository has no sweep that justifies them. The 30,000 gate is half the budget, so an exact attempt can finish before it runs out. The checkerboard follows from the ship lengths, not from a search.</p>
+  <!-- battleship_api.py:37-38 (GAME_TTL, MAX_GAMES), agents.py:134 (profile); server/app.py:66 (MOVES_PER_MIN) -->
+  <p class="hiw-note"><b>How these were chosen:</b> CHANCE_PROFILE is a hand-picked shape: symmetric, rising from the edge to the middle, with four equal middle rows. Nothing is learned or tuned. SAMPLES and EXACT_BUDGET are hand-picked constants, and the repository has no sweep that justifies them. The 30,000 gate is half the budget, so an exact attempt can finish before the budget runs out. The checkerboard follows from the ship lengths, not from a search. The server's request limit and game lifetime are set in the server modules (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/app.py#L64-L66" target="_blank" rel="noopener" title="server/app.py, lines 64–66" aria-label="Code on GitHub: server/app.py, lines 64 to 66">59</a>, <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/battleship_api.py#L37-L38" target="_blank" rel="noopener" title="server/battleship_api.py, lines 37–38" aria-label="Code on GitHub: server/battleship_api.py, lines 37 to 38">60</a>).</p>
 
   <h3 class="hiw-sub">Results</h3>
-  <p class="hiw-note">100 random fleets, seed 1, the same fleets for every agent. Mean shots to sink the fleet: random 95.4, hunt and target 51.9, Bayesian 45.9 (median 45.5, worst 64). The Bayesian agent needed fewer shots than hunt and target on 67 of 100 fleets, and 6.0 fewer on average (95% interval 3.7 to 8.2), at a much higher cost per shot.</p>
-  <p class="hiw-note">Race, 100 games, seed 1, <code>python -m battleship match --games 100 --seed 1</code>: Bayesian AI 100 wins, chance 0. Hunt and target vs chance: the same 100 to 0. Races cannot be drawn, since the first fleet sunk decides. Full output in <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/battleship_match.md">results/battleship_match.md</a>.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/probability.py">battleship/probability.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/agents.py">battleship/agents.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/board.py">battleship/board.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/battleship_api.py">server/battleship_api.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/benchmark.py">battleship/benchmark.py</a></p>
+  <p>Benchmark: 100 random fleets, seed 1, the same fleets for every agent. The mean shots to sink a fleet were 95.4 for random, 51.9 for hunt and target, and 45.9 for the Bayesian agent, with medians of 97.0, 54.0 and 45.5 and worst cases of 100, 67 and 64 (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/battleship_benchmark.md" target="_blank" rel="noopener" title="results/battleship_benchmark.md" aria-label="Code on GitHub: results/battleship_benchmark.md">61</a>).</p>
+  <p>Paired on the same fleets, the Bayesian agent needed fewer shots than hunt and target on 67 fleets, more on 30, and tied on 3. The mean saving is 5.96 shots. The 95% interval uses the paired per-fleet differences <span class="math">d_i</span>, with mean <span class="math">\bar d</span> and sample standard deviation <span class="math">s</span> over <span class="math">n = 100</span> fleets (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/battleship_head_to_head.json" target="_blank" rel="noopener" title="results/battleship_head_to_head.json" aria-label="Code on GitHub: results/battleship_head_to_head.json">62</a>).</p>
+  <!-- results/battleship_head_to_head.json: "interval_method" and the t value 1.9842 (99 degrees of freedom) -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/battleship_head_to_head.json" target="_blank" rel="noopener" title="results/battleship_head_to_head.json" aria-label="Code on GitHub: results/battleship_head_to_head.json">62</a></span>
+    <div class="math math-block">\bar d \pm t_{0.975,\,99}\,\frac{s}{\sqrt{n}} = 5.96 \pm 1.9842 \cdot \frac{11.46}{\sqrt{100}} \approx 3.7 \text{ to } 8.2</div>
+  </div>
+  <p>Here <span class="math">d_i</span> is the number of shots hunt and target needed minus the number the Bayesian agent needed on fleet <span class="math">i</span>, so a positive value favours the Bayesian agent. The interval is a t interval with 99 degrees of freedom, and the file also gives a normal interval, which is nearly the same.</p>
+  <p>Per fleet, the Bayesian agent took 1.12 s on average against 7 ms for hunt and target, measured on a loaded shared laptop, so its cost per shot is far higher. Its strength is the number of shots, not the speed (<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/battleship/benchmark.py#L24-L34" target="_blank" rel="noopener" title="battleship/benchmark.py, lines 24–34" aria-label="Code on GitHub: battleship/benchmark.py, lines 24 to 34">63</a>).</p>
+  <p>Race: 100 races, seed 1, <code>python -m battleship match --games 100 --seed 1</code>. The Bayesian AI won all 100 races against chance, and hunt and target also won all 100. The mean shots when the race ended were 46.0 for the Bayesian AI and 45.5 for chance. The full output is in <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/battleship_match.md" target="_blank" rel="noopener" title="results/battleship_match.md" aria-label="Code on GitHub: results/battleship_match.md">64</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/battleship.js"></script>
 </body>

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="minesweeper.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,14 +32,13 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">CONSTRAINT SATISFACTION · EXACT PROBABILITY</div>
+      <div class="proj-pg-tag">CONSTRAINT COUNTING</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="MINESWEEPER">MINESWEEPER</h1>
-      <div class="proj-pg-sub">Every number is a constraint on the mines around it. The agent counts every layout that fits, proves what it can, and guesses the lowest exact odds only when nothing is certain.</div>
+      <div class="proj-pg-sub">Each number counts the mines around it. The agent proves what it can, and guesses only when nothing is certain.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
-        <span class="stat-chip">MINES <span class="val" id="chip-mines">—</span></span>
         <span class="stat-chip green">PROVEN <span class="val" id="chip-proven">0</span></span>
         <span class="stat-chip">REVEALED <span class="val" id="chip-revealed">0</span></span>
         <span class="stat-chip pink">GUESSES <span class="val" id="chip-guesses">0</span></span>
@@ -46,18 +46,24 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to reveal every cell that does not hold a mine. A revealed number counts the mines among its eight neighbouring cells.</p>
+    <p style="margin-top:0.5rem">Click a covered cell to reveal it. The first click is always safe. Right-click, or use FLAG MODE, to flag a cell that is suspected of holding a mine. Flags are notes and do not change the rules.</p>
+    <p style="margin-top:0.5rem">Press AI STEP to let the agent reveal every cell it can prove safe, or one guess when nothing is certain. AI PLAY repeats those steps until the board is decided.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
         <div class="ms-wrap">
           <div id="ms" class="ms-board" role="grid" aria-label="Minesweeper board"></div>
         </div>
-        <div class="field-hint" id="ms-note">Click a cell to reveal it. Right-click, or use FLAG MODE, to flag a suspected mine.</div>
         <div class="inline" style="justify-content:center;flex-wrap:wrap">
-          <button class="cyber-btn green" id="btn-step" type="button"><span class="btn-txt">▶ AI STEP</span></button>
-          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false"><span class="btn-txt">▶▶ AI PLAY</span></button>
-          <button class="cyber-btn" id="btn-flag" type="button" aria-pressed="false"><span class="btn-txt">⚑ FLAG MODE</span></button>
-          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW BOARD</span></button>
+          <button class="cyber-btn green" id="btn-step" type="button" title="Reveal every cell the agent can prove safe. If nothing is proven, reveal its lowest-odds guess."><span class="btn-txt">▶ AI STEP</span></button>
+          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false" title="Repeat AI STEP until the board is decided. Press again to stop."><span class="btn-txt">▶▶ AI PLAY</span></button>
+          <button class="cyber-btn" id="btn-flag" type="button" aria-pressed="false" title="While on, a click flags or unflags a cell instead of revealing it. Right-click always flags."><span class="btn-txt">⚑ FLAG MODE</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new board. The mines are placed after the first click."><span class="btn-txt">↺ NEW BOARD</span></button>
         </div>
       </div>
 
@@ -73,10 +79,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold">
+        <summary>Move log</summary>
         <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -85,44 +91,21 @@
         <div class="stack">
           <div>
             <div class="field-lbl">SIZE</div>
-            <select class="cyber-select" id="preset" style="width:100%">
+            <select class="cyber-select" id="preset" style="width:100%" title="The mines are placed after the first click, so that click always opens something.">
               <option value="beginner" selected>Beginner · 9 × 9 · 10 mines</option>
               <option value="intermediate">Intermediate · 16 × 16 · 40 mines</option>
               <option value="expert">Expert · 30 × 16 · 99 mines</option>
             </select>
           </div>
-          <div class="field-hint">The mines are placed after your first click, so it always opens something.</div>
         </div>
       </div>
 
       <div>
         <div class="section-title green-ttl">OVERLAYS</div>
         <div class="stack">
-          <label class="ms-toggle"><input type="checkbox" id="heat"> <span>HEAT MAP: mine probability per covered cell</span></label>
-          <label class="ms-toggle"><input type="checkbox" id="comps"> <span>CONSTRAINT COMPONENTS: independent groups, each counted alone</span></label>
+          <label class="ms-toggle" title="Shade each covered cell by its mine probability, from green (safe) to red (likely a mine). The numbers are percentages."><input type="checkbox" id="heat"> <span>HEAT MAP</span></label>
+          <label class="ms-toggle" title="Outline each group of numbers that share covered cells. Each group is counted on its own, then combined with the mine count."><input type="checkbox" id="comps"> <span>COMPONENTS</span></label>
           <div class="field-hint" id="ms-analysis">No analysis yet.</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">HOW IT THINKS</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">SINGLE-CELL RULES</div>
-            <div class="field-hint">A 1 with one covered neighbour makes that neighbour a mine. A number its known mines already satisfy makes every other covered neighbour safe. Each new fact can trigger more.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">COMPONENTS</div>
-            <div class="field-hint">Numbers that share a covered cell form one component. Components are independent once the total is fixed, so the agent counts each on its own and enumerates every layout that fits.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">THE MINE COUNT</div>
-            <div class="field-hint">The mines left over go among the covered cells that touch no number, in C(n, k) ways. A layout counts only if its total matches the board, which can prove cells the numbers alone cannot.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">EXACT ODDS</div>
-            <div class="field-hint">A cell's odds are the layouts where it is a mine, over all layouts. When nothing is certain, the agent guesses the lowest, breaking ties toward cells whose zero would open the most board.</div>
-          </div>
         </div>
       </div>
 
@@ -137,53 +120,374 @@
   </div>
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The agent treats each revealed number as a constraint on the covered squares around it. It makes every move that the counting proves safe. When nothing is proven, it guesses the covered square with the lowest exact chance of being a mine, counted over every layout of mines that fits the numbers and the mine count.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Single-square rules (level 1)</h3>
-      <p class="hiw-plain"><b>New to this?</b> This is the reasoning you do one clue at a time. If a 1 touches exactly one covered square, that square must hold the mine. Each new discovery can unlock another clue, so the rules repeat until nothing new turns up.</p>
-      <p><code>rule_pass</code> marks every covered neighbour of a number as a mine when the number needs as many mines as it has covered neighbours. It marks them safe when the mines already known satisfy the number. It repeats to a fixpoint. If nothing is proven, it guesses a covered square at random.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Constraint groups and exact counts (level 2)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Each number is a sentence such as "exactly two of these three squares are mines". Sentences that share a square have to be solved together. The agent counts every way the sentences can all be true, much as you might count the ways to fill a crossword grid.</p>
-      <p>Constraints that share a covered square form a group. Each group is counted by a backtracking search that remembers repeated states. A square is proven safe when no consistent layout puts a mine on it, and proven a mine when every layout does. The total mine count combines the groups. If nothing is proven, the guess is random.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Exact mine probability (level 3, default)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Treat every layout of mines that fits the clues as equally likely. A square's chance of being a mine is the share of those layouts that put a mine on it. It is like checking every seating plan that obeys a rule, then asking how often a particular seat is taken.</p>
-      <p>Covered squares that touch no number (the interior) take the leftover mines in C(n, k) ways. All weights are integers until the final division, so comparisons are exact. When nothing is proven, the agent guesses the covered square with the lowest probability. The count has a work budget: a board too wide to count within it keeps its proofs, shows estimated odds instead, and the page says so.</p>
-      <ul>
-        <li>Ties go to the square with the most covered neighbours, since revealing it would open the most, then to the lowest cell number.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Random (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Pick any covered square at random, with no reasoning at all. It is the floor that the other agents are measured against.</p>
-      <ul>
-        <li>On beginner boards it wins 0.0% (0 of 1,000 games) and needs 3.36 guesses per game.</li>
-      </ul>
-    </article>
+  <p class="hiw-lede">The agent treats each revealed number as a <b>constraint</b>: a statement that a fixed number of mines lie among the covered cells next to it. It makes every move that counting proves safe. When nothing is proven, it guesses the covered cell with the lowest exact chance of being a mine, counted over every layout of mines that fits the numbers and the mine count.</p>
+
+  <h3 class="hiw-sub">Board, first click and flood fill</h3>
+  <p class="hiw-note">Each cell has up to eight <b>neighbours</b>, the cells that touch it sideways, up, down or diagonally. A <b>mine</b> is a cell that holds one. A covered cell that is opened shows its <b>number</b>, the count of mines among its neighbours.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/board.py#L47-L61" target="_blank" rel="noopener" title="minesweeper/board.py, lines 47–61" aria-label="Code on GitHub: minesweeper/board.py, lines 47 to 61">1</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/board.py#L112-L114" target="_blank" rel="noopener" title="minesweeper/board.py, lines 112–114" aria-label="Code on GitHub: minesweeper/board.py, lines 112 to 114">2</a></p>
+  <!-- minesweeper/board.py:112-114; minesweeper.js:82 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/board.py#L112-L114" target="_blank" rel="noopener" title="minesweeper/board.py, lines 112–114" aria-label="Code on GitHub: minesweeper/board.py, lines 112 to 114">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L82" target="_blank" rel="noopener" title="web/js/minesweeper.js, line 82" aria-label="Code on GitHub: web/js/minesweeper.js, line 82">3</a></span>
+    <div class="math math-block">\text{number}(c) = \sum_{n \in N(c)} m_n</div>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Proof rule</td><td>A number that needs 0 more mines makes its covered neighbours safe; one that needs all of them makes them mines</td><td class="num">Exact; no weight</td></tr>
-    <tr><td>Mine count</td><td>Mines still hidden across the board</td><td class="num">From the preset; every layout must match it</td></tr>
-    <tr><td>Interior weight</td><td>Ways to place k mines among n covered squares that touch no number</td><td class="num">C(n, k)</td></tr>
-    <tr><td>Exact probability</td><td>Share of consistent layouts with a mine on the square</td><td class="num">Integer ratio over one shared total</td></tr>
-    <tr><td>Tie-break 1</td><td>Lowest exact probability</td><td class="num">Smallest numerator</td></tr>
-    <tr><td>Tie-break 2</td><td>Most covered neighbours, the most that a reveal could open</td><td class="num">More neighbours wins</td></tr>
-    <tr><td>Tie-break 3</td><td>Cell number</td><td class="num">Lowest number wins</td></tr>
-    <tr><td>First click</td><td>The clicked square and its neighbours are never mines</td><td class="num">Rule, no weight</td></tr>
+  <p class="hiw-note">Here <span class="math">N(c)</span> is the set of neighbours of cell <span class="math">c</span>, and <span class="math">m_n</span> is 1 when cell <span class="math">n</span> holds a mine and 0 otherwise. A number of 0 means that no neighbour is a mine.</p>
+  <p class="hiw-note">The mines are placed after the first click, not before it. The clicked cell and its neighbours are kept clear, so the first reveal always opens an area. The other mines are placed uniformly at random on the remaining cells.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L71-L80" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 71–80" aria-label="Code on GitHub: web/js/minesweeper.js, lines 71 to 80">4</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L71-L80" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 71–80" aria-label="Code on GitHub: web/js/minesweeper.js, lines 71 to 80">4</a></span>
+    <pre class="pseudo-simple">function PLACE-MINES(first):
+    pool ← the cells that are not first and not neighbours of first
+    choose the mine cells uniformly at random from pool</pre>
+    <pre class="pseudo-full" hidden>function PLACE-MINES(first):
+    clear ← {first} together with the neighbours of first
+    pool ← the cells that are not in clear, in row-major order
+    k ← 0
+    repeat mines times:
+        j ← k + a random integer from 0 to |pool| − k − 1      # partial Fisher-Yates shuffle
+        swap pool[k] and pool[j]
+        k ← k + 1
+    mine-cells ← the first mines cells of pool</pre>
+  </div>
+  <p class="hiw-note">The full version is a partial Fisher–Yates shuffle. After k swaps, the first k cells of the pool are a uniform random choice, so each set of mine cells is equally likely. Stopping after <code>mines</code> swaps saves the work of shuffling the rest.</p>
+  <p class="hiw-note"><b>Flood fill.</b> A cell whose number is 0 has no mines around it, so opening it opens all of its neighbours. A neighbour that is also 0 opens its own neighbours in turn. The opening spreads <b>breadth first</b>: cells are opened in the order they were queued, using a first-in, first-out list. A mine ends the game. The game is won when every cell that is not a mine is open.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L86-L113" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 86–113" aria-label="Code on GitHub: web/js/minesweeper.js, lines 86 to 113">5</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L86-L113" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 86–113" aria-label="Code on GitHub: web/js/minesweeper.js, lines 86 to 113">5</a></span>
+    <pre class="pseudo-simple">function REVEAL(cell):
+    if cell is covered and not flagged:
+        if no mines are placed yet: PLACE-MINES(cell)      # the first click is always safe
+        if cell holds a mine: the game is lost
+        otherwise:
+            open cell with its number
+            queue ← [cell]
+            while queue is not empty:                     # breadth first
+                here ← the first item of queue, removed
+                if here shows 0: open each covered, unflagged neighbour of here and queue it</pre>
+    <pre class="pseudo-full" hidden>function REVEAL(cell):
+    if the game is over, or cell is not covered, or cell is flagged: return nothing
+    if no mines are placed yet: PLACE-MINES(cell)
+    if cell holds a mine:
+        the game is lost on cell
+        return [cell]
+    value[cell] ← the number of mines among the neighbours of cell
+    opened ← [cell]
+    queue ← [cell]
+    while queue is not empty:
+        here ← the first item of queue, removed                # breadth first
+        if value[here] ≠ 0: continue                          # only zeros spread the opening
+        for each neighbour n of here:
+            if n is covered and n is not flagged:
+                value[n] ← the number of mines among the neighbours of n
+                opened ← opened + [n]
+                queue ← queue + [n]
+    if the number of open cells = rows × cols − mines:
+        the game is won
+    return opened</pre>
+  </div>
+  <p class="hiw-note">The full version queues each cell when it is opened, and checks <code>value[here]</code> when the cell leaves the queue. A cell is therefore expanded only if it is still zero at that moment. A flagged cell is never opened by a reveal, which is why a flag protects a cell from an accidental click.</p>
+
+  <h3 class="hiw-sub">Random (baseline)</h3>
+  <p class="hiw-note">The <b>random</b> agent chooses one covered cell uniformly at random, with no reasoning. It is the floor that the other agents are measured against.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py#L77-L79" target="_blank" rel="noopener" title="minesweeper/agents.py, lines 77–79" aria-label="Code on GitHub: minesweeper/agents.py, lines 77 to 79">6</a> On beginner boards it wins 0.0% of 1,000 seeded games (0 wins) and needs 3.36 guesses per game.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/minesweeper_benchmark.md" target="_blank" rel="noopener" title="results/minesweeper_benchmark.md" aria-label="Code on GitHub: results/minesweeper_benchmark.md">7</a></p>
+
+  <h3 class="hiw-sub">Single-cell rules (level 1)</h3>
+  <p class="hiw-note">The agent works at one of three <b>levels</b>. Level 1 uses single cells. Level 2 adds the constraint groups and the mine count. Level 3 adds exact probabilities. The page's AI STEP and AI PLAY run at level 3.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/minesweeper_api.py#L116-L128" target="_blank" rel="noopener" title="server/minesweeper_api.py, lines 116–128" aria-label="Code on GitHub: server/minesweeper_api.py, lines 116 to 128">8</a></p>
+  <p class="hiw-note">For a revealed number at cell <span class="math">i</span>, the <b>need</b> is the number of mines still missing around it. A <b>known mine</b> is a covered cell that has been proven to hold a mine, and a <b>known-safe</b> cell is one that has been proven clear. The <b>open</b> neighbours of <span class="math">i</span> are its covered neighbours that are neither.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L180-L185" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 180–185" aria-label="Code on GitHub: minesweeper/inference.py, lines 180 to 185">9</a></p>
+  <!-- minesweeper/inference.py:180-185 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L180-L185" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 180–185" aria-label="Code on GitHub: minesweeper/inference.py, lines 180 to 185">9</a></span>
+    <div class="math math-block">\text{need}_i = v_i - \bigl|K \cap N(i)\bigr|, \qquad \text{open}_i = \{\, n \in N(i) : n \text{ covered},\ n \notin K,\ n \notin S \,\}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">v_i</span> is the number shown at <span class="math">i</span>, <span class="math">N(i)</span> is the set of its neighbours, <span class="math">K</span> is the set of known mines, <span class="math">S</span> is the set of known-safe cells, and <span class="math">|\cdot|</span> is the size of a set. If a number needs 0 more mines, its open neighbours are safe. If it needs as many mines as it has open neighbours, they are all mines. Each new fact can change the need of another number, so the rules repeat until nothing changes, which is a <b>fixpoint</b>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L187-L196" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 187–196" aria-label="Code on GitHub: minesweeper/inference.py, lines 187 to 196">10</a></p>
+  <p class="hiw-note"><b>Example.</b> A 1 with two open neighbours and no known mine needs 1 and has 2 open cells, so neither rule applies. If one of those two is later proven a mine, the need drops to 0, and the other neighbour is proven safe.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L170-L196" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 170–196" aria-label="Code on GitHub: minesweeper/inference.py, lines 170 to 196">11</a></span>
+    <pre class="pseudo-simple">function RULE-PASS(view):
+    repeat until nothing changes:
+        for each revealed number v at cell i:
+            need ← v − the known mines among its neighbours
+            if need = 0:
+                mark its open neighbours safe                  # its mines are all placed
+            otherwise if need = the number of open neighbours:
+                mark its open neighbours as mines              # every open neighbour is a mine</pre>
+    <pre class="pseudo-full" hidden>function RULE-PASS(view):
+    KNOWN-MINES ← empty
+    KNOWN-SAFE ← empty
+    repeat until nothing changes:
+        for each revealed number v at cell i:
+            covered ← the covered neighbours of i
+            open ← the cells of covered that are in neither KNOWN-MINES nor KNOWN-SAFE
+            if open is empty: continue                         # nothing left to decide here
+            hits ← the number of cells of covered that are in KNOWN-MINES
+            need ← v − hits
+            if need = 0:                                       # every mine i wants is placed
+                add every cell of open to KNOWN-SAFE
+            otherwise if need = the number of cells in open:   # every open cell is a mine
+                add every cell of open to KNOWN-MINES
+    return KNOWN-MINES, KNOWN-SAFE</pre>
+  </div>
+  <p class="hiw-note">The full version recomputes <code>open</code> and <code>hits</code> for every number on every pass. Each pass that adds a fact sets the flag that drives the next pass, and the loop stops on the first pass that adds nothing. The loop always stops, because each pass that continues adds at least one cell to KNOWN-MINES or KNOWN-SAFE, and there are only so many covered cells.</p>
+  <p class="hiw-note">If no cell is proven, the rules agent guesses uniformly among the covered cells that are not proven mines.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py#L90-L93" target="_blank" rel="noopener" title="minesweeper/agents.py, lines 90–93" aria-label="Code on GitHub: minesweeper/agents.py, lines 90 to 93">12</a></p>
+
+  <h3 class="hiw-sub">Constraint groups and exact counts (level 2)</h3>
+  <p class="hiw-note">Each revealed number that still has open neighbours gives one <b>constraint</b>: exactly <span class="math">\text{need}_i</span> of its open cells are mines. Write <span class="math">x_n = 1</span> when covered cell <span class="math">n</span> is a mine and <span class="math">x_n = 0</span> when it is safe. The constraint is then a linear equation in those values.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L147-L167" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 147–167" aria-label="Code on GitHub: minesweeper/inference.py, lines 147 to 167">13</a></p>
+  <!-- minesweeper/inference.py:147-167 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L147-L167" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 147–167" aria-label="Code on GitHub: minesweeper/inference.py, lines 147 to 167">13</a></span>
+    <div class="math math-block">\sum_{n \in O_i} x_n = \text{need}_i, \qquad x_n \in \{0, 1\}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">O_i</span> is the set of open cells of number <span class="math">i</span>. Two constraints that share an open cell are <b>linked</b>, and a set of linked constraints forms a <b>component</b>, a group that has to be solved together. Components with no shared cell are independent. Once the total number of mines is fixed, each component can be counted on its own.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L301-L321" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 301–321" aria-label="Code on GitHub: minesweeper/inference.py, lines 301 to 321">14</a></p>
+  <p class="hiw-note">A component is counted by <b>backtracking</b>, a depth-first search that assigns one cell at a time and abandons a branch as soon as a constraint cannot be met. The cells are visited in row-major order. Each search state is the index of the next cell together with the <b>residual need</b> of every open constraint, the number of mines it still requires. Two partial layouts that reach the same state have the same future, so the count is stored under that state and reused. This is <b>memoization</b>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L278" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–278" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 278">15</a></p>
+  <p class="hiw-note">The count is kept by mine total. <span class="math">A[k]</span> is the number of layouts that use exactly <span class="math">k</span> mines. Independent components are combined by <b>convolution</b>, a sum of products over all ways of splitting the total:</p>
+  <!-- minesweeper/inference.py:136-144 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L136-L144" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 136–144" aria-label="Code on GitHub: minesweeper/inference.py, lines 136 to 144">16</a></span>
+    <div class="math math-block">(A \ast B)[k] = \sum_{a + b = k} A[a]\, B[b]</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">A</span> and <span class="math">B</span> are layout-count tables of two independent components, and <span class="math">(A \ast B)[k]</span> is the number of layouts of both together that use <span class="math">k</span> mines.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L278" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–278" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 278">15</a></span>
+    <pre class="pseudo-simple">function COUNT(i, needs):                # cells i onward; needs = mines each open constraint still wants
+    if i is past the last cell: return [1]
+    if (i, needs) was seen: return its stored counts
+    counts ← zeros
+    for x in 0 and 1:                     # cell i is safe, or a mine
+        if every constraint on cell i still fits x:
+            counts ← counts + COUNT(i + 1, updated needs), shifted by x
+    store counts for (i, needs)
+    return counts</pre>
+    <pre class="pseudo-full" hidden>function COUNT-LAYOUTS(order, constraints, fixed):     # order: the cells, row-major
+    m ← the number of cells in order
+    for each constraint j:
+        members[j] ← the positions in order of its cells, sorted
+        needs[j] ← its need
+    for each position i from 0 to m:
+        open-at[i] ← the constraints j with first member < i ≤ last member
+    for each position i:
+        touch[i] ← (j, the number of members of j after i) for each constraint j that has cell i
+    memo ← empty
+    return SOLVE(0, empty state)
+
+function SOLVE(i, state):                # state: the residual need of each constraint in open-at[i]
+    if i = m: return [1]                 # every cell is assigned, and every constraint is closed at 0
+    if (i, state) is in memo: return memo[(i, state)]
+    spend (m − i) + |open-at[i]| + |touch[i]| units of work       # raises budget exceeded
+    cur ← the residual need of each constraint in open-at[i], taken from state
+    values ← [0, 1]
+    if fixed is set on cell i: values ← [its forced value]
+    out ← zeros, one for each count from 0 to m − i
+    for each x in values:
+        nxt ← empty
+        for each (j, after) in touch[i]:
+            r ← (cur[j] if j is open, otherwise needs[j]) − x
+            if r < 0 or r > after: skip x          # too many mines, or too few cells left to supply them
+            nxt[j] ← r
+        child ← for each j in open-at[i + 1]: nxt[j] if set, otherwise cur[j]
+        for each k with value v in SOLVE(i + 1, child):
+            out[k + x] ← out[k + x] + v
+    memo[(i, state)] ← out
+    return out</pre>
+  </div>
+  <p class="hiw-note">The full version has the same states as the simple one, with the bookkeeping spelled out. A constraint that has not started yet still has its full need. The check <code>r &gt; after</code> prunes a branch early, when the cells left in the constraint cannot supply the mines it still wants. The <code>fixed</code> argument forces one cell to a value, which gives the layouts in which that cell is a mine. The work is charged to the budget in the next section.</p>
+  <p class="hiw-note"><b>Example.</b> Take three cells in row-major order, <span class="math">a</span>, <span class="math">b</span>, <span class="math">c</span>, with the constraints <span class="math">x_a + x_b = 1</span> and <span class="math">x_b + x_c = 1</span>. If <span class="math">b</span> is a mine, then <span class="math">a</span> and <span class="math">c</span> are safe, giving one mine in total. If <span class="math">b</span> is safe, then <span class="math">a</span> and <span class="math">c</span> are mines, giving two. So the component's table is <span class="math">[0, 1, 1]</span>.</p>
+
+  <h3 class="hiw-sub">Exact mine probability (level 3, default)</h3>
+  <p class="hiw-note">A <b>layout</b> is a full assignment of mines to the covered cells that satisfies every constraint and uses the board's mine count. Every layout is treated as equally likely, so a cell's probability is the share of layouts that put a mine on it. The <b>weight</b> of a set of layouts is simply how many there are. All weights are integers, so comparisons are exact, and the one division is done at the end.</p>
+  <p class="hiw-note">The <b>frontier</b> is the set of cells that appear in some constraint. The <b>interior</b> is the rest of the covered cells, which touch no number. Let <span class="math">R</span> be the mines not yet proven, and let <span class="math">t</span> be the number of mines on the frontier. The other <span class="math">R - t</span> mines fall among the interior's cells in <span class="math">\binom{|I|}{R-t}</span> ways. <span class="math">\binom{n}{k}</span> is the <b>binomial coefficient</b>, the number of ways to choose <span class="math">k</span> of <span class="math">n</span> cells. It is 0 when <span class="math">k</span> is negative or larger than <span class="math">n</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L131-L133" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 131–133" aria-label="Code on GitHub: minesweeper/inference.py, lines 131 to 133">17</a></p>
+  <!-- minesweeper/inference.py:375-385 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L375-L385" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 375–385" aria-label="Code on GitHub: minesweeper/inference.py, lines 375 to 385">18</a></span>
+    <div class="math math-block">W = \sum_{t} G[t]\, \binom{|I|}{R - t}, \qquad G = A_1 \ast A_2 \ast \cdots \ast A_c</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">W</span> is the weight of all layouts, <span class="math">A_1 \ldots A_c</span> are the layout-count tables of the <span class="math">c</span> components, <span class="math">G[t]</span> is the number of ways the frontier can hold <span class="math">t</span> mines, and <span class="math">I</span> is the interior.</p>
+  <p class="hiw-note">For a cell <span class="math">c</span> on the frontier of component <span class="math">K</span>, the weight of the layouts in which <span class="math">c</span> is a mine is built from that component's with-mine counts and from the other components, combined:</p>
+  <!-- minesweeper/inference.py:387-397 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L387-L397" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 387–397" aria-label="Code on GitHub: minesweeper/inference.py, lines 387 to 397">19</a></span>
+    <div class="math math-block">N_c = \sum_{j} A^{(c)}_K[j]\, R_K[j], \qquad R_K[j] = \sum_{s} B_K[s]\, \binom{|I|}{R - j - s}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">A^{(c)}_K[j]</span> is the number of layouts of <span class="math">K</span> that have <span class="math">c</span> as a mine and <span class="math">j</span> mines in total. <span class="math">B_K</span> is the convolution of the layout tables of all the other components. <span class="math">R_K[j]</span> is the weight of the full layouts in which <span class="math">K</span> uses <span class="math">j</span> mines.</p>
+  <p class="hiw-note">Interior cells are interchangeable, so each has the same weight. For a fixed count <span class="math">k</span> of interior mines, a given interior cell is a mine in <span class="math">\binom{|I|-1}{k-1}</span> of the <span class="math">\binom{|I|}{k}</span> placements. Summing over the possible values of <span class="math">k</span>, weighted by <span class="math">G[t]</span>, gives:</p>
+  <!-- minesweeper/inference.py:398-403 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L398-L403" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 398–403" aria-label="Code on GitHub: minesweeper/inference.py, lines 398 to 403">20</a></span>
+    <div class="math math-block">N_c = \sum_{t} G[t]\, \binom{|I| - 1}{R - t - 1}</div>
+  </div>
+  <p class="hiw-note">Finally, the probability of a covered cell <span class="math">c</span> is its weight divided by the total weight:</p>
+  <!-- minesweeper/inference.py:117-123 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L117-L123" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 117–123" aria-label="Code on GitHub: minesweeper/inference.py, lines 117 to 123">21</a></span>
+    <div class="math math-block">p_c = \frac{N_c}{W}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">N_c</span> is the weight of the layouts in which <span class="math">c</span> is a mine, and <span class="math">W</span> is the weight of all layouts. If <span class="math">N_c = 0</span>, no layout puts a mine on <span class="math">c</span>, so <span class="math">c</span> is proven safe. If <span class="math">N_c = W</span>, every layout does, so <span class="math">c</span> is proven a mine. These are the proofs that AI STEP plays.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L405-L416" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 405–416" aria-label="Code on GitHub: minesweeper/inference.py, lines 405 to 416">22</a></p>
+  <p class="hiw-note"><b>Example.</b> Suppose three interior cells remain and one mine is left among them. Then <span class="math">\binom{3}{1} = 3</span> layouts exist. Each cell is a mine in <span class="math">\binom{2}{0} = 1</span> of them, so its probability is <span class="math">1/3</span>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L329-L351" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 329–351" aria-label="Code on GitHub: minesweeper/inference.py, lines 329 to 351">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L354-L422" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 354–422" aria-label="Code on GitHub: minesweeper/inference.py, lines 354 to 422">24</a></span>
+    <pre class="pseudo-simple">function ANALYSE(view):
+    prove every cell that the single-cell rules settle
+    group the numbers into components that share covered cells
+    count the layouts of each component, by mine total
+    combine the components, the interior and the mine count
+    for each covered cell:
+        probability ← the layouts with a mine there ÷ all layouts
+    a cell that no layout fills with a mine is safe; one that every layout fills is a mine</pre>
+    <pre class="pseudo-full" hidden>function ANALYSE(view, level):
+    KNOWN-MINES, KNOWN-SAFE ← RULE-PASS(view)
+    if level = 1: return the proofs
+    try:
+        return EXACT(view, level, KNOWN-MINES, KNOWN-SAFE)
+    on budget exceeded:
+        return ESTIMATE(view, level, KNOWN-MINES, KNOWN-SAFE)
+
+function EXACT(view, level, KNOWN-MINES, KNOWN-SAFE):
+    constraints ← one (open cells, need) for each revealed number with open cells
+    frontier ← the cells that appear in some constraint
+    interior ← the covered cells in neither frontier, KNOWN-MINES nor KNOWN-SAFE
+    remaining ← mines − |KNOWN-MINES|
+    components ← the constraints, grouped by shared cells
+    for each component K:
+        total[K] ← COUNT-LAYOUTS(cells of K, constraints of K)
+        for each cell c of K:
+            withmine[K][c] ← COUNT-LAYOUTS(cells of K, constraints of K, fixed = (c, mine))
+    G ← [1]
+    for each component K: G ← G ∗ total[K]
+    weight(t) ← C(|interior|, remaining − t)
+    total ← the sum over t of G[t] × weight(t)
+    if total = 0: raise ValueError("the numbers and the mine count cannot all be true")
+    for each component K:
+        others ← [1]
+        for each other component L: others ← others ∗ total[L]
+        R[j] ← the sum over s of others[s] × weight(j + s), for each j
+        for each cell c of K:
+            numerator[c] ← the sum over j of withmine[K][c][j] × R[j]
+    for each interior cell c:
+        numerator[c] ← the sum over t of G[t] × C(|interior| − 1, remaining − t − 1)
+    for each covered cell c:
+        if numerator[c] = 0: c is safe
+        otherwise if numerator[c] = total: c is a mine
+    return the analysis, with numerator and total</pre>
+  </div>
+  <p class="hiw-note">The full version is the exact count, step by step. Each component is counted twice: once with no restriction, and once for every frontier cell forced to a mine. The per-component results are cached on the component's cells and constraints, so an unchanged component costs nothing on the next move. The check <code>total = 0</code> is the only place where contradictory numbers are reported as an error, since the counts are the only thing that can see that no layout fits.</p>
+  <p class="hiw-note">The probability of a frontier cell uses the other components only through their combined table <code>others</code>. Since the components are independent once the total is fixed, the mines that the others take are summed over every split that is possible.</p>
+  <p class="hiw-note"><b>Ties.</b> Ties are common on the interior, where every cell has the same weight. The agent guesses the covered cell with the lowest <span class="math">N_c</span>. The tie-break prefers the cell with the most covered neighbours, because revealing it can open the most covered cells if it is a zero. The final tie-break is the lower cell number. Exact weights are compared as integers, so two cells never tie through rounding.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py#L48-L64" target="_blank" rel="noopener" title="minesweeper/agents.py, lines 48–64" aria-label="Code on GitHub: minesweeper/agents.py, lines 48 to 64">25</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py#L48-L64" target="_blank" rel="noopener" title="minesweeper/agents.py, lines 48–64" aria-label="Code on GitHub: minesweeper/agents.py, lines 48 to 64">25</a></span>
+    <pre class="pseudo-simple">function BEST-GUESS(analysis):
+    return the covered cell with the lowest mine probability
+           # ties: most covered neighbours first, then the lower cell number</pre>
+    <pre class="pseudo-full" hidden>function BEST-GUESS(analysis):
+    if analysis is exact:
+        candidates ← the covered cells that have a numerator
+        if candidates is empty: raise ValueError
+        return the c in candidates with the smallest (numerator[c], −unknown-neighbours(c), c)
+    candidates ← the covered cells that have an estimate
+    if candidates is empty: raise ValueError
+    return the c in candidates with the smallest (estimate[c], −unknown-neighbours(c), c)</pre>
+  </div>
+  <p class="hiw-note">The full version compares a tuple of three keys. Negating the neighbour count makes a larger count sort first, and the cell number at the end makes the choice deterministic. In estimate mode the same keys are used with the estimated probabilities.</p>
+
+  <h3 class="hiw-sub">Work budget and estimates</h3>
+  <p class="hiw-note">The exact count can grow quickly on a wide frontier with long chains of numbers. Every new memo state and every convolution is charged to a <b>work budget</b> of 2,000,000 units, where a unit is roughly one Python operation. The budget is set by <code>WORK_BUDGET</code>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L53" target="_blank" rel="noopener" title="minesweeper/inference.py, line 53" aria-label="Code on GitHub: minesweeper/inference.py, line 53">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L60-L69" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 60–69" aria-label="Code on GitHub: minesweeper/inference.py, lines 60 to 69">27</a> When it runs out, the analysis keeps the single-cell proofs, which were found before counting, and reports estimated probabilities instead. The reply carries <code>exact: false</code>, and the page says so. An estimate never proves a cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/minesweeper_api.py#L91" target="_blank" rel="noopener" title="server/minesweeper_api.py, line 91" aria-label="Code on GitHub: server/minesweeper_api.py, line 91">28</a></p>
+  <!-- minesweeper/inference.py:441-451 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L441-L451" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 441–451" aria-label="Code on GitHub: minesweeper/inference.py, lines 441 to 451">29</a></span>
+    <div class="math math-block">\hat{p}_c = \min\Bigl(1,\ \frac{1}{|K_c|} \sum_{k \in K_c} \frac{\text{need}_k}{|O_k|}\Bigr) \quad (c \in \text{frontier}), \qquad \hat{p}_c = \min\bigl(1, \max\bigl(0, \tfrac{R - \sum_{f \in \text{frontier}} \hat{p}_f}{|I|}\bigr)\bigr) \quad (c \in I)</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">K_c</span> is the set of constraints that contain frontier cell <span class="math">c</span>, <span class="math">O_k</span> is the open cells of constraint <span class="math">k</span>, and <span class="math">\hat{p}_c</span> is the estimated mine probability of <span class="math">c</span>. A frontier cell gets the average density, the need over the number of open cells, of the constraints it sits in. The interior cells share the mines that the frontier estimates do not account for, spread evenly.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L425-L455" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 425–455" aria-label="Code on GitHub: minesweeper/inference.py, lines 425 to 455">30</a></span>
+    <pre class="pseudo-simple">function ESTIMATE(view, KNOWN-MINES, KNOWN-SAFE):
+    keep the single-cell proofs
+    for each covered cell next to a number:
+        estimate ← the average, over its constraints, of need ÷ number of open cells
+    share the mines not accounted for evenly among the interior cells</pre>
+    <pre class="pseudo-full" hidden>function ESTIMATE(view, KNOWN-MINES, KNOWN-SAFE):
+    constraints ← the constraints of EXACT
+    frontier ← the cells that appear in some constraint
+    interior ← the covered cells in neither frontier, KNOWN-MINES nor KNOWN-SAFE
+    remaining ← mines − |KNOWN-MINES|
+    density ← an empty map from cell to a list of numbers
+    for each constraint (cells, need):
+        for each cell c in cells: append need ÷ |cells| to density[c]
+    for each cell c in density:
+        estimate[c] ← min(1, the average of density[c])
+    if interior is not empty:
+        left ← remaining − the sum of estimate over the frontier
+        share ← min(1, max(0, left ÷ |interior|))
+        for each interior cell c: estimate[c] ← share
+    return the analysis, with exact false and the estimates</pre>
+  </div>
+  <p class="hiw-note">The full version builds the same constraints as the exact count, so both see the same frontier and interior. The <code>min(1, …)</code> keeps each estimate a probability. The estimates shade the heat map and rank guesses, and <code>best_guess</code> uses the same tie-break as the exact count. An estimate never proves a cell.</p>
+
+  <h3 class="hiw-sub">AI STEP and AI PLAY</h3>
+  <p class="hiw-note"><b>AI STEP</b> asks the server for the level-3 analysis of the board as it stands, and then applies it. Each certain mine is marked as proven. Every cell proven safe is revealed, one beat at a time, and its reason is logged. If nothing is proven, the agent reveals its lowest-probability guess. A guess also clears any flag on its cell, as a certain move does.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L359-L414" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 359–414" aria-label="Code on GitHub: web/js/minesweeper.js, lines 359 to 414">31</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/minesweeper.js#L359-L414" target="_blank" rel="noopener" title="web/js/minesweeper.js, lines 359–414" aria-label="Code on GitHub: web/js/minesweeper.js, lines 359 to 414">31</a></span>
+    <pre class="pseudo-simple">function AI-STEP():
+    a ← the analysis of the board from the server, at level 3
+    mark the certain mines in a as proven
+    if a has cells proven safe:
+        for each proven safe cell c, one beat at a time:
+            REVEAL(c)                                      # a flood fill may open more cells
+    otherwise if a has a guess g:
+        REVEAL(g)                                          # the lowest mine probability on the board</pre>
+    <pre class="pseudo-full" hidden>function AI-STEP():
+    if the game is over or a step is running: return false
+    gen ← the current board number
+    busy ← true
+    try:
+        a ← the analysis of the board from the server, at level 3
+    on error:
+        busy ← false
+        return false
+    if gen is not the current board number: return false       # a new board started meanwhile
+    add every certain mine in a to proven
+    if a has cells proven safe:
+        rounds ← rounds + 1
+        beat ← max(20, min(110, round(900 ÷ number of safe cells)))     # milliseconds
+        for each cell c in a.safe:
+            if the game is over or gen is not the current board number: stop
+            if c is open already: continue                     # opened by an earlier flood fill
+            remove any flag on c
+            REVEAL(c)
+            wait beat milliseconds
+    otherwise if a has a guess g:
+        guesses ← guesses + 1
+        remove any flag on g
+        REVEAL(g)
+    otherwise:
+        log "nothing left to decide"
+    busy ← false
+    return true</pre>
+  </div>
+  <p class="hiw-note">The full version has two guards and a pacing rule. The <code>busy</code> flag stops a second step from starting while one is running. The board number <code>gen</code> stops a reply, or a running round, from acting on a board that has since been replaced. The beat is shorter when there are more cells, so a long round reads as a sequence without taking long. <b>AI PLAY</b> repeats AI STEP until the board is decided, the player presses STOP, or a request fails, and it makes one server request per round.</p>
+
+  <h3 class="hiw-sub">Constants and tie-breaks</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Constant or rule</th><th>What it sets</th><th class="num">Value</th></tr></thead><tbody>
+    <tr><td>Board sizes</td><td>Rows, columns and mines of each preset</td><td class="num">9×9 with 10 mines; 16×16 with 40; 16 rows × 30 columns with 99</td></tr>
+    <tr><td>WORK_BUDGET</td><td>Units of work for one exact count</td><td class="num">2,000,000</td></tr>
+    <tr><td>_CACHE_LIMIT</td><td>Component results kept; the cache is cleared when full</td><td class="num">4,096</td></tr>
+    <tr><td>Tie-break 1</td><td>Lowest weight (exact) or lowest estimate</td><td class="num">Smallest value</td></tr>
+    <tr><td>Tie-break 2</td><td>Covered neighbours, the most that a reveal could open</td><td class="num">More neighbours wins</td></tr>
+    <tr><td>Tie-break 3</td><td>Cell number</td><td class="num">Lower number wins</td></tr>
+    <tr><td>First click</td><td>The clicked cell and its neighbours are never mines</td><td class="num">Rule, no weight</td></tr>
+    <tr><td>BENCH_SEED_BASE</td><td>Seed of the first benchmark game; game i uses seed + i</td><td class="num">10,000</td></tr>
+    <tr><td>GAMES</td><td>Benchmark games per size</td><td class="num">1,000; 500; 200</td></tr>
+    <tr><td>Wilson z</td><td>Multiplier for the 95% interval on win rates</td><td class="num">1.96</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> nothing is tuned. The probabilities are exact counts, and the proof rules follow from the rules of the game. The tie-breaks were fixed by hand, not tuned. The three presets are the classic beginner (9×9, 10 mines), intermediate (16×16, 40) and expert (30 columns by 16 rows, 99) boards. The benchmark plays 1,000, 500 and 200 seeded games per size, on seeds 10,000 onward, with the same boards for every agent.</p>
-  <p class="hiw-note"><b>Results</b> (95% Wilson intervals): on beginner boards the probability agent wins 97.5% against 96.1% for the constraint agent and 79.8% for the rules agent. On intermediate boards the figures are 87.8%, 85.4% and 49.2%. On expert boards they are 48.5%, 39.0% and 1.5%. The probability agent guesses more on expert boards (2.88 per game against 2.29), since it keeps playing longer.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py">minesweeper/inference.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py">minesweeper/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/board.py">minesweeper/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/benchmark.py">minesweeper/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/minesweeper_benchmark.md">results/minesweeper_benchmark.md</a></p>
-</section>
+  <p class="hiw-note">Each of these values is fixed in the code. Nothing was tuned: the probabilities are exact counts, and the proof rules follow from the rules of the game. The tie-breaks were set by hand.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L46-L53" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 46–53" aria-label="Code on GitHub: minesweeper/inference.py, lines 46 to 53">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/benchmark.py#L22-L24" target="_blank" rel="noopener" title="minesweeper/benchmark.py, lines 22–24" aria-label="Code on GitHub: minesweeper/benchmark.py, lines 22 to 24">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/board.py#L21-L25" target="_blank" rel="noopener" title="minesweeper/board.py, lines 21–25" aria-label="Code on GitHub: minesweeper/board.py, lines 21 to 25">34</a></p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note">The benchmark plays every agent on the same seeded boards, so the comparison is paired. Win rates are shown with a 95% Wilson interval, which behaves better than the normal interval when the rate is near 0 or 1.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/benchmark.py#L27-L35" target="_blank" rel="noopener" title="minesweeper/benchmark.py, lines 27–35" aria-label="Code on GitHub: minesweeper/benchmark.py, lines 27 to 35">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/minesweeper_benchmark.md" target="_blank" rel="noopener" title="results/minesweeper_benchmark.md" aria-label="Code on GitHub: results/minesweeper_benchmark.md">7</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Beginner (1,000 games)</th><th class="num">Intermediate (500)</th><th class="num">Expert (200)</th></tr></thead><tbody>
+    <tr><td>random</td><td class="num">0.0% (0.0–0.4)</td><td class="num">0.0% (0.0–0.8)</td><td class="num">0.0% (0.0–1.9)</td></tr>
+    <tr><td>rules (level 1)</td><td class="num">79.8% (77.2–82.2)</td><td class="num">49.2% (44.8–53.6)</td><td class="num">1.5% (0.5–4.3)</td></tr>
+    <tr><td>csp (level 2)</td><td class="num">96.1% (94.7–97.1)</td><td class="num">85.4% (82.0–88.2)</td><td class="num">39.0% (32.5–45.9)</td></tr>
+    <tr><td>probability (level 3)</td><td class="num">97.5% (96.3–98.3)</td><td class="num">87.8% (84.6–90.4)</td><td class="num">48.5% (41.7–55.4)</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">On beginner boards the probability agent wins 97.5% of games, 902 of its wins without a guess. On expert boards it guesses more often than the constraint agent (2.88 per game against 2.29), and it also wins more of its games (48.5% against 39.0%).<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/benchmark.py#L38-L53" target="_blank" rel="noopener" title="minesweeper/benchmark.py, lines 38–53" aria-label="Code on GitHub: minesweeper/benchmark.py, lines 38 to 53">36</a></p>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/minesweeper.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

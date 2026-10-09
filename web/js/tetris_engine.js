@@ -208,6 +208,46 @@ export function bestMove(board, piece, weights, preview = null, topK = 6) {
   return { move: best, moves };
 }
 
+// Can the falling piece reach placement t with moves a player can make: turn one quarter at a time, slide one
+// column at a time, then fall straight down? Every step must fit. The AI animates only when this holds; otherwise
+// it locks the piece at t at once, so it never shows a route the piece cannot take.
+export function reachesByMoves(g, t) {
+  const n = ROTATIONS[g.piece].length;
+  let rot = g.rot, x = g.x;
+  while (rot !== t.rot) {
+    rot = (rot + 1) % n;
+    if (!fits(g.board, g.shape(rot), x, g.y)) return false;
+  }
+  while (x !== t.x) {
+    x += Math.sign(t.x - x);
+    if (!fits(g.board, g.shape(rot), x, g.y)) return false;
+  }
+  // The fall must reach row t.y without touching anything. t.y is where the piece rests in this column, so
+  // falling exactly to it is the whole drop.
+  if (g.y < t.y) return false;
+  for (let y = g.y - 1; y >= t.y; y--) if (!fits(g.board, g.shape(rot), x, y)) return false;
+  return true;
+}
+
+// One animation step toward placement t: a quarter turn if the rotation differs, else a slide if the column
+// differs. Returns false when there is no step to take (already aligned, or the step is blocked), and the
+// caller then locks the piece at t.
+export function stepToward(g, t) {
+  if (g.rot !== t.rot) {
+    const next = (g.rot + 1) % ROTATIONS[g.piece].length;
+    if (!fits(g.board, g.shape(next), g.x, g.y)) return false;
+    g.rot = next;
+    return true;
+  }
+  if (g.x !== t.x) {
+    const nx = g.x + Math.sign(t.x - g.x);
+    if (!fits(g.board, g.shape(), nx, g.y)) return false;
+    g.x = nx;
+    return true;
+  }
+  return false;
+}
+
 // Seeded random numbers (mulberry32). The browser's games use this; they do not need to match Python's.
 export function rng(seed) {
   let a = seed >>> 0;
@@ -238,14 +278,18 @@ export class Bag {
 }
 
 // The game state for the page: falling piece, board, score. The AI does not use this for movement;
-// it asks bestMove() for a target and the page animates the slide and drop.
+// it asks bestMove() for a target and the page animates the turn and slide, then locks the piece there.
+// opts.endOnBlockedSpawn picks the game-over rule. True (play by hand) ends the game when a piece cannot
+// appear at the top centre. False (the AI) ends it only when the search finds no legal placement, as in
+// tetris/game.py, so the AI plays the same games as the benchmark.
 export class Game {
-  constructor(seed) {
+  constructor(seed, { endOnBlockedSpawn = true } = {}) {
     this.bag = new Bag(seed);
     this.board = new Array(H).fill(0);
     this.lines = 0;
     this.pieces = 0;
     this.over = false;
+    this.endOnBlockedSpawn = endOnBlockedSpawn;
     this.spawn();
   }
   spawn() {
@@ -255,7 +299,7 @@ export class Game {
     const r = this.shape();
     this.x = Math.floor((W - r.width) / 2);
     this.y = H - r.height;
-    if (!fits(this.board, r, this.x, this.y)) this.over = true;
+    if (this.endOnBlockedSpawn && !fits(this.board, r, this.x, this.y)) this.over = true;
   }
   shape(k = this.rot) { return ROTATIONS[this.piece][k]; }
   move(dx) { if (fits(this.board, this.shape(), this.x + dx, this.y)) { this.x += dx; return true; } return false; }

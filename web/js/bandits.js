@@ -26,6 +26,7 @@ const state = {
   meta: null,
   constants: CONSTANTS,
   labels: {},             // agent key -> label from meta
+  blurbs: {},             // agent key -> one-sentence description from meta, shown as a tooltip
   kind: 'bernoulli',
   k: 5,
   pulls: 300,
@@ -79,6 +80,7 @@ function renderAgentToggles() {
   for (const key of lineup()) {
     const label = document.createElement('label');
     label.className = 'bd-agent';
+    label.title = state.blurbs[key] || '';
     label.style.setProperty('--col', AGENT_COLORS[key]);
     const cb = document.createElement('input');
     cb.type = 'checkbox';
@@ -171,7 +173,7 @@ function renderFloor() {
     b.addEventListener('click', () => pull(i, b));
     floor.append(b);
   }
-  $('floor-note').textContent = 'Click a lever (or press 1 to 9 and 0) to pull. Payouts stay hidden until the reveal.';
+  $('floor-note').textContent = 'Payouts stay hidden until the reveal.';
 }
 
 function machineButton(i) {
@@ -467,7 +469,6 @@ function renderChips() {
   const p = state.player;
   $('chip-pulls').textContent = `${p.arms.length}/${state.pulls}`;
   $('chip-regret').textContent = state.casino ? p.regret.toFixed(2) : '—';
-  $('chip-best').textContent = p.arms.length ? `${(100 * p.optimal / p.arms.length).toFixed(0)}%` : '—';
   $('chip-leader').textContent = leaderText();
 }
 
@@ -670,7 +671,7 @@ function drawThompson() {
     $('post-title').textContent = 'Thompson posteriors';
     note.textContent = state.visible.has('thompson')
       ? 'Waiting for the first pull of Thompson sampling.'
-      : 'Turn on Thompson sampling in the agents list to see its posteriors.';
+      : 'Tick Thompson sampling in the agents list to see its posteriors.';
     return;
   }
   const curves = thompsonCurves(racer);
@@ -707,8 +708,8 @@ function drawThompson() {
   });
   $('post-title').textContent = `Thompson posteriors after ${racer.t} pulls`;
   note.textContent = gaussian
-    ? 'Each curve is the agent\'s belief about a machine\'s mean payout. The dashed line is the sample it drew last.'
-    : 'Each curve is the agent\'s belief about a machine\'s payout rate: Beta(1 + wins, 1 + losses). The dashed line is the sample it drew last.';
+    ? 'Each curve is one machine\'s belief about its mean payout. The dashed line is the last sample.'
+    : 'Each curve is one machine\'s belief about its payout rate. The dashed line is the last sample.';
 }
 
 // UCB confidence bars: the average so far (solid) and the bonus up to the index (pale).
@@ -720,7 +721,7 @@ function drawUCB() {
   const note = $('ucb-note');
   if (!key) {
     $('ucb-title').textContent = 'UCB confidence bars';
-    note.textContent = 'Turn on UCB1 or sliding-window UCB in the agents list to see its bounds.';
+    note.textContent = 'Tick UCB1 or sliding-window UCB in the agents list to see its bounds.';
     return;
   }
   const racer = state.racers[key];
@@ -757,7 +758,7 @@ function drawUCB() {
   ctx.fillStyle = '#4a7a9b';
   ctx.fillText(top.toFixed(1), 2, y0 + 10);
   $('ucb-title').textContent = `${state.labels[key]} after ${racer.t} pulls`;
-  note.textContent = 'Solid bar: the average so far. Pale bar: the bonus that lifts an under-tried machine to its bound.';
+  note.textContent = 'Solid bar: the average so far. Pale bar: the bonus up to the index.';
 }
 
 // Benchmark panel: committed results, drawn from results/bandits_benchmark.json.
@@ -850,6 +851,7 @@ async function init() {
   try {
     state.meta = await getJSON('/api/bandits/meta');
     state.labels = Object.fromEntries(state.meta.agents.map((a) => [a.key, a.label]));
+    state.blurbs = Object.fromEntries(state.meta.agents.map((a) => [a.key, a.blurb]));
     state.constants = { ...CONSTANTS, ...state.meta.constants };
   } catch (err) {
     setStatus('ERROR');

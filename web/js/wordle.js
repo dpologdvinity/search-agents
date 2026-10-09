@@ -86,7 +86,7 @@ function keyButton(label, extra, onClick) {
   b.textContent = label;
   b.setAttribute('aria-label', label === '⌫' ? 'backspace' : label.toLowerCase());
   b.onclick = onClick;
-  if (label.length === 1) state.keys.set(label.toLowerCase(), b);
+  if (/^[A-Z]$/.test(label)) state.keys.set(label.toLowerCase(), b); // letters only: render() repaints these, and ⌫ keeps its wide class
   return b;
 }
 
@@ -314,7 +314,6 @@ function renderHint(data) {
       : `Its ${top.bits.toFixed(2)} expected bits split the candidates into buckets of ${top.expected_left.toFixed(1)} words on average.`;
     $('think-text').textContent = `Best: ${top.word.toUpperCase()}${top.candidate ? ' (it could be the answer)' : ''}. ${note}`;
   }
-  $('chip-strategy').textContent = sName.toUpperCase();
   $('left-title').textContent = `${data.remaining} WORDS STILL POSSIBLE`;
   const chips = $('wd-chips');
   chips.innerHTML = '';
@@ -419,7 +418,10 @@ function onKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const tag = e.target.tagName;
   if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
-  if (e.key === 'Enter') { e.preventDefault(); submit(); }
+  // Enter on a fold summary, a link, or the explanation controls (pseudocode toggle, open-all) is that control's own
+  // activation, so the board must not take it. Enter on any other focused button still submits the typed word.
+  const ownEnter = tag === 'SUMMARY' || tag === 'A' || e.target.classList.contains('pseudo-toggle') || e.target.classList.contains('fold-all');
+  if (e.key === 'Enter') { if (ownEnter) return; e.preventDefault(); submit(); }
   else if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
   else if (/^[a-zA-Z]$/.test(e.key)) addLetter(e.key.toLowerCase());
 }

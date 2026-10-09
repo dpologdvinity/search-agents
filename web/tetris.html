@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="tetris.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">PLACEMENT SEARCH · GENETIC ALGORITHM</div>
+      <div class="proj-pg-tag">PLACEMENT SEARCH // CROSS-ENTROPY TUNING</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="TETRIS">TETRIS</h1>
-      <div class="proj-pg-sub">Every rotation and column is a candidate. Each result is scored as a weighted sum of board features, and a cross-entropy search found the weights.</div>
+      <div class="proj-pg-sub">Each piece goes wherever the weighted score of the resulting board is highest. Play yourself, or watch the agent.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -41,10 +42,16 @@
         <span class="stat-chip">LINES <span class="val" id="chip-lines">0</span></span>
         <span class="stat-chip">PIECES <span class="val" id="chip-pieces">0</span></span>
         <span class="stat-chip green">BEST <span class="val" id="chip-best">0</span></span>
-        <span class="stat-chip">MODE <span class="val" id="chip-mode">HUMAN</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Stack the falling pieces so that full rows clear. The game ends when a new piece cannot appear at the top centre of the board.</p>
+    <p style="margin-top:0.5rem">Move with the arrow keys, rotate with ↑, X or Z, soft drop with ↓, and hard drop with space. On a phone, the buttons under the board do the same. P pauses.</p>
+    <p style="margin-top:0.5rem">AI PLAYS hands the moves to the agent, and SHOW AGENT marks its choice for the current piece while you play. The agent starts on the TUNED weights when they load, and HAND-PICKED switches to the hand-written set.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -65,21 +72,12 @@
       </div>
 
       <div class="tt-controls">
-        <button class="cyber-btn pink" id="tt-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
-        <button class="cyber-btn" id="tt-mode-human" type="button" aria-pressed="true"><span class="btn-txt">YOU PLAY</span></button>
-        <button class="cyber-btn green" id="tt-mode-ai" type="button" aria-pressed="false"><span class="btn-txt">▶ AI PLAYS</span></button>
-        <span class="tt-speed-wrap" id="tt-speed-wrap" hidden>
-          <label class="field-lbl" for="tt-speed">AI SPEED</label>
-          <select class="cyber-select" id="tt-speed">
-            <option value="slow">slow</option>
-            <option value="normal" selected>normal</option>
-            <option value="fast">fast</option>
-            <option value="max">max</option>
-          </select>
-        </span>
-        <button class="cyber-btn" id="tt-pause" type="button" aria-pressed="false" data-human><span class="btn-txt">❚❚ PAUSE</span></button>
-        <button class="cyber-btn" id="tt-agent" type="button" aria-pressed="false"><span class="btn-txt">◉ SHOW AGENT</span></button>
-        <button class="cyber-btn" id="tt-look" type="button" aria-pressed="false"><span class="btn-txt">⧉ LOOKAHEAD</span></button>
+        <button class="cyber-btn pink" id="tt-new" type="button" title="Start a new game"><span class="btn-txt">↺ NEW GAME</span></button>
+        <button class="cyber-btn" id="tt-mode-human" type="button" aria-pressed="true" title="You move the falling piece"><span class="btn-txt">YOU PLAY</span></button>
+        <button class="cyber-btn green" id="tt-mode-ai" type="button" aria-pressed="false" title="The agent moves the falling pieces"><span class="btn-txt">▶ AI PLAYS</span></button>
+        <button class="cyber-btn" id="tt-pause" type="button" aria-pressed="false" title="Pause or resume (P)"><span class="btn-txt">❚❚ PAUSE</span></button>
+        <button class="cyber-btn" id="tt-agent" type="button" aria-pressed="false" title="Show the agent's choice for the falling piece (H)"><span class="btn-txt">◉ SHOW AGENT</span></button>
+        <button class="cyber-btn" id="tt-look" type="button" aria-pressed="false" title="Also weigh the next piece when the agent chooses a placement"><span class="btn-txt">⧉ LOOKAHEAD</span></button>
       </div>
 
       <div class="tt-mobile" aria-label="Touch controls">
@@ -90,23 +88,35 @@
         <button class="cyber-btn pink" id="tt-m-drop" type="button" data-human><span class="btn-txt">⤓ DROP</span></button>
       </div>
 
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <span class="tt-speed-wrap" id="tt-speed-wrap">
+          <label class="field-lbl" for="tt-speed">AI SPEED</label>
+          <select class="cyber-select" id="tt-speed" title="How long the agent waits between its moves while AI PLAYS runs">
+            <option value="slow">slow</option>
+            <option value="normal" selected>normal</option>
+            <option value="fast">fast</option>
+            <option value="max">max</option>
+          </select>
+        </span>
+      </details>
+
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">WHAT THE AGENT IS THINKING</div>
         <div class="viz-panel tt-why-panel">
           <div class="viz-title" id="tt-why-line">Thinking...</div>
           <div class="tt-why" id="tt-why" aria-live="polite"></div>
-          <div class="field-hint">Each bar is one feature's weighted contribution to the chosen placement. Green pushes the score up, pink pushes it down. Every candidate is a ghost, coloured from cold blue (worst) to hot yellow and pink (best).</div>
+          <div class="field-hint">Green pushes the score up, pink pushes it down. Ghosts run from cold blue (worst) to hot pink (best).</div>
         </div>
       </div>
     </div>
 
     <div class="proj-ctrl-col">
       <div>
-        <div class="section-title pink-ttl">FEATURE WEIGHTS</div>
-        <div class="field-hint" style="margin-bottom:0.6rem">Drag a weight and the agent re-scores every candidate at once. The score is the sum of weight times feature, and the agent takes the highest.</div>
+        <div class="section-title pink-ttl" title="Drag a weight and the agent re-scores every candidate. The score is the sum of weight times feature, and the agent takes the highest.">FEATURE WEIGHTS</div>
         <div class="tt-presets">
-          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false"><span class="btn-txt">TUNED</span></button>
-          <button class="cyber-btn green" id="tt-reset-hand" type="button" aria-pressed="true"><span class="btn-txt">HAND-PICKED</span></button>
+          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false" title="The weights found by the cross-entropy search"><span class="btn-txt">TUNED</span></button>
+          <button class="cyber-btn green" id="tt-reset-hand" type="button" aria-pressed="true" title="The hand-written weights, never tuned"><span class="btn-txt">HAND-PICKED</span></button>
         </div>
         <div class="tt-sliders" id="tt-sliders"></div>
       </div>
@@ -115,94 +125,406 @@
         <div class="section-title green-ttl">HOW THE TUNED WEIGHTS WERE FOUND</div>
         <div class="viz-panel">
           <div class="field-hint" id="tt-cfg">Loading the tuned weights...</div>
-          <div class="field-hint" style="margin-top:0.4rem">Held-out result (30 games played to game over, seeds the training never used): the tuned weights clear 6,702 mean lines against 2,129 for the hand-picked weights. The tuned set is the noisy cross-entropy result, stopped after 6 iterations for time. The earlier GA set (v2) cleared fewer lines than hand-picked; its record is in results/tetris_benchmark_hard.md and results/tetris_benchmark_hard_v3.md.</div>
           <div class="field-hint" style="margin-top:0.4rem">Training fitness (mean lines over the training games): <span id="tt-train-fit">—</span></div>
-          <canvas id="tt-fitness" class="tt-fitness" aria-label="Best and mean training fitness per generation"></canvas>
-          <div class="field-hint">Cyan is the best genome in each generation, pink the population mean. Every genome plays the same seeded games, so the curve is deterministic.</div>
+          <canvas id="tt-fitness" class="tt-fitness" aria-label="Best and mean training fitness per iteration"></canvas>
+          <div class="field-hint">Cyan: best sample in each iteration. Pink: mean of all samples. Each iteration's samples play the same seeded games.</div>
         </div>
       </div>
 
-      <div>
-        <div class="section-title pink-ttl">THE SEARCH</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">TRY EVERYTHING</div>
-            <div class="field-hint">A piece has four rotations and up to ten columns, about 34 landing spots on an empty board. Each one drops straight down and locks.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">SCORE THE RESULT</div>
-            <div class="field-hint">Nine features are read off the board after the lock: landing height, eroded cells, row and column transitions, holes, wells, aggregate height, bumpiness, and lines.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">LOOK ONE PIECE AHEAD</div>
-            <div class="field-hint">With lookahead on, the best few placements are each followed by the best placement of the preview piece, and the two scores are added.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">ROWS AS BITMASKS</div>
-            <div class="field-hint">Each row is one integer with a bit per column, so a row is checked, cleared, and scored with a few bit operations.</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">For each falling piece the agent tries every rotation and every column, scores the board that would result as a weighted sum of nine features, and plays the best one. Only the nine weights were learned. The search, the features and the game rules are hand-written.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Try every placement</h3>
-      <p class="hiw-plain"><b>New to this?</b> Before a piece lands, try it in every spot and keep the one that looks best afterwards. Trying everything is slow for chess, but for Tetris a piece has only a few dozen resting places.</p>
-      <p>A piece has up to four rotations, and each can sit in up to ten columns: about 34 resting spots on an empty board. Each one drops straight down and locks. The board is stored as one bitmask per row, so a full row is detected and cleared with a single comparison. With <b>lookahead</b> on, the six best placements are each followed by the best placement of the preview piece, and the two scores are added.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Score the result</h3>
-      <p class="hiw-plain"><b>New to this?</b> The score is a checklist with weights. Each item is a count, such as holes or bumps, multiplied by how much that item should matter. Summing the products gives one number per placement.</p>
-      <p>Nine features are read off the board after the lock and the line clear: landing height, eroded piece cells, row and column transitions, holes, cumulative wells, aggregate height, bumpiness, and completed lines. The score is their weighted sum. The agent takes the highest. The first six come from the classic Dellacherie set; the other three (aggregate height, bumpiness, lines cleared) are simple board-shape counts.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Genetic algorithm (v2)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Start with many random guesses. Keep the better ones, mix pairs of them, nudge the results a little, and repeat for many generations. Weights that play better survive more often.</p>
-      <p>Population 16, 16 generations. Each genome plays 6 games on the 10-row board, capped at 2,500 pieces. Each generation uses fresh seeds that no other generation sees. Selection is by tournament, crossover is arithmetic, mutation is Gaussian, and the two best genomes are copied unchanged. This set was worse than the hand-picked weights on held-out games.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Cross-entropy method (v3)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Picture a cloud of possible weight sets. Try many of them, keep the best tenth, move the cloud's centre to them, and keep it wide enough to keep exploring. Repeat until the cloud stops moving.</p>
-      <p>This is the noisy cross-entropy method of Szita and Lorincz (2006), the approach usually used for Tetris. A Gaussian over the nine weights starts centred on the hand-picked set. Each iteration samples 20 weight sets, plays 3 fresh games each to game over (cap 100,000 pieces, matching the benchmark), keeps the top 15%, refits the mean and variance to them, and adds a shrinking amount of extra variance. The run was stopped after 6 iterations for time.</p>
-    </article>
-  </div>
+  <p class="hiw-lede">For each falling piece, the agent tries every rotation and every column, scores the board that each placement would leave, and chooses the highest score. That score is a <b>weighted sum</b> of nine features of the board. The shipped weights were tuned automatically. The features, the search and the game rules were written by hand.</p>
 
-  <h3 class="hiw-sub">Features and weights</h3>
+  <h3 class="hiw-sub">The board and the pieces</h3>
+  <p>The playfield in the game on this page is 10 columns wide and 20 rows high, and row 0 is the bottom row. The board is stored as one integer per row, a <b>bitmask</b>: bit x of a row's integer is set when column x of that row is filled. A row is therefore an integer from 0 to 1023, and a full row is 1023. Clearing a full row is a single comparison. The page's JavaScript uses the same layout.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L1-L9" target="_blank" rel="noopener" title="tetris/board.py, lines 1–9" aria-label="Code on GitHub: tetris/board.py, lines 1 to 9">1</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L15-L17" target="_blank" rel="noopener" title="tetris/board.py, lines 15–17" aria-label="Code on GitHub: tetris/board.py, lines 15 to 17">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L4-L10" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 4–10" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 4 to 10">3</a></p>
+  <p>There are seven pieces, I, O, T, S, Z, J and L, each made of four cells. A <b>rotation</b> is one distinct orientation of a piece. O has one rotation, I, S and Z have two, and the other three have four.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/pieces.py#L6" target="_blank" rel="noopener" title="tetris/pieces.py, line 6" aria-label="Code on GitHub: tetris/pieces.py, line 6">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/pieces.py#L66-L78" target="_blank" rel="noopener" title="tetris/pieces.py, lines 66–78" aria-label="Code on GitHub: tetris/pieces.py, lines 66 to 78">5</a> Pieces come from a <b>7-bag</b>: the seven pieces are shuffled and dealt in that order, then the next bag is shuffled. No piece goes more than 12 draws without appearing. A seed fixes the whole sequence, so every strategy in the benchmark plays the same games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/game.py#L26-L46" target="_blank" rel="noopener" title="tetris/game.py, lines 26–46" aria-label="Code on GitHub: tetris/game.py, lines 26 to 46">6</a></p>
+  <p>A piece <b>spawns</b> in the top two rows. The search treats its move as a straight drop from there, and the piece <b>rests</b> at the lowest row where the next row down would overlap a filled cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L37-L49" target="_blank" rel="noopener" title="tetris/board.py, lines 37–49" aria-label="Code on GitHub: tetris/board.py, lines 37 to 49">7</a> When it rests, it <b>locks</b>: its cells are written into the board, and every full row is removed, with the rows above it moving down by one.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L52-L83" target="_blank" rel="noopener" title="tetris/board.py, lines 52–83" aria-label="Code on GitHub: tetris/board.py, lines 52 to 83">8</a></p>
+
+  <h3 class="hiw-sub">Placement search</h3>
+  <p>A <b>placement</b> is a choice of rotation and leftmost column. A placement is <b>legal</b> when the piece can sit at the top of the board in that column. On an empty board, the counts are 9 for O, 17 for I, S and Z, and 34 for T, J and L.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L3-L6" target="_blank" rel="noopener" title="tetris/search.py, lines 3–6" aria-label="Code on GitHub: tetris/search.py, lines 3 to 6">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L41-L53" target="_blank" rel="noopener" title="tetris/search.py, lines 41–53" aria-label="Code on GitHub: tetris/search.py, lines 41 to 53">10</a> Each legal placement is scored on the board that results after the piece locks and full rows clear. The agent takes the highest score.</p>
+  <p>A <b>greedy</b> search uses only the score of the current piece. With <b>one-piece lookahead</b>, the search also uses the <b>preview</b>, the piece that comes next. It keeps the six best placements of the current piece, a <b>beam</b> of width six. For each one, it finds the best placement of the preview on the resulting board, and adds that score to the candidate's own score. The candidate with the largest sum is chosen.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L56-L78" target="_blank" rel="noopener" title="tetris/search.py, lines 56–78" aria-label="Code on GitHub: tetris/search.py, lines 56 to 78">11</a></p>
+  <!-- tetris/search.py:68-77, tetris/search.py:22-23 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\text{total}(m) = \text{score}(m) + \begin{cases} \max\limits_{m' \in M(s_m,\, p)} \text{score}(m') &amp; M(s_m,\, p) \neq \varnothing \\ -10^{9} &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L68-L77" target="_blank" rel="noopener" title="tetris/search.py, lines 68–77" aria-label="Code on GitHub: tetris/search.py, lines 68 to 77">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L22-L23" target="_blank" rel="noopener" title="tetris/search.py, lines 22–23" aria-label="Code on GitHub: tetris/search.py, lines 22 to 23">13</a></span>
+  </div>
+  <p>Here <span class="math">m</span> is one of the six best placements of the current piece, <span class="math">s_m</span> the board after <span class="math">m</span> locks, <span class="math">p</span> the preview piece, and <span class="math">M(s, p)</span> the set of legal placements of <span class="math">p</span> on board <span class="math">s</span>. Each <span class="math">m'</span> is scored with the same weights on <span class="math">s_m</span>. If the preview has no legal placement, the bonus is <span class="math">-10^{9}</span>, which makes that candidate a forced game over and avoids it unless all six are.</p>
+  <p><i>Example.</i> On an empty board the I piece has 17 placements: 7 in its horizontal rotation and 10 in its vertical one. The search scores all 17 and keeps the highest.</p>
+  <p>The page computes the same placements, feature values and scores in JavaScript, and a test checks that its legal placements match the Python search on the same boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L174-L188" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 174–188" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 174 to 188">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L265-L290" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 265–290" aria-label="Code on GitHub: tests/test_tetris.py, lines 265 to 290">15</a> Each decision is made when a piece spawns, and again when the weights or the lookahead setting change. Every candidate is shown as a ghost. The page then animates the piece turning and sliding to the chosen column and drops it. The slide is shown but is not part of the search. The piece always locks at the chosen placement. When turning and sliding cannot reach it, for example when a block overhangs the path near the top, the piece locks there at once with no animation, so the move the panel describes is the move that happens.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris.js#L165-L178" target="_blank" rel="noopener" title="web/js/tetris.js, lines 165–178" aria-label="Code on GitHub: web/js/tetris.js, lines 165 to 178">16</a></p>
+  <p><b>Game over</b> means that a piece cannot be placed. In the Python training and benchmark games, that happens when no rotation and column is legal. The page's AI uses that same rule, so it plays the same games as the benchmark. Play by hand is different, because a person cannot place a piece by search. In that mode the game ends as soon as the next piece cannot appear at its spawn position, which is the top centre with rotation 0, even if the piece could be placed elsewhere.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L295-L303" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 295–303" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 295 to 303">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/game.py#L91-L104" target="_blank" rel="noopener" title="tetris/game.py, lines 91–104" aria-label="Code on GitHub: tetris/game.py, lines 91 to 104">18</a></p>
+
+  <!-- tetris/search.py:56-78, tetris/search.py:41-53, tetris/board.py:37-49, tetris/board.py:24-34, tetris/board.py:52-83, tetris/features.py:123-127 -->
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L56-L78" target="_blank" rel="noopener" title="tetris/search.py, lines 56–78" aria-label="Code on GitHub: tetris/search.py, lines 56 to 78">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L41-L53" target="_blank" rel="noopener" title="tetris/search.py, lines 41–53" aria-label="Code on GitHub: tetris/search.py, lines 41 to 53">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L37-L49" target="_blank" rel="noopener" title="tetris/board.py, lines 37–49" aria-label="Code on GitHub: tetris/board.py, lines 37 to 49">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L24-L34" target="_blank" rel="noopener" title="tetris/board.py, lines 24–34" aria-label="Code on GitHub: tetris/board.py, lines 24 to 34">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L52-L83" target="_blank" rel="noopener" title="tetris/board.py, lines 52–83" aria-label="Code on GitHub: tetris/board.py, lines 52 to 83">8</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L123-L127" target="_blank" rel="noopener" title="tetris/features.py, lines 123–127" aria-label="Code on GitHub: tetris/features.py, lines 123 to 127">20</a></span>
+    <pre class="pseudo-simple">function BEST-MOVE(board, piece, weights, preview):
+    moves ← LEGAL-MOVES(board, piece, weights)      # every rotation and column
+    if preview is none:
+        return the move with the highest score
+    for each of the six best moves m:               # a beam of width six
+        bonus ← highest score of the preview on the board after m, or −1e9 if none
+        total ← score(m) + bonus
+    return the move with the highest total</pre>
+    <pre class="pseudo-full" hidden>function BEST-MOVE(board, piece, weights, preview, top-k):
+    moves ← LEGAL-MOVES(board, piece, weights)
+    if moves is empty:
+        return none, moves                          # no legal placement: game over
+    if preview is none:
+        return the first move with the highest score, moves
+    ranked ← the top-k moves sorted by score, highest first   # stable: ties keep search order
+    best ← none
+    for each m in ranked:
+        nxt ← LEGAL-MOVES(board after m, preview, weights)
+        if nxt is empty:
+            bonus ← −1e9                            # the preview cannot be placed: forced game over
+        else:
+            bonus ← the highest score in nxt
+        total ← score(m) + bonus
+        if best is none or total &gt; total of best:  # strict: an earlier candidate keeps a tie
+            best ← m, with total as its total
+    return best, moves
+
+function LEGAL-MOVES(board, piece, weights):
+    out ← empty list
+    for each rotation index ri with rotation rot of piece:
+        for px from 0 to W − rot.width:             # px is the leftmost column of the piece
+            py ← DROP-ROW(board, rot, px)
+            if py is none:
+                continue                            # the spawn spot in this column is blocked
+            (new-board, lines, eroded) ← LOCK(board, rot, px, py)
+            (rows, cols, holes, wells, agg, bump) ← BOARD-FEATURES(new-board)
+            feats ← (py + (rot.height − 1) / 2, eroded, rows, cols, holes, wells, agg, bump, lines)
+            score ← sum of weights × feats
+            append (piece, ri, px, py, lines, feats, score, new-board, score) to out
+    return out
+
+function DROP-ROW(board, rot, px):
+    y ← number of rows in board − rot.height        # the top row of the piece is the top row of the board
+    if not FITS(board, rot, px, y):
+        return none
+    while y &gt; 0 and FITS(board, rot, px, y − 1):    # step down while the next row is free
+        y ← y − 1
+    return y
+
+function FITS(board, rot, px, py):
+    if px &lt; 0 or px + rot.width &gt; W or py &lt; 0:
+        return false
+    for each row i of rot.masks:                    # masks[0] is the bottom row of the piece
+        if py + i &lt; number of rows in board and board[py + i] &amp; (rot.masks[i] &lt;&lt; px) ≠ 0:
+            return false
+    return true
+
+function LOCK(board, rot, px, py):
+    rows ← copy of board
+    for each row i of rot.masks:
+        if py + i &lt; number of rows in board:
+            rows[py + i] ← rows[py + i] | (rot.masks[i] &lt;&lt; px)   # OR the piece into the row
+    lines ← number of rows in rows equal to full
+    cleared ← sum of popcount(rot.masks[i]) over piece rows i whose row is full after the piece is added
+    kept ← the rows that are not full, in order
+    new-board ← kept, followed by lines empty rows at the top
+    return new-board, lines, lines × cleared        # the third value is the eroded piece cells</pre>
+  </div>
+  <p>The stable sort keeps equal scores in search order, which is rotation first and then column. The strict comparison means that the first candidate to reach a tie keeps it. Without a preview, the search takes the first move with the highest score, the same choice a <b>max</b> over the moves would make.</p>
+  <p><b>DROP-ROW</b> returns none when the piece cannot sit at the top in that column, so the column is skipped. When every column is blocked, the list of legal placements is empty.</p>
+  <p><b>Erosion</b> is the eroded piece cells feature. It is the number of lines cleared times the piece's own cells in those rows, so a placement that clears lines with many of its cells scores higher.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py#L76-L81" target="_blank" rel="noopener" title="tetris/board.py, lines 76–81" aria-label="Code on GitHub: tetris/board.py, lines 76 to 81">21</a></p>
+
+  <h3 class="hiw-sub">Board features and the score</h3>
+  <p>After a placement locks and full rows clear, nine <b>features</b> are measured on the resulting board. The first six are the features of <b>Dellacherie's set</b>, a hand-designed set of Tetris features from Pierre Dellacherie's controller: landing height, eroded piece cells, row transitions, column transitions, holes and wells. The last three are board-shape counts: aggregate height, bumpiness and lines cleared. The <b>score</b> of a placement is the weighted sum of its features, and the agent takes the highest score.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L1-L19" target="_blank" rel="noopener" title="tetris/features.py, lines 1–19" aria-label="Code on GitHub: tetris/features.py, lines 1 to 19">22</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L25-L35" target="_blank" rel="noopener" title="tetris/features.py, lines 25–35" aria-label="Code on GitHub: tetris/features.py, lines 25 to 35">23</a></p>
+  <!-- tetris/features.py:130-131, tetris/search.py:51 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\text{score}(p) = \sum_{k=1}^{9} w_k \, f_k(p)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L130-L131" target="_blank" rel="noopener" title="tetris/features.py, lines 130–131" aria-label="Code on GitHub: tetris/features.py, lines 130 to 131">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py#L51" target="_blank" rel="noopener" title="tetris/search.py, line 51" aria-label="Code on GitHub: tetris/search.py, line 51">25</a></span>
+  </div>
+  <p>Here <span class="math">f_k(p)</span> is feature <span class="math">k</span> of placement <span class="math">p</span>, in the order of the feature list, and <span class="math">w_k</span> is its weight. The weights are signed, so a negative weight penalises its feature. Since the agent takes the highest score, multiplying every weight by the same positive number does not change its choice.</p>
+  <p>The symbols for the nine features are these. Let <span class="math">b_{r,c}</span> be 1 when the cell in row <span class="math">r</span> and column <span class="math">c</span> is filled after the placement, and 0 otherwise. Walls count as filled: <span class="math">b_{r,-1} = b_{r,10} = 1</span> for every row, and the floor counts as filled below row 0. Let <span class="math">t</span> be one more than the highest filled row, or 0 on an empty board, so rows at or above <span class="math">t</span> are empty. The height <span class="math">h_c</span> of column <span class="math">c</span> is the row number of its highest filled cell plus one, or 0 if the column is empty. For the piece, <span class="math">y</span> is its bottom row, <span class="math">q</span> its height in cells, <span class="math">n</span> its cells in the cleared rows, and <span class="math">\ell</span> the number of lines cleared.</p>
+  <!-- tetris/features.py:123-127, tetris/features.py:45-56, tetris/features.py:71-73, tetris/features.py:75-82, tetris/features.py:84-99, tetris/features.py:101-103, tetris/features.py:105-119 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+f_1 &amp;= y + \tfrac{q-1}{2} \\
+f_2 &amp;= \ell \cdot n \\
+f_3 &amp;= \sum_{r=0}^{t-1} \sum_{c=-1}^{9} \big[\, b_{r,c} \neq b_{r,c+1} \,\big] \\
+f_4 &amp;= \sum_{c=0}^{9} \sum_{r=0}^{t} \big[\, b_{r-1,c} \neq b_{r,c} \,\big] \\
+f_5 &amp;= \sum_{c=0}^{9} \sum_{r=0}^{t-1} \big[\, b_{r,c} = 0 \text{ and } b_{r',c} = 1 \text{ for some } r' \text{ with } r &lt; r' &lt; t \,\big] \\
+f_6 &amp;= \sum_{c=0}^{9} \sum_{r=0}^{t-1} k_{r,c} \\
+f_7 &amp;= \sum_{c=0}^{9} h_c \\
+f_8 &amp;= \sum_{c=0}^{8} \lvert h_c - h_{c+1} \rvert \\
+f_9 &amp;= \ell
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L123-L127" target="_blank" rel="noopener" title="tetris/features.py, lines 123–127" aria-label="Code on GitHub: tetris/features.py, lines 123 to 127">20</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L45-L56" target="_blank" rel="noopener" title="tetris/features.py, lines 45–56" aria-label="Code on GitHub: tetris/features.py, lines 45 to 56">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L71-L73" target="_blank" rel="noopener" title="tetris/features.py, lines 71–73" aria-label="Code on GitHub: tetris/features.py, lines 71 to 73">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L75-L82" target="_blank" rel="noopener" title="tetris/features.py, lines 75–82" aria-label="Code on GitHub: tetris/features.py, lines 75 to 82">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L84-L99" target="_blank" rel="noopener" title="tetris/features.py, lines 84–99" aria-label="Code on GitHub: tetris/features.py, lines 84 to 99">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L101-L103" target="_blank" rel="noopener" title="tetris/features.py, lines 101–103" aria-label="Code on GitHub: tetris/features.py, lines 101 to 103">30</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L105-L119" target="_blank" rel="noopener" title="tetris/features.py, lines 105–119" aria-label="Code on GitHub: tetris/features.py, lines 105 to 119">31</a></span>
+  </div>
+  <p>Here <span class="math">f_1</span> is the <b>landing height</b>, the height of the piece's centre when it lands. <span class="math">f_2</span> is <b>eroded piece cells</b>, the lines cleared times the piece's cells in them. <span class="math">f_3</span> counts the <b>row transitions</b>: the changes between filled and empty cells along each row up to the top, with the two walls counted as filled. <span class="math">f_4</span> counts the <b>column transitions</b> in the same way up each column, with the floor counted as filled and the empty space above the top as empty. <span class="math">f_5</span> counts the <b>holes</b>, empty cells with a filled cell somewhere above them. <span class="math">f_6</span> counts the <b>wells</b>, defined below. <span class="math">f_7</span> is the <b>aggregate height</b>, the sum of the column heights. <span class="math">f_8</span> is the <b>bumpiness</b>, the sum of the height differences between neighbouring columns. <span class="math">f_9</span> is the number of lines cleared.</p>
+  <!-- tetris/features.py:105-119, tetris/features.py:111-113, tetris/features.py:84-99 -->
+
+  <div class="math-fig">
+    <div class="math math-block">k_{r,c} = \begin{cases} k_{r-1,c} + 1 &amp; \text{if } b_{r,c} = 0,\; b_{r,c-1} = 1,\; b_{r,c+1} = 1 \\ 0 &amp; \text{otherwise} \end{cases} \qquad h_c = \max\big(\{0\} \cup \{\, r+1 : b_{r,c} = 1 \,\}\big)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L105-L119" target="_blank" rel="noopener" title="tetris/features.py, lines 105–119" aria-label="Code on GitHub: tetris/features.py, lines 105 to 119">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L111-L113" target="_blank" rel="noopener" title="tetris/features.py, lines 111–113" aria-label="Code on GitHub: tetris/features.py, lines 111 to 113">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L84-L99" target="_blank" rel="noopener" title="tetris/features.py, lines 84–99" aria-label="Code on GitHub: tetris/features.py, lines 84 to 99">29</a></span>
+  </div>
+  <p>A <b>well cell</b> is an empty cell with a filled cell on each side. The count <span class="math">k_{r,c}</span> is the length of the run of well cells in column <span class="math">c</span> that ends at row <span class="math">r</span>, with <span class="math">k_{-1,c} = 0</span>. A run of length <span class="math">d</span> adds <span class="math">1 + 2 + \cdots + d</span> to <span class="math">f_6</span>, which is the cumulative well depth. The column height <span class="math">h_c</span> is the definition used for <span class="math">f_7</span> and <span class="math">f_8</span>.</p>
+  <p><i>Example.</i> A column that is empty between two filled columns, with depth 3 in consecutive rows, adds 1 + 2 + 3 = 6 to the wells feature.</p>
+
+  <!-- tetris/features.py:59-120, tetris/features.py:45-56 -->
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L59-L120" target="_blank" rel="noopener" title="tetris/features.py, lines 59–120" aria-label="Code on GitHub: tetris/features.py, lines 59 to 120">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L45-L56" target="_blank" rel="noopener" title="tetris/features.py, lines 45–56" aria-label="Code on GitHub: tetris/features.py, lines 45 to 56">26</a></span>
+    <pre class="pseudo-simple">function BOARD-FEATURES(board):
+    row-transitions ← filled/empty changes along each row, walls counted as filled
+    column-transitions ← filled/empty changes up each column, floor counted as filled
+    holes ← empty cells that have a filled cell above them
+    wells ← each run of well cells in a column adds 1 + 2 + ... + depth
+    aggregate ← sum of the column heights
+    bumpiness ← sum of height differences between neighbouring columns
+    return the six counts</pre>
+    <pre class="pseudo-full" hidden>function BOARD-FEATURES(board):
+    t ← 0                                           # one above the highest filled row
+    for r from number of rows − 1 down to 0:
+        if board[r] ≠ 0:
+            t ← r + 1
+            break
+    row-transitions ← 0
+    for r from 0 to t − 1:
+        row-transitions ← row-transitions + TRANSITIONS(board[r])
+    column-transitions ← 0
+    prev ← full                                     # the floor counts as filled
+    for r from 0 to t − 1:
+        column-transitions ← column-transitions + popcount(prev ⊕ board[r])
+        prev ← board[r]
+    column-transitions ← column-transitions + popcount(prev)   # the top row against the empty space above
+    seen ← 0                                        # the OR of the rows above the current row
+    holes ← 0
+    aggregate ← 0
+    heights ← ten zeros
+    for r from t − 1 down to 0:
+        holes ← holes + popcount(seen &amp; ~board[r] &amp; full)   # empty cells with a filled cell above
+        for each column c whose bit is set in board[r] &amp; ~seen:  # the column's top is in this row
+            heights[c] ← r + 1
+        seen ← seen | board[r]
+        aggregate ← aggregate + popcount(seen)      # each column counts once for each row it reaches
+    bumpiness ← sum of |heights[c] − heights[c + 1]| for c from 0 to 8
+    wells ← 0
+    run ← ten zeros                                 # run[c]: length of the well run in column c so far
+    for r from 0 to t − 1:
+        left ← ((board[r] &lt;&lt; 1) | 1) &amp; full         # bit c: column c − 1 filled, a wall for c = 0
+        right ← (board[r] &gt;&gt; 1) | (1 &lt;&lt; 9)           # bit c: column c + 1 filled, a wall for c = 9
+        well ← ~board[r] &amp; left &amp; right &amp; full
+        for c from 0 to 9:
+            if bit c of well is set:
+                run[c] ← run[c] + 1
+                wells ← wells + run[c]
+            else:
+                run[c] ← 0
+    return row-transitions, column-transitions, holes, wells, aggregate, bumpiness
+
+function TRANSITIONS(mask):
+    e ← (mask &lt;&lt; 1) | 1 | (1 &lt;&lt; 11)             # bit 0 and bit 11 are walls, bits 1 to 10 are the cells
+    return popcount((e ⊕ (e &gt;&gt; 1)) &amp; 2047)   # bit k is set where bits k and k + 1 differ</pre>
+  </div>
+  <p>The walk from the top down finds the holes and the heights in one pass. The variable <span class="math">\text{seen}</span> holds every filled cell above the current row, so an empty cell that is in <span class="math">\text{seen}</span> is a hole, and a column first reached in row <span class="math">r</span> has height <span class="math">r + 1</span>.</p>
+  <p>Rows above the top are empty and are not read, so the empty space above the stack does not change the row or the hole counts. The column transitions still see that space, through the final term that compares the top row with an empty row.</p>
+  <p>Row transitions use a lookup table over all 1,024 row patterns, so each row costs one table read. The wells counter resets to zero in any row where the column is not a well cell, so each run of depth <span class="math">d</span> adds <span class="math">1 + 2 + \cdots + d</span> in total.</p>
+
+  <p>The table below lists the nine weights. The hand-picked set uses the six Dellacherie features with rounded, hand-chosen sizes, and zero on the other three. It was not tuned here. The v3 set is the CEM result, started from the hand-picked set. The v2 set is the GA result, started from random weights. The weights only make sense together, since the choice depends on their relative sizes.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py#L37-L40" target="_blank" rel="noopener" title="tetris/features.py, lines 37–40" aria-label="Code on GitHub: tetris/features.py, lines 37 to 40">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/tuned.json" target="_blank" rel="noopener" title="tetris/tuned.json" aria-label="Code on GitHub: tetris/tuned.json">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_tuned_v2.json" target="_blank" rel="noopener" title="results/tetris_tuned_v2.json" aria-label="Code on GitHub: results/tetris_tuned_v2.json">36</a></p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Hand-picked</th><th class="num">Tuned v3 (CEM)</th><th class="num">GA v2</th></tr></thead><tbody>
     <tr><td>landing height</td><td>Height of the piece's centre when it lands. Higher is worse.</td><td class="num">-1.00</td><td class="num">-2.50</td><td class="num">-0.35</td></tr>
     <tr><td>eroded cells</td><td>Lines cleared times this piece's cells in them.</td><td class="num">+1.00</td><td class="num">+2.51</td><td class="num">-0.78</td></tr>
-    <tr><td>row transitions</td><td>Filled-to-empty changes along each row, walls counted as filled.</td><td class="num">-1.00</td><td class="num">-1.62</td><td class="num">+0.13</td></tr>
-    <tr><td>column transitions</td><td>Filled-to-empty changes up each column, floor counted as filled.</td><td class="num">-1.00</td><td class="num">-5.50</td><td class="num">-0.98</td></tr>
+    <tr><td>row transitions</td><td>Filled and empty changes along each row, walls counted as filled.</td><td class="num">-1.00</td><td class="num">-1.62</td><td class="num">+0.13</td></tr>
+    <tr><td>column transitions</td><td>Filled and empty changes up each column, floor counted as filled.</td><td class="num">-1.00</td><td class="num">-5.50</td><td class="num">-0.98</td></tr>
     <tr><td>holes</td><td>Empty cells with a block somewhere above them.</td><td class="num">-4.00</td><td class="num">-5.01</td><td class="num">-1.18</td></tr>
     <tr><td>wells</td><td>Cumulative well depth: a well of depth d adds 1 + 2 + ... + d.</td><td class="num">-1.00</td><td class="num">-2.47</td><td class="num">-0.16</td></tr>
     <tr><td>aggregate height</td><td>Sum of the column heights.</td><td class="num">0.00</td><td class="num">-0.24</td><td class="num">-0.92</td></tr>
     <tr><td>bumpiness</td><td>Sum of height differences between neighbouring columns.</td><td class="num">0.00</td><td class="num">+1.32</td><td class="num">-0.44</td></tr>
     <tr><td>lines cleared</td><td>Full rows this placement completes.</td><td class="num">0.00</td><td class="num">-0.19</td><td class="num">+0.76</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The hand-picked set is the classic Dellacherie-style weighting on its six features, with zero on the other three; it was set by hand and never tuned here. The v3 set is the cross-entropy result, started from the hand-picked set. The v2 set is the GA result, from random starting weights. Weights only matter relative to each other, since the agent takes the highest score, so read them together: a large weight on one feature can be offset by a large weight on another.</p>
 
-  <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">Training uses a 10-row board, a different board from the 20-row game you can play here. Training games use seeds from 200000 upward for the cross-entropy run and from 1000 upward for the GA, both separate from the benchmark seeds. The cross-entropy run had 20 samples per iteration, 3 games each, 6 iterations completed, and the final mean is the distribution's centre after iteration 6 (training fitness is the last elite mean, 6,869 lines). The GA had 16 genomes, 6 games each, 2,500-piece cap, and 16 generations (training fitness on its best genome's own seeds, 804.5 lines, which is optimistic). Both runs are logged in <code>results/</code>.</p>
+  <h3 class="hiw-sub">Cross-entropy method (v3, the shipped weights)</h3>
+  <p>The <b>cross-entropy method</b> (CEM) is a search over parameter vectors. It keeps a probability distribution over them, here a Gaussian, samples candidates from it, and moves the distribution toward the best candidates. Szita and Lorincz (2006) applied a noisy version of this method to learning Tetris weights, and the shipped weights come from it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L1-L17" target="_blank" rel="noopener" title="tetris/cem.py, lines 1–17" aria-label="Code on GitHub: tetris/cem.py, lines 1 to 17">37</a></p>
+  <p>Each <b>iteration</b> samples 20 weight vectors, scores each one by playing games, keeps the best 15% as the <b>elite</b> set, and refits the Gaussian to the elites. The Gaussian has a mean and a variance for each weight, so the nine weights are sampled independently. The <b>noise</b> is an extra variance added at every refit. It keeps the distribution wide, so the search does not collapse onto one early elite.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L35-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 35–53" aria-label="Code on GitHub: tetris/cem.py, lines 35 to 53">38</a></p>
+  <!-- tetris/cem.py:60-61, tetris/cem.py:98-99 -->
+
+  <div class="math-fig">
+    <div class="math math-block">w^{(i)}_j = \operatorname{clip}\big(\mu_j + \sigma_j\, \xi^{(i)}_j\big), \qquad \xi^{(i)}_j \sim \mathcal{N}(0, 1), \qquad \operatorname{clip}(x) = \max\big(-10,\ \min(10, x)\big)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L60-L61" target="_blank" rel="noopener" title="tetris/cem.py, lines 60–61" aria-label="Code on GitHub: tetris/cem.py, lines 60 to 61">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L98-L99" target="_blank" rel="noopener" title="tetris/cem.py, lines 98–99" aria-label="Code on GitHub: tetris/cem.py, lines 98 to 99">40</a></span>
+  </div>
+  <!-- tetris/cem.py:32, tetris/cem.py:56-57, tetris/cem.py:64-67 -->
+
+  <div class="math-fig">
+    <div class="math math-block">F(w) = \frac{1}{G} \sum_{k=0}^{G-1} L\big(w,\; s_{t,k}\big), \qquad s_{t,k} = 200\,000 + G\,t + k</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L32" target="_blank" rel="noopener" title="tetris/cem.py, line 32" aria-label="Code on GitHub: tetris/cem.py, line 32">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L56-L57" target="_blank" rel="noopener" title="tetris/cem.py, lines 56–57" aria-label="Code on GitHub: tetris/cem.py, lines 56 to 57">42</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L64-L67" target="_blank" rel="noopener" title="tetris/cem.py, lines 64–67" aria-label="Code on GitHub: tetris/cem.py, lines 64 to 67">43</a></span>
+  </div>
+  <!-- tetris/cem.py:93, tetris/cem.py:101-102, tetris/cem.py:106-110, tetris/cem.py:51-53 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+E_t &amp;= \text{the } n_e \text{ samples with the highest } F \\
+n_e &amp;= \max\big(2,\ \lceil 0.15 \cdot 20 \rceil\big) = 3 \\
+\mu_j &amp;\leftarrow \frac{1}{n_e} \sum_{e \in E_t} e_j \\
+\sigma_j &amp;\leftarrow \sqrt{\frac{1}{n_e} \sum_{e \in E_t} \big(e_j - \mu_j\big)^2 + z_t} \\
+z_t &amp;= \max\big(0.05,\; 1.0 \cdot (1 - t/20)\big)
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L93" target="_blank" rel="noopener" title="tetris/cem.py, line 93" aria-label="Code on GitHub: tetris/cem.py, line 93">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L101-L102" target="_blank" rel="noopener" title="tetris/cem.py, lines 101–102" aria-label="Code on GitHub: tetris/cem.py, lines 101 to 102">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L106-L110" target="_blank" rel="noopener" title="tetris/cem.py, lines 106–110" aria-label="Code on GitHub: tetris/cem.py, lines 106 to 110">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
+  </div>
+  <p>Here <span class="math">\mu_j</span> and <span class="math">\sigma_j</span> are the mean and standard deviation of weight <span class="math">j</span>, and <span class="math">\xi</span> is a standard normal draw. The clip keeps each weight between −10 and 10, the same limit as the GA. <span class="math">L(w, s)</span> is the number of lines that the greedy agent with weights <span class="math">w</span> clears on seed <span class="math">s</span>, playing until game over or until 100,000 pieces. Iteration <span class="math">t</span> uses the three seeds <span class="math">200\,000 + 3t + k</span>, so each iteration plays its own games, and every sample in an iteration plays the same games. The elite count is <span class="math">n_e = 3</span>. The noise <span class="math">z_t</span> starts at 1.0, falls by 0.05 each iteration, and stops at its floor of 0.05 from iteration 19.</p>
+  <p><i>Example.</i> In the committed run's last iteration, <span class="math">t = 5</span>, so <span class="math">z_t = 0.75</span>. The elite mean of that iteration was 6,869.4 lines.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_log.jsonl" target="_blank" rel="noopener" title="results/tetris_cem_log.jsonl" aria-label="Code on GitHub: results/tetris_cem_log.jsonl">48</a></p>
+
+  <!-- tetris/cem.py:70-136, tetris/cem.py:51-53 -->
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L70-L136" target="_blank" rel="noopener" title="tetris/cem.py, lines 70–136" aria-label="Code on GitHub: tetris/cem.py, lines 70 to 136">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
+    <pre class="pseudo-simple">function CROSS-ENTROPY(iterations, samples):
+    mu ← the hand-picked weights                    # the mean starts at the hand-picked set
+    sigma ← 1.0 for each of the nine weights
+    repeat iterations times:
+        draw samples weight vectors from the Gaussian (mu, sigma), clipped to ±10
+        score each one by its mean lines over this iteration's games
+        elites ← the best 15% of the samples
+        mu ← the mean of the elites
+        sigma ← the spread of the elites, plus a shrinking extra variance
+    return mu                                       # the final mean, not a sample</pre>
+    <pre class="pseudo-full" hidden>function CROSS-ENTROPY(iterations, samples, games):
+    mu ← the hand-picked weights                    # the mean starts at the hand-picked set
+    sigma ← 1.0 for each of the nine weights        # the standard deviations
+    n-elite ← max(2, ceil(0.15 × samples))          # 3 of the 20 samples
+    best ← none
+    for t from 0 to iterations − 1:
+        seeds ← 200000 + games × t + k for k from 0 to games − 1   # fresh seeds for this iteration
+        for i from 0 to samples − 1:
+            w[i] ← for each weight j: clip(mu[j] + sigma[j] × (a standard normal draw), −10, 10)
+            fit[i] ← mean of LINES(w[i], s) over the seeds s
+        order ← the sample indices sorted by fit, highest first
+        elites ← the first n-elite samples in order
+        if best is none or fit[order[0]] &gt; fitness of best:   # kept for reference only
+            best ← w[order[0]], with its fitness
+        z ← max(0.05, 1.0 × (1 − t / 20))           # the extra variance (the noise)
+        for each weight j:
+            mu[j] ← the mean of elites[j] over the elites
+            sigma[j] ← sqrt(the mean over the elites of (elite[j] − mu[j]) squared, plus z)
+    return mu                                       # the final mean, not a sampled vector
+
+function LINES(w, s):
+    play the greedy agent with weights w on seed s, until game over or 100000 pieces
+    return the lines cleared</pre>
+  </div>
+    <p>The noise is the part that keeps the search from collapsing. Without it, the variance can shrink quickly, and the search stops exploring. The extra term <span class="math">z_t</span> sets a floor for the variance that falls over the run.</p>
+  <p>The returned weights are the final mean <span class="math">\mu</span>, and that mean is not one of the samples. The training fitness reported for the run is the elite mean of the last iteration, which scores the samples and not <span class="math">\mu</span> itself. The best single sample is recorded only for reference, since it was picked on the same games that scored it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L103-L105" target="_blank" rel="noopener" title="tetris/cem.py, lines 103–105" aria-label="Code on GitHub: tetris/cem.py, lines 103 to 105">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L134-L136" target="_blank" rel="noopener" title="tetris/cem.py, lines 134–136" aria-label="Code on GitHub: tetris/cem.py, lines 134 to 136">51</a></p>
+  <p>The committed run used 6 iterations, 20 samples per iteration, 3 games per sample, an elite fraction of 0.15, a 10-row training board, a cap of 100,000 pieces, an initial standard deviation of 1.0 and sampler seed 0. Its mean after the sixth refit is the shipped set. Its training fitness, 6,869.4 lines, is the elite mean of the last iteration.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/tuned.json" target="_blank" rel="noopener" title="tetris/tuned.json" aria-label="Code on GitHub: tetris/tuned.json">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_weights.json" target="_blank" rel="noopener" title="results/tetris_cem_weights.json" aria-label="Code on GitHub: results/tetris_cem_weights.json">52</a></p>
+
+  <h3 class="hiw-sub">Genetic algorithm (v2, earlier)</h3>
+  <p>The <b>genetic algorithm</b> (GA) was the first tuner. It keeps a population of weight vectors called <b>genomes</b>. Each generation makes a new population from the fittest genomes, using <b>selection</b> (keeping the better parents), <b>crossover</b> (combining two parents) and <b>mutation</b> (small random changes). Its result, v2, cleared fewer lines than the hand-picked weights on held-out games, so the shipped weights come from the CEM. The GA remains in the code, and its training log is committed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L1-L20" target="_blank" rel="noopener" title="tetris/evolve.py, lines 1–20" aria-label="Code on GitHub: tetris/evolve.py, lines 1 to 20">53</a></p>
+  <!-- tetris/evolve.py:98-99, tetris/evolve.py:52-55, tetris/evolve.py:58-60 -->
+
+  <div class="math-fig">
+    <div class="math math-block">w_j \sim \mathcal{U}(-1, 1), \qquad F(w) = \frac{1}{6} \sum_{i=0}^{5} L\big(w,\; s_{g,i}\big), \qquad s_{g,i} = 1\,000 + 6\,g + i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L98-L99" target="_blank" rel="noopener" title="tetris/evolve.py, lines 98–99" aria-label="Code on GitHub: tetris/evolve.py, lines 98 to 99">54</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L52-L55" target="_blank" rel="noopener" title="tetris/evolve.py, lines 52–55" aria-label="Code on GitHub: tetris/evolve.py, lines 52 to 55">55</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L58-L60" target="_blank" rel="noopener" title="tetris/evolve.py, lines 58–60" aria-label="Code on GitHub: tetris/evolve.py, lines 58 to 60">56</a></span>
+  </div>
+  <!-- tetris/evolve.py:72-75, tetris/evolve.py:78-85, tetris/evolve.py:88-89 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\text{child}_j = \tau_j\, a_j + (1 - \tau_j)\, b_j \;\text{ with probability } 0.8, \qquad \tau_j \sim \mathcal{U}(0, 1)
+
+w_j \leftarrow \operatorname{clip}\big(w_j + \varepsilon_j\big) \;\text{ with probability } 0.2, \qquad \varepsilon_j \sim \mathcal{N}(0,\, 0.3^2)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L72-L75" target="_blank" rel="noopener" title="tetris/evolve.py, lines 72–75" aria-label="Code on GitHub: tetris/evolve.py, lines 72 to 75">57</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L78-L85" target="_blank" rel="noopener" title="tetris/evolve.py, lines 78–85" aria-label="Code on GitHub: tetris/evolve.py, lines 78 to 85">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L88-L89" target="_blank" rel="noopener" title="tetris/evolve.py, lines 88–89" aria-label="Code on GitHub: tetris/evolve.py, lines 88 to 89">59</a></span>
+  </div>
+  <p>Here <span class="math">L(w, s)</span> is the lines cleared by the greedy agent with weights <span class="math">w</span> on seed <span class="math">s</span>, with each game capped at 2,500 pieces. In the first formula, <span class="math">g</span> is the generation number, and each generation plays six games with its own seeds, so no generation plays another generation's games. In the second, <span class="math">a</span> and <span class="math">b</span> are the two parents. Each gene has its own <span class="math">\tau_j</span>. Crossover happens with probability 0.8, and otherwise the child copies the first parent. Each gene mutates with probability 0.2, and a mutated gene gets a Gaussian step with standard deviation 0.3.</p>
+  <p>A tournament draws three different genomes at random and keeps the fittest. Each child uses two tournaments, one for each parent. The population has 16 genomes, and the two fittest are copied unchanged into the next generation, which is called elitism. The loop evaluates generations 0 to 16. That is 17 evaluations and 16 rounds of breeding, the 16 generations of the setting plus the random starting generation.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L143" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–143" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 143">60</a></p>
+
+  <!-- tetris/evolve.py:92-143, tetris/evolve.py:72-89 -->
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L143" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–143" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 143">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L72-L89" target="_blank" rel="noopener" title="tetris/evolve.py, lines 72–89" aria-label="Code on GitHub: tetris/evolve.py, lines 72 to 89">61</a></span>
+    <pre class="pseudo-simple">function GENETIC-TUNE(generations):
+    pop ← 16 random weight vectors, each weight uniform in [−1, 1]
+    for each generation from 0 to generations:
+        score each genome by its mean lines over this generation's games
+        nxt ← the two best genomes, copied unchanged
+        while nxt has fewer than 16 genomes:
+            choose two parents by tournament
+            child ← crossover of the parents, then mutation
+            add child to nxt
+        pop ← nxt
+    return the best genome seen in any generation</pre>
+    <pre class="pseudo-full" hidden>function GENETIC-TUNE(generations, population, games):
+    pop ← population random genomes, each weight drawn uniformly from [−1, 1]
+    for gen from 0 to generations:                  # generation 0 is the random start
+        seeds ← 1000 + games × gen + k for k from 0 to games − 1   # fresh seeds for this generation
+        for each genome g in pop:
+            fit[g] ← mean of LINES(g, s) over seeds, each game capped at 2500 pieces
+        order ← the genomes sorted by fit, highest first
+        record the best, mean and worst fit of this generation
+        if gen = generations:
+            stop
+        nxt ← copies of the two best genomes         # elitism: copied unchanged
+        while size of nxt &lt; population:
+            p1 ← TOURNAMENT(pop, fit, 3)
+            p2 ← TOURNAMENT(pop, fit, 3)
+            child ← CROSSOVER(p1, p2)
+            append MUTATE(child) to nxt
+        pop ← nxt
+    return the best genome seen in any generation, with its fitness
+
+function TOURNAMENT(pop, fit, k):
+    picks ← k different genomes chosen at random
+    return the pick with the highest fit
+
+function CROSSOVER(p1, p2):
+    if a random number is at least 0.8:
+        return a copy of p1
+    for each weight j:
+        τ ← a random number in [0, 1)
+        child[j] ← τ × p1[j] + (1 − τ) × p2[j]
+    return child
+
+function MUTATE(genome):
+    for each weight j:
+        if a random number is below 0.2:
+            genome[j] ← clip(genome[j] + a Gaussian step with standard deviation 0.3, −10, 10)
+    return genome</pre>
+  </div>
+  <p>The two copied genomes are re-evaluated on the next generation's seeds, so an elite's fitness can change from one generation to the next. Elitism keeps good weights in the population, but it does not guarantee that they stay the best.</p>
+  <p>The reported result is the best genome seen in any generation. Its fitness is measured on the games of the generation where it was found. Because it was chosen for that score, the score is optimistic. For v2, that is 804.5 lines on generation 16's games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_tuned_v2.json" target="_blank" rel="noopener" title="results/tetris_tuned_v2.json" aria-label="Code on GitHub: results/tetris_tuned_v2.json">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_train_log.jsonl" target="_blank" rel="noopener" title="results/tetris_train_log.jsonl" aria-label="Code on GitHub: results/tetris_train_log.jsonl">62</a></p>
+
+  <h3 class="hiw-sub">Training and benchmark settings</h3>
+  <p>The training games and the benchmark games come from separate seed ranges: 200,000 upward for the CEM, 1,000 upward for the GA, and 50,000 to 50,029 for the benchmark. A test checks that two GA generations share no seed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L197-L200" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 197–200" aria-label="Code on GitHub: tests/test_tetris.py, lines 197 to 200">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L35" target="_blank" rel="noopener" title="tetris/benchmark.py, line 35" aria-label="Code on GitHub: tetris/benchmark.py, line 35">64</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>CEM (v3, shipped)</th><th>GA (v2)</th><th>Held-out benchmark</th></tr></thead><tbody>
+    <tr><td>Seeds</td><td class="num">200,000 + 3t + k</td><td class="num">1,000 + 6g + i</td><td class="num">50,000 to 50,029</td></tr>
+    <tr><td>Candidates</td><td class="num">20 samples, 6 iterations</td><td class="num">16 genomes, generations 0 to 16</td><td class="num">random, hand-picked and one tuned set</td></tr>
+    <tr><td>Games per candidate</td><td class="num">3 per iteration</td><td class="num">6 per generation</td><td class="num">30 per strategy</td></tr>
+    <tr><td>Piece cap per game</td><td class="num">100,000</td><td class="num">2,500</td><td class="num">100,000</td></tr>
+    <tr><td>Board</td><td class="num">10 rows</td><td class="num">10 rows</td><td class="num">10 rows, no lookahead</td></tr>
+    <tr><td>Random seed</td><td class="num">0 (sampler)</td><td class="num">0 (population and breeding)</td><td class="num">one seed per game for random placement</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The table gives the settings recorded for the committed runs. The benchmark column describes the held-out runs, which are logged with the results below.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard_v3.md" target="_blank" rel="noopener" title="results/tetris_benchmark_hard_v3.md" aria-label="Code on GitHub: results/tetris_benchmark_hard_v3.md">65</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard.md" target="_blank" rel="noopener" title="results/tetris_benchmark_hard.md" aria-label="Code on GitHub: results/tetris_benchmark_hard.md">66</a></p>
 
   <h3 class="hiw-sub">Held-out results</h3>
+  <p>The benchmark plays every strategy on the same 30 seeds and reports the mean lines with a 95% confidence interval. The interval is the mean plus or minus the t value times the standard error, where the standard error is the sample standard deviation divided by the square root of the number of games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L85-L103" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 85–103" aria-label="Code on GitHub: tetris/benchmark.py, lines 85 to 103">67</a></p>
+  <!-- tetris/benchmark.py:39-46, tetris/benchmark.py:85-103 -->
+
+  <div class="math-fig">
+    <div class="math math-block">\bar{x} \pm t_{0.975,\; n-1} \cdot \frac{s}{\sqrt{n}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L39-L46" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 39–46" aria-label="Code on GitHub: tetris/benchmark.py, lines 39 to 46">68</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L85-L103" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 85–103" aria-label="Code on GitHub: tetris/benchmark.py, lines 85 to 103">67</a></span>
+  </div>
+  <p>Here <span class="math">\bar{x}</span> is the mean number of lines over the games, <span class="math">s</span> the sample standard deviation, and <span class="math">n</span> the number of games. With 30 games, <span class="math">t_{0.975,\,29} = 2.045</span>, which the code reads from its table of two-sided 95% values.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Mean lines</th><th class="num">95% CI</th><th class="num">Median</th><th class="num">Mean pieces</th><th class="num">Hit cap</th></tr></thead><tbody>
     <tr><td>random placement</td><td class="num">0.0</td><td class="num">± 0.1</td><td class="num">0</td><td class="num">14</td><td class="num">0 / 30</td></tr>
     <tr><td>hand-picked weights</td><td class="num">2128.5</td><td class="num">± 895.6</td><td class="num">867</td><td class="num">5342</td><td class="num">0 / 30</td></tr>
     <tr><td>GA v2 weights</td><td class="num">388.9</td><td class="num">± 109.0</td><td class="num">311</td><td class="num">993</td><td class="num">0 / 30</td></tr>
-    <tr><td>cross-entropy v3 weights</td><td class="num">6702.0</td><td class="num">± 2194.9</td><td class="num">6305</td><td class="num">16776</td><td class="num">0 / 30</td></tr>
+    <tr><td>CEM v3 weights (shipped)</td><td class="num">6702.0</td><td class="num">± 2194.9</td><td class="num">6305</td><td class="num">16776</td><td class="num">0 / 30</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">30 seeds (50000 to 50029), 10-row board, no lookahead, every game played to game over with a 100,000-piece cap. No game reached the cap. The v3 row is the first run that beats hand-picked weights on these seeds, and the 95% intervals do not overlap. Caveats: the cross-entropy run was stopped early (6 iterations); there is one training run, not several; and the page plays the 20-row game, so these numbers are for the 10-row board. The earlier table on the 20-row board with a 2,000-piece cap is saturated (every survivor sits near 800 lines, the cell-count ceiling) and is kept in <code>results/tetris_benchmark.md</code>.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/board.py">tetris/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/features.py">tetris/features.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/search.py">tetris/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/game.py">tetris/game.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py">tetris/evolve.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py">tetris/cem.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py">tetris/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/tuned.json">tetris/tuned.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard_v3.md">results/tetris_benchmark_hard_v3.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_log.jsonl">results/tetris_cem_log.jsonl</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_train_log.jsonl">results/tetris_train_log.jsonl</a></p>
+  <p class="hiw-note">The random, hand-picked and CEM v3 rows come from the v3 run. The GA v2 row comes from the earlier run, which used the v2 weights.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard_v3.json" target="_blank" rel="noopener" title="results/tetris_benchmark_hard_v3.json" aria-label="Code on GitHub: results/tetris_benchmark_hard_v3.json">69</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard.json" target="_blank" rel="noopener" title="results/tetris_benchmark_hard.json" aria-label="Code on GitHub: results/tetris_benchmark_hard.json">70</a></p>
+  <p>The seeds are 50,000 to 50,029 on the 10-row board with no lookahead. Every game was played to game over, with a cap of 100,000 pieces, and no game reached the cap. The CEM weights are the only committed set that beats the hand-picked weights on these seeds. Their 95% intervals do not overlap: 4,507 to 8,897 for the CEM weights, and 1,233 to 3,024 for the hand-picked weights.</p>
+  <p>There are four caveats. The CEM was one training run of 6 iterations, so the weights are not converged. Training used a 10-row board, but the page plays 20 rows, so these numbers do not measure the page's game. The benchmark uses the Python game-over rule, not the stricter rule on the page. The 20-row results file uses an older table layout and was run on the 10-by-20 board with a 2,000-piece cap.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L15-L17" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 15–17" aria-label="Code on GitHub: tetris/benchmark.py, lines 15 to 17">71</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark.md" target="_blank" rel="noopener" title="results/tetris_benchmark.md" aria-label="Code on GitHub: results/tetris_benchmark.md">72</a></p>
+  <p>In that 20-row file, every hand-picked, GA and lookahead game reached the 2,000-piece cap while still alive. Each piece adds 4 cells, and each line removes 10, so 2,000 pieces can clear at most 4 × 2,000 / 10 = 800 lines. That is why the survivors sit near 800 lines. The file measures the cap, not the strategies.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/tetris.js"></script>
 </body>

@@ -24,9 +24,8 @@ const KEY_MOVES = {
 };
 const DEATH_MS = 700; // how long Pac-Man takes to shrink away
 const ODDS_NAMES = { straight: 'Keep going', left: 'Turn left', right: 'Turn right', back: 'Reverse' };
-const POLICY_CHIP = { ai: 'AI', chance: 'CHANCE' };
 const NEXT_GAME_MS = 900; // pause between games when auto-restart is on, so the last board can be read
-const HINT_PLAY = 'Use W A S D or the arrow keys to move. Each key is one turn. Ghosts move after you.';
+const HINT_PLAY = 'Use W A S D, the arrow keys, or the buttons under the board. Each key is one turn. Ghosts move after you.';
 const HINT_WATCH = 'Press Run to watch the agent play the seeded game. Pause and step to read its values turn by turn.';
 
 const canvas = $('pm-canvas');
@@ -284,8 +283,7 @@ function updateMatchup() {
   const ghosts = ghostInfo(policy)?.label ?? policy;
   const pacman = $('mode').value === 'play' ? 'You play Pac-Man' : `${$('agent').selectedOptions[0].textContent} plays Pac-Man`;
   $('matchup').textContent = `${pacman} against ${ghosts}.`;
-  $('ghosts-desc').textContent = ghostInfo(policy)?.description ?? '';
-  $('chip-ghosts').textContent = POLICY_CHIP[policy];
+  $('ghosts').title = ghostInfo(policy)?.description ?? '';
 }
 
 // The odds as a two-column table: each way a chance ghost can turn and its share of the draw.
@@ -340,8 +338,6 @@ function countGame(result) {
 }
 
 function updateChips() {
-  $('chip-mode').textContent = $('mode').value === 'play' ? 'PLAY' : 'WATCH';
-  $('chip-ghosts').textContent = POLICY_CHIP[S.policy];
   $('chip-score').textContent = S.points.toLocaleString('en-US');
   $('chip-pellets').textContent = String(S.pellets.size);
   $('chip-turn').textContent = String(S.turn);
@@ -425,7 +421,9 @@ function updateGhosts() {
     const plan = S.plans.find((p) => p.ghost === i);
     let state = 'waiting';
     if (g.scared) {
-      state = `scared for ${g.scared} more turn${g.scared === 1 ? '' : 's'}: fleeing`;
+      // Only the A* ghosts flee; chance ghosts keep to their odds while scared (see ghosts.py chance_move).
+      const left = `scared for ${g.scared} more turn${g.scared === 1 ? '' : 's'}`;
+      state = S.policy === 'chance' ? `${left}: still moves by the odds` : `${left}: fleeing`;
     } else if (plan && plan.target) {
       const atTarget = plan.target[0] === g.pos[0] && plan.target[1] === g.pos[1];
       state = atTarget
@@ -444,17 +442,8 @@ function updateGhosts() {
     row.querySelector('.state').textContent = state;
     panel.appendChild(row);
   });
-  const hint = document.createElement('div');
-  hint.className = 'field-hint';
-  hint.style.marginTop = '0.4rem';
-  if (S.policy === 'chance') {
-    hint.textContent = 'Chance ghosts ignore Pac-Man and the maze: each one keeps going, turns or reverses by the odds below.';
-    panel.appendChild(hint);
-    panel.appendChild(oddsTable());
-    return;
-  }
-  hint.textContent = 'Chasers head for Pac-Man. The ambusher aims ahead of him. Scatter ghosts retreat to a corner when close.';
-  panel.appendChild(hint);
+  // The chance odds are the only thing the panel shows beyond the ghosts' states; the rest is in HOW IT WORKS.
+  if (S.policy === 'chance') panel.appendChild(oddsTable());
 }
 
 function renderWeights() {
@@ -623,6 +612,7 @@ function setMode(mode) {
   $('speed').closest('div').hidden = !watch;
   $('score-row').hidden = !watch;
   $('pm-hint').textContent = watch ? HINT_WATCH : HINT_PLAY;
+  $('pm-dpad').hidden = watch;
   $('btn-new').querySelector('.btn-txt').textContent = watch ? '↺ NEW SEED' : '↺ NEW GAME';
   loadBoard().catch((e) => log(e.message, 'log-err'));
 }
@@ -724,7 +714,7 @@ function wire() {
   $('seed').addEventListener('change', () => { if ($('mode').value === 'play') reload(); });
   $('agent').addEventListener('change', () => {
     const info = S.meta?.agents.find((a) => a.name === $('agent').value);
-    $('agent-desc').textContent = info ? info.description : '';
+    $('agent').title = info ? info.description : '';
     resetTally();
     updateMatchup();
   });
@@ -753,6 +743,9 @@ function wire() {
     randomSeed();
     if ($('mode').value === 'play') reload();
   });
+  for (const [id, letter] of [['dpad-n', 'N'], ['dpad-e', 'E'], ['dpad-s', 'S'], ['dpad-w', 'W']]) {
+    $(id).addEventListener('click', () => humanMove(letter));
+  }
   addEventListener('keydown', (e) => {
     if (e.target.matches('input, select, textarea')) return;
     const letter = KEY_MOVES[e.key.toLowerCase()];
@@ -778,7 +771,7 @@ async function init() {
     opt.textContent = m.title;
     $('maze').appendChild(opt);
   }
-  $('agent-desc').textContent = S.meta.agents[0].description;
+  $('agent').title = S.meta.agents[0].description;
   $('odds-table').replaceChildren(oddsTable());
   renderTally();
   renderWeights();

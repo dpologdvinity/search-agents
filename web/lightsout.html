@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="lightsout.css">
 </head>
 <body>
@@ -33,7 +34,7 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">07 // LINEAR ALGEBRA · GAUSSIAN ELIMINATION MOD 2</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="LIGHTS OUT">LIGHTS OUT</h1>
-      <div class="proj-pg-sub">Press a light and it toggles with its neighbours. The solver writes the board as A x = b over GF(2) and finds the fewest presses.</div>
+      <div class="proj-pg-sub">Press lights until every light is dark. The solver finds the fewest presses by Gaussian elimination mod 2.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -41,23 +42,29 @@
         <span class="stat-chip">PRESSES <span class="val" id="chip-presses">0</span></span>
         <span class="stat-chip green">LIT <span class="val" id="chip-lit">—</span></span>
         <span class="stat-chip">MINIMUM <span class="val" id="chip-min">—</span></span>
-        <span class="stat-chip">RANK <span class="val" id="chip-rank">—</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Lights Out is a grid of lights, and the goal is to make every light dark. A press toggles the pressed light and the lights directly above, below, left and right of it.</p>
+    <p style="margin-top:0.5rem">Click a light to press it. NEW BOARD deals a fresh board of the chosen SIZE, and NEW BOARDS ARE chooses whether every board is solvable or any board may be dealt.</p>
+    <p style="margin-top:0.5rem">HINT lights the next press of the minimum solution, and SOLVE shows all of it. STEP and AUTO play the shown solution one press at a time, and the panels below the board show the elimination that finds it.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
-        <div id="lo" class="lo-board" role="group" aria-label="Lights Out board"></div>
+        <div id="lo" class="lo-board" role="group" aria-label="Lights Out board" title="Pressing a light toggles it and its orthogonal neighbours."></div>
         <div class="field-hint" id="lo-note">Click a light to press it. Goal: every light dark.</div>
         <div class="inline" style="justify-content:center;flex-wrap:wrap">
-          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW BOARD</span></button>
-          <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
-          <button class="cyber-btn" id="btn-solve" type="button"><span class="btn-txt">◉ SOLVE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">▶ STEP</span></button>
-          <button class="cyber-btn" id="btn-auto" type="button" aria-pressed="false"><span class="btn-txt">▶▶ AUTO</span></button>
-          <button class="cyber-btn" id="btn-reset" type="button"><span class="btn-txt">⟲ RESET</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Deal a new board of the chosen size and kind."><span class="btn-txt">↺ NEW BOARD</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" title="Light the next press of the minimum solution."><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-solve" type="button" title="Show every press of the minimum solution."><span class="btn-txt">◉ SOLVE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Press the next light of the shown solution."><span class="btn-txt">▶ STEP</span></button>
+          <button class="cyber-btn" id="btn-auto" type="button" aria-pressed="false" title="Press the shown solution one light at a time."><span class="btn-txt">▶▶ AUTO</span></button>
+          <button class="cyber-btn" id="btn-reset" type="button" title="Return to the board as dealt."><span class="btn-txt">⟲ RESET</span></button>
         </div>
       </div>
 
@@ -75,19 +82,20 @@
           <div class="viz-title" id="elim-title">Each row is one light's equation. Pink is the lit state.</div>
           <canvas id="elim" class="lo-elim" width="420" height="200" aria-label="Augmented matrix during elimination"></canvas>
           <div class="lo-elim-controls">
-            <button class="cyber-btn" id="elim-prev" type="button"><span class="btn-txt">◀ PREV</span></button>
-            <button class="cyber-btn" id="elim-next" type="button"><span class="btn-txt">NEXT ▶</span></button>
-            <button class="cyber-btn green" id="elim-play" type="button" aria-pressed="false"><span class="btn-txt">▶ PLAY</span></button>
+            <button class="cyber-btn" id="elim-prev" type="button" title="Undo one elimination step."><span class="btn-txt">◀ PREV</span></button>
+            <button class="cyber-btn" id="elim-next" type="button" title="Apply the next elimination step."><span class="btn-txt">NEXT ▶</span></button>
+            <button class="cyber-btn green" id="elim-play" type="button" aria-pressed="false" title="Play the elimination step by step."><span class="btn-txt">▶ PLAY</span></button>
             <span class="field-hint" id="elim-count"></span>
+            <span class="field-hint" title="The rank of the press matrix: the number of pivots.">RANK <span id="chip-rank">—</span></span>
           </div>
           <div class="field-hint" id="elim-note"></div>
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold">
+        <summary>Move log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -96,64 +104,219 @@
         <div class="stack">
           <div>
             <div class="field-lbl">SIZE</div>
-            <select class="cyber-select" id="size" style="width:100%"></select>
+            <select class="cyber-select" id="size" style="width:100%" title="Board size n × n. The solver works with an n²-by-n² matrix over GF(2)."></select>
           </div>
           <div>
             <div class="field-lbl">NEW BOARDS ARE</div>
-            <select class="cyber-select" id="mode" style="width:100%">
+            <select class="cyber-select" id="mode" style="width:100%" title="Solvable: presses on a dark board, so always clearable. Any: each light random, and most 5 × 5 boards cannot be cleared.">
               <option value="solvable" selected>Solvable (drawn from presses)</option>
               <option value="any">Any (may be unsolvable)</option>
             </select>
           </div>
         </div>
       </div>
-      <div>
-        <div class="section-title green-ttl">HOW IT SOLVES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">A PRESS IS A VECTOR</div>
-            <div class="field-hint">Pressing a light adds its column of the press matrix A. Mod 2, pressing twice cancels, so the order of presses never matters.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">THE BOARD IS A SYSTEM</div>
-            <div class="field-hint">Each light gives one equation: the presses that touch it XOR to its lit state. Solving A x = b is Gaussian elimination mod 2.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">SOME BOARDS CANNOT BE CLEARED</div>
-            <div class="field-hint">On 5x5 the matrix has rank 23 of 25, so only one board in four is reachable. Presses never change which class a board is in.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">THE FEWEST PRESSES</div>
-            <div class="field-hint">The null space has dimension 2, so a solvable 5x5 board has 4 solutions. The solver returns the one with the fewest presses.</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
+
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">There is no search and no learning here. Pressing a light is addition mod 2 (1 + 1 = 0), so a board is a linear system with one equation per light. Gaussian elimination solves that system exactly. The solver says whether a board can be cleared at all, and if it can, returns the press set with the fewest presses. HINT shows the first press of that set and SOLVE shows all of it.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Gaussian elimination mod 2</h3>
-      <p class="hiw-plain"><b>New to this?</b> Picture a grid of clues, where each clue says whether an odd number of the switches touching one light are on. Gaussian elimination is the standard recipe for a set of clues like this. It combines clues, drops the ones that repeat, and reads off the answer one unknown at a time. Over mod 2 the only numbers are 0 and 1, so combining two clues is XOR and pressing the same light twice cancels.</p>
-      <p>The solver builds the matrix A, where row i is the cell i and its orthogonal neighbours, and writes the board as a column b. It reduces [A | b] to reduced row echelon form. Each row operation is one integer XOR. A row that reads 0 = 1 proves the board unreachable.</p>
-      <ul>
-        <li>The ELIMINATION panel replays the reduction for boards up to 7x7 (the trace is cut off above that).</li>
-        <li>The answer is exact, so there is no tolerance or approximation to tune.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Null space and the fewest presses</h3>
-      <p class="hiw-plain"><b>New to this?</b> Some combinations of presses cancel out completely and change nothing. Those combinations are the null space. If you know one valid answer and the list of do-nothing combinations, you can produce every valid answer. It is like having several routes to the same place and taking the one with the fewest turns.</p>
-      <p>The solver sets the free variables to 0 to get one particular solution, then XORs in every combination of the null-space basis. A solvable 5x5 board has nullity 2, so 4 solutions, and the lightest one is returned. HINT and SOLVE both use that minimum set.</p>
-      <ul>
-        <li>The number of solutions is 2 to the power of the nullity.</li>
-        <li>Brute force would have to try all 2^25 (about 33 million) press sets on 5x5. The solver never does.</li>
-      </ul>
-    </article>
+  <p class="hiw-lede">This page uses no search and no learning. Pressing a light is addition <b>mod 2</b>, meaning only the remainder after division by 2 is kept, so 1 + 1 = 0. The rules therefore form a linear system with one equation per light, and <b>Gaussian elimination</b> solves that system exactly. The solver reports whether a board can be cleared and, if it can, the press set with the fewest presses. HINT shows the first press of that set and SOLVE shows all of it.</p>
+
+  <h3 class="hiw-sub">The rules as a linear system over GF(2)</h3>
+  <p>Cells are numbered row by row from the top left, 0 to N − 1, where N = n × n is the number of cells on an n × n board. The board is a vector <span class="math">b</span> with <span class="math">b_i = 1</span> when cell <span class="math">i</span> is lit and 0 when it is dark. A <b>press pattern</b> is a vector <span class="math">x</span> with <span class="math">x_j = 1</span> when cell <span class="math">j</span> is pressed. A press toggles the pressed cell and its orthogonal neighbours, the cells directly above, below, left and right of it. The set of cells that one press toggles is its <b>neighbourhood</b><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L22-L30" target="_blank" rel="noopener" title="lightsout/board.py, lines 22–30" aria-label="Code on GitHub: lightsout/board.py, lines 22 to 30">1</a>.</p>
+  <p><b>GF(2)</b> is the set {0, 1} with addition mod 2, which is XOR (1 ⊕ 1 = 0), and with multiplication AND. Every press is one XOR of a neighbourhood into the board, so presses combine by XOR and their order does not matter. Pressing a cell twice cancels, which is why a minimum solution never presses a cell twice.</p>
+  <!-- lightsout/solver.py:94-97, lightsout/board.py:22-30 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L94-L97" target="_blank" rel="noopener" title="lightsout/solver.py, lines 94–97" aria-label="Code on GitHub: lightsout/solver.py, lines 94 to 97">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L22-L30" target="_blank" rel="noopener" title="lightsout/board.py, lines 22–30" aria-label="Code on GitHub: lightsout/board.py, lines 22 to 30">1</a></span>
+    <div class="math math-block">A\,x = b \pmod{2}, \qquad A_{ij} = 1 \text{ if } j \in N(i), \text{ otherwise } 0</div>
   </div>
-  <h3 class="hiw-sub">Board sizes and solution counts</h3>
+  <p>Here <span class="math">A</span> is the N × N <b>matrix</b> whose row <span class="math">i</span> is the neighbourhood <span class="math">N(i)</span> of cell <span class="math">i</span>, and <span class="math">x</span> and <span class="math">b</span> are the press pattern and the board. The equation for cell <span class="math">i</span> says that the presses on the cells of <span class="math">N(i)</span> XOR to the lit state <span class="math">b_i</span>, so that cell ends dark. The matrix is symmetric, because <span class="math">j \in N(i)</span> exactly when <span class="math">i \in N(j)</span>.</p>
+  <!-- lightsout/board.py:47-60 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L47-L60" target="_blank" rel="noopener" title="lightsout/board.py, lines 47–60" aria-label="Code on GitHub: lightsout/board.py, lines 47 to 60">3</a></span>
+    <div class="math math-block">b' = b \oplus \bigoplus_{p \in P} N(p)</div>
+  </div>
+  <p>Here <span class="math">P</span> is the set of pressed cells, <span class="math">N(p)</span> is the neighbourhood of cell <span class="math">p</span>, and <span class="math">b'</span> is the board after the presses. The code stores every board, neighbourhood and press set as a <b>bit mask</b>, an integer whose bit <span class="math">i</span> is 1 when cell <span class="math">i</span> is in the set. A press is then one XOR of a mask into the board.</p>
+
+  <h3 class="hiw-sub">Gauss-Jordan elimination mod 2</h3>
+  <p><b>Gaussian elimination</b> solves a linear system by row operations, each of which keeps the set of solutions. <b>Gauss-Jordan elimination</b> adds one step: it clears the pivot column in every other row, above as well as below. The result is the <b>reduced row echelon form</b>, in which every pivot column holds a single 1. The augmented matrix <span class="math">[A \mid b]</span> is <span class="math">A</span> with <span class="math">b</span> added as one extra column on the right.</p>
+  <p>A <b>pivot</b> is a row chosen to hold the leading 1 of a column. A column with no pivot is a <b>free</b> column, and its variable may be set freely. The number of pivots is the <b>rank</b> of <span class="math">A</span>. The solver works down the columns from 0 to N − 1. For each column it searches the rows from the current rank downward for a 1 in that column, and swaps the row it finds up to the rank<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L109-L120" target="_blank" rel="noopener" title="lightsout/solver.py, lines 109–120" aria-label="Code on GitHub: lightsout/solver.py, lines 109 to 120">4</a>.</p>
+  <p>Each row is one Python integer, with bit <span class="math">j</span> holding column <span class="math">j</span> and bit N holding the right-hand side. A row operation is then one XOR. Clearing a column uses the rule below, which adds one equation to another and so keeps the solutions unchanged<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L121-L126" target="_blank" rel="noopener" title="lightsout/solver.py, lines 121–126" aria-label="Code on GitHub: lightsout/solver.py, lines 121 to 126">5</a>.</p>
+  <!-- lightsout/solver.py:124-126 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L124-L126" target="_blank" rel="noopener" title="lightsout/solver.py, lines 124–126" aria-label="Code on GitHub: lightsout/solver.py, lines 124 to 126">6</a></span>
+    <div class="math math-block">\text{row}_s \leftarrow \text{row}_s \oplus \text{row}_{\text{pivot}} \qquad \text{for every row } s \neq \text{pivot} \text{ with a 1 in the pivot column}</div>
+  </div>
+  <p>Here <span class="math">\text{row}_{\text{pivot}}</span> is the pivot row, which is not changed. Each such row <span class="math">s</span> loses its 1 in the pivot column. The earlier pivot columns stay clear, because the pivot row has a 0 in each of them.</p>
+  <p>The solver writes each step as a <b>Step</b>: the column, the pivot row, the swap made, and the rows cleared. The server returns the steps only for boards up to 7 × 7, because the comment there says the trace grows roughly with n⁴<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/lightsout_api.py#L27-L29" target="_blank" rel="noopener" title="server/lightsout_api.py, lines 27–29" aria-label="Code on GitHub: server/lightsout_api.py, lines 27 to 29">7</a>. The ELIMINATION panel replays the steps on the starting matrix, so it can show any step the player chooses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/lightsout.js#L311-L325" target="_blank" rel="noopener" title="web/js/lightsout.js, lines 311–325" aria-label="Code on GitHub: web/js/lightsout.js, lines 311 to 325">8</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L100-L130" target="_blank" rel="noopener" title="lightsout/solver.py, lines 100–130" aria-label="Code on GitHub: lightsout/solver.py, lines 100 to 130">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L94-L97" target="_blank" rel="noopener" title="lightsout/solver.py, lines 94–97" aria-label="Code on GitHub: lightsout/solver.py, lines 94 to 97">2</a></span>
+    <pre class="pseudo-simple">function ELIMINATE(A, b):                     # Gauss-Jordan mod 2 on [A | b]
+    rows ← each row of [A | b] as an integer
+    rank ← 0
+    for each column c from 0 to N − 1:
+        find a row r at or below rank with a 1 in column c
+        if there is no such row:
+            continue                          # column c is free
+        swap row r with row rank
+        for each row s ≠ rank with a 1 in column c:
+            row s ← row s ⊕ row rank          # clears column c above and below
+        rank ← rank + 1
+    return rows, rank</pre>
+    <pre class="pseudo-full" hidden>function ELIMINATE(n, board):                # board: N cells, bit i = cell i
+    N ← n · n
+    rhs ← bit(N)                              # the right-hand side bit
+    for each cell i from 0 to N − 1:
+        rows[i] ← neighbourhood(n, i) OR (rhs if cell i is lit else 0)
+    start ← each row of rows as N + 1 characters of 0 and 1
+    pivots ← empty list
+    steps ← empty list
+    rank ← 0
+    for each column c from 0 to N − 1:
+        mark ← bit(c)
+        found ← the first row r from rank to N − 1 with rows[r] AND mark ≠ 0, or none
+        if found is none:
+            store Step(c, none, none, empty)  # free column: a null-space direction
+            continue
+        swap ← none
+        if found ≠ rank:
+            swap rows rank and found
+            swap ← (rank, found)
+        pivot_row ← rows[rank]
+        cleared ← every row r ≠ rank with rows[r] AND mark ≠ 0    # above and below
+        for each r in cleared:
+            rows[r] ← rows[r] ⊕ pivot_row
+        append c to pivots
+        store Step(c, rank, swap, cleared)
+        rank ← rank + 1
+    return rows, pivots, rank, steps, start</pre>
+  </div>
+  <p>The simple version is the whole method: find a pivot in each column, swap it up, and clear the column everywhere else. The full version adds the bookkeeping the code keeps. Each row starts with its neighbourhood, so the right-hand side is the cell's own lit state.</p>
+  <p>A free column gets a <b>Step</b> with no pivot, because its variable is one of the free choices that generate the null space. The row swap and the cleared rows are recorded so the visualizer can replay each step. The clearing loop runs over every other row, not only the rows below, which is what makes each pivot column a single 1.</p>
+  <p><i>Example.</i> On a blank 5 × 5 board, the matrix has rank 23 of 25, so the elimination ends with two free columns. Those two columns are the null-space directions described below.</p>
+
+  <h3 class="hiw-sub">When a board can be cleared</h3>
+  <p>The boards that can be reached from the dark board are the <b>column space</b> of <span class="math">A</span>, the set of all vectors <span class="math">A\,x</span>. Each press adds one column of <span class="math">A</span>, so pressing moves a board only within its <b>class</b>, the set of boards that differ from it by a column combination. A board in another class can never be cleared.</p>
+  <p>The solver checks solvability after the elimination. Rows from the rank on have no pivot, so their left side is all zeros. If one of those rows has a 1 on the right, it reads 0 = 1 and no press pattern satisfies it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L172-L176" target="_blank" rel="noopener" title="lightsout/solver.py, lines 172–176" aria-label="Code on GitHub: lightsout/solver.py, lines 172 to 176">10</a>.</p>
+  <!-- lightsout/solver.py:172-176 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L172-L176" target="_blank" rel="noopener" title="lightsout/solver.py, lines 172–176" aria-label="Code on GitHub: lightsout/solver.py, lines 172 to 176">10</a></span>
+    <div class="math math-block">\text{solvable} \iff \text{rhs}_r = 0 \text{ for every row } r \geq \text{rank}</div>
+  </div>
+  <p>Here <span class="math">\text{rhs}_r</span> is the right-hand side bit of reduced row <span class="math">r</span>. The test is exact, so it has no tolerance. Solvability is an <b>invariant</b>, a property that no move changes: no sequence of presses can carry a board out of its class, so a board that cannot be cleared stays that way however it is pressed.</p>
+  <p>The reachable boards are a fixed fraction of all boards. There are 2<sup>rank</sup> reachable boards out of 2<sup>N</sup> in total. On 5 × 5 the rank is 23, so one board in four is reachable (2<sup>23</sup> ÷ 2<sup>25</sup> = 1/4)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L71-L74" target="_blank" rel="noopener" title="lightsout/board.py, lines 71–74" aria-label="Code on GitHub: lightsout/board.py, lines 71 to 74">11</a>.</p>
+
+  <h3 class="hiw-sub">The null space and the solution set</h3>
+  <p>A <b>null-space</b> vector is a press pattern <span class="math">v</span> with <span class="math">A\,v = 0</span>. Pressing exactly the cells of <span class="math">v</span> changes no light, so the presses cancel. The <b>nullity</b> is the dimension of the null space, which is the number of vectors in a <b>basis</b>, a smallest set of vectors from which every null vector is a combination. Gauss-Jordan elimination gives the nullity directly, because the free columns are the directions in which a solution can move without changing the board<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L168-L170" target="_blank" rel="noopener" title="lightsout/solver.py, lines 168–170" aria-label="Code on GitHub: lightsout/solver.py, lines 168 to 170">12</a>.</p>
+  <!-- lightsout/solver.py:169, lightsout/solver.py:184-188, lightsout/solver.py:76-79 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L169" target="_blank" rel="noopener" title="lightsout/solver.py, lines 169, 184–188, 76–79" aria-label="Code on GitHub: lightsout/solver.py, lines 169, 184 to 188, 76 to 79">13</a></span>
+    <div class="math math-block">\text{nullity} = N - \text{rank}, \qquad |\mathcal{S}| = 2^{\text{nullity}}</div>
+  </div>
+  <p>Here <span class="math">\mathcal{S}</span> is the set of solutions of a solvable board, and <span class="math">|\mathcal{S}|</span> is its size. The code reports the size as <code style="overflow-wrap:anywhere">Solution.count</code>. On 5 × 5 the nullity is 2, so every solvable board has 4 solutions. The brute force alternative would try all 2<sup>25</sup> (about 33 million) press sets on 5 × 5. The solver never does this, since it builds only the 2<sup>nullity</sup> solutions.</p>
+  <!-- lightsout/solver.py:178-182 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L178-L182" target="_blank" rel="noopener" title="lightsout/solver.py, lines 178–182" aria-label="Code on GitHub: lightsout/solver.py, lines 178 to 182">14</a></span>
+    <div class="math math-block">x_0[\text{piv}(r)] = \text{rhs}_r \qquad x_0[f] = 0 \text{ for every free column } f</div>
+  </div>
+  <p>Here <span class="math">x_0</span> is one <b>particular solution</b>, and <span class="math">\text{piv}(r)</span> is the pivot column of row <span class="math">r</span>. Setting every free press to 0 makes each pivot press equal to its row's right-hand side, since the reduced row has no other pivot columns.</p>
+  <!-- lightsout/solver.py:142-149 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L142-L149" target="_blank" rel="noopener" title="lightsout/solver.py, lines 142–149" aria-label="Code on GitHub: lightsout/solver.py, lines 142 to 149">15</a></span>
+    <div class="math math-block">v_f = e_f \oplus \bigoplus_{r \,:\, \text{row}_r[f] = 1} e_{\text{piv}(r)}</div>
+  </div>
+  <p>Here <span class="math">e_c</span> is the vector with a 1 only in cell <span class="math">c</span>, written <code style="overflow-wrap:anywhere">bit(c)</code> in the code, and <span class="math">v_f</span> is the null-space vector for free column <span class="math">f</span>. Setting <span class="math">f</span> to 1 with the other free presses at 0 forces each pivot press to the bit that its row holds in column <span class="math">f</span>. A reduced pivot row reads <span class="math">x_{\text{piv}(r)}</span> plus the free presses it contains equal to its right-hand side, which is 0 for a null vector.</p>
+  <!-- lightsout/solver.py:184-188 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L184-L188" target="_blank" rel="noopener" title="lightsout/solver.py, lines 184–188" aria-label="Code on GitHub: lightsout/solver.py, lines 184 to 188">16</a></span>
+    <div class="math math-block">\mathcal{S} = \left\{\, x_0 \oplus \bigoplus_{v \in T} v \;:\; T \subseteq \{v_f\} \,\right\}</div>
+  </div>
+  <p>Every solution is <span class="math">x_0</span> XOR a combination of the null-space vectors <span class="math">v_f</span>. The code builds the list by doubling: for each vector <span class="math">v</span>, it appends every existing solution XORed with <span class="math">v</span>, which gives all 2<sup>nullity</sup> combinations.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L133-L150" target="_blank" rel="noopener" title="lightsout/solver.py, lines 133–150" aria-label="Code on GitHub: lightsout/solver.py, lines 133 to 150">17</a></span>
+    <pre class="pseudo-simple">function NULL-BASIS(rows, pivots):
+    basis ← empty list
+    for each free column f:                   # a column with no pivot
+        v ← bit(f)
+        for each pivot row r:
+            if bit f of rows[r] is 1:
+                v ← v ⊕ bit(pivots[r])
+        append v to basis
+    return basis</pre>
+    <pre class="pseudo-full" hidden>function NULL-BASIS(n, rows, pivots):
+    pivot_cols ← the set of values in pivots
+    basis ← empty list
+    for each column f from 0 to N − 1:
+        if f is in pivot_cols:
+            continue                          # only free columns give a basis vector
+        v ← bit(f)                            # set the free variable to 1
+        for each pivot row r, with pivot column pivots[r]:
+            if bit f of rows[r] is 1:
+                v ← v OR bit(pivots[r])       # this pivot must be 1 as well
+        append v to basis
+    return basis</pre>
+  </div>
+  <p>The full version does not use a separate null-space routine: the solver calls it with the reduced rows, and <code style="overflow-wrap:anywhere">null_space(n)</code> calls the same function on the empty board. The code uses OR here. Each pivot column differs from <span class="math">f</span> and from the other pivot columns, so no bit is set twice, and OR and XOR give the same vector.</p>
+
+  <h3 class="hiw-sub">The minimum-press solution</h3>
+  <p>The solver returns the lightest solution, the one with the fewest presses. Solutions are compared by a pair: first the number of presses, then the integer value of the press mask. The second key makes ties deterministic, so the same board always gives the same answer<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L190-L194" target="_blank" rel="noopener" title="lightsout/solver.py, lines 190–194" aria-label="Code on GitHub: lightsout/solver.py, lines 190 to 194">18</a>.</p>
+  <!-- lightsout/solver.py:190-191 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L190-L191" target="_blank" rel="noopener" title="lightsout/solver.py, lines 190–191" aria-label="Code on GitHub: lightsout/solver.py, lines 190 to 191">19</a></span>
+    <div class="math math-block">x^{*} = \operatorname*{arg\,min}_{x \in \mathcal{S}} \Big( |x|, \;\; \textstyle\sum_{c} x_c\, 2^{c} \Big)</div>
+  </div>
+  <p>Here <span class="math">|x|</span> is the number of presses in <span class="math">x</span>, which the code gets with <code style="overflow-wrap:anywhere">bit_count()</code>, and the sum is the integer whose bit <span class="math">c</span> is <span class="math">x_c</span>. Pairs are compared in order, first by <span class="math">|x|</span> and then by the sum. HINT shows the first cell of <span class="math">x^{*}</span> in increasing order, and SOLVE shows the whole set<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/lightsout.js#L201-L219" target="_blank" rel="noopener" title="web/js/lightsout.js, lines 201–219" aria-label="Code on GitHub: web/js/lightsout.js, lines 201 to 219">20</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L158-L194" target="_blank" rel="noopener" title="lightsout/solver.py, lines 158–194" aria-label="Code on GitHub: lightsout/solver.py, lines 158 to 194">21</a></span>
+    <pre class="pseudo-simple">function SOLVE(board):
+    rows, rank ← ELIMINATE(A, board)          # reduce [A | b] mod 2
+    for each row r from rank to N − 1:
+        if the right-hand side of row r is 1:
+            return unsolvable                 # the row reads 0 = 1
+    x ← the particular solution, free presses 0
+    solutions ← x ⊕ each combination of the NULL-BASIS vectors
+    return the solution with the fewest presses</pre>
+    <pre class="pseudo-full" hidden>function SOLVE(n, board, trace):           # board: N values, each 0 or 1
+    if board does not have N values, each 0 or 1:
+        raise ValueError("board must be N cells of 0 or 1")
+    rows, pivots, rank, steps, start ← ELIMINATE(n, board)
+    nullity ← N − rank
+    keep steps and start if trace is set      # the visualizer replays them
+    for each row r from rank to N − 1:        # no pivot: the left side is all 0
+        if the right-hand side of row r is 1:
+            return unsolvable, with rank and nullity
+    x0 ← 0
+    for each pivot row r:
+        if the right-hand side of row r is 1:
+            x0 ← x0 OR bit(pivots[r])         # free presses stay 0
+    solutions ← [x0]
+    for each v in NULL-BASIS(n, rows, pivots):
+        solutions ← solutions + [s ⊕ v for each s in solutions]    # doubles the list
+    best ← the s in solutions with the least (POPCOUNT(s), s)
+    presses ← the cells c in increasing order with bit c of best set
+    sizes ← the sorted values of POPCOUNT(s) over solutions
+    return solvable, rank, nullity, presses, sizes, trace</pre>
+  </div>
+  <p>The simple version shows the decision: it either reports the 0 = 1 contradiction or returns the lightest of the solutions. The full version adds the checks and outputs the page uses: the input is validated, the elimination steps are kept only when a trace is requested, and the list of solution sizes is returned along with the presses.</p>
+  <p>Setting the free presses to 0 gives <span class="math">x_0</span>, and doubling the list adds every null-space combination. The solution with the fewest presses is found by scanning the list once with the key above. This is why the solver never tries all 2<sup>25</sup> press sets on 5 × 5.</p>
+  <p><i>Example.</i> Pressing a1, b2 and d4 on a dark 5 × 5 board lights nine cells. Its four solutions use 3, 13, 13 and 19 presses, and the lightest is a1, b2, d4, which is the press set that made the board.</p>
+
+  <h3 class="hiw-sub">Random boards</h3>
+  <p>NEW BOARD deals a board with <code style="overflow-wrap:anywhere">random_board</code>. In solvable mode, each cell is pressed with probability one half, and the chosen presses are applied to a dark board. The result is solvable by construction, because pressing the same set again undoes the presses, since every press is its own inverse<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L76-L79" target="_blank" rel="noopener" title="lightsout/board.py, lines 76–79" aria-label="Code on GitHub: lightsout/board.py, lines 76 to 79">22</a>.</p>
+  <p>In any mode, each light is lit with probability one half, independently of the others. Most of those boards cannot be cleared. A board that is already dark is rejected and drawn again<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L80-L83" target="_blank" rel="noopener" title="lightsout/board.py, lines 80–83" aria-label="Code on GitHub: lightsout/board.py, lines 80 to 83">23</a>. The board sizes, 3 to 9 with 5 as the default, are limits set in the board module<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L17" target="_blank" rel="noopener" title="lightsout/board.py, line 17" aria-label="Code on GitHub: lightsout/board.py, line 17">24</a>.</p>
+
+  <h3 class="hiw-sub">Keeping the plan valid during play</h3>
+  <p>Pressing a light never calls the server. The page keeps the shown plan valid instead. A press on cell <span class="math">p</span> toggles <span class="math">N(p)</span> on the board, and the plan changes by the single cell <span class="math">p</span>, so the plan is toggled at <span class="math">p</span> rather than solved again<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/lightsout.js#L162-L167" target="_blank" rel="noopener" title="web/js/lightsout.js, lines 162–167" aria-label="Code on GitHub: web/js/lightsout.js, lines 162 to 167">25</a>.</p>
+  <!-- web/js/lightsout.js:45-55, web/js/lightsout.js:162-167 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/lightsout.js#L45-L55" target="_blank" rel="noopener" title="web/js/lightsout.js, lines 45–55, 162–167" aria-label="Code on GitHub: web/js/lightsout.js, lines 45 to 55, 162 to 167">26</a></span>
+    <div class="math math-block">x' = x \oplus e_p, \qquad b' = b \oplus A\,e_p, \qquad A\,x' = b'</div>
+  </div>
+  <p>Here <span class="math">e_p</span> is the vector with a 1 only at <span class="math">p</span>, so <span class="math">A\,e_p</span> is the neighbourhood <span class="math">N(p)</span>. Since <span class="math">A\,x' = A\,x \oplus A\,e_p = b \oplus A\,e_p = b'</span>, the new plan is still a solution. In the code, toggling <span class="math">p</span> means removing it from the plan if it is there and adding it otherwise.</p>
+  <p>STEP and AUTO press the first cell of the plan, so the plan shrinks by one each time. Their presses count as assists, not as the player's moves<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/lightsout.js#L231-L259" target="_blank" rel="noopener" title="web/js/lightsout.js, lines 231–259" aria-label="Code on GitHub: web/js/lightsout.js, lines 231 to 259">27</a>.</p>
+
+  <h3 class="hiw-sub">Results: board sizes and solution counts</h3>
+  <p>Each value below comes from the solver's elimination on a board with no lit cells, which gives the rank and nullity of <span class="math">A</span>, and from the solvable share 2<sup>rank</sup>/2<sup>N</sup><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py#L100-L130" target="_blank" rel="noopener" title="lightsout/solver.py, lines 100–130" aria-label="Code on GitHub: lightsout/solver.py, lines 100 to 130">9</a>. Nothing here is tuned or learned.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Board</th><th>What it measures</th><th class="num">Value</th></tr></thead><tbody>
     <tr><td>3x3</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 9 of 9, nullity 0, all boards solvable, 1 solution</td></tr>
     <tr><td>4x4</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 12 of 16, nullity 4, 1 in 16 boards solvable, 16 solutions</td></tr>
@@ -161,14 +324,16 @@
     <tr><td>6x6, 7x7, 8x8</td><td>Rank of A, nullity, solvable share</td><td class="num">full rank, nullity 0, all boards solvable, 1 solution</td></tr>
     <tr><td>9x9</td><td>Rank of A, nullity, solvable share</td><td class="num">rank 73 of 81, nullity 8, 1 in 256 boards solvable, 256 solutions</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> nothing here is tuned or learned. The ranks and nullities are computed by the solver for each size. The board sizes (3 to 9, default 5) are limits set in <code>lightsout/board.py</code>. In solvable mode a board is made by pressing each cell with probability one half from a dark board, so it is solvable by construction. In any mode every light is drawn independently, and most of those boards cannot be cleared.</p>
-  <p class="hiw-note"><b>Measured:</b> over 3,000 random solvable 5x5 boards, the lightest solution averages 9.9 presses, and the heaviest of the four is 5.2 presses heavier on average. A re-run with seed 1 gives 9.89 and 5.19. No committed result file covers Lights Out, so these come from re-running the code.</p>
-  <p class="hiw-note"><b>Checks:</b> the tests compare the solver with brute force on all 512 boards of 3x3, and on 1,500 random 4x4 boards.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/solver.py">lightsout/solver.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py">lightsout/board.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/lightsout_api.py">server/lightsout_api.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_lightsout.py">tests/test_lightsout.py</a></p>
+
+  <h3 class="hiw-sub">Measurements and tests</h3>
+  <p>The 5 × 5 solution sizes were measured by re-running the code: 3,000 solvable boards from <code style="overflow-wrap:anywhere">random_board(5, random.Random(1), solvable=True)</code>. The lightest solution averages 9.89 presses, and the gap between the heaviest and the lightest solution averages 5.19 presses. With seed 0 on the same number of boards, the averages are 9.83 and 5.24, so the averages depend on the sample. No committed result file covers Lights Out<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/lightsout/board.py#L68-L83" target="_blank" rel="noopener" title="lightsout/board.py, lines 68–83" aria-label="Code on GitHub: lightsout/board.py, lines 68 to 83">28</a>.</p>
+  <p>The tests compare the solver with brute force. Brute force tries every press set and records the lightest one per board. The check covers all 512 boards of 3 × 3 and 1,500 random boards of 4 × 4<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_lightsout.py#L29-L49" target="_blank" rel="noopener" title="tests/test_lightsout.py, lines 29–49" aria-label="Code on GitHub: tests/test_lightsout.py, lines 29 to 49">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_lightsout.py#L112-L128" target="_blank" rel="noopener" title="tests/test_lightsout.py, lines 112–128" aria-label="Code on GitHub: tests/test_lightsout.py, lines 112 to 128">30</a>. Another test checks that the 5 × 5 null space has two vectors, that each changes no light, and that a solvable board has exactly 4 solutions<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_lightsout.py#L65-L73" target="_blank" rel="noopener" title="tests/test_lightsout.py, lines 65–73" aria-label="Code on GitHub: tests/test_lightsout.py, lines 65 to 73">31</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/lightsout.js"></script>
 </body>

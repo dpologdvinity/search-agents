@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="queens.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">08 // LOCAL SEARCH · CONFLICT MINIMISATION</div>
+      <div class="proj-pg-tag">08 // LOCAL SEARCH</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="N-QUEENS">N-QUEENS</h1>
-      <div class="proj-pg-sub">Place N queens so that none attacks another. A systematic search backs up through the tree; three local searches repair a board one queen at a time. Same board, four agents.</div>
+      <div class="proj-pg-sub">Place N queens so that none attacks another. Four agents solve the same board.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -43,6 +44,13 @@
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Place N queens on an N × N board so that no two queens attack each other. A queen attacks along its column and both diagonals, so each row holds exactly one queen.</p>
+    <p>In PLAY, click a square to put a queen in its row, and click it again to take the queen back. HINT names the next min-conflicts move.</p>
+    <p>WATCH replays one agent's search step by step. RACE runs all four agents on one board, and BIG N runs min-conflicts live in your browser.</p>
+  </section>
 
   <div class="qn-tabs" role="tablist" aria-label="Mode">
     <button class="cyber-btn pink act" id="tab-play" data-mode="play" role="tab" aria-selected="true" type="button"><span class="btn-txt">▣ PLAY</span></button>
@@ -56,39 +64,20 @@
     <div class="proj-body">
       <div class="proj-game-col">
         <div class="qn-stage">
-          <div id="play-board" class="qn-board" style="--n:8" role="grid" aria-label="8 by 8 board"></div>
-          <div class="field-hint" id="play-note">Click a square to put a queen in its row. A queen in conflict glows red; the empty squares glow by how many queens attack them.</div>
+          <div id="play-board" class="qn-board" style="--n:8" role="grid" aria-label="8 by 8 board" title="Each row holds one queen. A queen attacks along its column and both diagonals."></div>
+          <div class="field-hint" id="play-note">Click a square to put a queen in its row. A red queen is in conflict; pink squares glow by how many queens attack them.</div>
           <div class="inline" style="justify-content:center;flex-wrap:wrap">
-            <button class="cyber-btn green" id="play-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
-            <button class="cyber-btn" id="play-clear" type="button"><span class="btn-txt">⟲ CLEAR</span></button>
-            <button class="cyber-btn pink" id="play-solve" type="button"><span class="btn-txt">◉ SHOW A SOLUTION</span></button>
+            <button class="cyber-btn green" id="play-hint" type="button" title="Show the next min-conflicts move"><span class="btn-txt">✦ HINT</span></button>
+            <button class="cyber-btn" id="play-clear" type="button" title="Take every queen off the board"><span class="btn-txt">⟲ CLEAR</span></button>
+            <button class="cyber-btn pink" id="play-solve" type="button" title="Run min-conflicts from a greedy start and show its solution"><span class="btn-txt">◉ SHOW A SOLUTION</span></button>
           </div>
         </div>
         <div class="viz-panel" style="margin-top:1rem">
-          <div class="viz-title">What the hint means</div>
+          <div class="viz-title">Hint</div>
           <div class="field-hint" id="play-hint-text">Press HINT. The hint is the min-conflicts move: take a conflicted queen and put it on the column with the fewest attacks.</div>
         </div>
       </div>
       <div class="proj-ctrl-col">
-        <div>
-          <div class="section-title pink-ttl">THE RULES</div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div class="field-hint">Each row holds one queen. A queen attacks along its column and both diagonals. Eight queens on eight squares: every row filled and no two attacking.</div>
-          </div>
-        </div>
-        <div>
-          <div class="section-title green-ttl">WHY THE COLOURS</div>
-          <div class="stack">
-            <div class="heuristic-card" style="padding:0.7rem">
-              <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">RED QUEEN</div>
-              <div class="field-hint">Another queen attacks this one. The search minimises the count of such pairs.</div>
-            </div>
-            <div class="heuristic-card" style="padding:0.7rem">
-              <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">HOT SQUARE</div>
-              <div class="field-hint">An empty square is hot in proportion to the queens that would attack a queen placed there. Min-conflicts moves a queen to the coolest square in its row.</div>
-            </div>
-          </div>
-        </div>
         <div class="viz-panel">
           <div class="viz-title" id="play-status">Placed 0 of 8 queens</div>
         </div>
@@ -102,6 +91,7 @@
       <div class="proj-game-col">
         <div class="qn-stage">
           <div id="watch-board" class="qn-board" style="--n:8" role="grid" aria-label="Board for the chosen agent"></div>
+          <div class="field-hint">Pink squares are attacked by queens. A red queen is in conflict. Backtracking's chart counts the rows still open.</div>
           <div class="qn-playback">
             <button class="cyber-btn" id="watch-prev" type="button"><span class="btn-txt">◀</span></button>
             <button class="cyber-btn green" id="watch-play" type="button" aria-pressed="false"><span class="btn-txt">▶ PLAY</span></button>
@@ -123,42 +113,37 @@
         <div>
           <div class="section-title pink-ttl">AGENT</div>
           <div class="stack">
-            <select class="cyber-select" id="watch-agent" style="width:100%">
+            <select class="cyber-select" id="watch-agent" style="width:100%" title="Min-conflicts: moves a queen in conflict to a least-attacked column in its row.">
               <option value="backtrack">Backtracking (bitmasks)</option>
               <option value="hill">Steepest-ascent hill climbing</option>
               <option value="anneal">Simulated annealing</option>
               <option value="minconf" selected>Min-conflicts</option>
             </select>
-            <div class="field-hint" id="watch-blurb"></div>
-          </div>
-        </div>
-        <div>
-          <div class="section-title green-ttl">BOARD</div>
-          <div class="stack">
-            <div>
-              <div class="field-lbl">QUEENS</div>
-              <select class="cyber-select" id="watch-n" style="width:100%">
-                <option value="8" selected>8</option>
-                <option value="12">12</option>
-                <option value="16">16</option>
-                <option value="24">24</option>
-                <option value="32">32</option>
-              </select>
-            </div>
-            <div class="inline">
-              <div class="grow">
-                <div class="field-lbl">SEED</div>
-                <input class="cyber-select" id="watch-seed" type="number" min="0" value="1" style="width:100%">
+            <details class="more-settings">
+              <summary>More settings</summary>
+              <div class="stack">
+                <div>
+                  <div class="field-lbl">QUEENS</div>
+                  <select class="cyber-select" id="watch-n" style="width:100%" aria-label="Queens">
+                    <option value="8" selected>8</option>
+                    <option value="12">12</option>
+                    <option value="16">16</option>
+                    <option value="24">24</option>
+                    <option value="32">32</option>
+                  </select>
+                </div>
+                <div class="inline">
+                  <div class="grow">
+                    <div class="field-lbl">SEED</div>
+                    <input class="cyber-select" id="watch-seed" type="number" min="0" value="1" style="width:100%" title="The seed sets the random start, so a seed always gives the same run">
+                  </div>
+                  <button class="cyber-btn" id="watch-shuffle" type="button" title="Pick a random seed"><span class="btn-txt">⟳</span></button>
+                </div>
               </div>
-              <button class="cyber-btn" id="watch-shuffle" type="button"><span class="btn-txt">⟳</span></button>
-            </div>
+            </details>
             <button class="cyber-btn pink" id="watch-run" type="button"><span class="btn-txt">▶ RUN THE AGENT</span></button>
             <div class="field-err" id="watch-err"></div>
           </div>
-        </div>
-        <div>
-          <div class="section-title pink-ttl">WHAT THE COLOURS MEAN</div>
-          <div class="field-hint">A pink glow on an empty square counts the queens that would attack a queen placed there. A red queen is in conflict. Backtracking never has a conflict, so its chart counts the rows still open.</div>
         </div>
       </div>
     </div>
@@ -171,6 +156,7 @@
         <div class="viz-panel">
           <div class="viz-title" id="race-title">Pick a size and race the four agents on the same seeded start.</div>
           <div class="qn-race" id="race-cards"></div>
+          <div class="field-hint">Steps mean different things for each agent, so each card also gives the candidate squares it scored.</div>
         </div>
         <div class="viz-panel" style="margin-top:1rem">
           <div class="viz-title">Time to finish (server time, capped)</div>
@@ -183,7 +169,7 @@
           <div class="stack">
             <div>
               <div class="field-lbl">QUEENS</div>
-              <select class="cyber-select" id="race-n" style="width:100%">
+              <select class="cyber-select" id="race-n" style="width:100%" title="An agent that is not served at this size is skipped: backtracking up to 64 queens, hill climbing up to 100, annealing up to 2,000, min-conflicts up to 10,000.">
                 <option value="8" selected>8</option>
                 <option value="16">16</option>
                 <option value="32">32</option>
@@ -193,17 +179,16 @@
                 <option value="2000">2,000</option>
               </select>
             </div>
-            <div>
-              <div class="field-lbl">SEED</div>
-              <input class="cyber-select" id="race-seed" type="number" min="0" value="1" style="width:100%">
-            </div>
+            <details class="more-settings">
+              <summary>More settings</summary>
+              <div>
+                <div class="field-lbl">SEED</div>
+                <input class="cyber-select" id="race-seed" type="number" min="0" value="1" style="width:100%" title="The seed sets the random start shared by the four agents">
+              </div>
+            </details>
             <button class="cyber-btn pink" id="race-run" type="button"><span class="btn-txt">⚑ GO</span></button>
             <div class="field-err" id="race-err"></div>
           </div>
-        </div>
-        <div>
-          <div class="section-title green-ttl">READING THE RACE</div>
-          <div class="field-hint">Steps mean different things for each agent, so the cards also give candidate squares scored: the work each agent did. Backtracking stops at its time cap once the tree is too big; hill climbing is not served past 100 queens.</div>
         </div>
       </div>
     </div>
@@ -215,7 +200,7 @@
       <div class="proj-game-col">
         <div class="qn-stage">
           <canvas id="big-canvas" class="qn-big" width="500" height="500" aria-label="Board: one pixel per square; queens are cyan"></canvas>
-          <div class="field-hint" id="big-note">Each pixel is a square. Cyan is a queen, white is the one being moved.</div>
+          <div class="field-hint" id="big-note">Each pixel is a square. Cyan is a queen, white is the one just moved.</div>
           <div class="qn-playback">
             <button class="cyber-btn green" id="big-play" type="button" aria-pressed="false"><span class="btn-txt">▶ START</span></button>
             <button class="cyber-btn" id="big-new" type="button"><span class="btn-txt">↺ NEW BOARD</span></button>
@@ -240,24 +225,7 @@
             </div>
             <div>
               <div class="field-lbl">REPAIRS PER FRAME: <span id="big-speed-out">4</span></div>
-              <input id="big-speed" type="range" min="1" max="200" value="4" aria-label="Repairs per frame">
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="section-title green-ttl">THE LOOP</div>
-          <div class="stack">
-            <div class="heuristic-card" style="padding:0.7rem">
-              <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">START GREEDY</div>
-              <div class="field-hint">Each row takes a random column that nothing attacks. Almost every queen lands with no conflict.</div>
-            </div>
-            <div class="heuristic-card" style="padding:0.7rem">
-              <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">REPAIR</div>
-              <div class="field-hint">Pick a conflicted queen at random. Lift it and score all N columns of its row in one pass. Put it on a least-attacked column.</div>
-            </div>
-            <div class="heuristic-card" style="padding:0.7rem">
-              <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">WHY IT IS FAST</div>
-              <div class="field-hint">A repair never adds a conflict, and only a few hundred are left after the greedy start, so the count reaches zero in a few hundred repairs even at a thousand queens.</div>
+              <input id="big-speed" type="range" min="1" max="200" value="4" aria-label="Repairs per frame" title="How many repairs run in each animation frame">
             </div>
           </div>
         </div>
@@ -279,34 +247,305 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Four agents try to place N queens on an N × N board so that no two attack each other. Backtracking is exhaustive, so it can prove that no answer exists. The other three are local search: they start from a board with conflicts and move queens to reduce them, with no proof of anything. Min-conflicts is the one that scales: in the benchmark it solved a 1,000,000-queen board in one run of 13.6 s.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>The problem and the conflict count</h3>
-      <p class="hiw-plain"><b>New to this?</b> On a chessboard, a queen captures along its row, column and diagonals. The puzzle asks for N queens placed so none can capture another. Random placements almost never work for large N, so the agents have to search with some sense of direction.</p>
-      <p>The board keeps one queen per row, so only columns and diagonals can clash. A conflict is a pair of queens sharing a column or a diagonal. Three count arrays hold the number of queens on each column and each diagonal, so the change in conflicts from moving one queen is an O(1) lookup. A line holding k queens has C(k, 2) conflicting pairs, and a solution has zero.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Backtracking with bitmasks</h3>
-      <p class="hiw-plain"><b>New to this?</b> Place queens one row at a time. If a row has no safe square, take back the queen above and try its next square. It is slow on big boards, but every partial board it keeps is conflict-free, and when it finishes it has either a solution or a proof that none exists.</p>
-      <p>For each row, three n-bit masks mark the columns already taken and the two diagonals hit by queens above. The open squares are full &amp; ~(cols | ld | rd), and the lowest open bit is tried first. The search is iterative, so a board of 10,000 rows does not overflow Python's recursion limit. Being exhaustive, it reports "exhausted" when no solution exists, as it does for N = 2 and 3.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Steepest-ascent hill climbing</h3>
-      <p class="hiw-plain"><b>New to this?</b> Look at every single queen move and take the one that removes the most conflicts. When no move helps, the search is in a dip or on a flat plateau, so it tips the board over and starts again from a random placement.</p>
-      <p>Each step scores every move (each row against each column), which is N × N squares, and plays one of the best, ties broken at random. Sideways moves are not allowed. A restart counts as a step and as a restart. The run stops when it solves the board or reaches its time cap.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Simulated annealing</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like a metal cooling into shape. Propose a random queen move. An improvement is always accepted. A worse move is sometimes accepted, and less often as the temperature falls. While hot the search can climb out of a dip, and once cold it settles.</p>
-      <p>A proposal moves one random queen to another random column. Its change in conflicts is d. A move with d ≤ 0 is always taken; an uphill move is taken with probability exp(−d / T). The temperature falls geometrically from T = 2.0 to 0.05 over a run of max(200, 60 N) proposals. A run that ends unsolved restarts from a random placement at T = 2.0.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Min-conflicts</h3>
-      <p class="hiw-plain"><b>New to this?</b> Pick a queen that is under attack, lift it, and set it down in the square in its row with the fewest attacks. Repeat until nothing is attacked. Each repair scores the columns of one row, so it stays cheap even on enormous boards.</p>
-      <p>The start is greedy: each row tries up to 4,096 random unused columns and keeps the first with no attacks, or else the least attacked one. Each repair then picks a conflicted queen uniformly at random, removes it, scores every column in its row, and moves the queen to a least-attacked column, ties broken at random (the current column can win). If the conflict count has not reached a new low for max(200, 20 N) repairs, the run restarts from a fresh greedy start.</p>
-    </article>
+  <p class="hiw-lede"><b>N-queens</b> asks for N queens on an N × N board so that no two attack each other. Four agents attempt it. <b>Backtracking</b> is a systematic search, so it can prove that no solution exists. The other three are <b>local search</b> methods: they start from a board that has conflicts and change one queen at a time to reduce them, so they cannot prove that no solution exists. <b>Min-conflicts</b> is the agent that scales. In the benchmark it solved a 1,000,000-queen board in one run of 13.6 s.</p>
+
+  <h3 class="hiw-sub">The board and the conflict count</h3>
+  <p class="hiw-note">The board has one queen per row, so only columns and diagonals can clash. A <b>conflict</b> is a pair of queens that share a column or a diagonal. A <b>diagonal</b> is a line of squares at 45 degrees. Squares on one diagonal satisfy either r + c = constant or r − c = constant, so the board keeps two arrays for the diagonals, one for each family, with 2n − 1 entries each<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L7-L10" target="_blank" rel="noopener" title="queens/board.py, lines 7–10" aria-label="Code on GitHub: queens/board.py, lines 7 to 10">1</a>.</p>
+  <p class="hiw-note">The <b>conflict count</b> is the number of attacking pairs on the board. A line that holds k queens contains C(k, 2) = k(k − 1) / 2 pairs. No two queens share two lines, because a shared column and a shared diagonal would put them in the same row, and two shared diagonals would put them on the same square. So the conflict count is the sum of C(k, 2) over every line<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L12-L14" target="_blank" rel="noopener" title="queens/board.py, lines 12–14" aria-label="Code on GitHub: queens/board.py, lines 12 to 14">2</a>.</p>
+  <!-- queens/board.py:95-110 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L95-L110" target="_blank" rel="noopener" title="queens/board.py, lines 95–110" aria-label="Code on GitHub: queens/board.py, lines 95 to 110">3</a></span>
+    <div class="math math-block">\text{conflicts} = \sum_{\ell} \binom{k_\ell}{2} = \sum_{\ell} \frac{k_\ell\,(k_\ell - 1)}{2}</div>
   </div>
+  <p class="hiw-note">Here ℓ runs over every column and every diagonal of both families, and k_ℓ is the number of queens on line ℓ. The function that computes this sum from scratch is <code>count_conflicts</code>, and the tests check it against a brute-force pair count. The board does not recount on each move. <code>place</code> adds the queens already on a new queen's three lines, and <code>remove</code> subtracts the queens left behind on the lines of the queen it takes away<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L60-L70" target="_blank" rel="noopener" title="queens/board.py, lines 60–70" aria-label="Code on GitHub: queens/board.py, lines 60 to 70">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L72-L83" target="_blank" rel="noopener" title="queens/board.py, lines 72–83" aria-label="Code on GitHub: queens/board.py, lines 72 to 83">5</a>.</p>
+  <p class="hiw-note">The <b>attack count</b> A(r, c) is the number of queens that would attack a queen placed on square (r, c), not counting the queen already in row r. The three lookups read the column and the two diagonals through (r, c)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L41-L53" target="_blank" rel="noopener" title="queens/board.py, lines 41–53" aria-label="Code on GitHub: queens/board.py, lines 41 to 53">6</a>.</p>
+  <!-- queens/board.py:41-53 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py#L41-L53" target="_blank" rel="noopener" title="queens/board.py, lines 41–53" aria-label="Code on GitHub: queens/board.py, lines 41 to 53">6</a></span>
+    <div class="math math-block">A(r,c) = \mathrm{col}[c] + \mathrm{d1}[r + c] + \mathrm{d2}[r - c + n - 1] - 3\,[\,\mathrm{cols}[r] = c\,]</div>
+  </div>
+  <p class="hiw-note">Here [·] is 1 when the condition holds and 0 otherwise. If the row-r queen stands on (r, c) itself, it lies on all three lines, so 3 is subtracted. Otherwise the row-r queen is on none of them, because its lines meet (r, c) only when it is in column c. Each lookup is O(1), so every agent scores a move without rescanning the board.</p>
+
+  <h3 class="hiw-sub">Backtracking with bitmasks</h3>
+  <p class="hiw-note"><b>Backtracking</b> is a <b>depth-first search</b> of a <b>search tree</b>. The tree has one level per row, and each node is a partial placement with a queen in every row above. The search places a queen in the lowest open column of the current row. When a row has no open column, the search <b>backtracks</b>: it takes back the queen in the row above and tries that queen's next open column. The search is exhaustive, so when it ends with no solution it has proved that none exists, as it does for N = 2 and N = 3<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L113-L126" target="_blank" rel="noopener" title="queens/agents.py, lines 113–126" aria-label="Code on GitHub: queens/agents.py, lines 113 to 126">7</a>.</p>
+  <p class="hiw-note">A <b>bitmask</b> is an integer in which bit c stands for column c, so a set of columns is one number and a set operation is one bitwise instruction. For row r the search keeps three n-bit masks: C, the columns already taken; L (<code>ld</code>), the columns hit by one family of diagonals from queens above; and R (<code>rd</code>), the columns hit by the other family. A queen in column c blocks column c + 1 one row lower through L and column c − 1 through R<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L115-L119" target="_blank" rel="noopener" title="queens/agents.py, lines 115–119" aria-label="Code on GitHub: queens/agents.py, lines 115 to 119">8</a>.</p>
+  <!-- queens/agents.py:153-155 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L153-L155" target="_blank" rel="noopener" title="queens/agents.py, lines 153–155" aria-label="Code on GitHub: queens/agents.py, lines 153 to 155">9</a></span>
+    <div class="math math-block">\mathrm{open}_r = F \land \lnot\,(C_r \lor L_r \lor R_r), \qquad b = \mathrm{open}_r \land (-\mathrm{open}_r)</div>
+  </div>
+  <p class="hiw-note">Here F = 2<sup>n</sup> − 1 is the mask with all n columns set, ∧ is bitwise AND, ∨ bitwise OR and ¬ bitwise NOT (the code writes <code>&amp;</code>, <code>|</code> and <code>~</code>). The open columns of row r are the columns that none of the three masks takes. The bit b is the lowest open column, and the search tries it first. The code computes b as <code>bits &amp; -bits</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L153-L155" target="_blank" rel="noopener" title="queens/agents.py, lines 153–155" aria-label="Code on GitHub: queens/agents.py, lines 153 to 155">9</a>.</p>
+  <!-- queens/agents.py:158-165 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L158-L165" target="_blank" rel="noopener" title="queens/agents.py, lines 158–165" aria-label="Code on GitHub: queens/agents.py, lines 158 to 165">10</a></span>
+    <div class="math math-block">C_{r+1} = C_r \lor b, \qquad L_{r+1} = \bigl((L_r \lor b) \ll 1\bigr) \land F, \qquad R_{r+1} = (R_r \lor b) \gg 1</div>
+  </div>
+  <p class="hiw-note">Here ≪ and ≫ are left and right bit shifts, and r + 1 is the next row. Placing a queen in row r sets its bit in C, and its two diagonals move one column per row, which the shifts express. The next row's open columns are then computed from the three new masks with the formula above<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L156-L165" target="_blank" rel="noopener" title="queens/agents.py, lines 156–165" aria-label="Code on GitHub: queens/agents.py, lines 156 to 165">11</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L111-L179" target="_blank" rel="noopener" title="queens/agents.py, lines 111–179" aria-label="Code on GitHub: queens/agents.py, lines 111 to 179">12</a></span>
+    <pre class="pseudo-simple">function BACKTRACK(n):
+    row ← 0
+    open[0] ← every column
+    while row &lt; n:
+        if open[row] is empty:
+            if row = 0:
+                return "no solution exists"
+            row ← row − 1                      # backtrack: take back the queen above
+        else:
+            c ← the lowest open column of row
+            remove c from open[row]
+            place a queen at (row, c)
+            row ← row + 1
+            open[row] ← columns not taken and not on a diagonal of a queen above
+    return the placement</pre>
+    <pre class="pseudo-full" hidden>function BACKTRACK(n):
+    full ← 2^n − 1                             # bit c stands for column c
+    C[0] ← 0;  L[0] ← 0;  R[0] ← 0             # nothing is taken above row 0
+    open[0] ← full
+    row ← 0
+    steps ← 0;  nodes ← 0                      # steps: placements and retreats
+    placed ← [−1, …, −1]                       # −1 marks an empty row
+    while row &lt; n:
+        bits ← open[row]
+        if bits = 0:                           # dead end: no open column in this row
+            if row = 0:
+                stop: "exhausted"              # no solution exists
+            row ← row − 1                      # retreat to the row above
+            placed[row] ← −1
+            steps ← steps + 1
+        else:
+            bit ← bits AND (−bits)             # lowest open column
+            open[row] ← bits XOR bit           # this column is not tried again
+            placed[row] ← column of bit
+            c ← C[row] OR bit
+            ld ← ((L[row] OR bit) &lt;&lt; 1) AND full
+            rd ← (R[row] OR bit) &gt;&gt; 1
+            row ← row + 1
+            C[row] ← c;  L[row] ← ld;  R[row] ← rd
+            open[row] ← full AND NOT (c OR ld OR rd)
+            steps ← steps + 1
+            nodes ← nodes + 1                  # the work measure: placements
+        if max_steps is set and steps ≥ max_steps:
+            stop: "step cap"
+        if steps mod 256 = 0 and the time limit has passed:
+            stop: "time cap"
+    return placed                              # complete only if row = n</pre>
+  </div>
+  <p class="hiw-note"><b>Bit tricks.</b> <code>bits AND (−bits)</code> isolates the lowest set bit, and <code>bits XOR bit</code> clears it. Both are single machine operations, so the search never loops over the columns of a row to find the next one to try.</p>
+  <p class="hiw-note"><b>Iterative search.</b> The search keeps one array entry per row instead of recursing, because a recursion of depth 10,000 would overflow Python's stack<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L113-L126" target="_blank" rel="noopener" title="queens/agents.py, lines 113–126" aria-label="Code on GitHub: queens/agents.py, lines 113 to 126">7</a>.</p>
+  <p class="hiw-note"><b>Recording omitted.</b> The full version leaves out the trace and frame recorder, which only keeps the samples the chart and the watch view read. It does not change the search.</p>
+
+  <h3 class="hiw-sub">Steepest-ascent hill climbing</h3>
+  <p class="hiw-note"><b>Hill climbing</b> is a local search. It starts from a complete placement, one queen per row on a random column, and changes it one move at a time. A move puts the row-r queen on column c. The code calls the method <b>steepest ascent</b>: each step scores every move and plays the one that removes the most conflicts<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L184-L193" target="_blank" rel="noopener" title="queens/agents.py, lines 184–193" aria-label="Code on GitHub: queens/agents.py, lines 184 to 193">13</a>. Scoring all moves costs n² squares per step.</p>
+  <p class="hiw-note">A placement where no move lowers the conflict count is a <b>local minimum</b> or lies on a <b>plateau</b>, a region where the count stays level. The code allows no sideways moves, so at such a placement it restarts from a random placement. A restart counts as a step and as a restart<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L223-L233" target="_blank" rel="noopener" title="queens/agents.py, lines 223–233" aria-label="Code on GitHub: queens/agents.py, lines 223 to 233">14</a>.</p>
+  <!-- queens/agents.py:213-217 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L213-L217" target="_blank" rel="noopener" title="queens/agents.py, lines 213–217" aria-label="Code on GitHub: queens/agents.py, lines 213 to 217">15</a></span>
+    <div class="math math-block">\Delta(r,c) = A(r,c) - A(r,\,\mathrm{cur}_r)</div>
+  </div>
+  <p class="hiw-note">Here Δ(r, c) is the change in conflicts if the row-r queen moves from column cur<sub>r</sub> to column c. A is the attack count above, and A(r, cur<sub>r</sub>) is the number of queens attacking the row-r queen. The code computes the same number as <code>col[c] + d1[r + c] + d2[r − c + n − 1] − base</code>, with <code>base</code> already holding A(r, cur<sub>r</sub>). A move is useful when Δ &lt; 0. The step keeps every move with the most negative Δ and plays one of them at random<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L213-L222" target="_blank" rel="noopener" title="queens/agents.py, lines 213–222" aria-label="Code on GitHub: queens/agents.py, lines 213 to 222">16</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L184-L240" target="_blank" rel="noopener" title="queens/agents.py, lines 184–240" aria-label="Code on GitHub: queens/agents.py, lines 184 to 240">17</a></span>
+    <pre class="pseudo-simple">function HILL-CLIMB(n):
+    board ← RANDOM-PLACEMENT(n)               # one random column per row
+    while board has conflicts:
+        best ← the moves that lower the conflict count the most
+        if best is not empty:
+            play one move from best, chosen at random
+        else:
+            board ← RANDOM-PLACEMENT(n)       # local minimum or plateau: restart
+    return board</pre>
+    <pre class="pseudo-full" hidden>function HILL-CLIMB(n, max_steps, max_restarts, time_limit):
+    board ← RANDOM-PLACEMENT(n)
+    steps ← 0;  evals ← 0;  restarts ← 0
+    while conflicts(board) &gt; 0:
+        if max_steps is set and steps ≥ max_steps:
+            stop: "step cap"
+        if the time limit has passed:
+            stop: "time cap"
+        best_d ← 0;  best ← empty list
+        for each row r:
+            cur ← column of the row-r queen
+            base ← col[cur] + d1[r + cur] + d2[r − cur + n − 1] − 3   # attacks on that queen
+            for each column c with c ≠ cur:
+                d ← col[c] + d1[r + c] + d2[r − c + n − 1] − base      # change in conflicts
+                if d &lt; best_d:
+                    best_d ← d;  best ← [(r, c)]
+                else if d = best_d and d &lt; 0:
+                    append (r, c) to best
+        evals ← evals + n · n
+        if best is not empty:
+            (r, c) ← a move from best, chosen at random
+            MOVE(board, r, c)
+        else:
+            restarts ← restarts + 1
+            if max_restarts is set and restarts &gt; max_restarts:
+                stop: "restart cap"
+            board ← RANDOM-PLACEMENT(n)
+        steps ← steps + 1
+    return board</pre>
+  </div>
+  <p class="hiw-note"><b>The base term.</b> The row's own queen is counted on its column and both diagonals, so <code>base</code> subtracts those three counts of 1 to leave only the other queens. Subtracting <code>base</code> from every candidate's count turns the count into a change in conflicts.</p>
+  <p class="hiw-note"><b>Ties.</b> Several moves often share the best Δ. The step picks one of them at random, so the search does not always follow the same order over the rows.</p>
+
+  <h3 class="hiw-sub">Simulated annealing</h3>
+  <p class="hiw-note"><b>Simulated annealing</b> is a local search that sometimes accepts a move that raises the conflict count. How often it does so is set by a <b>temperature</b> T, which falls during each run. While T is high the search wanders; as T falls it settles<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L245-L254" target="_blank" rel="noopener" title="queens/agents.py, lines 245–254" aria-label="Code on GitHub: queens/agents.py, lines 245 to 254">18</a>.</p>
+  <p class="hiw-note">Each step is a <b>proposal</b>. A random row r is chosen, and its queen moves to a random other column c. Every column other than the current one is equally likely. The change in conflicts is Δ(r, c), defined as above. The code decides on the proposal with the rule below, where the acceptance probability is written out for both cases<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L281-L285" target="_blank" rel="noopener" title="queens/agents.py, lines 281–285" aria-label="Code on GitHub: queens/agents.py, lines 281 to 285">19</a>.</p>
+  <!-- queens/agents.py:284-285 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L284-L285" target="_blank" rel="noopener" title="queens/agents.py, lines 284–285" aria-label="Code on GitHub: queens/agents.py, lines 284 to 285">20</a></span>
+    <div class="math math-block">\Pr[\text{accept}] = \begin{cases} 1 &amp; \Delta \le 0 \\ e^{-\Delta / T} &amp; \Delta &gt; 0 \end{cases}</div>
+  </div>
+  <p class="hiw-note">Here e is the base of the natural logarithm and T is the current temperature. A proposal that does not raise the count is always taken. An uphill proposal with Δ &gt; 0 is taken with probability e<sup>−Δ/T</sup>, so a small increase is often accepted while T is high and rarely once T is low. <b>Example.</b> At T = 2.0, an uphill move with Δ = 1 is accepted with probability e<sup>−0.5</sup> ≈ 0.61.</p>
+  <p class="hiw-note">The temperature falls geometrically from T<sub>0</sub> = 2.0 to T<sub>1</sub> = 0.05 over a run of L = max(200, 60 n) proposals. The code multiplies the temperature by a fixed factor after each proposal<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L259-L264" target="_blank" rel="noopener" title="queens/agents.py, lines 259–264" aria-label="Code on GitHub: queens/agents.py, lines 259 to 264">21</a>.</p>
+  <!-- queens/agents.py:260-264 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L260-L264" target="_blank" rel="noopener" title="queens/agents.py, lines 260–264" aria-label="Code on GitHub: queens/agents.py, lines 260 to 264">22</a></span>
+    <div class="math math-block">\mathrm{cool} = \left(\frac{T_1}{T_0}\right)^{1/L}, \qquad T_k = T_0 \cdot \mathrm{cool}^{\,k}</div>
+  </div>
+  <p class="hiw-note">Here k counts the proposals made since the start of the run, so T<sub>0</sub> is the temperature at k = 0. After L proposals the temperature has reached T<sub>1</sub>, because cool<sup>L</sup> = T<sub>1</sub> / T<sub>0</sub>. The code multiplies the temperature by cool after each proposal<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L290" target="_blank" rel="noopener" title="queens/agents.py, line 290" aria-label="Code on GitHub: queens/agents.py, line 290">23</a>. <b>Example.</b> At n = 8, L = 480 and cool ≈ 0.9923, so T falls from 2.0 to about 0.32 after 240 proposals.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L245-L297" target="_blank" rel="noopener" title="queens/agents.py, lines 245–297" aria-label="Code on GitHub: queens/agents.py, lines 245 to 297">24</a></span>
+    <pre class="pseudo-simple">function ANNEAL(n):
+    board ← RANDOM-PLACEMENT(n)
+    T ← 2.0
+    while board has conflicts:
+        r ← a random row;  c ← a random column other than the one in row r
+        d ← change in conflicts if the row-r queen moves to c
+        if d ≤ 0 or a random number in [0, 1) &lt; exp(−d / T):
+            MOVE(board, r, c)                  # accept the proposal
+        T ← T × cool
+        if the run is over:
+            board ← RANDOM-PLACEMENT(n)        # start a new run
+            T ← 2.0
+    return board</pre>
+    <pre class="pseudo-full" hidden>function ANNEAL(n, max_steps, run_length, t0 = 2.0, t1 = 0.05, time_limit):
+    board ← RANDOM-PLACEMENT(n)
+    run_length ← max(200, 60 · n)              # used when no length is given
+    cool ← (t1 / t0) ^ (1 / run_length)
+    steps ← 0;  evals ← 0;  restarts ← 0
+    temp ← t0;  run_pos ← 0
+    while conflicts(board) &gt; 0:
+        if max_steps is set and steps ≥ max_steps:
+            stop: "step cap"
+        if steps mod 1024 = 0 and the time limit has passed:
+            stop: "time cap"
+        if run_pos = run_length:               # the run is over: start a new one
+            restarts ← restarts + 1
+            board ← RANDOM-PLACEMENT(n)
+            temp ← t0;  run_pos ← 0
+            continue
+        r ← a random row
+        cur ← column of the row-r queen
+        c ← (cur + 1 + a random integer in [0, n − 2]) mod n    # the other n − 1 columns
+        d ← attacks_if(r, c) − queen_attacks(r)                 # change in conflicts
+        if d ≤ 0 or a random number in [0, 1) &lt; exp(−d / temp):
+            MOVE(board, r, c)
+        evals ← evals + 1
+        steps ← steps + 1
+        run_pos ← run_pos + 1
+        temp ← temp × cool
+    return board</pre>
+  </div>
+  <p class="hiw-note"><b>Column offset.</b> The new column is <code>(cur + 1 + randrange(n − 1)) % n</code>. The offset is between 1 and n − 1, so the proposal is never the current column, and each of the other n − 1 columns is equally likely<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L281-L283" target="_blank" rel="noopener" title="queens/agents.py, lines 281–283" aria-label="Code on GitHub: queens/agents.py, lines 281 to 283">25</a>.</p>
+  <p class="hiw-note"><b>Restarts.</b> A run that ends unsolved starts again from a fresh random placement at T = 2.0. Each run is an independent attempt, and <code>max_steps</code> caps the total number of proposals across all runs.</p>
+
+  <h3 class="hiw-sub">Min-conflicts</h3>
+  <p class="hiw-note"><b>Min-conflicts</b> is a local search introduced by Minton, Johnston, Philips and Laird in 1992. It starts from a <b>greedy start</b>, a placement with few conflicts, and then repeats one <b>repair</b>. A repair picks a queen in conflict, lifts it, and puts it back on the column of its row with the fewest attacks. The lifted queen's old column is one of the candidates, so a repair never raises the conflict count<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L418-L433" target="_blank" rel="noopener" title="queens/agents.py, lines 418–433" aria-label="Code on GitHub: queens/agents.py, lines 418 to 433">26</a>.</p>
+  <p class="hiw-note">The greedy start fills the rows from top to bottom. Each row tries up to 4,096 random unused columns and keeps the first column that no queen attacks, or else the least attacked column tried. An unused column has no queen on it, so the attack count of such a column is given by the two diagonal counts alone<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L393-L400" target="_blank" rel="noopener" title="queens/agents.py, lines 393–400" aria-label="Code on GitHub: queens/agents.py, lines 393 to 400">27</a>.</p>
+  <!-- queens/agents.py:396 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L396" target="_blank" rel="noopener" title="queens/agents.py, line 396" aria-label="Code on GitHub: queens/agents.py, line 396">28</a></span>
+    <div class="math math-block">a_c = \mathrm{d1}[r + c] + \mathrm{d2}[r - c + n - 1]</div>
+  </div>
+  <p class="hiw-note">Here a<sub>c</sub> is the attack count of unused column c in row r, and the search keeps the smallest a<sub>c</sub> it has seen. Only unused columns are tried. A used column already has a queen attacking along it, so it can never be attack-free for the row<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L379-L381" target="_blank" rel="noopener" title="queens/agents.py, lines 379–381" aria-label="Code on GitHub: queens/agents.py, lines 379 to 381">29</a>. The greedy start leaves some conflicts near the end of the fill, when few free diagonals remain. The code's docstring records a one-off check, not committed, that left about 10 conflicts at 1,000 to 10,000 queens<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L366-L373" target="_blank" rel="noopener" title="queens/agents.py, lines 366–373" aria-label="Code on GitHub: queens/agents.py, lines 366 to 373">30</a>.</p>
+  <p class="hiw-note">A queen in row r is <b>in conflict</b> when its row's count is more than 3. Its own three lines contribute 3, so any higher count means another queen shares one of its lines<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L347-L352" target="_blank" rel="noopener" title="queens/agents.py, lines 347–352" aria-label="Code on GitHub: queens/agents.py, lines 347 to 352">31</a>.</p>
+  <!-- queens/agents.py:347-352 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L347-L352" target="_blank" rel="noopener" title="queens/agents.py, lines 347–352" aria-label="Code on GitHub: queens/agents.py, lines 347 to 352">31</a></span>
+    <div class="math math-block">S_r = \mathrm{col}[c_r] + \mathrm{d1}[r + c_r] + \mathrm{d2}[r - c_r + n - 1] \;&gt;\; 3</div>
+  </div>
+  <p class="hiw-note">Here c<sub>r</sub> is the column of the row-r queen, and the inequality marks a queen in conflict. Equivalently, the queen's attack count A(r, c<sub>r</sub>) is greater than 0.</p>
+  <p class="hiw-note">A repair chooses a conflicted row uniformly at random, lifts its queen, and scores every column of that row with the same count, now without the queen<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L354-L362" target="_blank" rel="noopener" title="queens/agents.py, lines 354–362" aria-label="Code on GitHub: queens/agents.py, lines 354 to 362">32</a>.</p>
+  <!-- queens/agents.py:354-362 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L354-L362" target="_blank" rel="noopener" title="queens/agents.py, lines 354–362" aria-label="Code on GitHub: queens/agents.py, lines 354 to 362">32</a></span>
+    <div class="math math-block">\mathrm{score}(r,c) = \mathrm{col}[c] + \mathrm{d1}[r + c] + \mathrm{d2}[r - c + n - 1], \qquad c_{\text{new}} \in \arg\min_c \mathrm{score}(r,c)</div>
+  </div>
+  <p class="hiw-note">Here score(r, c) is the attack count of square (r, c) with the row-r queen lifted, so it equals A(r, c) for every column. The new column is drawn uniformly from the columns with the smallest score. The code computes all n scores in one pass over the numpy arrays<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L479-L483" target="_blank" rel="noopener" title="queens/agents.py, lines 479–483" aria-label="Code on GitHub: queens/agents.py, lines 479 to 483">33</a>.</p>
+  <p class="hiw-note"><b>Plateau restart.</b> Repairs can cycle between placements that have the same conflict count. If the count has not reached a new low for more than max(200, 20 n) repairs, the run starts again from a new greedy start<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L443-L463" target="_blank" rel="noopener" title="queens/agents.py, lines 443–463" aria-label="Code on GitHub: queens/agents.py, lines 443 to 463">34</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L365-L415" target="_blank" rel="noopener" title="queens/agents.py, lines 365–415" aria-label="Code on GitHub: queens/agents.py, lines 365 to 415">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L418-L496" target="_blank" rel="noopener" title="queens/agents.py, lines 418–496" aria-label="Code on GitHub: queens/agents.py, lines 418 to 496">36</a></span>
+    <pre class="pseudo-simple">function MIN-CONFLICTS(n):
+    cols ← GREEDY-START(n)                     # few conflicts to begin with
+    repeat until conflicts = 0:
+        r ← a random row whose queen is in conflict
+        lift the queen in row r
+        c ← a column of row r with the fewest attacks, ties at random
+        place the queen at (r, c)
+        if the count has not reached a new low for a long time:
+            cols ← GREEDY-START(n)             # plateau: start again
+    return cols</pre>
+    <pre class="pseudo-full" hidden>function MIN-CONFLICTS(n, max_steps, time_limit):
+    lines, cols, conflicts, evals ← GREEDY-START(n)
+    steps ← 0;  restarts ← 0
+    best_seen ← conflicts;  stall ← 0
+    stall_limit ← max(200, 20 · n)
+    while conflicts &gt; 0:
+        if max_steps is set and steps ≥ max_steps:
+            stop: "step cap"
+        if steps mod 128 = 0 and the time limit has passed:
+            stop: "time cap"
+        if stall &gt; stall_limit:                   # plateau: start again
+            restarts ← restarts + 1
+            lines, cols, conflicts, added ← GREEDY-START(n)
+            evals ← evals + added
+            best_seen ← conflicts;  stall ← 0
+            continue
+        r ← −1
+        repeat up to 4000 times:               # random rows first
+            cand ← a random row
+            if col[cols[cand]] + d1[cand + cols[cand]] + d2[cand − cols[cand] + n − 1] &gt; 3:
+                r ← cand
+                break
+        if r &lt; 0:                               # the random tries missed: list every row
+            bad ← every row whose queen is in conflict
+            r ← a random element of bad
+        old ← cols[r]
+        conflicts ← conflicts − (col[old] + d1[r + old] + d2[r − old + n − 1])   # lift the queen
+        for each column c:
+            score[c] ← col[c] + d1[r + c] + d2[r − c + n − 1]
+        best ← the smallest value in score
+        new_c ← a column c with score[c] = best, chosen at random
+        conflicts ← conflicts + score[new_c]   # place the queen
+        cols[r] ← new_c
+        evals ← evals + n
+        steps ← steps + 1
+        if conflicts &lt; best_seen:
+            best_seen ← conflicts;  stall ← 0
+        else:
+            stall ← stall + 1
+    return cols
+
+function GREEDY-START(n):
+    free ← every column;  conflicts ← 0
+    for each row r from 0 to n − 1:
+        best_c ← −1;  best_a ← infinity
+        repeat up to 4096 times:               # random unused columns
+            c ← a random element of free
+            a ← d1[r + c] + d2[r − c + n − 1]  # unused column: col[c] = 0
+            if a &lt; best_a:
+                best_c ← c;  best_a ← a
+                if a = 0:
+                    break
+        remove best_c from free
+        conflicts ← conflicts + col[best_c] + d1[r + best_c] + d2[r − best_c + n − 1]
+        place the row-r queen on best_c and update the counts
+    return lines, cols, conflicts</pre>
+  </div>
+  <p class="hiw-note"><b>Finding a conflicted row.</b> Trying random rows is cheap while conflicts are common. When they are rare, most random rows are clean, so after 4,000 misses one pass lists every conflicted row. Both paths choose uniformly from the conflicted rows, so the rule is the same either way<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L464-L476" target="_blank" rel="noopener" title="queens/agents.py, lines 464–476" aria-label="Code on GitHub: queens/agents.py, lines 464 to 476">37</a>.</p>
+  <p class="hiw-note"><b>Free-column list.</b> The greedy start keeps the unused columns in a list. Taking a column out is a swap with the last entry and a pop, so each removal is O(1) and a late row does not scan the whole board.</p>
+  <p class="hiw-note"><b>Why it scales.</b> Each repair scores one row of n columns, and the greedy start leaves few conflicts. The committed benchmark's median repair count over solved runs is 24 at 8 queens, 116 at 100,000 queens and 47 at 1,000,000 queens. Across every size it runs from 24 to 116<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.md" target="_blank" rel="noopener" title="results/queens_benchmark.md" aria-label="Code on GitHub: results/queens_benchmark.md">38</a>.</p>
 
   <h3 class="hiw-sub">Parameters and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
@@ -317,14 +556,15 @@
     <tr><td>Run length</td><td>max(200, 60 N) proposals, then restart</td><td>annealing</td></tr>
     <tr><td>Step cap (default)</td><td>10,000,000 proposals</td><td>annealing</td></tr>
     <tr><td>Greedy start tries</td><td>4,096 random unused columns per row</td><td>min-conflicts</td></tr>
-    <tr><td>Random rows before a full scan</td><td>4,000 tries, then one vectorised pass over all rows</td><td>min-conflicts</td></tr>
+    <tr><td>Random rows before a full scan</td><td>4,000 tries, then one pass over all rows</td><td>min-conflicts</td></tr>
     <tr><td>Restart rule</td><td>No new low in max(200, 20 N) repairs</td><td>min-conflicts</td></tr>
     <tr><td>Benchmark caps</td><td>Time cap of 5 to 120 s per run, by agent and size; backtracking also a 2,000,000-step cap</td><td>benchmark</td></tr>
     <tr><td>Benchmark seeds</td><td>From 1000; trial i uses seed 1000 + i for every agent</td><td>benchmark</td></tr>
     <tr><td>Server time budget</td><td>2.0 s of CPU per request</td><td>server</td></tr>
     <tr><td>Largest N served</td><td>Backtracking 64; hill climbing 100; annealing 2,000; min-conflicts 10,000</td><td>server</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The annealing temperatures (2.0 down to 0.05) and run length (60 N, with a floor of 200) are fixed choices, not tuned. Cooling is geometric, so every run spends the same factor of temperature. The greedy start's 4,096 tries and the rejection threshold of 4,000 favour speed. The docstring records that the greedy start leaves about 10 conflicts at every size from 1,000 to 1,000,000 queens, and that repairs then take 26 to 87 steps. The restart rule max(200, 20 N) is also a fixed choice. The server's largest sizes are the ones a request can finish within its 2-second budget, not benchmark results. No parameter sweep is committed for any agent.</p>
+  <p class="hiw-note">The values are constants in the agent module<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py#L29-L33" target="_blank" rel="noopener" title="queens/agents.py, lines 29–33" aria-label="Code on GitHub: queens/agents.py, lines 29 to 33">39</a>, the benchmark plan<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/benchmark.py#L24-L56" target="_blank" rel="noopener" title="queens/benchmark.py, lines 24–56" aria-label="Code on GitHub: queens/benchmark.py, lines 24 to 56">40</a>, the server limits<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/queens_api.py#L31-L42" target="_blank" rel="noopener" title="server/queens_api.py, lines 31–42" aria-label="Code on GitHub: server/queens_api.py, lines 31 to 42">41</a>, and the browser copies of the greedy and repair constants<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/queens.js#L302-L303" target="_blank" rel="noopener" title="web/js/queens.js, lines 302–303" aria-label="Code on GitHub: web/js/queens.js, lines 302 to 303">42</a>.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> The annealing temperatures (2.0 down to 0.05) and run length (60 N, with a floor of 200) are fixed choices, not tuned. Cooling is geometric, so every run spends the same factor of temperature. The greedy start's 4,096 tries and the rejection threshold of 4,000 favour speed. The restart rule max(200, 20 N) is also a fixed choice. The server's caps are the sizes past which a request would only reach its time cap or use most of the shared CPU budget. They are not benchmark results. No parameter sweep is committed for any agent.</p>
 
   <h3 class="hiw-sub">Results on fixed seeds</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>N</th><th>Backtracking</th><th>Hill climbing</th><th>Annealing</th><th>Min-conflicts</th></tr></thead><tbody>
@@ -337,14 +577,15 @@
     <tr><td>100,000</td><td>not run</td><td>not run</td><td>not run</td><td>3 of 3, 116 steps</td></tr>
     <tr><td>1,000,000</td><td>not run</td><td>not run</td><td>not run</td><td>1 of 1, 47 steps (13.6 s)</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">Steps are each agent's own unit: placements and retreats for backtracking, moves played for hill climbing (restarts included), proposals for annealing, and repairs for min-conflicts. The shared work measure is candidate squares scored. At 16 queens the medians are 10,052 for backtracking, 43,392 for hill climbing, 13,420 for annealing and 9,976 for min-conflicts. Hill climbing at 10,000 queens was not run, because one step would score 10^8 squares. Medians are over solved runs, from the committed benchmark.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/agents.py">queens/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/board.py">queens/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/queens/benchmark.py">queens/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/queens_api.py">server/queens_api.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/queens.js">web/js/queens.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.md">results/queens_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.json">results/queens_benchmark.json</a></p>
+  <p class="hiw-note">The table is the committed benchmark, with seeds from 1000 on<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.md" target="_blank" rel="noopener" title="results/queens_benchmark.md" aria-label="Code on GitHub: results/queens_benchmark.md">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/queens_benchmark.json" target="_blank" rel="noopener" title="results/queens_benchmark.json" aria-label="Code on GitHub: results/queens_benchmark.json">43</a>. Steps are each agent's own unit: placements and retreats for backtracking, moves played for hill climbing (restarts included), proposals for annealing, and repairs for min-conflicts. The shared work measure is candidate squares scored. At 16 queens the medians are 10,052 for backtracking, 43,392 for hill climbing, 13,420 for annealing and 9,976 for min-conflicts. Hill climbing at 10,000 queens was not run, because one step would score 10<sup>8</sup> squares. Medians are over solved runs.</p>
+  <p class="hiw-note">The benchmark runs each case with a time cap, and a case that hits its cap is recorded as a failure with its reason<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/queens/benchmark.py#L99-L120" target="_blank" rel="noopener" title="queens/benchmark.py, lines 99–120" aria-label="Code on GitHub: queens/benchmark.py, lines 99 to 120">44</a>. Every reported solution is checked as a valid placement before it is counted.</p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/queens.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

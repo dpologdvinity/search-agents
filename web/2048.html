@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -30,9 +31,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">03 // STOCHASTIC SEARCH · TEMPORAL-DIFFERENCE LEARNING</div>
+      <div class="proj-pg-tag">03 // STOCHASTIC SEARCH</div>
       <h1 class="proj-pg-title neon-purple glitch" data-text="2048 AGENTS">2048 AGENTS</h1>
-      <div class="proj-pg-sub">Expectimax with an automatically tuned evaluation vs an n-tuple network learned by TD(0) · 0.1 s per move</div>
+      <div class="proj-pg-sub">Slide the tiles yourself, or watch an expectimax search or a learned n-tuple network play.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -44,20 +45,26 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Slide tiles to combine equal numbers into larger tiles and score points. The game ends when no slide is possible.</p>
+    <p style="margin-top:0.5rem">Use the arrow keys or W, A, S and D, or swipe on the board, to slide the tiles. A 2 or a 4 appears after each move.</p>
+    <p style="margin-top:0.5rem">Choose AI PLAY to watch the selected agent play, and choose it again to pause. Keys do nothing while it runs.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
-        <div id="g2048" class="g-board"></div>
-        <div class="field-hint">Arrow keys or WASD to play yourself. Press AI PLAY to let an agent take over.</div>
+        <div id="g2048" class="g-board" style="touch-action:none"></div>
         <div class="inline" style="justify-content:center">
-          <button class="cyber-btn pink" id="btn-play"><span class="btn-txt">▶ AI PLAY</span></button>
-          <button class="cyber-btn" id="btn-step"><span class="btn-txt">AI STEP ▶</span></button>
-          <button class="cyber-btn" id="btn-new"><span class="btn-txt">↺ NEW GAME</span></button>
+          <button class="cyber-btn pink" id="btn-play" title="Let the selected agent play until you pause it or the game ends"><span class="btn-txt">▶ AI PLAY</span></button>
+          <button class="cyber-btn" id="btn-step" title="Make one move with the selected agent"><span class="btn-txt">AI STEP ▶</span></button>
+          <button class="cyber-btn" id="btn-new" title="Start a new game"><span class="btn-txt">↺ NEW GAME</span></button>
         </div>
       </div>
 
       <div style="margin-top:1.6rem">
-        <div class="section-title purple-ttl">WHAT THE AGENT EXPECTS FROM EACH MOVE</div>
+        <div class="section-title purple-ttl" title="Each move is followed by a 2 (90%) or a 4 (10%) in a random empty cell, so the values shown are expectations, not guarantees.">WHAT THE AGENT EXPECTS FROM EACH MOVE</div>
         <div class="viz-panel">
           <div class="viz-title" id="an-title">Ask the agent for a move to see its evaluation of each direction.</div>
           <div class="dir-bars" id="an-bars"></div>
@@ -65,112 +72,389 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">AGENT LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Agent log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(155,0,255,0.35)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
       <div>
         <div class="section-title purple-ttl">AGENT</div>
-        <div class="stack">
-          <select class="cyber-select" id="agent" style="width:100%"></select>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="agent-desc"></div></div>
-          <div>
-            <div class="field-lbl">PLAYBACK DELAY: <span id="delay-lbl" style="color:var(--purple)">50</span> MS</div>
-            <input type="range" class="cyber-range" id="delay" min="0" max="500" step="10" value="50">
-          </div>
-        </div>
+        <select class="cyber-select" id="agent" style="width:100%" aria-label="Agent" title="The algorithm that plays when you press AI PLAY or AI STEP"></select>
       </div>
 
       <div>
         <div class="section-title purple-ttl">THIS GAME</div>
         <div class="stack" style="gap:0.4rem">
-          <div class="row-stat"><span class="lbl">SEARCH DEPTH</span><span class="val purple" id="st-depth">—</span></div>
-          <div class="row-stat"><span class="lbl">NODES LAST MOVE</span><span class="val" id="st-nodes">—</span></div>
-          <div class="row-stat"><span class="lbl">SERVER TIME</span><span class="val green" id="st-time">—</span></div>
-          <div class="row-stat"><span class="lbl">AI MOVES</span><span class="val" id="st-ai">0</span></div>
+          <div class="row-stat"><span class="lbl" title="How many slides the agent looked ahead for its last move">SEARCH DEPTH</span><span class="val purple" id="st-depth">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Positions the agent evaluated while choosing its last move">NODES LAST MOVE</span><span class="val" id="st-nodes">—</span></div>
+          <div class="row-stat"><span class="lbl" title="How long the server took to choose the last move">SERVER TIME</span><span class="val green" id="st-time">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Moves the agent has made in this game">AI MOVES</span><span class="val" id="st-ai">0</span></div>
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">NOTES</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--purple);margin-bottom:0.3rem">HAND-TUNED VS LEARNED</div>
-            <div class="field-hint">The hand-crafted agent scores boards with six features (empty cells, monotonicity, corner, merges, smoothness, max tile), with weights found by an automated search over simulated games. The n-tuple network learned its own scoring from 45,514 self-played games (the last count the trainer logged).</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CHANCE NODES</div>
-            <div class="field-hint">After each move a 2 (90%) or 4 (10%) appears in a random empty cell. Expectiminimax averages over every possibility, so the value shown is an expectation, not a guarantee.</div>
+          <div>
+            <div class="field-lbl">DELAY BETWEEN AGENT MOVES: <span id="delay-lbl" style="color:var(--purple)">50</span> MS</div>
+            <input type="range" class="cyber-range" id="delay" min="0" max="500" step="10" value="50" aria-label="Delay between agent moves" title="Pause between agent moves while AI PLAY runs">
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The agents look a few moves ahead, averaging over the random tile that appears after each slide. One scores positions with six hand-chosen features whose weights were found by an automated search. The other is an n-tuple network: a table of values for small patches of the board, learned by playing games. The third combines the table with the same look-ahead.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Expectimax (tuned features)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Planning a route when some roads may be closed at random: for each choice, weigh every way the randomness could turn out by how likely it is, and pick the choice with the best average result.</p>
-      <p>Alternates player nodes, which choose a slide, with chance nodes, where a 2 (probability 0.9) or a 4 (probability 0.1) appears in each empty cell with equal chance. Iterative deepening runs up to depth 20 within 0.1 s per move. Leaves are scored by the tuned evaluation below.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>N-tuple network (no search)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A cheat sheet that lists a score for every small patch of a board. To judge a position, look up each patch and add the scores, with no planning at all.</p>
-      <p>Six patterns of tile positions, each with its own table: four 5-cell patterns (16⁵ = 1,048,576 values each) and two 6-cell patterns (16⁶ = 16,777,216 values each). Each pattern is read under the 8 board symmetries, so a position costs 48 lookups. The move chosen maximises points gained plus the value of the resulting board. Trained by TD(0), below.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>N-tuple + expectimax</h3>
-      <p class="hiw-plain"><b>New to this?</b> Use the cheat sheet to judge positions at the end of a short look-ahead, so the planning and the table work together.</p>
-      <p>The expectimax search above, with the n-tuple value plus points gained along the line used as the leaf score. It is the default when the table is available.</p>
-    </article>
+  <p class="hiw-lede">This page runs three agents on 2048, a one-player sliding-tile game in which a random tile appears after every move. <b>Expectimax</b> searches a few slides ahead and averages over the random tiles, scoring the positions it reaches with a <b>heuristic evaluation</b>: six board features combined with weights found by an automated search. The <b>n-tuple network</b> uses no search. It adds up values stored in lookup tables for patterns of tiles, and those values were learned by <b>temporal-difference (TD) learning</b>, which moves each estimate toward a target built from the estimate for the next position. The third agent is expectimax with the learned values as its evaluation.</p>
+
+  <h3 class="hiw-sub">The board and a move</h3>
+  <p>The board is a 4 × 4 grid of <b>cells</b>. A cell is empty or holds a <b>tile</b> with the value 2<sup>k</sup>. The code stores the exponent k in each cell, with 0 for an empty cell, so 1 is a 2, 2 is a 4, and so on. The 16 cells fit in one 64-bit integer, four bits per cell, which lets the code precompute the result of sliding each possible row<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L1-L8" target="_blank" rel="noopener" title="game2048/board.py, lines 1–8" aria-label="Code on GitHub: game2048/board.py, lines 1 to 8">1</a>.</p>
+  <p>A <b>move</b> slides every tile in one of four directions as far as it can go. Two equal tiles that meet while sliding <b>merge</b> once into a tile of double value. A move that leaves the board unchanged is not <b>legal</b>, and the agents ignore it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L95-L102" target="_blank" rel="noopener" title="game2048/board.py, lines 95–102" aria-label="Code on GitHub: game2048/board.py, lines 95 to 102">2</a>.</p>
+  <p>Each merge adds the value of its new tile to the score. A merge that produces exponent k therefore scores 2<sup>k</sup> points, and a move scores the sum over its merges<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L37" target="_blank" rel="noopener" title="game2048/board.py, line 37" aria-label="Code on GitHub: game2048/board.py, line 37">3</a>.</p>
+  <!-- game2048/board.py:37, game2048/board.py:53 -->
+  <div class="math-fig">
+    <div class="math math-block">g(s,a) = \sum_{\text{merges } m \text{ in move } a} 2^{\,k_m}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L37" target="_blank" rel="noopener" title="game2048/board.py, lines 37, 53" aria-label="Code on GitHub: game2048/board.py, lines 37, 53">3</a></span>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
+  <p>Here <span class="math">g(s,a)</span> is the number of points that move <span class="math">a</span> scores on board <span class="math">s</span>, and <span class="math">k_m</span> is the exponent of the tile that merge <span class="math">m</span> produces. The sum is empty for a move with no merges.</p>
+  <p>The <b>afterstate</b> is the board right after a move and before the new tile appears. Write <span class="math">s_a</span> for the afterstate of move <span class="math">a</span>. The agents score afterstates, since the spawn that follows is random and the player does not choose it.</p>
+  <p>After each move, one <b>spawn</b> adds a 2 with probability 0.9 or a 4 with probability 0.1, in one empty cell chosen uniformly at random<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L110-L116" target="_blank" rel="noopener" title="game2048/board.py, lines 110–116" aria-label="Code on GitHub: game2048/board.py, lines 110 to 116">4</a>. The page's own game uses the same rule<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/2048.js#L56-L63" target="_blank" rel="noopener" title="web/js/2048.js, lines 56–63" aria-label="Code on GitHub: web/js/2048.js, lines 56 to 63">5</a>. With <span class="math">|E(s)|</span> empty cells, a given cell receives a 2 with probability <span class="math">0.9/|E(s)|</span> and a 4 with probability <span class="math">0.1/|E(s)|</span>.</p>
+  <!-- game2048/board.py:110-116, game2048/batch.py:47-56 -->
+  <div class="math-fig">
+    <div class="math math-block">\Pr(\text{2 in cell } c) = \frac{0.9}{|E(s)|}, \qquad \Pr(\text{4 in cell } c) = \frac{0.1}{|E(s)|}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L110-L116" target="_blank" rel="noopener" title="game2048/board.py, lines 110–116" aria-label="Code on GitHub: game2048/board.py, lines 110 to 116">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/batch.py#L47-L56" target="_blank" rel="noopener" title="game2048/batch.py, lines 47–56" aria-label="Code on GitHub: game2048/batch.py, lines 47 to 56">6</a></span>
+  </div>
+  <p>The game ends when no legal move remains. There is no winning tile, so play continues past 2048.</p>
+  <p><i>Example.</i> With 3 empty cells, a 2 lands in any one of them with probability <span class="math">0.9/3 = 0.3</span>, and a 4 with probability <span class="math">0.1/3 \approx 0.033</span>.</p>
+
+  <h3 class="hiw-sub">Expectimax</h3>
+  <p><b>Expectimax</b> is a tree search for one-player games with random events. Its nodes come in two kinds. A <b>max node</b> is the player's turn: it takes the best value over the legal moves. A <b>chance node</b> is the spawn: its value is the <b>expectation</b>, the probability-weighted average of the values of its outcomes. The value of a move is therefore the average over the tiles that might appear, not the best or the worst of them.</p>
+  <p>The tree is cut off at a fixed <b>depth</b>, the number of player slides searched. A search of depth <span class="math">d</span> makes <span class="math">d</span> slides with a spawn between consecutive slides, and scores the afterstate reached by the last slide, before its spawn. That scored position is a <b>leaf</b>. Its value is the <b>evaluation</b> of the board: the heuristic below for the tuned agent, or the learned value for the n-tuple search.</p>
+  <!-- game2048/expectimax.py:156-164 (max node), game2048/expectimax.py:166-185 (chance node) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+V_{\max}(s,d) &= \max_{a \in A(s)} \Big[\, g(s,a)\,\mathbf{1}_{\text{rewards}} + V_{\text{chance}}(s_a,\, d-1) \Big] \\
+V_{\text{chance}}(s,d) &= \sum_{c \in E(s)} \frac{1}{|E(s)|}\Big[\, 0.9\, V_{\max}(s{+}2_c,\, d) + 0.1\, V_{\max}(s{+}4_c,\, d) \Big]
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L156-L164" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 156–164, 166–185" aria-label="Code on GitHub: game2048/expectimax.py, lines 156 to 164, 166 to 185">7</a></span>
+  </div>
+  <p>Here <span class="math">A(s)</span> is the set of legal moves in <span class="math">s</span>, <span class="math">E(s)</span> the set of empty cells, <span class="math">s{+}2_c</span> the board with a 2 added in cell <span class="math">c</span>, and <span class="math">d</span> the number of search levels still to go. The points term <span class="math">g(s,a)</span> is counted only when <span class="math">\mathbf{1}_{\text{rewards}} = 1</span>, which is the n-tuple search; the tuned agent scores board shape only. The spawn probabilities 0.9 and 0.1 are the constants on lines 181 and 182 of the code, and the share <span class="math">1/|E(s)|</span> is line 177. At depth 0 both node types return the evaluation of the board. At the root, the value of move <span class="math">a</span> in a pass of depth <span class="math">D</span> is <span class="math">g(s,a)\,\mathbf{1}_{\text{rewards}} + V_{\text{chance}}(s_a, D-1)</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L198" target="_blank" rel="noopener" title="game2048/expectimax.py, line 198" aria-label="Code on GitHub: game2048/expectimax.py, line 198">8</a>.</p>
+  <p><b>Iterative deepening</b> runs the search at depth 1, then depth 2, and so on up to depth 20. Each pass that finishes within the <b>time budget</b> of 0.1 s per move<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py#L12" target="_blank" rel="noopener" title="game2048/agents.py, line 12" aria-label="Code on GitHub: game2048/agents.py, line 12">9</a> replaces the answer of the one before it, and a pass cut short by the clock is discarded<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L195-L205" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 195–205" aria-label="Code on GitHub: game2048/expectimax.py, lines 195 to 205">10</a>. The move played is therefore the best one from the deepest pass that finished in time.</p>
+  <!-- full version: game2048/expectimax.py:187-208 (EXPECTIMAX-MOVE), 156-164 (MAX-NODE), 166-185 (CHANCE-NODE), 151-154 (COUNT-NODE); agents.py:12 (budget) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L187-L208" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 187–208, 156–164, 166–185, 151–154" aria-label="Code on GitHub: game2048/expectimax.py, lines 187 to 208, 156 to 164, 166 to 185, 151 to 154">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py#L12" target="_blank" rel="noopener" title="game2048/agents.py, line 12" aria-label="Code on GitHub: game2048/agents.py, line 12">9</a></span>
+    <pre class="pseudo-simple">function EXPECTIMAX(board):
+    for depth ← 1, 2, 3, ... while time remains:      # iterative deepening
+        for each legal direction d:
+            value[d] ← CHANCE-NODE(RESULT(board, d), depth − 1)
+        best ← the direction with the largest value
+    return best
+
+function CHANCE-NODE(board, depth):
+    if depth = 0:
+        return EVALUATE(board)
+    total ← 0
+    for each empty cell c:                            # the random spawn
+        share ← 1 / |EMPTY-CELLS(board)|
+        total ← total + 0.9 · share · MAX-NODE(board with a 2 at c, depth)
+        total ← total + 0.1 · share · MAX-NODE(board with a 4 at c, depth)
+    return total
+
+function MAX-NODE(board, depth):
+    if depth = 0 or LEGAL-MOVES(board) is empty:
+        return EVALUATE(board)
+    return max over the legal directions d of CHANCE-NODE(RESULT(board, d), depth − 1)</pre>
+    <pre class="pseudo-full" hidden>function EXPECTIMAX-MOVE(board, budget):
+    deadline ← now + budget                             # the time budget for one move
+    nodes ← 0
+    moves ← LEGAL-MOVES(board)                          # (direction, afterstate, points)
+    if moves is empty:
+        raise ERROR("no legal moves")
+    best ← the first legal direction, at depth 0
+    for depth ← 1 to 20:                                # the depth limit
+        table ← empty                                   # transposition table, reset each pass
+        try:
+            for each (d, afterstate, points) in moves:
+                value[d] ← points + CHANCE-NODE(afterstate, depth − 1, 1.0)   # points: n-tuple only
+        on time-limit reached:
+            stop                                        # keep the answer of the last finished pass
+        best ← the direction with the largest value[d], its depth, its values
+        if now ≥ deadline:
+            stop
+    best.nodes ← nodes                                  # counts the unfinished pass too
+    return best
+
+function MAX-NODE(board, depth, prob):
+    COUNT-NODE()
+    moves ← LEGAL-MOVES(board)
+    if moves is empty or depth = 0:
+        return EVALUATE(board)
+    if REWARDS:
+        return max over moves of points + CHANCE-NODE(afterstate, depth − 1, prob)
+    return max over moves of CHANCE-NODE(afterstate, depth − 1, prob)
+
+function CHANCE-NODE(board, depth, prob):
+    COUNT-NODE()
+    if depth = 0 or prob &lt; 0.0001:                       # probability cutoff
+        return EVALUATE(board)
+    if CACHE and (board, depth) is in table:
+        return table[(board, depth)]
+    cells ← EMPTY-CELLS(board)
+    if cells is empty:
+        return EVALUATE(board)
+    share ← 1 / |cells|
+    total ← 0
+    for each cell c in cells:
+        total ← total + 0.9 · share · MAX-NODE(board with a 2 at c, depth, prob · 0.9 · share)
+        total ← total + 0.1 · share · MAX-NODE(board with a 4 at c, depth, prob · 0.1 · share)
+    if CACHE:
+        table[(board, depth)] ← total
+    return total
+
+function COUNT-NODE():
+    nodes ← nodes + 1
+    if nodes mod 256 = 0 and now ≥ deadline:
+        raise time-limit reached</pre>
+  </div>
+  <p><b>Ties</b> go to the move listed first in the order Up, Down, Left, Right<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/board.py#L98" target="_blank" rel="noopener" title="game2048/board.py, line 98" aria-label="Code on GitHub: game2048/board.py, line 98">12</a>. The <b>transposition table</b> is a dictionary from a pair (board, depth) to the value already computed for it, so a position reached by a different order of slides is not searched again. Only chance nodes are stored, and the table is emptied at the start of every pass<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L196" target="_blank" rel="noopener" title="game2048/expectimax.py, line 196" aria-label="Code on GitHub: game2048/expectimax.py, line 196">13</a>, so each pass starts from an empty table.</p>
+  <p>The <b>probability cutoff</b> stops a line once its probability falls below 0.0001. The probability of a line is the product of the spawn probabilities along it from the root. Such a line is evaluated at once rather than searched, so rare deep spawns do not take up the time budget.</p>
+  <p>The clock is read every 256 nodes. Past the deadline the search raises a time-limit signal, and the pass in progress is dropped. The node count reported by the page is the total for the whole move, including that dropped pass, which is why it can be larger than the work behind the played move.</p>
+  <p>The cache key is the board and the depth, without the probability. A value computed on one line can therefore be reused on another line that has a different probability. The cutoff is still checked first at every node, so the approximation affects only the values that the cutoff itself would have left alone.</p>
+
+  <h3 class="hiw-sub">The heuristic evaluation</h3>
+  <p>A <b>heuristic evaluation</b> scores a board without looking further ahead. The tuned agent uses a <b>linear</b> evaluation: a sum of six <b>features</b>, each a number computed from the board, with each feature multiplied by its <b>weight</b>. Each feature is oriented so that a larger value is better. The rewards (empty cells, corner, merges, max tile) are zero or positive, and the penalties (monotonic, smooth) are zero or negative.</p>
+  <!-- game2048/expectimax.py:120-122, game2048/data/heuristic_weights.json -->
+  <div class="math-fig">
+    <div class="math math-block">h(s) = \sum_{k=1}^{6} w_k\, f_k(s)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L120-L122" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 120–122" aria-label="Code on GitHub: game2048/expectimax.py, lines 120 to 122">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json" target="_blank" rel="noopener" title="game2048/data/heuristic_weights.json" aria-label="Code on GitHub: game2048/data/heuristic_weights.json">15</a></span>
+  </div>
+  <p>Here <span class="math">f_k(s)</span> is feature <span class="math">k</span> of board <span class="math">s</span> and <span class="math">w_k</span> its weight. The six weights are the shipped values in the table below. The tuner keeps every weight at zero or above<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L121-L122" target="_blank" rel="noopener" title="game2048/tune.py, lines 121–122" aria-label="Code on GitHub: game2048/tune.py, lines 121 to 122">16</a>, but the shipped smooth weight is negative, so its penalty becomes a reward for roughness.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Tuned weight</th></tr></thead><tbody>
-    <tr><td>empty</td><td>log2 of (empty cells + 1)</td><td class="num">0.7204</td></tr>
-    <tr><td>monotonic</td><td>How far rows and columns break a sorted order, in tile exponents (a penalty, zero or below). The better direction is taken for rows and for columns separately.</td><td class="num">1.0</td></tr>
-    <tr><td>smooth</td><td>Negative sum of exponent differences between consecutive non-empty tiles in each row and column, empty cells skipped (zero or below)</td><td class="num">−0.129</td></tr>
-    <tr><td>corner</td><td>Exponent of the largest tile if it sits in a corner, otherwise 0</td><td class="num">0.9022</td></tr>
-    <tr><td>merges</td><td>Count of equal neighbouring pairs in rows and columns</td><td class="num">0.2986</td></tr>
-    <tr><td>max_tile</td><td>Exponent of the largest tile</td><td class="num">0.8174</td></tr>
+    <tr><td>empty</td><td>log<sub>2</sub> of the number of empty cells plus 1</td><td class="num">0.7204</td></tr>
+    <tr><td>monotonic</td><td>How far each row and each column is from a single rising or falling run of tiles, in exponents. Rows and columns each take the less-penalised direction. A penalty, zero or below.</td><td class="num">1.0</td></tr>
+    <tr><td>smooth</td><td>Sum over rows and columns of the exponent differences between neighbouring non-empty tiles, with a minus sign. A penalty, zero or below.</td><td class="num">−0.129</td></tr>
+    <tr><td>corner</td><td>The largest exponent if it sits in a corner, otherwise 0</td><td class="num">0.9022</td></tr>
+    <tr><td>merges</td><td>Number of equal adjacent pairs in rows and columns</td><td class="num">0.2986</td></tr>
+    <tr><td>max_tile</td><td>The largest exponent on the board</td><td class="num">0.8174</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> tuned automatically with the cross-entropy method (<code>game2048/tune.py</code>). Each generation draws candidate weight vectors from a Gaussian, scores each by the mean final score of greedy one-move-lookahead games on shared seeds, keeps the best elite, and refits the Gaussian to them. The table's weights are from an earlier, unbounded run whose settings were not recorded. The bounded runs used 20 generations, 32 candidates, 8 elite, 300 games per candidate, and seed 0 (<code>python -m game2048.tune --generations 20 --population 32 --elite 8 --games 300 --seed 0</code>). Final weights are rescaled so the largest is 1.0.</p>
-  <p class="hiw-note"><b>Sign note:</b> every feature is oriented so that larger is better: the two penalties (monotonic, smooth) are zero or below. A negative weight on a penalty rewards the disorder it measures. The tuner now bounds every weight at zero. The table's smooth weight is negative because its run was unbounded, and the search rewards rougher boards on that term. A bounded re-run scored lower under greedy play (5,823 against 7,074 points on 3,000 held-out games; 95% intervals 5,709 to 5,936 and 6,930 to 7,219). Its expectimax score was higher by about 1,700 points on 60 held-out games, but the intervals overlap, so the table's weights were kept.</p>
-  <p class="hiw-note">Expectimax with these features, 60 held-out games at 50 ms per move: mean 16,954 (95% CI 15,259 to 18,650), 2048 reached in 11.7% (5.8 to 22.2). The bounded set gave 18,639 (16,461 to 20,817) and 20.0% (11.8 to 31.8).</p>
+  <p>For one line of the board (a row or a column), let <span class="math">a_1, \dots, a_m</span> be the exponents of its non-empty tiles in order, with empty cells skipped. The code computes three quantities per line. The rising and falling penalties are <span class="math">U_\ell</span> and <span class="math">D_\ell</span>, which the code names <code style="overflow-wrap:anywhere">up</code> and <code style="overflow-wrap:anywhere">down</code>. The roughness is <span class="math">\rho_\ell</span>, named <code style="overflow-wrap:anywhere">rough</code>.</p>
+  <!-- game2048/expectimax.py:39-47 (per line), game2048/expectimax.py:76-80 (sums) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+U_\ell &= -\sum_{j:\, a_j > a_{j+1}} (a_j - a_{j+1}), \qquad D_\ell = -\sum_{j:\, a_j < a_{j+1}} (a_{j+1} - a_j) \\
+\rho_\ell &= -\sum_{j} |a_j - a_{j+1}|
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L39-L47" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 39–47, 76–80" aria-label="Code on GitHub: game2048/expectimax.py, lines 39 to 47, 76 to 80">17</a></span>
+  </div>
+  <p>The sums <span class="math">U_\ell</span>, <span class="math">D_\ell</span> and <span class="math">\rho_\ell</span> are zero or negative, because each term is subtracted. A line that only rises has <span class="math">U_\ell = 0</span>, and a line that only falls has <span class="math">D_\ell = 0</span>. The roughness <span class="math">\rho_\ell</span> is zero only when all neighbouring non-empty tiles are equal. The rows are written <span class="math">r</span> and the columns <span class="math">c</span> below.</p>
+  <!-- game2048/expectimax.py:77-78 (monotonic), game2048/expectimax.py:79 (smooth) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+f_{\text{mono}}(s) &= \max\Big(\sum_{r} U_r,\ \sum_{r} D_r\Big) + \max\Big(\sum_{c} U_c,\ \sum_{c} D_c\Big) \\
+f_{\text{smooth}}(s) &= \sum_{r} \rho_r + \sum_{c} \rho_c
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L77-L78" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 77–78, 79" aria-label="Code on GitHub: game2048/expectimax.py, lines 77 to 78, 79">18</a></span>
+  </div>
+  <p>The monotonic feature takes, for rows and for columns separately, the direction with the smaller penalty, so a board that is sorted in either direction loses nothing. The smooth feature sums the roughness of every row and column. The shipped smooth weight is negative, which turns this penalty into a reward for roughness. The sign is discussed under Results.</p>
+  <!-- game2048/expectimax.py:43-48 (per line), game2048/expectimax.py:80 (sum) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+m_\ell &= \sum_{j=1}^{3} \big[\, x_{\ell,j} \neq 0 \ \text{and}\ x_{\ell,j} = x_{\ell,j+1} \,\big] \\
+f_{\text{merges}}(s) &= \sum_{\ell} m_\ell
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L43-L48" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 43–48, 80" aria-label="Code on GitHub: game2048/expectimax.py, lines 43 to 48, 80">19</a></span>
+  </div>
+  <p>Here <span class="math">x_{\ell,j}</span> is the exponent of cell <span class="math">j</span> of line <span class="math">\ell</span>, counting empty cells as 0, and the bracket is 1 when its condition holds and 0 otherwise. The merges feature counts pairs of equal tiles in neighbouring cells, over all rows and all columns. Unlike the smooth feature, it does not skip empty cells, so only truly adjacent pairs count.</p>
+  <!-- game2048/expectimax.py:81-83 (max tile and empty count), game2048/expectimax.py:82 (corner) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+p(s) &= \max_{x \in s} x, \qquad f_{\max}(s) = p(s) \\
+f_{\text{corner}}(s) &= p(s)\,\big[\,p(s) > 0 \text{ and } x_c = p(s) \text{ for some corner cell } c\,\big] \\
+f_{\text{empty}}(s) &= \log_2\big(|E(s)| + 1\big)
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L81-L83" target="_blank" rel="noopener" title="game2048/expectimax.py, lines 81–83, 82" aria-label="Code on GitHub: game2048/expectimax.py, lines 81 to 83, 82">20</a></span>
+  </div>
+  <p>Here <span class="math">p(s)</span> is the largest exponent on the board, so the largest tile is worth <span class="math">2^{p(s)}</span>. The corner feature is <span class="math">p(s)</span> when the largest tile sits in one of the four corners of the 4 × 4 grid, and 0 otherwise. The corners are listed as bit shifts in <code style="overflow-wrap:anywhere">CORNER_SHIFTS</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py#L59" target="_blank" rel="noopener" title="game2048/expectimax.py, line 59" aria-label="Code on GitHub: game2048/expectimax.py, line 59">21</a>. The empty-cell feature uses a logarithm so that the first few empty cells count for more than later ones.</p>
+  <p><i>Example.</i> The row <span class="math">(8, 8, 2, \text{empty})</span> has exponents <span class="math">(3, 3, 1, 0)</span>. Its one non-empty step from 8 to 2 is 3 − 1 = 2 exponents, so <span class="math">U = -2</span>, <span class="math">D = 0</span>, and <span class="math">\rho = -2</span>, and it has one equal adjacent pair, so <span class="math">m = 1</span>. The code returns these values for this row (<code style="overflow-wrap:anywhere">(1, -2, 0, -2, 1)</code> with the empty count first).</p>
 
-  <h3 class="hiw-sub">Training</h3>
-  <h3 class="hiw-sub">N-tuple patterns</h3>
+  <h3 class="hiw-sub">Tuning the weights: the cross-entropy method</h3>
+  <p>The six weights were fitted by the <b>cross-entropy method (CEM)</b>, a search that keeps a Gaussian distribution over candidate weight vectors and moves the distribution toward the best candidates. The fitness of a candidate is the mean final score of a set of games in which the player is <b>greedy</b>: at every move it picks the slide whose afterstate has the highest linear value. This is a <b>one-move lookahead</b> on the features, with no search and no spawn modelled.</p>
+  <p>Each <b>generation</b> draws a <b>population</b> of candidate weight vectors from the Gaussian, scores every candidate on the same games, keeps the <b>elite</b> (the highest-scoring candidates), and refits the Gaussian to them. The Gaussian starts with mean 1 and standard deviation 2 for every weight<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L116-L117" target="_blank" rel="noopener" title="game2048/tune.py, lines 116–117" aria-label="Code on GitHub: game2048/tune.py, lines 116 to 117">22</a>.</p>
+  <!-- game2048/tune.py:50, 55 (greedy choice) -->
+  <div class="math-fig">
+    <div class="math math-block">a^{*} = \arg\max_{a \in A(s)}\ \theta \cdot f(s_a)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L50" target="_blank" rel="noopener" title="game2048/tune.py, lines 50, 55" aria-label="Code on GitHub: game2048/tune.py, lines 50, 55">23</a></span>
+  </div>
+  <!-- game2048/tune.py:122-123 (sampling and fitness), game2048/tune.py:124-125 (refit) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+\theta^{(k)} &= \max\big(\mu + \sigma \odot z^{(k)},\ 0\big), \qquad z^{(k)} \sim \mathcal{N}(0, I) \\
+F(\theta) &= \frac{1}{N}\sum_{g=1}^{N} \text{score}_g(\theta) \\
+\mu' &= \frac{1}{|\mathcal{E}|}\sum_{k \in \mathcal{E}} \theta^{(k)}, \qquad \sigma' = \operatorname{std}_{k \in \mathcal{E}}\big(\theta^{(k)}\big) + 0.05
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L122-L123" target="_blank" rel="noopener" title="game2048/tune.py, lines 122–123, 124–125" aria-label="Code on GitHub: game2048/tune.py, lines 122 to 123, 124 to 125">24</a></span>
+  </div>
+  <p>Here <span class="math">\theta</span> is a candidate weight vector, <span class="math">\mu</span> and <span class="math">\sigma</span> are the mean and standard deviation of the Gaussian, and <span class="math">\odot</span> is the element-wise product. The vector <span class="math">z^{(k)}</span> holds six independent standard normal draws. The clip at zero keeps a penalty weight from turning into a reward. <span class="math">F(\theta)</span> is the fitness, the mean score over <span class="math">N</span> games, and <span class="math">\mathcal{E}</span> is the elite, the top <span class="math">e</span> candidates by fitness. The constant <span class="math">0.05</span> is added to every standard deviation, so the spread never shrinks to zero. The bounded runs used <span class="math">N = 300</span> games per candidate, <span class="math">e = 8</span>, population 32 and 20 generations.</p>
+  <!-- game2048/tune.py:136 -->
+  <div class="math-fig">
+    <div class="math math-block">w = \frac{\theta}{\max_i \theta_i}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L136" target="_blank" rel="noopener" title="game2048/tune.py, line 136" aria-label="Code on GitHub: game2048/tune.py, line 136">25</a></span>
+  </div>
+  <p>The final weight vector is divided by its largest entry, so the largest weight becomes 1.0. Dividing by a positive constant does not change which move is greedy, so the scale is set only for readability. The table above shows these scaled weights.</p>
+  <!-- full version: game2048/tune.py:113-147 (TUNE), 35-59 (GREEDY-SCORE) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L113-L147" target="_blank" rel="noopener" title="game2048/tune.py, lines 113–147, 35–59" aria-label="Code on GitHub: game2048/tune.py, lines 113 to 147, 35 to 59">26</a></span>
+    <pre class="pseudo-simple">function TUNE-WEIGHTS():
+    μ ← 1 for each feature;  σ ← 2 for each feature
+    repeat generations times:
+        sample candidate weight vectors from the Gaussian (μ, σ), clipped at zero
+        score each candidate by its mean greedy game score
+        μ ← the mean of the best candidates
+        σ ← the standard deviation of the best candidates + 0.05
+    return the best candidate, scaled so its largest weight is 1</pre>
+    <pre class="pseudo-full" hidden>function TUNE(generations, population, elite, games):
+    μ ← (1, 1, 1, 1, 1, 1);  σ ← (2, 2, 2, 2, 2, 2)           # one entry per feature
+    best ← μ;  best-score ← −infinity
+    for generation ← 0 to generations − 1:
+        for k ← 1 to population:
+            θ(k) ← max(μ + σ · z(k), 0)                     # z(k): independent standard normal draws
+        for each candidate k:
+            F(k) ← mean of GREEDY-SCORE(θ(k), games, seed ← 1000 + generation)
+        E ← the elite candidates with the largest F
+        μ ← the mean of E;  σ ← the standard deviation of E + 0.05
+        if max F > best-score:
+            best ← the candidate with the largest F;  best-score ← that F
+        record the largest and the mean F of this generation
+    for each candidate in (best, μ):
+        score ← mean of GREEDY-SCORE(candidate, 2 · games, seed ← 99)
+    θ ← the candidate with the larger score
+    return θ / max(θ), rounded to 4 decimals
+
+function GREEDY-SCORE(θ, games, seed):
+    boards ← NEW-GAMES(games, seed)
+    scores ← zeros(games)
+    repeat for at most 5000 moves, while a game has a legal move:
+        for each legal direction d, in every live game at once:
+            q(d) ← θ · FEATURES(RESULT(board, d))          # the features, not the points
+        a ← the direction with the largest q
+        scores ← scores + points of a
+        board ← SPAWN(RESULT(board, a))
+    return scores</pre>
+  </div>
+  <p>The clip at zero is applied before the fitness is measured<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L121-L122" target="_blank" rel="noopener" title="game2048/tune.py, lines 121–122" aria-label="Code on GitHub: game2048/tune.py, lines 121 to 122">16</a>. Every candidate in one generation plays the same games, since the seed is <code style="overflow-wrap:anywhere">1000 + generation</code>, so the differences in fitness come from the weights. The points are counted in the score but are not used to choose the move: the greedy player maximises <span class="math">\theta \cdot f(s_a)</span> alone.</p>
+  <p>The best candidate seen in any generation is kept<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L127-L128" target="_blank" rel="noopener" title="game2048/tune.py, lines 127–128" aria-label="Code on GitHub: game2048/tune.py, lines 127 to 128">27</a>. At the end, that candidate and the final mean are each scored again on fresh games with seed 99, twice as many as in a generation, and the better one is kept<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py#L132-L136" target="_blank" rel="noopener" title="game2048/tune.py, lines 132–136" aria-label="Code on GitHub: game2048/tune.py, lines 132 to 136">28</a>. The fresh games stop the choice from favouring a candidate that happened to score well on the generation games.</p>
+  <p>The shipped weights in <code style="overflow-wrap:anywhere">game2048/data/heuristic_weights.json</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json" target="_blank" rel="noopener" title="game2048/data/heuristic_weights.json" aria-label="Code on GitHub: game2048/data/heuristic_weights.json">15</a> come from an earlier run that the README records as unbounded, with no settings saved. Its smooth weight is negative. The bounded runs saved as <code style="overflow-wrap:anywhere">results/game2048_heuristic_weights_v2.json</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_weights_v2.json" target="_blank" rel="noopener" title="results/game2048_heuristic_weights_v2.json" aria-label="Code on GitHub: results/game2048_heuristic_weights_v2.json">29</a> and <code style="overflow-wrap:anywhere">results/game2048_heuristic_weights_v3.json</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_weights_v3.json" target="_blank" rel="noopener" title="results/game2048_heuristic_weights_v3.json" aria-label="Code on GitHub: results/game2048_heuristic_weights_v3.json">30</a> used <code style="overflow-wrap:anywhere">python -m game2048.tune --generations 20 --population 32 --elite 8 --games 300 --seed 0</code>, and both ended with a smooth weight of 0.</p>
+
+  <h3 class="hiw-sub">The n-tuple network</h3>
+  <p>An <b>n-tuple network</b> is a value function that is a sum of table lookups. A <b>pattern</b>, or tuple, is a fixed set of cells. The exponents in those cells, read in a fixed order, form an index into a <b>lookup table</b> for that pattern. Each cell holds one of 16 exponent values, so a pattern of n cells has <span class="math">16^n</span> entries, and each entry is a learned number. The network here has six patterns: four of 5 cells, with <span class="math">16^5 = 1{,}048{,}576</span> entries each, and two of 6 cells, with <span class="math">16^6 = 16{,}777{,}216</span> entries each<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L28-L35" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 28–35" aria-label="Code on GitHub: game2048/ntuple.py, lines 28 to 35">31</a>.</p>
+  <p>Each pattern is read under the 8 <b>symmetries</b> of the square board: four rotations, each with and without a left-right mirror. All 8 readings use the same table for their pattern. A board therefore costs 6 × 8 = 48 lookups<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L41-L68" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 41–68" aria-label="Code on GitHub: game2048/ntuple.py, lines 41 to 68">32</a>.</p>
+  <!-- game2048/ntuple.py:62-68, 106-115 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+\iota_{p,\sigma}(s) &= \sum_{j=1}^{n_p} 16^{\,n_p - j}\ e_{\sigma(c_{p,j})}(s) \\
+V(s) &= \sum_{p=1}^{6}\ \sum_{\sigma \in G}\ T_p\big[\,\iota_{p,\sigma}(s)\,\big]
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L62-L68" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 62–68, 106–115" aria-label="Code on GitHub: game2048/ntuple.py, lines 62 to 68, 106 to 115">33</a></span>
+  </div>
+  <p>Here <span class="math">c_{p,j}</span> is the <span class="math">j</span>-th cell of pattern <span class="math">p</span>, <span class="math">n_p</span> is its size (5 or 6), <span class="math">\sigma</span> is one of the 8 symmetries in the group <span class="math">G</span>, and <span class="math">e_x(s)</span> is the exponent in cell <span class="math">x</span> of board <span class="math">s</span>. The index <span class="math">\iota_{p,\sigma}(s)</span> reads the exponents as base-16 digits, with the first cell as the most significant digit. The value <span class="math">V(s)</span> adds the table entry <span class="math">T_p[\cdot]</span> for every pattern and every symmetry. The code sums in float64 and reads the tables as float16 when it serves the network<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L99-L115" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 99–115, 127–136" aria-label="Code on GitHub: game2048/ntuple.py, lines 99 to 115, 127 to 136">34</a>.</p>
+  <p>The network's greedy agent chooses the move with the largest points plus learned value of its afterstate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py#L33-L36" target="_blank" rel="noopener" title="game2048/agents.py, lines 33–36" aria-label="Code on GitHub: game2048/agents.py, lines 33 to 36">35</a>.</p>
+  <!-- game2048/agents.py:35-36 -->
+  <div class="math-fig">
+    <div class="math math-block">a^{*} = \arg\max_{a \in A(s)}\ \big[\, g(s,a) + V(s_a) \,\big]</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py#L35-L36" target="_blank" rel="noopener" title="game2048/agents.py, lines 35–36" aria-label="Code on GitHub: game2048/agents.py, lines 35 to 36">36</a></span>
+  </div>
+  <p>The points term <span class="math">g(s,a)</span> is added because <span class="math">V</span> estimates the future points of a board rather than its immediate score, and the agent compares moves by their total.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Pattern</th><th>Cells (row-major, 4 × row + col)</th><th>Shape on the 4 × 4 board</th></tr></thead><tbody>
-    <tr><td>1</td><td>0, 1, 2, 3, 4</td><td><code>XXXX / X... / .... / ....</code></td></tr>
-    <tr><td>2</td><td>4, 5, 6, 7, 8</td><td><code>.... / XXXX / X... / ....</code></td></tr>
-    <tr><td>3</td><td>0, 1, 2, 4, 5</td><td><code>XXX. / XX.. / .... / ....</code></td></tr>
-    <tr><td>4</td><td>4, 5, 6, 8, 9</td><td><code>.... / XXX. / XX.. / ....</code></td></tr>
-    <tr><td>5</td><td>0, 1, 2, 3, 4, 5</td><td><code>XXXX / XX.. / .... / ....</code></td></tr>
-    <tr><td>6</td><td>0, 1, 2, 4, 5, 6</td><td><code>XXX. / XXX. / .... / ....</code></td></tr>
+    <tr><td>1</td><td>0, 1, 2, 3, 4</td><td><code style="overflow-wrap:anywhere">XXXX / X... / .... / ....</code></td></tr>
+    <tr><td>2</td><td>4, 5, 6, 7, 8</td><td><code style="overflow-wrap:anywhere">.... / XXXX / X... / ....</code></td></tr>
+    <tr><td>3</td><td>0, 1, 2, 4, 5</td><td><code style="overflow-wrap:anywhere">XXX. / XX.. / .... / ....</code></td></tr>
+    <tr><td>4</td><td>4, 5, 6, 8, 9</td><td><code style="overflow-wrap:anywhere">.... / XXX. / XX.. / ....</code></td></tr>
+    <tr><td>5</td><td>0, 1, 2, 3, 4, 5</td><td><code style="overflow-wrap:anywhere">XXXX / XX.. / .... / ....</code></td></tr>
+    <tr><td>6</td><td>0, 1, 2, 4, 5, 6</td><td><code style="overflow-wrap:anywhere">XXX. / XXX. / .... / ....</code></td></tr>
   </tbody></table></div>
-  <p class="hiw-note">Patterns 5 and 6 are the 6-cell tuples of the 4 × 6-tuple network of Yeh et al. (the TDL2048 demo). The other two, cells 4, 5, 6, 7, 8, 9 and cells 4, 5, 6, 8, 9, 10, were left out to keep the 6-cell tables to two. The earlier network used six 5-cell patterns, and its patterns 5 and 6 were transposes of 3 and 4. Under the symmetry sum a transpose scores every board the same as its source, so that network had four distinct shapes.</p>
+  <p>Patterns 5 and 6 are two of the 6-cell tuples of the 4 × 6-tuple network of Yeh et al., as used in the TDL2048 demo. The other two, cells 4, 5, 6, 7, 8, 9 and cells 4, 5, 6, 8, 9, 10, were left out to keep the 6-cell tables at two<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L36-L38" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 36–38" aria-label="Code on GitHub: game2048/ntuple.py, lines 36 to 38">37</a>.</p>
+  <p>The earlier network used six 5-cell patterns. Its patterns 5 and 6 are the transposes of patterns 3 and 4, so under the 8 symmetries they read the same shapes. Each pattern still had its own table, and the tables were learned separately, so the two pairs are not identical functions. The earlier network therefore had four distinct shapes, and two of its patterns repeated shapes with tables learned separately.</p>
+  <p><i>Example.</i> For pattern 1 on a board whose cells 0 to 4 have exponents 1, 2, 0, 0, 3, the index under the identity symmetry is <span class="math">1 \cdot 16^4 + 2 \cdot 16^3 + 0 + 0 + 3 = 73{,}731</span>. Its entry in <span class="math">T_1</span> is the value that this reading of the row contributes.</p>
 
-  <p class="hiw-note">The n-tuple network is trained by TD(0) on afterstates (<code>game2048/train_td.py</code>), with 1,000 games advancing in lockstep: <code>python -m game2048.train_td --minutes 70 --games 1000 --alpha 0.1 --seed 0</code>. After each move, the value of the previous afterstate moves toward the reward plus the value of the new one, with target 0 at game end. The learning rate is 0.1, split across the 48 lookups of each position, and updates are averaged per weight within a batch. Tables are float32 during training and stored as float16 (72 MiB in memory). The trainer logs once a minute and writes no final record, so the figures are its last logged record: 45,514 games at 69.04 minutes, with a mean score of 52,801 over the last 2,000 training games, 2048 reached in 86.4% and 4096 in 45.6%. The previous network's last record is 42,980 games at 64.1 minutes.</p>
+  <h3 class="hiw-sub">Training: TD(0) on afterstates</h3>
+  <p><b>TD(0)</b> is the simplest form of temporal-difference learning. It moves the value of a position toward a <b>target</b> made of the reward of the next step plus the learned value of the position after it, rather than waiting for the final score of the game. Here the positions are afterstates, and the reward is the points of the next move. The trainer follows Szubert and Jaskowski (2014), as its docstring states<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L1-L18" target="_blank" rel="noopener" title="game2048/train_td.py, lines 1–18" aria-label="Code on GitHub: game2048/train_td.py, lines 1 to 18">38</a>.</p>
+  <p>The training is <b>self-play</b>: the network chooses every move in the games it learns from, using its current values, and the games are played in <b>lockstep</b>, as NumPy arrays, 1,000 at once by default. A finished game is restarted at once.</p>
+  <!-- game2048/train_td.py:102, 112-113 -->
+  <div class="math-fig">
+    <div class="math math-block">\delta = \begin{cases} 0 - V(p) & \text{if the game has no legal move} \\ \max_{a \in A(s)}\big[\, g(s,a) + V(s_a) \,\big] - V(p) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L102" target="_blank" rel="noopener" title="game2048/train_td.py, lines 102, 112–113" aria-label="Code on GitHub: game2048/train_td.py, lines 102, 112 to 113">39</a></span>
+  </div>
+  <p>Here <span class="math">\delta</span> is the <b>TD error</b>, <span class="math">p</span> is the previous afterstate of the same game, and <span class="math">s</span> is the current board. The target is 0 when the game ends, and otherwise the best one-step return from <span class="math">s</span>, which is the points of the best move plus the learned value of its afterstate.</p>
+  <!-- game2048/train_td.py:68 (step size), game2048/train_td.py:43-48 (per-weight average) -->
+  <div class="math-fig">
+    <div class="math math-block">\theta_i \leftarrow \theta_i + \frac{\alpha}{48}\cdot\frac{1}{n_i}\sum_{\text{reads } b \text{ of } \theta_i} \delta_b</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L68" target="_blank" rel="noopener" title="game2048/train_td.py, lines 68, 43–48" aria-label="Code on GitHub: game2048/train_td.py, lines 68, 43 to 48">40</a></span>
+  </div>
+  <p>Here <span class="math">\theta_i</span> is a table entry, <span class="math">\alpha = 0.1</span> is the <b>learning rate</b> (the <code style="overflow-wrap:anywhere">--alpha</code> default in the training command), <span class="math">\alpha / 48</span> is the step taken by each lookup, and the sum runs over the <span class="math">n_i</span> reads of entry <span class="math">\theta_i</span> in the current batch, one per board and symmetry. Each entry moves by the <b>mean</b> of the errors that read it, not their sum. The sum made shared entries take steps as large as the batch and diverged, so the average is used<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L34-L42" target="_blank" rel="noopener" title="game2048/train_td.py, lines 34–42" aria-label="Code on GitHub: game2048/train_td.py, lines 34 to 42">41</a>.</p>
+  <p>The learning rate α = 0.1 is split across the 48 lookups of a board, so each lookup takes a step of α / 48 ≈ 0.0021<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L55" target="_blank" rel="noopener" title="game2048/train_td.py, lines 55, 68" aria-label="Code on GitHub: game2048/train_td.py, lines 55, 68">42</a>. Tables are float32 during training and written as float16. In memory they take 72 MiB, which is the two 6-cell tables at 32 MiB each plus the four 5-cell tables at 2 MiB each<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py#L9-L11" target="_blank" rel="noopener" title="game2048/ntuple.py, lines 9–11, 36–38" aria-label="Code on GitHub: game2048/ntuple.py, lines 9 to 11, 36 to 38">43</a>.</p>
+  <!-- full version: game2048/train_td.py:51-143 (TRAIN-TD) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L51-L143" target="_blank" rel="noopener" title="game2048/train_td.py, lines 51–143" aria-label="Code on GitHub: game2048/train_td.py, lines 51 to 143">44</a></span>
+    <pre class="pseudo-simple">function TRAIN-TD(games):
+    repeat, with all games moving one step in lockstep:
+        for each legal move a, in every game at once:
+            q(a) ← points(a) + V(afterstate of a)
+        target ← the largest q(a), or 0 if the game has no legal move
+        V(previous afterstate) ← V(previous afterstate) + α · (target − V(previous afterstate))
+        play the best move and spawn a tile
+    return V</pre>
+    <pre class="pseudo-full" hidden>function TRAIN-TD(games, minutes, α):
+    step ← α / 48                                        # 6 patterns × 8 symmetries
+    boards ← NEW-GAMES(games)
+    previous ← empty list of length games
+    while elapsed time &lt; minutes · 60:
+        for each direction d:                              # all four moves, for every game
+            after(d), gain(d) ← SLIDE(boards, d)
+            if after(d) differs from boards:               # legal
+                q(d) ← gain(d) + V(after(d))
+            else:
+                q(d) ← −infinity
+        best ← the direction with the largest q
+        target ← 0 if every q is −infinity, otherwise the largest q
+        for the games with a previous afterstate, at once:          # the TD(0) update
+            δ ← target − V(previous)
+            for each table entry θ read by these boards, in every pattern and symmetry:
+                θ ← θ + step · (the mean of δ over the boards in this batch that read θ)
+        for the games with no legal move:                  # game over
+            record its score and its largest tile
+            board ← NEW-GAME;  score ← 0;  previous ← none
+        for the other games:
+            previous ← after(best);  score ← score + gain(best)
+            board ← SPAWN(after(best))
+        if a minute has passed since the last log:
+            log the mean score and the reach rates of the last 2,000 finished games
+            write the tables to disk
+    return V</pre>
+  </div>
+  <p>The step size is shared out across the lookups, as the first line of the full version shows. Each step updates the previous afterstate once, toward the target built from the current board.</p>
+  <p>The per-weight average is the only batch-specific part of the update. With 1,000 games in a batch, the same table entry is read by many boards at the start of the game, and averaging keeps its step from growing with the batch size.</p>
+  <p>The trainer keeps a deque of the last 2,000 finished games<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L75" target="_blank" rel="noopener" title="game2048/train_td.py, line 75" aria-label="Code on GitHub: game2048/train_td.py, line 75">45</a>. Its log gives the mean score over that window and the share of games that reached each tile, and it logs once more when it stops<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py#L138-L140" target="_blank" rel="noopener" title="game2048/train_td.py, lines 138–140" aria-label="Code on GitHub: game2048/train_td.py, lines 138 to 140">46</a>. The current network's run predates that final record, so the figures are its last logged record, at 69.04 minutes: 45,514 games, with a mean score of 52,801 over the last 2,000 games, 2048 reached in 86.35% of them and 4096 in 45.6%, from the log in <code style="overflow-wrap:anywhere">results/game2048_train_log_v2.jsonl</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log_v2.jsonl" target="_blank" rel="noopener" title="results/game2048_train_log_v2.jsonl" aria-label="Code on GitHub: results/game2048_train_log_v2.jsonl">47</a>. The earlier network's last record is 42,980 games at 64.1 minutes, in the log <code style="overflow-wrap:anywhere">results/game2048_train_log_v1.jsonl</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log_v1.jsonl" target="_blank" rel="noopener" title="results/game2048_train_log_v1.jsonl" aria-label="Code on GitHub: results/game2048_train_log_v1.jsonl">48</a>.</p>
 
-  <h3 class="hiw-sub">Held-out results</h3>
-  <p class="hiw-note">The greedy held-out tables share one batch seed, 500000, and the 60-game expectimax rows use seeds 500000 to 500059; neither the tuner nor the trainer used these seeds. Intervals are 95%: normal for the mean, Wilson for the rates.</p>
+  <h3 class="hiw-sub">Results</h3>
+  <p>The tables below are held-out measurements: the seeds used to measure them were not used by the tuner or the trainer<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/benchmark.py#L14-L16" target="_blank" rel="noopener" title="game2048/benchmark.py, lines 14–16" aria-label="Code on GitHub: game2048/benchmark.py, lines 14 to 16">49</a>. The greedy rows share one batch seed, 500000, and the 60-game expectimax rows use seeds 500000 to 500059. Intervals are 95%: normal for the mean and Wilson for the rates. The expectimax rows were measured at 50 ms per move (<code style="overflow-wrap:anywhere">--budget 0.05</code>), half the 0.1 s the live page uses, so they are not a direct measure of the page's agent. The search rows have only 12 games each, so their intervals are wide.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th>Games</th><th class="num">Mean score (95% CI)</th><th class="num">Reached 2048</th><th class="num">Reached 4096</th><th class="num">Reached 8192</th></tr></thead><tbody>
+    <tr><td>Expectimax, tuned features (shipped weights), 50 ms/move</td><td class="num">60</td><td class="num">16,954 (15,259 to 18,650)</td><td class="num">11.7% (5.8 to 22.2)</td><td class="num">0.0% (0.0 to 6.0)</td><td class="num">0.0% (0.0 to 6.0)</td></tr>
+    <tr><td>Expectimax, tuned features (bounded weights v3), 50 ms/move</td><td class="num">60</td><td class="num">18,639 (16,461 to 20,817)</td><td class="num">20.0% (11.8 to 31.8)</td><td class="num">0.0% (0.0 to 6.0)</td><td class="num">0.0% (0.0 to 6.0)</td></tr>
     <tr><td>N-tuple, greedy, earlier network</td><td class="num">3,000</td><td class="num">43,970 (43,168 to 44,773)</td><td class="num">83.5% (82.1 to 84.8)</td><td class="num">32.1% (30.5 to 33.8)</td><td class="num">2.1% (1.6 to 2.7)</td></tr>
     <tr><td>N-tuple, greedy, this network</td><td class="num">3,000</td><td class="num">54,835 (53,791 to 55,879)</td><td class="num">88.1% (86.9 to 89.2)</td><td class="num">48.7% (46.9 to 50.5)</td><td class="num">6.7% (5.9 to 7.7)</td></tr>
     <tr><td>N-tuple + expectimax, earlier network, 50 ms/move</td><td class="num">12</td><td class="num">46,459 (32,404 to 60,513)</td><td class="num">75.0% (46.8 to 91.1)</td><td class="num">41.7% (19.3 to 68.0)</td><td class="num">0.0% (0.0 to 24.3)</td></tr>
     <tr><td>N-tuple + expectimax, this network, 50 ms/move</td><td class="num">12</td><td class="num">104,144 (82,370 to 125,919)</td><td class="num">100.0% (75.7 to 100.0)</td><td class="num">91.7% (64.6 to 98.5)</td><td class="num">41.7% (19.3 to 68.0)</td></tr>
   </tbody></table></div>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/expectimax.py">game2048/expectimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/tune.py">game2048/tune.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/data/heuristic_weights.json">game2048/data/heuristic_weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/ntuple.py">game2048/ntuple.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/train_td.py">game2048/train_td.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/agents.py">game2048/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/game2048/benchmark.py">game2048/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_train_log_v2.jsonl">results/game2048_train_log_v2.jsonl</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_combined.md">results/game2048_heuristic_combined.md</a></p>
+  <p class="hiw-note">The shipped smoothness is the one the current code computes, which skips empty cells<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_v1_gap_baseline.md" target="_blank" rel="noopener" title="results/game2048_heuristic_v1_gap_baseline.md" aria-label="Code on GitHub: results/game2048_heuristic_v1_gap_baseline.md">50</a>. An earlier definition, which compared only touching tiles, scored 16,988 (15,131 to 18,844) and 10.0% on the same games<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_combined.md" target="_blank" rel="noopener" title="results/game2048_heuristic_combined.md" aria-label="Code on GitHub: results/game2048_heuristic_combined.md">51</a>. It is not in the current code and is not shown in the table. The greedy one-move results on the features, over 3,000 games with seed 500000, are 7,074 (6,930 to 7,219) for the shipped weights, with a smooth weight of −0.129, and 5,823 (5,709 to 5,936) and 5,768 (5,657 to 5,880) for the two bounded runs, whose smooth weight is 0, as recorded in <code style="overflow-wrap:anywhere">results/game2048_heuristic_greedy_heldout.md</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/game2048_heuristic_greedy_heldout.md" target="_blank" rel="noopener" title="results/game2048_heuristic_greedy_heldout.md" aria-label="Code on GitHub: results/game2048_heuristic_greedy_heldout.md">52</a>. The bounded runs score lower under greedy play. Under expectimax the bounded weights scored about 1,700 points higher on 60 games, but the intervals overlap, so the shipped weights were kept as the tuned agent's evaluation. </p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/2048.js"></script>
 </body>

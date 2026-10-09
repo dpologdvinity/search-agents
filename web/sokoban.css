@@ -147,3 +147,13 @@
   .sok-sprite, .sok-box.thump { transition: none; animation: none; }
   .sok-cell.goal::before, .sok-spin { animation: none; }
 }
+
+/* Touch pad: four step buttons, shown on narrow screens where there are no arrow keys. Each one walks or
+   pushes like its key. The buttons stay 56 px so each is a comfortable tap target. */
+.sok-pad { display: none; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px); gap: 6px; justify-content: center; touch-action: manipulation; }
+.sok-pad .cyber-btn { width: 56px; height: 56px; padding: 0; }
+.sok-pad [data-dir="w"] { grid-column: 2; grid-row: 1; }
+.sok-pad [data-dir="a"] { grid-column: 1; grid-row: 2; }
+.sok-pad [data-dir="s"] { grid-column: 2; grid-row: 2; }
+.sok-pad [data-dir="d"] { grid-column: 3; grid-row: 2; }
+@media (max-width: 700px) { .sok-pad { display: grid; } }

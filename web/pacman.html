@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="pacman.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,15 +32,12 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">07 // A* ROUTES · APPROXIMATE Q-LEARNING</div>
+      <div class="proj-pg-tag">07 // ROUTE SEARCH AND LEARNING</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="PAC-MAN">PAC-MAN</h1>
-      <div class="proj-pg-sub">Eat every pellet and dodge the ghosts. The agent learned its moves by playing itself, and you can see the value it puts on each one.</div>
-      <div class="field-hint" id="matchup" role="status" aria-live="polite" style="margin-top:0.5rem"></div>
+      <div class="proj-pg-sub">Eat every pellet and avoid the ghosts. A learned agent scores each move, and its scores are shown on the board.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip">MODE <span class="val" id="chip-mode">WATCH</span></span>
-        <span class="stat-chip">GHOSTS <span class="val" id="chip-ghosts">AI</span></span>
         <span class="stat-chip green">SCORE <span class="val" id="chip-score">0</span></span>
         <span class="stat-chip pink">PELLETS <span class="val" id="chip-pellets">—</span></span>
         <span class="stat-chip">TURN <span class="val" id="chip-turn">0</span></span>
@@ -48,25 +46,39 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Eat every pellet to clear the maze, and avoid the ghosts, which catch Pac-Man on contact unless they are scared. Pellets, power pellets and eaten ghosts all score points.</p>
+    <p style="margin-top:0.5rem">In watch mode, press RUN AGENT to play a seeded game with the selected agent, then PAUSE and STEP to read its move values one turn at a time. In You play mode, use W A S D, the arrow keys, or the buttons under the board; each press is one turn.</p>
+    <p style="margin-top:0.5rem">The line under the board names the algorithm on each side. The ghosts move after Pac-Man each turn.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="pm-stage">
         <div class="pm-frame">
           <canvas id="pm-canvas" role="img" aria-label="Pac-Man maze"></canvas>
         </div>
+        <div class="field-hint" id="matchup" role="status" aria-live="polite"></div>
         <div class="field-hint" id="pm-hint">Use W A S D or the arrow keys to move. Each key is one turn.</div>
         <div class="inline pm-controls" style="justify-content:center">
-          <button class="cyber-btn green" id="btn-run" type="button"><span class="btn-txt">▶ RUN AGENT</span></button>
-          <button class="cyber-btn" id="btn-toggle" type="button"><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">› STEP</span></button>
-          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
+          <button class="cyber-btn green" id="btn-run" type="button" title="Play the selected agent on a seeded game"><span class="btn-txt">▶ RUN AGENT</span></button>
+          <button class="cyber-btn" id="btn-toggle" type="button" title="Pause or resume the watched game"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Advance the watched game by one turn"><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new game with a new seed"><span class="btn-txt">↺ NEW GAME</span></button>
+        </div>
+        <div class="pm-dpad" id="pm-dpad" hidden>
+          <button class="cyber-btn" id="dpad-n" type="button" aria-label="Move north" title="Move north (W)"><span class="btn-txt">▲</span></button>
+          <button class="cyber-btn" id="dpad-w" type="button" aria-label="Move west" title="Move west (A)"><span class="btn-txt">◀</span></button>
+          <button class="cyber-btn" id="dpad-e" type="button" aria-label="Move east" title="Move east (D)"><span class="btn-txt">▶</span></button>
+          <button class="cyber-btn" id="dpad-s" type="button" aria-label="Move south" title="Move south (S)"><span class="btn-txt">▼</span></button>
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Move log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -75,50 +87,33 @@
         <div class="stack">
           <div>
             <div class="field-lbl">MODE</div>
-            <select class="cyber-select" id="mode" style="width:100%">
+            <select class="cyber-select" id="mode" style="width:100%" title="Watch an agent play a seeded game, or play Pac-Man yourself">
               <option value="watch" selected>Watch an agent</option>
               <option value="play">You play</option>
             </select>
           </div>
           <div>
             <div class="field-lbl">MAZE</div>
-            <select class="cyber-select" id="maze" style="width:100%"></select>
+            <select class="cyber-select" id="maze" style="width:100%" title="Neon Lanes has three ghosts; Vault has four"></select>
           </div>
           <div id="agent-row">
             <div class="field-lbl">AGENT</div>
-            <select class="cyber-select" id="agent" style="width:100%">
+            <select class="cyber-select" id="agent" style="width:100%" title="The Pac-Man agent used in watch mode">
               <option value="q" selected>Q-learning (learned)</option>
               <option value="reflex">Reflex (greedy rule)</option>
               <option value="random">Random</option>
             </select>
-            <div class="heuristic-card pm-card"><div class="field-hint" id="agent-desc"></div></div>
           </div>
           <div>
             <div class="field-lbl">GHOSTS</div>
-            <select class="cyber-select" id="ghosts" style="width:100%">
+            <select class="cyber-select" id="ghosts" style="width:100%" title="The ghost policy that moves the ghosts">
               <option value="ai" selected>AI ghosts (A* routes)</option>
               <option value="chance">Chance (fixed odds)</option>
             </select>
-            <div class="heuristic-card pm-card"><div class="field-hint" id="ghosts-desc"></div></div>
-          </div>
-          <div>
-            <div class="field-lbl">SEED <span class="field-hint">(same seed, same ghosts)</span></div>
-            <div class="inline">
-              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="7" style="flex:1">
-              <button class="cyber-btn" id="btn-seed" type="button" title="random seed"><span class="btn-txt">RANDOM</span></button>
-            </div>
-          </div>
-          <div>
-            <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
-            <input class="cyber-range" id="speed" type="range" min="60" max="700" step="20" value="240" style="width:100%">
           </div>
           <div id="score-row">
-            <div class="field-lbl">SCORE <span class="field-hint">(across games, same settings)</span></div>
+            <div class="field-lbl">SCORE <span class="field-hint">(watch games, same settings)</span></div>
             <div class="stat-chips" id="score"></div>
-            <div class="inline" style="margin-top:0.5rem">
-              <label class="field-hint"><input type="checkbox" id="auto-restart"> AUTO-RESTART</label>
-              <button class="cyber-btn" id="btn-reset-score" type="button"><span class="btn-txt">RESET SCORE</span></button>
-            </div>
           </div>
         </div>
       </div>
@@ -149,83 +144,294 @@
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">HOW IT DECIDES</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">A* ROUTES</div>
-            <div class="field-hint">Each ghost picks a target (Pac-Man, a cell ahead of him, or its corner) and plans a shortest route to it with A*. The glowing lines are those routes.</div>
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same ghosts)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="7" style="flex:1" aria-label="Game seed">
+              <button class="cyber-btn" id="btn-seed" type="button" title="Pick a random seed"><span class="btn-txt">RANDOM</span></button>
+            </div>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">Q-LEARNING</div>
-            <div class="field-hint">Each move is scored as a weighted sum of hand-built features (distance to pellets, ghosts one step away, eating). Weights move after every turn toward the reward actually seen.</div>
+          <div>
+            <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
+            <input class="cyber-range" id="speed" type="range" min="60" max="700" step="20" value="240" style="width:100%" aria-label="Milliseconds per watched turn">
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">SELF-PLAY</div>
-            <div class="field-hint">The weights were learned by playing thousands of games against the same ghosts, with occasional random moves to explore. The rules run on the server, so every game replays exactly from its seed.</div>
+          <div class="inline">
+            <label class="field-hint"><input type="checkbox" id="auto-restart"> AUTO-RESTART</label>
+            <button class="cyber-btn" id="btn-reset-score" type="button"><span class="btn-txt">RESET SCORE</span></button>
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Pac-Man steps first each turn, then every ghost steps. The AI ghosts plan routes with A* search, or chance ghosts roll fixed odds. The learned agent scores each legal move as a weighted sum of 13 hand-designed features, with weights learned from 3000 self-play games.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>A* route search (the ghosts)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A* finds a shortest path by always trying the road that looks shortest so far, with a rough guess of how far is left. The guess steers it toward the goal, so it checks far fewer routes than trying every one.</p>
-      <p>Each ghost picks a target cell every turn and runs A* to it, with Manhattan distance (ignoring walls) as the guess. Targets by personality:</p>
-      <ul>
-        <li><b>Chaser</b>: Pac-Man's cell.</li>
-        <li><b>Ambusher</b>: 4 cells ahead of Pac-Man in his last direction, stopping at a wall.</li>
-        <li><b>Scatter</b>: Pac-Man's cell, until he is within 4 Manhattan cells; then its corner.</li>
-      </ul>
-      <p>Neon Lanes has three ghosts (chaser, ambusher, scatter). Vault adds a second chaser as the fourth. A scared ghost plans nothing and steps to the neighbour farthest from Pac-Man.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Approximate Q-learning</h3>
-      <p class="hiw-plain"><b>New to this?</b> Rate each move with a checklist ("eats a pellet, +7", "ghost close, -20"). After each turn, compare the score you expected with what happened, and nudge the numbers to shrink the gap. Over thousands of games they settle into ratings that pick good moves.</p>
-      <p>For each legal move the agent computes Q(s, a) = w · f(s, a): f is the 13-feature vector after that move, w the weights. It takes the highest Q, breaking exact ties at random, and in training sometimes moves at random instead (epsilon-greedy). After each turn:</p>
-      <ul>
-        <li>target = r + γ · max Q(s′, ·), or just r if the game ended</li>
-        <li>δ = target − Q(s, a)</li>
-        <li>w<sub>i</sub> += α · δ · f<sub>i</sub>(s, a)</li>
-      </ul>
-      <p>The max uses the best move from the next position, not the one exploration picked (Watkins' off-policy form). Training reward: points this turn, minus 1, minus 300 if caught.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Survival lookahead (one feature)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A lookahead plays the game forward in imagination to see where a move leads, the way a chess player follows a few replies before moving.</p>
-      <p>For each legal move, the survival feature replays the game with the real ghost logic and counts how many of the next 6 turns Pac-Man survives under his best survival play. Results are cached, so one search serves every move in a turn. It is exact for the ghost AI, except a scared ghost's random tie-break uses a fixed seed.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Reflex rule (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A reflex is a fixed rule of thumb, like "if the car ahead brakes, brake." It reacts to the current turn and does not plan ahead.</p>
-      <p>Each move is scored and the highest wins: onto an active ghost, -1000; one step from an active ghost, -80; two steps, -40; onto a scared ghost, +50; otherwise minus the walking distance to the nearest pellet. These values were hand-written, not tuned.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Random (floor)</h3>
-      <p class="hiw-plain"><b>New to this?</b> It rolls a die at each junction. It sets the floor any real strategy should beat.</p>
-      <p>Picks uniformly among legal moves.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance ghosts (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like rolling a die at each junction. The ghost does not look at the maze or at Pac-Man; it only rolls the table.</p>
-      <p>Each turn a chance ghost picks a direction from fixed odds, read relative to the way it last moved. The shares are renormalised over the directions that are open, so a ghost in a corridor with one way out takes it.</p>
-      <div id="odds-table"></div>
-      <p>No search and no lookahead. The shares were set by hand, not fitted to data. Choose it from the GHOSTS menu, or run <code>python -m pacman match</code> to play each agent against both ghost policies on the same seeds.</p>
-    </article>
+  <p class="hiw-lede">Pac-Man moves first each turn, then every ghost moves. The ghosts are run by one of two policies: <b>A* search</b> plans their routes, or chance ghosts roll fixed odds. The learned agent scores each legal move as a weighted sum of 13 hand-designed <b>features</b>, and its weights were learned by <b>Q-learning</b> from 3000 games of <b>self-play</b>, in which the agent plays against the A* ghosts.</p>
+
+  <h3 class="hiw-sub">The rules</h3>
+  <p>The maze is a grid of cells. Walls and open cells are fixed. Some open cells hold a <b>pellet</b>, and four of them are <b>power pellets</b>. Each turn, Pac-Man moves one step to an open neighbour, and then every ghost moves one step. The game is won when no pellets remain, and lost when a ghost catches Pac-Man.</p>
+  <p>Eating a pellet scores 10 points, a power pellet 50, and clearing the maze adds 500. A power pellet makes every ghost <b>scared</b> for 8 turns. The rule is applied on each step onto a power cell, whether or not its pellet is still there<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L166-L168" target="_blank" rel="noopener" title="pacman/engine.py, lines 166–168" aria-label="Code on GitHub: pacman/engine.py, lines 166 to 168">1</a>. A scared ghost that Pac-Man reaches is eaten for 200 points and returns to its starting cell. Any other ghost that meets him ends the game<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L107-L121" target="_blank" rel="noopener" title="pacman/engine.py, lines 107–121" aria-label="Code on GitHub: pacman/engine.py, lines 107 to 121">2</a>. A game that reaches 300 turns ends as a timeout<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L40" target="_blank" rel="noopener" title="pacman/engine.py, line 40" aria-label="Code on GitHub: pacman/engine.py, line 40">3</a>.</p>
+  <p>Each turn is resolved in six steps. A ghost already on Pac-Man's new cell is resolved first, so a scared ghost on that cell is eaten. Then the win check runs, because a cleared maze ends the game before the ghosts move. The ghosts then move from one shared snapshot of the board, and a ghost that steps onto Pac-Man's cell is resolved a second time. Last, the scared timers count down and the turn counter advances<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L144-L207" target="_blank" rel="noopener" title="pacman/engine.py, lines 144–207" aria-label="Code on GitHub: pacman/engine.py, lines 144 to 207">4</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L144-L207" target="_blank" rel="noopener" title="pacman/engine.py, lines 144–207" aria-label="Code on GitHub: pacman/engine.py, lines 144 to 207">4</a></span>
+    <pre class="pseudo-simple">function TURN(state, action):
+    pac ← the cell Pac-Man reaches with action
+    award points for a pellet or power pellet on pac, and scare every ghost on a power cell
+    if a ghost stands on pac:
+        if it is scared: eat it (200 points), send it home
+        otherwise: the game is lost
+    if no pellets remain: the game is won
+    every ghost moves one step, by GHOST-MOVE or by CHANCE-MOVE
+    if a ghost now stands on pac: resolve it as above
+    count down the scared timers and check the turn limit
+    return the new state</pre>
+    <pre class="pseudo-full" hidden>function TURN(state, action):
+    pac ← NEIGHBOUR(state.pac, action)                    # the cell in that direction
+    points ← 0
+    if pac is in pellets:
+        remove pac from pellets
+        if pac is a power cell: points ← points + 50
+        otherwise: points ← points + 10
+    if pac is a power cell:                               # eaten or not
+        set every ghost's scared timer to 8
+    ghosts, gained, died ← MEET(ghosts, pac)              # ghosts already on pac
+    points ← points + gained
+    if died:
+        return LOST
+    if pellets is empty:
+        return WON with points + 500
+    pac-dist ← DISTANCES(maze, pac) if any ghost is scared, otherwise nothing
+    for each ghost i:                                     # all choose from the same snapshot
+        if the policy is chance:
+            next, heading ← CHANCE-MOVE(maze, ghost)
+        otherwise:
+            next, target, route ← GHOST-MOVE(maze, ghost, i, pac, action, pac-dist)
+            heading ← ghost.heading                       # A* ghosts never read it
+        move the ghost to next and set its heading
+    ghosts, gained, died ← MEET(ghosts, pac)              # ghosts that stepped onto pac
+    points ← points + gained
+    if died:
+        return LOST
+    for each ghost: scared ← max(0, scared − 1)
+    if turn + 1 ≥ 300:
+        status ← TIMEOUT
+    return the new state with points and status</pre>
+  </div>
+  <p>The full version has two ideas that are easy to miss. Stepping onto a power cell scares the ghosts again even when its pellet was eaten earlier, since the check is only on the cell. And the first collision check also covers a swap: a ghost on the cell Pac-Man moves into is still there when that move is resolved, so it is caught before any ghost moves. The second check catches only ghosts that step onto Pac-Man during the ghost move.</p>
+
+  <h3 class="hiw-sub">Route search with A*</h3>
+  <p>The ghosts plan with <b>A* search</b>, a shortest-path method that always expands the queued cell with the smallest estimated total cost. It keeps a queue ordered by <span class="math">f = g + h</span>, where <span class="math">g</span> is the number of steps so far and <span class="math">h</span> is a <b>heuristic</b>, an estimate of the steps still needed. Here <span class="math">h</span> is the <b>Manhattan distance</b>, the grid distance that ignores walls.</p>
+  <div class="math-fig">
+    <!-- pacman/search.py:44-47, 75 and 97-99 -->
+    <div class="math math-block">f(n) = g(n) + h(n), \qquad h(n) = |r_n - r_{\text{goal}}| + |c_n - c_{\text{goal}}|</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py#L41-L76" target="_blank" rel="noopener" title="pacman/search.py, lines 41–76, 97–99" aria-label="Code on GitHub: pacman/search.py, lines 41 to 76, 97 to 99">5</a></span>
+  </div>
+  <p>Here <span class="math">n</span> is a cell, <span class="math">g(n)</span> is the length of the best route found so far to <span class="math">n</span>, and <span class="math">r_n</span> and <span class="math">c_n</span> are its row and column. Every move costs one step, and the Manhattan distance never overestimates on such a grid. So the first time the goal leaves the queue, its route is a shortest one.</p>
+  <p>Ties in <span class="math">f</span> go to the cell with the smaller <span class="math">h</span>, which is nearer the goal and cuts the number of cells explored<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py#L44-L47" target="_blank" rel="noopener" title="pacman/search.py, lines 44–47" aria-label="Code on GitHub: pacman/search.py, lines 44 to 47">6</a>. A cell is <b>closed</b> once it has been expanded, and a stale queue entry for a closed cell is skipped. Each cell stores a <b>parent</b>, the cell it was reached from, and the route is read back from the goal.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py#L41-L76" target="_blank" rel="noopener" title="pacman/search.py, lines 41–76" aria-label="Code on GitHub: pacman/search.py, lines 41 to 76">5</a></span>
+    <pre class="pseudo-simple">function ASTAR(maze, start, goal):
+    queue ← [start], ordered by g + h, where h = MANHATTAN(cell, goal)
+    g[start] ← 0
+    while the queue is not empty:
+        cur ← the entry with the lowest f
+        if cur = goal:
+            return the route back from goal through parent
+        for each open neighbour nb of cur:
+            if g[cur] + 1 < g[nb]:
+                g[nb] ← g[cur] + 1
+                parent[nb] ← cur
+                push nb with f = g[nb] + MANHATTAN(nb, goal)
+    return None</pre>
+    <pre class="pseudo-full" hidden>function ASTAR(maze, start, goal):
+    if start = goal:
+        return [start]
+    best-g ← {start: 0}
+    parent ← {start: NO-CELL}
+    h0 ← MANHATTAN(start, goal)
+    heap ← [(h0, h0, start)]                              # entries are (f, h, cell)
+    closed ← empty set
+    while heap is not empty:
+        (f, h, cur) ← pop the smallest entry of heap
+        if cur = goal:
+            route ← [cur]
+            while parent[last cell of route] ≠ NO-CELL:
+                append parent[last cell of route] to route
+            reverse route
+            return route
+        if cur is in closed:                              # a stale entry, already expanded
+            (skip to the next pop)
+        else:
+            add cur to closed
+            g ← best-g[cur] + 1
+            for each neighbour nb of cur:
+                if nb is NO-CELL or nb is in closed:
+                    (skip nb)
+                else if nb is not in best-g or g < best-g[nb]:
+                    best-g[nb] ← g
+                    parent[nb] ← cur
+                    h ← MANHATTAN(nb, goal)
+                    push (g + h, h, nb) onto heap
+    return None</pre>
+  </div>
+  <p>The full version keeps the queue as a heap, a structure that returns the smallest entry in logarithmic time, and it keeps a separate record of the best <span class="math">g</span> seen for each cell. Those two records are why a cell may appear in the queue more than once. Cells are expanded only once, so the search always finishes.</p>
+  <p><b>Breadth-first search (BFS)</b> finds the walking distance from one cell to every other cell in one pass. Each cell is reached from its nearest neighbour already reached, and that neighbour's distance plus one is its own. The features and the scared ghosts' flight both use these distances<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py#L21-L33" target="_blank" rel="noopener" title="pacman/search.py, lines 21–33" aria-label="Code on GitHub: pacman/search.py, lines 21 to 33">7</a>.</p>
+
+  <h3 class="hiw-sub">Ghost personalities and targets</h3>
+  <p>Each ghost has a personality. Ghost <span class="math">i</span>, counting from zero in the order of the maze's G cells, takes the personality at position <span class="math">i \bmod 4</span> of the list chaser, ambusher, scatter, chaser<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L28" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 28, 78–79" aria-label="Code on GitHub: pacman/ghosts.py, lines 28, 78 to 79">8</a>. Neon Lanes therefore has a chaser, an ambusher and a scatter ghost. Vault adds a second chaser as its fourth.</p>
+  <ul>
+    <li><b>Chaser</b> targets Pac-Man's cell.</li>
+    <li><b>Ambusher</b> targets the cell <b>4</b> steps ahead of Pac-Man in his last direction, walking forward and stopping early at a wall<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L34" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 34, 91–99" aria-label="Code on GitHub: pacman/ghosts.py, lines 34, 91 to 99">9</a>.</li>
+    <li><b>Scatter</b> targets Pac-Man's cell, unless its Manhattan distance to him is at most 4. Then it targets its corner: the open cell nearest one of the four corners, chosen by index<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L35" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 35, 100–103" aria-label="Code on GitHub: pacman/ghosts.py, lines 35, 100 to 103">10</a>.</li>
+  </ul>
+  <p>A ghost that is not scared plans an A* route to its target and takes the first step of it. If the route has no step, because the ghost already stands on its target, it steps to the neighbour nearest to Pac-Man by Manhattan distance<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L106-L132" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 106–132" aria-label="Code on GitHub: pacman/ghosts.py, lines 106 to 132">11</a>.</p>
+  <p>A scared ghost ignores its target. It steps to the neighbour with the largest walking distance from Pac-Man's new cell, and ties go to a random choice from the game's generator<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L121-L124" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 121–124" aria-label="Code on GitHub: pacman/ghosts.py, lines 121 to 124">12</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L106-L132" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 106–132, 82–103" aria-label="Code on GitHub: pacman/ghosts.py, lines 106 to 132, 82 to 103">11</a></span>
+    <pre class="pseudo-simple">function GHOST-MOVE(maze, ghost, pac, facing, pac-dist):
+    if ghost is scared:
+        step to the neighbour with the largest pac-dist, ties at random
+        return that cell, no target
+    target ← TARGET(maze, ghost, pac, facing)
+    route ← ASTAR(maze, ghost.pos, target)
+    if the route has a next cell:
+        step to route[1]
+    otherwise:
+        step to the neighbour nearest pac by Manhattan distance
+    return the cell, target, route</pre>
+    <pre class="pseudo-full" hidden>function GHOST-MOVE(maze, ghost, index, pac, facing, pac-dist):
+    options ← open neighbours of ghost.pos
+    if ghost.scared > 0:
+        best ← max of pac-dist[nb] over options
+        nxt ← random choice among options with pac-dist[nb] = best
+        return (nxt, no target, route (ghost.pos, nxt))
+    target ← TARGET(maze, ghost, index, pac, facing)
+    route ← ASTAR(maze, ghost.pos, target)
+    if route is not None and length of route > 1:
+        return (route[1], target, route)
+    nxt ← the option nb with the smallest (MANHATTAN(nb, pac), nb)
+    return (nxt, target, (ghost.pos, nxt))
+
+function TARGET(maze, ghost, index, pac, facing):
+    if ghost is a chaser:
+        return pac
+    if ghost is an ambusher:
+        cell ← pac
+        if facing ≥ 0:
+            repeat 4 times:
+                nxt ← the neighbour of cell in direction facing
+                if nxt is NO-CELL: break
+                cell ← nxt
+        return cell
+    # scatter
+    if MANHATTAN(ghost.pos, pac) ≤ 4:
+        return corners[index mod 4]
+    return pac</pre>
+  </div>
+  <p>In the full version, <span class="math">facing</span> is the direction index of Pac-Man's move this turn, or −1 before he has moved. The index of a ghost is its position in the maze's list of ghosts, and it selects the corner for a scatter ghost. The ambusher's walk never leaves the maze, since it stops at a wall.</p>
+
+  <h3 class="hiw-sub">Chance ghosts (fixed odds)</h3>
+  <p>The chance policy does no planning. It does not look at Pac-Man, the pellets, or any route. Each ghost keeps a <b>heading</b>, the direction of its last move. Each turn it picks one open direction from fixed odds read relative to that heading: keep going 60%, turn left 15%, turn right 15%, reverse 10%<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L57" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 57, 60" aria-label="Code on GitHub: pacman/ghosts.py, lines 57, 60">13</a>. The shares are renormalised over the open directions only, so a ghost in a corridor with one exit must take it.</p>
+  <div class="math-fig">
+    <!-- pacman/ghosts.py:135-157 (chance_move), pacman/ghosts.py:57 (CHANCE_ODDS), pacman/ghosts.py:60 (_RELATIVE) -->
+    <div class="math math-block">P(d) = \dfrac{o\big((d - h) \bmod 4\big)}{\sum_{d' \in D} o\big((d' - h) \bmod 4\big)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L135-L157" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 135–157, 57, 60" aria-label="Code on GitHub: pacman/ghosts.py, lines 135 to 157, 57, 60">14</a></span>
+  </div>
+  <p>Here <span class="math">d</span> is a direction index in the order N, E, S, W (0 to 3), <span class="math">h</span> is the ghost's heading, <span class="math">D</span> is the set of open directions, and <span class="math">o(k)</span> is the odds for turn <span class="math">k</span>: 0.60 for straight, 0.15 for right (k = 1), 0.10 for back (k = 2), and 0.15 for left (k = 3). A ghost with no heading yet gives every open direction the same weight.</p>
+  <p>The draw uses one random number from the game's generator. It is scaled to the total weight, and the open directions are walked in order until it is used up. The ghost keeps its move's direction as its new heading<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L135-L157" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 135–157" aria-label="Code on GitHub: pacman/ghosts.py, lines 135 to 157">14</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L135-L157" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 135–157" aria-label="Code on GitHub: pacman/ghosts.py, lines 135 to 157">14</a></span>
+    <pre class="pseudo-simple">function CHANCE-MOVE(maze, ghost):
+    open ← the directions with an open neighbour
+    weight[d] ← the odds for d, read relative to ghost.heading
+    roll ← a random number in [0, 1) × the sum of the weights
+    for each d in open:
+        roll ← roll − weight[d]
+        if roll &lt; 0:
+            return the neighbour in direction d, and d
+    return the last open direction</pre>
+    <pre class="pseudo-full" hidden>function CHANCE-MOVE(maze, ghost):
+    open_dirs ← [d for d in 0..3 if the neighbour in direction d is open]
+    if ghost.heading = NO-HEADING:
+        weights ← [1 for each d in open_dirs]
+    otherwise:
+        weights ← [CHANCE-ODDS[RELATIVE[(d − ghost.heading) mod 4]] for each d in open_dirs]
+    roll ← random number in [0, 1) × sum(weights)
+    for each (d, w) in (open_dirs, weights):
+        roll ← roll − w
+        if roll &lt; 0:
+            return (neighbour in direction d, d)
+    return (neighbour in open_dirs[last], open_dirs[last])     # rounding only
+
+# RELATIVE = (straight, right, back, left), the turn names by clockwise offset from the heading
+# CHANCE-ODDS: straight 0.60, left 0.15, right 0.15, back 0.10</pre>
+  </div>
+  <div id="odds-table"></div>
+  <p>The shares were set by hand, not fitted to data. Chance ghosts do not change when Pac-Man is scared: they keep to the odds, and they are eaten only when Pac-Man lands on them. Only the A* ghosts flee<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py#L40-L49" target="_blank" rel="noopener" title="pacman/ghosts.py, lines 40–49" aria-label="Code on GitHub: pacman/ghosts.py, lines 40 to 49">15</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L185-L190" target="_blank" rel="noopener" title="pacman/engine.py, lines 185–190" aria-label="Code on GitHub: pacman/engine.py, lines 185 to 190">16</a>. The match results later on the page compare both policies.</p>
+
+  <h3 class="hiw-sub">Reflex rule (baseline)</h3>
+  <p>The reflex agent is a fixed rule with no search and no learning. It scores each legal move, and plays the highest score, breaking exact ties at random. Its value for a move <span class="math">a</span> is</p>
+  <div class="math-fig">
+    <!-- pacman/agents.py:51-65 (reflex_score) -->
+    <div class="math math-block">R(a) = \begin{cases} -1000 & \text{an active ghost stands on the destination} \\ -\sum_{d \in \{1, 2\}} 40\,(3 - d) \;+\; 50\,\mathbf{1}_{\text{scared}} \;-\; \text{food}(a) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py#L51-L65" target="_blank" rel="noopener" title="pacman/agents.py, lines 51–65" aria-label="Code on GitHub: pacman/agents.py, lines 51 to 65">17</a></span>
+  </div>
+  <p>Here <span class="math">d</span> is the walking distance from the destination to an active ghost, so the sum counts only the ghosts one or two steps away: 80 points for one step and 40 for two. The indicator <span class="math">\mathbf{1}_{\text{scared}}</span> is 1 when the move eats a scared ghost. The term <span class="math">\text{food}(a)</span> is the walking distance from the destination to the nearest pellet, and 0 when none remains. The values 1000, 40, 50 are hand-written, not tuned.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py#L51-L65" target="_blank" rel="noopener" title="pacman/agents.py, lines 51–65" aria-label="Code on GitHub: pacman/agents.py, lines 51 to 65">17</a></span>
+    <pre class="pseudo-simple">function REFLEX-SCORE(move):
+    if an active ghost is on the move's cell:
+        return −1000
+    score ← 0
+    for each active ghost one or two steps away:
+        score ← score − 40 × (3 − distance)
+    if the move eats a scared ghost:
+        score ← score + 50
+    return score − distance to the nearest pellet</pre>
+    <pre class="pseudo-full" hidden>function REFLEX-SCORE(s):                  # s: the position after the move
+    if any active ghost has distance 0 from the destination:
+        return −1000
+    score ← 0
+    score ← score − sum of 40 × (3 − d) for each active ghost with d in {1, 2}
+    if any scared ghost has distance 0 from the destination:
+        score ← score + 50
+    score ← score − (food, or 0 when no pellet remains)
+    return score</pre>
   </div>
 
-  <h3 class="hiw-sub">Features and learned weights</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+  <h3 class="hiw-sub">Random agent (floor)</h3>
+  <p>The random agent picks one legal move uniformly at random<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py#L44-L48" target="_blank" rel="noopener" title="pacman/agents.py, lines 44–48" aria-label="Code on GitHub: pacman/agents.py, lines 44 to 48">18</a>. It is the floor that any learned policy should beat. In the benchmark below it cleared no maze in 400 games.</p>
+
+  <h3 class="hiw-sub">Features and the learned weights</h3>
+  <p>The Q-agent scores move <span class="math">a</span> in position <span class="math">s</span> with a <b>Q-value</b>, a weighted sum of a <b>feature vector</b>. A <b>feature</b> is a number computed from the position the move leads to, before the ghosts move. A <b>weight</b> sets how much its feature adds to the score. The score is linear in the features:</p>
+  <div class="math-fig">
+    <!-- pacman/agents.py:86-90 (QAgent.evaluate); pacman/features.py:25-39 (FEATURE_NAMES) -->
+    <div class="math math-block">Q(s, a) = w \cdot f(s, a) = \sum_{i=1}^{13} w_i \, f_i(s, a)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py#L86-L90" target="_blank" rel="noopener" title="pacman/agents.py, lines 86–90" aria-label="Code on GitHub: pacman/agents.py, lines 86 to 90">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L25-L39" target="_blank" rel="noopener" title="pacman/features.py, lines 25–39" aria-label="Code on GitHub: pacman/features.py, lines 25 to 39">20</a></span>
+  </div>
+  <p>Here <span class="math">f(s, a)</span> is the vector of 13 features of the position after move <span class="math">a</span>, <span class="math">w</span> is the vector of learned weights, and <span class="math">f_i</span> and <span class="math">w_i</span> are their <span class="math">i</span>-th entries. The features express the trade-offs that matter: eat pellets and power pellets, avoid active ghosts, chase scared ghosts, avoid dead ends, and avoid traps that close a few turns later. The weights are learned, so the code does not fix how much any feature counts.</p>
+  <p>Distances are walking distances from the destination cell, so walls and corridors count as they do for a ghost<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L76-L99" target="_blank" rel="noopener" title="pacman/features.py, lines 76–99, 102–109" aria-label="Code on GitHub: pacman/features.py, lines 76 to 99, 102 to 109">21</a>. A distance is divided by 10 and not passed through a reciprocal. A reciprocal would flatten out for far targets, so the model could not tell a pellet 15 steps away from one 25 steps away<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L102-L109" target="_blank" rel="noopener" title="pacman/features.py, lines 102–109" aria-label="Code on GitHub: pacman/features.py, lines 102 to 109">22</a>.</p>
+  <div class="math-fig">
+    <!-- pacman/features.py:81-82 (food, capsule), 102-109 (_scaled_distance), 114-127 (ghost terms) -->
+    <div class="math math-block">\text{food} = \frac{d_{\text{pellet}}}{10}, \qquad \text{capsule} = \frac{d_{\text{power}}}{10}, \qquad \text{ghost\_near} = \sum_{g \text{ active}} \max\!\left(0,\, 1 - \frac{d_g}{6}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L81-L82" target="_blank" rel="noopener" title="pacman/features.py, lines 81–82, 102–109, 114–115" aria-label="Code on GitHub: pacman/features.py, lines 81 to 82, 102 to 109, 114 to 115">23</a></span>
+  </div>
+  <div class="math-fig">
+    <!-- pacman/features.py:122-127 (ghost_adjacent, caught, scared_near, eat_ghost, openness, trap) -->
+    <div class="math math-block">\text{scared\_near} = \sum_{\substack{g \text{ scared} \\ d_g \ge 1}} \max\!\left(0,\, 1 - \frac{d_g}{8}\right), \qquad \text{openness} = \frac{n_{\text{open}}}{4}, \qquad \text{trap} = \text{ghost\_near} \cdot (1 - \text{openness})</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L122-L127" target="_blank" rel="noopener" title="pacman/features.py, lines 122–127" aria-label="Code on GitHub: pacman/features.py, lines 122 to 127">24</a></span>
+  </div>
+  <p>Here <span class="math">d_{\text{pellet}}</span> and <span class="math">d_{\text{power}}</span> are the walking distances from the destination to the nearest pellet and the nearest power pellet, each taken as 0 when none remains. The sum <span class="math">\text{ghost\_near}</span> runs over the active ghosts, those that can hurt Pac-Man, and each <span class="math">d_g</span> is that ghost's walking distance from the destination. The range 6 is the distance at which an active ghost stops counting. The sum <span class="math">\text{scared\_near}</span> runs over the scared ghosts at a distance of at least 1, with range 8. The count <span class="math">n_{\text{open}}</span> is the number of open neighbours of the destination, so a low openness marks a dead end. The <span class="math">\text{trap}</span> feature is large when a ghost is closing in on a place with few exits.</p>
+  <p>Five features are indicators, each 1 or 0: <b>pellet</b> (the move eats a pellet), <b>power</b> (it eats a power pellet), <b>ghost_adjacent</b> (an active ghost is one step from the destination), <b>caught</b> (an active ghost stands on it), and <b>eat_ghost</b> (it lands on a scared ghost). The bias is the constant 1. The last feature, <b>survival</b>, is described in the next section.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>What it measures</th><th class="num">Learned weight</th></tr></thead><tbody>
     <tr><td>bias</td><td>Constant 1. Learns the typical value of a turn.</td><td class="num">-235.120829</td></tr>
     <tr><td>pellet</td><td>1 if the move eats a pellet.</td><td class="num">7.756391</td></tr>
     <tr><td>power</td><td>1 if the move eats a power pellet.</td><td class="num">44.070686</td></tr>
-    <tr><td>food</td><td>Walking distance to the nearest pellet, / 10 (0 when none remains or none is reachable).</td><td class="num">-70.833204</td></tr>
-    <tr><td>capsule</td><td>Walking distance to the nearest power pellet, / 10 (0 when none remains or none is reachable).</td><td class="num">-21.920583</td></tr>
+    <tr><td>food</td><td>Walking distance to the nearest pellet, / 10 (0 when none remains).</td><td class="num">-70.833204</td></tr>
+    <tr><td>capsule</td><td>Walking distance to the nearest power pellet, / 10 (0 when none remains).</td><td class="num">-21.920583</td></tr>
     <tr><td>ghost_near</td><td>Sum over active ghosts of max(0, 1 - d / 6), d = walking distance from the move.</td><td class="num">-19.740337</td></tr>
     <tr><td>ghost_adjacent</td><td>1 if an active ghost is one step from the move.</td><td class="num">2.239702</td></tr>
     <tr><td>caught</td><td>1 if an active ghost stands on the destination (fatal).</td><td class="num">-8.093631</td></tr>
@@ -235,24 +441,162 @@
     <tr><td>trap</td><td>ghost_near × (1 - openness): a ghost closing in on a dead end.</td><td class="num">10.416065</td></tr>
     <tr><td>survival</td><td>Turns Pac-Man survives after the move (up to 6), / 6.</td><td class="num">319.341411</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The features and their scales (ranges of 6 and 8 cells, distance divided by 10, openness by 4, survival by 6) were designed by hand; distance is linear so far targets keep a gradient. The weights were not set by hand: training started from zeros and learned all 13. The reward constants (1 per turn, 300 for being caught) are hand-set, and the point values come from the game rules. No tuning sweep over any of these is committed. Features overlap, so read weights together: survival's 319.34 is about 53 per extra surviving turn (319.34 / 6).</p>
+  <p class="hiw-note"><b>How these were chosen:</b> the features and their scales (ranges of 6 and 8 cells, distance divided by 10, openness by 4, survival by 6) were designed by hand. The weights were not set by hand: training started from zeros and learned all 13. The reward constants (1 per turn, 300 for being caught) are hand-set, and the point values come from the game rules. No tuning sweep over any of these is committed. Features overlap, so read the weights together: survival's 319.34 is about 53 per extra surviving turn (319.34 / 6).<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/data/weights.json" target="_blank" rel="noopener" title="pacman/data/weights.json" aria-label="Code on GitHub: pacman/data/weights.json">25</a></p>
+
+  <h3 class="hiw-sub">Survival lookahead (one feature)</h3>
+  <p>A static feature cannot see a trap two or three turns away, such as a corridor with a ghost waiting at its far end. The <b>survival</b> feature instead plays the game forward. For each legal move, the ghosts answer with their real logic, Pac-Man tries every legal move again, and so on, for up to <span class="math">H = 6</span> turns<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L22" target="_blank" rel="noopener" title="pacman/lookahead.py, lines 22, 45–61" aria-label="Code on GitHub: pacman/lookahead.py, lines 22, 45 to 61">26</a>. The <b>depth</b> is the number of turns Pac-Man survives. It is 0 if the move is fatal at once, and 6 if he survives the whole horizon.</p>
+  <div class="math-fig">
+    <!-- pacman/lookahead.py:25-42 (_alive), 45-61 (survival_depths), 22 (SURVIVAL_HORIZON); pacman/features.py:128 -->
+    <div class="math math-block">\text{survival}(s, a) = \frac{D(s, a)}{H}, \qquad D(s, a) = \begin{cases} 0 & \text{the move is fatal} \\ 1 + A(s_a, H - 1) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L22" target="_blank" rel="noopener" title="pacman/lookahead.py, lines 22, 25–42, 45–61" aria-label="Code on GitHub: pacman/lookahead.py, lines 22, 25 to 42, 45 to 61">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py#L128" target="_blank" rel="noopener" title="pacman/features.py, line 128" aria-label="Code on GitHub: pacman/features.py, line 128">27</a></span>
+  </div>
+  <div class="math-fig">
+    <!-- pacman/lookahead.py:25-42 (_alive) -->
+    <div class="math math-block">A(x, p) = \begin{cases} p & p = 0 \text{ or } x \text{ is over} \\ \max\!\Big(\{0\} \cup \{\,1 + A(x_{a'}, p - 1) : a' \text{ not fatal}\,\}\Big) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L25-L42" target="_blank" rel="noopener" title="pacman/lookahead.py, lines 25–42" aria-label="Code on GitHub: pacman/lookahead.py, lines 25 to 42">28</a></span>
+  </div>
+  <p>Here <span class="math">s_a</span> is the position after move <span class="math">a</span>, <span class="math">H</span> is the horizon of 6 turns, and <span class="math">A(x, p)</span> is the number of the next <span class="math">p</span> turns that a living position <span class="math">x</span> survives under Pac-Man's best play. A game that is won counts as surviving, as does a position that survives the whole horizon. The feature is <span class="math">D / H</span>, so it lies between 0 and 1 before its weight is applied.</p>
+  <p>The search is exact for the ghost AI, with one exception. A scared ghost's random tie-break uses a fixed seed of 0, so it can differ from the choice in a real game<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L1-L16" target="_blank" rel="noopener" title="pacman/lookahead.py, lines 1–16, 45–61" aria-label="Code on GitHub: pacman/lookahead.py, lines 1 to 16, 45 to 61">29</a>. The results are memoised, meaning stored and reused, under the key (Pac-Man's cell, his last move, every ghost, the number of pellets left, the turns left). The key counts the pellets rather than naming them, so two positions that differ only in which pellets remain can share an entry<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L29" target="_blank" rel="noopener" title="pacman/lookahead.py, line 29" aria-label="Code on GitHub: pacman/lookahead.py, line 29">30</a>. The search always assumes the A* ghosts, even when the chance policy is chosen, so the feature is only an estimate under chance ghosts.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py#L25-L61" target="_blank" rel="noopener" title="pacman/lookahead.py, lines 25–61" aria-label="Code on GitHub: pacman/lookahead.py, lines 25 to 61">31</a></span>
+    <pre class="pseudo-simple">function SURVIVAL-DEPTHS(state):
+    for each legal move a:
+        if a is fatal at once: depth[a] ← 0
+        otherwise: depth[a] ← 1 + ALIVE(position after a, 5)
+    return depth
+
+function ALIVE(state, plies):
+    if plies = 0 or state is over: return plies
+    best ← 0
+    for each legal move a:
+        if a is not fatal:
+            best ← max(best, 1 + ALIVE(position after a, plies − 1))
+            if best = plies: stop
+    return best</pre>
+    <pre class="pseudo-full" hidden>function SURVIVAL-DEPTHS(state, horizon = 6):
+    game ← a game on state.maze with seed 0
+    memo ← empty table
+    for each legal move a of state:
+        game.state ← state
+        turn ← game.step(a)
+        if death is in turn.events:
+            depth[a] ← 0
+        otherwise:
+            depth[a] ← 1 + ALIVE(game, game.state, horizon − 1, memo)
+    return depth
+
+function ALIVE(game, state, plies, memo):
+    if plies = 0 or state is over:
+        return plies
+    key ← (state.pac, state.facing, state.ghosts, number of pellets in state, plies)
+    if key is in memo:
+        return memo[key]
+    best ← 0
+    for each legal move a of state:
+        game.state ← state
+        turn ← game.step(a)
+        if death is not in turn.events:
+            best ← max(best, 1 + ALIVE(game, game.state, plies − 1, memo))
+            if best = plies: stop                         # no better is possible
+    memo[key] ← best
+    return best</pre>
+  </div>
+  <p>The memo table is a dictionary, so a position reached by two different orders of moves is solved once. The stop when <span class="math">best = plies</span> is a pruning step: once the whole remaining horizon is survived, no other move can do better. Both functions only read the game through its turn step, so the search uses exactly the rules the game uses.</p>
+
+  <h3 class="hiw-sub">Approximate Q-learning</h3>
+  <p><b>Q-learning</b> learns the value of a move from experience: the reward the agent receives, and the value of the best move from the position it reaches next. <b>Approximate</b> means the values come from the feature weights, not from a table with one entry per position. After each turn, the agent compares the value it expected with a target built from what happened, and moves each weight in proportion to its feature:</p>
+  <div class="math-fig">
+    <!-- pacman/qlearning.py:53-59 (td_update) -->
+    <div class="math math-block">\begin{aligned} \text{target} &= r + \gamma \max_{a'} Q(s', a') \qquad (\text{target} = r \text{ when the game ended}) \\ \delta &= \text{target} - Q(s, a) \\ w_i &\leftarrow w_i + \alpha\, \delta\, f_i(s, a) \end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L53-L59" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 53–59" aria-label="Code on GitHub: pacman/qlearning.py, lines 53 to 59">32</a></span>
+  </div>
+  <p>Here <span class="math">r</span> is the reward of the turn, <span class="math">s'</span> is the position after the ghosts have moved, and the maximum runs over the legal moves <span class="math">a'</span> in <span class="math">s'</span>. The discount factor <span class="math">\gamma = 0.9</span> sets how much the next turn's value counts. The <b>temporal-difference (TD) error</b> <span class="math">\delta</span> is the gap between the target and the expectation. The <b>step size</b> <span class="math">\alpha</span> (the learning rate) is 0.01 at the start of training and falls to 0.001 by its end.</p>
+  <p>The maximum is over the next position's moves, so the update learns the value of the best play from there. This is <b>Watkins' Q-learning</b>, which is <b>off-policy</b>: the moves the agent actually makes, including random exploration, do not enter the target<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L1-L20" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 1–20" aria-label="Code on GitHub: pacman/qlearning.py, lines 1 to 20">33</a>. A weight moves only on turns where its feature is non-zero. The bias, which is always 1, moves on every turn, while the power feature moves only on turns that eat a power pellet.</p>
+  <p>The reward for a turn is the points it scores, minus 1 as a small cost per turn so that a quicker clear is preferred, minus 300 when Pac-Man is caught. The penalty is larger than the points available before a death. A game that times out is treated as ended, so its target is just the reward<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L43-L44" target="_blank" rel="noopener" title="pacman/engine.py, lines 43–44, 99–104" aria-label="Code on GitHub: pacman/engine.py, lines 43 to 44, 99 to 104">34</a>.</p>
+  <div class="math-fig">
+    <!-- pacman/engine.py:99-104 (learning_reward), 43-44 (STEP_COST, DEATH_PENALTY) -->
+    <div class="math math-block">r = \text{points} - 1 - 300 \cdot \mathbf{1}_{\text{caught}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py#L43-L44" target="_blank" rel="noopener" title="pacman/engine.py, lines 43–44, 99–104" aria-label="Code on GitHub: pacman/engine.py, lines 43 to 44, 99 to 104">34</a></span>
+  </div>
+  <p>The trainer's loop is shown below. It picks each move with <span class="math">\varepsilon</span>-greedy exploration: with probability <span class="math">\varepsilon</span> a uniformly random legal move, otherwise the move with the highest Q-value, with exact ties broken at random<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L101-L104" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 101–104" aria-label="Code on GitHub: pacman/qlearning.py, lines 101 to 104">35</a>. After each turn it calls the update once.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L69-L127" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 69–127, 40–60" aria-label="Code on GitHub: pacman/qlearning.py, lines 69 to 127, 40 to 60">36</a></span>
+    <pre class="pseudo-simple">function TRAIN(episodes):
+    w ← zeros, one per feature
+    for each episode:
+        play one game with ε-greedy moves
+        after each turn, nudge w toward the target (TD-UPDATE)
+    return w</pre>
+    <pre class="pseudo-full" hidden>function TRAIN(episodes, seed, mazes, α, γ, ε):
+    rng ← random generator with seed
+    w ← [0, ..., 0]                                       # 13 weights
+    recent ← []
+    for ep from 0 to episodes − 1:
+        progress ← min(1, ep / max(1, 0.8 × episodes))
+        eps ← ε-start + (ε-end − ε-start) × progress
+        step ← α-start + (α-end − α-start) × ep / max(1, episodes − 1)
+        game ← a new game on mazes[ep mod len(mazes)], seed ← rng.randrange(2^31)
+        feats ← FEATURES(game.state)                      # f(s, a) for each legal a
+        while game is not over:
+            values ← {a: w · feats[a] for each legal a}
+            if rng.random() &lt; eps:
+                action ← a uniform random legal move
+            otherwise:
+                action ← the argmax of values, ties at random
+            turn ← game.step(action)
+            reward ← turn.points − 1, minus 300 if death is in turn.events
+            if game is over:
+                next-feats ← []
+            otherwise:
+                next-feats ← FEATURES(game.state)
+            TD-UPDATE(w, feats[action], reward, next-feats, step, γ)
+            feats ← next-feats
+        recent.append((final score, won))
+        if ep + 1 is a multiple of 25, or ep + 1 = episodes:
+            log the mean score and win rate of recent, then clear recent
+    return w
+
+function TD-UPDATE(w, feats, reward, next-feats, α, γ):
+    target ← reward
+    if next-feats is not empty:
+        target ← target + γ × max over f in next-feats of (w · f)
+    error ← target − w · feats
+    for each i: w[i] ← w[i] + α × error × feats[i]
+    return error</pre>
+  </div>
+  <p>The full version has three details that matter. The bootstrapped maximum is computed before any weight changes, so it uses the weights from before this turn. A game that ends, by a win, a death or a timeout, passes an empty list of next features, so its target is the reward alone. And the exploration coin and the move choice both draw from the trainer's own generator, so a run with the same arguments produces the same weights.</p>
+  <p>The trainer draws each game's seed from its own generator and never uses the benchmark seeds, so the results below are not training results<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L88" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 88, 96–97" aria-label="Code on GitHub: pacman/qlearning.py, lines 88, 96 to 97">37</a>.</p>
 
   <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">Self-play alternates between Neon Lanes and Vault for 3000 games, trainer seed 1, starting from zero weights. Step size α falls linearly from 0.01 to 0.001 over the run. Discount γ is 0.9. Exploration ε falls linearly from 0.3 to 0.02 over the first 2400 games, then stays at 0.02. Games stop at 300 turns. These are the trainer's defaults, and the trained block in weights.json records the same settings. The last 25 training games, at ε = 0.02, averaged 852 points and 5 wins. Those are training games, not the benchmark.</p>
+  <p>The shipped weights come from 3000 self-play games. The games alternate between Neon Lanes and Vault, starting from zero weights, with trainer seed 1. The defaults are set in the train command and in the train function, and the trained block of the weights file records the same settings<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/__main__.py#L33-L34" target="_blank" rel="noopener" title="pacman/__main__.py, lines 33–34" aria-label="Code on GitHub: pacman/__main__.py, lines 33 to 34">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L69-L78" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 69–78" aria-label="Code on GitHub: pacman/qlearning.py, lines 69 to 78">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/data/weights.json" target="_blank" rel="noopener" title="pacman/data/weights.json" aria-label="Code on GitHub: pacman/data/weights.json">25</a>.</p>
+  <div class="math-fig">
+    <!-- pacman/qlearning.py:93-95 (step size and epsilon schedules) -->
+    <div class="math math-block">\alpha_{ep} = \alpha_{\text{start}} + (\alpha_{\text{end}} - \alpha_{\text{start}})\,\frac{ep}{N - 1}, \qquad \varepsilon_{ep} = \varepsilon_{\text{start}} + (\varepsilon_{\text{end}} - \varepsilon_{\text{start}})\,\min\!\left(1,\, \frac{ep}{0.8\,N}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L93-L95" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 93–95" aria-label="Code on GitHub: pacman/qlearning.py, lines 93 to 95">40</a></span>
+  </div>
+  <p>Here <span class="math">ep</span> counts episodes from 0, and <span class="math">N = 3000</span> is the number of episodes. The step size <span class="math">\alpha</span> falls linearly from 0.01 to 0.001 across the whole run. The exploration rate <span class="math">\varepsilon</span> falls linearly from 0.3 to 0.02 over the first 2400 games, and then stays at 0.02.</p>
+  <p>The log writes a record every 25 games: the mean score and win rate over that window, the current <span class="math">\varepsilon</span>, and the weights<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py#L114-L126" target="_blank" rel="noopener" title="pacman/qlearning.py, lines 114–126" aria-label="Code on GitHub: pacman/qlearning.py, lines 114 to 126">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_train_log.jsonl" target="_blank" rel="noopener" title="results/pacman_train_log.jsonl" aria-label="Code on GitHub: results/pacman_train_log.jsonl">42</a>. The last record covers the final 25 training games, played at <span class="math">\varepsilon = 0.02</span>. Those games averaged 852 points and 5 wins, a 20% win rate. They are training games and are not the benchmark.</p>
 
   <h3 class="hiw-sub">Results on fixed seeds</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Win rate</th><th class="num">Mean score</th><th class="num">Mean turns</th></tr></thead><tbody>
-    <tr class="best"><td>Q-learning</td><td class="num">64.2%</td><td class="num">1350.3</td><td class="num">193.9</td></tr>
-    <tr><td>Reflex</td><td class="num">0.5%</td><td class="num">157.5</td><td class="num">22.8</td></tr>
-    <tr><td>Random</td><td class="num">0.0%</td><td class="num">45.5</td><td class="num">8.9</td></tr>
+  <p>The benchmark plays each agent on both mazes with seeds 10000 to 10199<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/benchmark.py#L19" target="_blank" rel="noopener" title="pacman/benchmark.py, lines 19, 22–52" aria-label="Code on GitHub: pacman/benchmark.py, lines 19, 22 to 52">43</a>. That is 200 games per maze and 400 per agent, and the seeds are apart from the trainer's game seeds. The same seeds replay the same games for every agent, so the comparison is fair.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Win rate</th><th class="num">Mean score</th><th class="num">Mean turns</th><th class="num">Won / lost / timeout</th></tr></thead><tbody>
+    <tr class="best"><td>Q-learning</td><td class="num">64.2%</td><td class="num">1350.3</td><td class="num">193.9</td><td class="num">257 / 47 / 96</td></tr>
+    <tr><td>Reflex</td><td class="num">0.5%</td><td class="num">157.5</td><td class="num">22.8</td><td class="num">2 / 395 / 3</td></tr>
+    <tr><td>Random</td><td class="num">0.0%</td><td class="num">45.5</td><td class="num">8.9</td><td class="num">0 / 400 / 0</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">200 games per maze (400 per agent), seeds 10000 to 10199, chosen apart from the trainer's own game seeds. Q-learning wins 43.5% on Neon Lanes and 85.0% on Vault.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/features.py">pacman/features.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/qlearning.py">pacman/qlearning.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/lookahead.py">pacman/lookahead.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/ghosts.py">pacman/ghosts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/agents.py">pacman/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/engine.py">pacman/engine.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/search.py">pacman/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/data/weights.json">pacman/data/weights.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_benchmark.md">results/pacman_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_train_log.jsonl">results/pacman_train_log.jsonl</a></p>
+  <p class="hiw-note">Q-learning wins 43.5% on Neon Lanes and 85.0% on Vault. Reflex wins 0.5% on each maze, with mean scores of 178.2 and 136.8. The table comes from <code style="overflow-wrap:anywhere">python -m pacman benchmark --games 200</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_benchmark.md" target="_blank" rel="noopener" title="results/pacman_benchmark.md" aria-label="Code on GitHub: results/pacman_benchmark.md">44</a>.</p>
+  <p>The match runs the Q-agent on the same seeds against both ghost policies<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pacman/match.py#L1-L9" target="_blank" rel="noopener" title="pacman/match.py, lines 1–9, 20–49" aria-label="Code on GitHub: pacman/match.py, lines 1 to 9, 20 to 49">45</a>. The learned weights were trained only against the A* ghosts, so the chance row measures how well they carry over, not what they were fitted to.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Ghosts</th><th class="num">Win rate</th><th class="num">Mean score</th><th class="num">Mean turns</th><th class="num">Won / lost / timeout</th></tr></thead><tbody>
+    <tr class="best"><td>AI ghosts (A* routes)</td><td class="num">64.2%</td><td class="num">1350.3</td><td class="num">193.9</td><td class="num">257 / 47 / 96</td></tr>
+    <tr><td>Chance (fixed odds)</td><td class="num">46.2%</td><td class="num">1513.7</td><td class="num">110.8</td><td class="num">185 / 215 / 0</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Against chance ghosts the agent wins less often and its games are shorter, but its mean score is higher. The table comes from <code style="overflow-wrap:anywhere">python -m pacman match --games 200</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/pacman_chance_match.md" target="_blank" rel="noopener" title="results/pacman_chance_match.md" aria-label="Code on GitHub: results/pacman_chance_match.md">46</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/pacman.js"></script>
 </body>

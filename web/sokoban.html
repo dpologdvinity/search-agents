@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="sokoban.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,20 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">10 // PUSH SEARCH · DEADLOCK PRUNING</div>
+      <div class="proj-pg-tag">10 // PUSH SEARCH</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="SOKOBAN">SOKOBAN</h1>
-      <div class="proj-pg-sub">Push every box onto a goal. The search runs over pushes, not steps, and it throws away any position where a box can no longer reach a goal.</div>
+      <div class="proj-pg-sub">Push every box onto a goal. The solver searches over pushes and drops positions that can no longer be finished.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
         <span class="stat-chip">PUSHES <span class="val" id="chip-pushes">0</span></span>
-        <span class="stat-chip">MOVES <span class="val" id="chip-moves">0</span></span>
         <span class="stat-chip green">OPTIMAL <span class="val" id="chip-optimal">—</span></span>
         <span class="stat-chip">MATCHING BOUND <span class="val" id="chip-bound">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to push every box onto a goal, the pink ring. Walk with the arrow keys, W A S D or the pad on a narrow screen; a move into a box pushes it one square if the square beyond is open.</p>
+    <p style="margin-top:0.5rem">U undoes a move and R restarts the level. HINT shows the solver's next push from this position, and SOLVE animates the rest of its plan.</p>
+    <p style="margin-top:0.5rem">Pick an ALGORITHM, turn DEADLOCK PRUNING on or off, and press COMPARE to see how many nodes each setting expands.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -55,16 +62,22 @@
         </div>
         <div class="field-hint" id="sok-note">Arrow keys or W A S D walk and push. U undo, R restart.</div>
         <div class="sok-controls">
-          <button class="cyber-btn pink" id="btn-undo" type="button" aria-label="Undo the last move"><span class="btn-txt">↶ UNDO</span></button>
-          <button class="cyber-btn" id="btn-restart" type="button" aria-label="Restart the level"><span class="btn-txt">⟲ RESTART</span></button>
-          <button class="cyber-btn green" id="btn-hint" type="button" aria-label="Show the solver's next push"><span class="btn-txt">✦ HINT</span></button>
-          <button class="cyber-btn" id="btn-solve" type="button" aria-label="Solve from here and animate"><span class="btn-txt">◉ SOLVE</span></button>
-          <button class="cyber-btn" id="btn-stop" type="button" aria-label="Stop the animation" disabled><span class="btn-txt">■ STOP</span></button>
+          <button class="cyber-btn pink" id="btn-undo" type="button" aria-label="Undo the last move" title="Take back the last walk or push"><span class="btn-txt">↶ UNDO</span></button>
+          <button class="cyber-btn" id="btn-restart" type="button" aria-label="Restart the level" title="Return every box and the player to the start of the level"><span class="btn-txt">⟲ RESTART</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" aria-label="Show the solver's next push" title="Search from here and show only the walk and push that come next"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-solve" type="button" aria-label="Solve from here and animate" title="Search from here and animate the whole plan"><span class="btn-txt">◉ SOLVE</span></button>
+          <button class="cyber-btn" id="btn-stop" type="button" aria-label="Stop the animation" title="Stop the animation after the current move" disabled><span class="btn-txt">■ STOP</span></button>
         </div>
         <div class="sok-toggles">
-          <button class="cyber-btn pink" id="tog-dead" type="button" aria-pressed="false"><span class="btn-txt">DEAD SQUARES</span></button>
-          <button class="cyber-btn" id="tog-dist" type="button" aria-pressed="false"><span class="btn-txt">PUSH DISTANCE</span></button>
-          <button class="cyber-btn" id="tog-pairs" type="button" aria-pressed="true"><span class="btn-txt">MATCHING LINES</span></button>
+          <button class="cyber-btn pink" id="tog-dead" type="button" aria-pressed="false" title="Shade the dead squares red: a box there can never reach a goal"><span class="btn-txt">DEAD SQUARES</span></button>
+          <button class="cyber-btn" id="tog-dist" type="button" aria-pressed="false" title="Show the push distance from each square to its nearest reachable goal"><span class="btn-txt">PUSH DISTANCE</span></button>
+          <button class="cyber-btn" id="tog-pairs" type="button" aria-pressed="true" title="Draw the cheapest pairing of boxes and goals, labelled with its pushes"><span class="btn-txt">MATCHING LINES</span></button>
+        </div>
+        <div class="sok-pad" role="group" aria-label="Touch controls: walk or push">
+          <button class="cyber-btn" type="button" data-dir="w" aria-label="Move up" title="Walk or push up"><span class="btn-txt">▲</span></button>
+          <button class="cyber-btn" type="button" data-dir="a" aria-label="Move left" title="Walk or push left"><span class="btn-txt">◀</span></button>
+          <button class="cyber-btn" type="button" data-dir="s" aria-label="Move down" title="Walk or push down"><span class="btn-txt">▼</span></button>
+          <button class="cyber-btn" type="button" data-dir="d" aria-label="Move right" title="Walk or push right"><span class="btn-txt">▶</span></button>
         </div>
       </div>
 
@@ -87,7 +100,7 @@
       <div style="margin-top:1.4rem">
         <div class="section-title pink-ttl">NODES EXPANDED: PRUNING OFF VS ON</div>
         <div class="viz-panel">
-          <div class="viz-title" id="cmp-title">Press COMPARE to run the same search twice, once with deadlock pruning and once without.</div>
+          <div class="viz-title" id="cmp-title">Press COMPARE to run this search with pruning off and on.</div>
           <div class="sok-counters">
             <div class="sok-counter off">
               <div class="sok-counter-lbl">PRUNING OFF</div>
@@ -103,17 +116,17 @@
             </div>
           </div>
           <div class="sok-compare-row">
-            <button class="cyber-btn green" id="btn-compare" type="button"><span class="btn-txt">▶ COMPARE</span></button>
+            <button class="cyber-btn green" id="btn-compare" type="button" title="Run the same search twice, with deadlock pruning off and on, from this position"><span class="btn-txt">▶ COMPARE</span></button>
             <span class="sok-spin" id="cmp-spin" hidden aria-live="polite">searching…</span>
           </div>
-          <div class="field-hint">Counters replay the run's progress samples from the server, then settle on the measured count.</div>
         </div>
       </div>
 
-      <div style="margin-top:1.4rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold">
+        <summary>Game log</summary>
+        <div class="field-hint">Moves so far: <span id="chip-moves">0</span></div>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -122,7 +135,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">WAREHOUSE</div>
-            <select class="cyber-select" id="sel-level" style="width:100%" aria-label="Level"></select>
+            <select class="cyber-select" id="sel-level" style="width:100%" aria-label="Level" title="Choose one of the 12 warehouses"></select>
           </div>
           <div class="field-hint" id="level-note"></div>
         </div>
@@ -132,7 +145,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">ALGORITHM</div>
-            <select class="cyber-select" id="sel-algo" style="width:100%" aria-label="Search algorithm">
+            <select class="cyber-select" id="sel-algo" style="width:100%" aria-label="Search algorithm" title="A* finds the fewest pushes. GREEDY is fast but may not. BFS uses no heuristic.">
               <option value="astar" selected>A* (optimal)</option>
               <option value="greedy">GREEDY (fast, not optimal)</option>
               <option value="bfs">BFS (no heuristic)</option>
@@ -140,95 +153,341 @@
           </div>
           <div id="heur-wrap">
             <div class="field-lbl">HEURISTIC</div>
-            <select class="cyber-select" id="sel-heur" style="width:100%" aria-label="Heuristic">
+            <select class="cyber-select" id="sel-heur" style="width:100%" aria-label="Heuristic" title="MATCHING: cheapest one-to-one pairing of boxes and goals. SIMPLE: each box's distance to its nearest goal.">
               <option value="matching" selected>MATCHING (Hungarian)</option>
               <option value="simple">SIMPLE (nearest goal per box)</option>
             </select>
           </div>
-          <button class="cyber-btn pink" id="btn-prune" type="button" aria-pressed="true" style="width:100%"><span class="btn-txt">DEADLOCK PRUNING: ON</span></button>
-        </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">HOW IT SEARCHES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">THE MOVES ARE PUSHES</div>
-            <div class="field-hint">Walking is free: the player's reachable region is one state. Only pushes create new states, so the search depth is the push count.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--red);margin-bottom:0.3rem">DEAD SQUARES</div>
-            <div class="field-hint">Pull every goal backwards along valid pushes. A square no pull reaches is dead: a box there can never be moved to a goal.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">FROZEN BOXES</div>
-            <div class="field-hint">A box blocked (by a wall or another frozen box) on at least one side horizontally and at least one side vertically can never be pushed again. Frozen off-goal means a deadlock, including the 2x2 block.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">MATCHING BOUND</div>
-            <div class="field-hint">Each box must end on its own goal. The cheapest one-to-one pairing of boxes and goals (Hungarian algorithm) never undercounts the pushes left.</div>
-          </div>
+          <button class="cyber-btn pink" id="btn-prune" type="button" aria-pressed="true" style="width:100%" title="Drop a position with a dead square or a frozen box before the search stores it"><span class="btn-txt">DEADLOCK PRUNING: ON</span></button>
         </div>
       </div>
     </div>
   </div>
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The solver searches over pushes, not steps, because walking is free. One search loop runs three ways (A*, greedy, breadth-first), and two lower bounds on the pushes still needed, plus deadlock checks, keep it away from positions that cannot be finished.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>A* search</h3>
-      <p class="hiw-plain"><b>New to this?</b> A* plans like a driver who adds the miles already driven to a guess of the miles still to go, and always tries the route with the smallest total first. If the guess never overstates the distance left, the first destination reached is by the shortest route.</p>
-      <p>Each state is a box layout, and its priority is g + h: pushes so far plus the bound. The page's default is A* with the matching bound and pruning on. Those controls drive HINT and SOLVE, and COMPARE runs both pruning settings.</p>
-      <ul>
-        <li>The bound never overestimates, so the first goal taken off the queue has the fewest pushes.</li>
-        <li>Across all 12 levels, matching with pruning expands 154 nodes; without pruning, 269.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy best-first</h3>
-      <p class="hiw-plain"><b>New to this?</b> Greedy search is A* without the distance already travelled. It always heads for whichever option looks closest to done. That makes it quick, but a path that looks close can be a dead end, so the plan it returns can be longer than the best one.</p>
-      <p>Its priority is h alone, with g only breaking ties. The benchmark pairs it with the matching bound.</p>
-      <ul>
-        <li>It solves all 12 levels with pruning on and off, but 11 of the 12 plans are optimal.</li>
-        <li>On the Aisle level it returns a 20-push plan where the optimum is 18.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Breadth-first search</h3>
-      <p class="hiw-plain"><b>New to this?</b> Breadth-first search checks every position one push away, then every position two pushes away, like ripples from a dropped stone. It always finds the fewest pushes, but it never looks toward the goal.</p>
-      <p>Its priority is the push count g alone, with no heuristic. It is the baseline for the node counts.</p>
-      <ul>
-        <li>With a 20,000-node budget it solves 8 of 12 levels with pruning off and 10 of 12 with pruning on.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Matching bound (Hungarian)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Suppose five people each need one of five chairs, and every person walks a different distance to every chair. The Hungarian algorithm finds the seating with the least total walking exactly, without trying every seating.</p>
-      <p>h is the minimum total push distance over all one-to-one pairings of boxes and goals, so no two boxes can claim the same goal. It runs in O(n&sup3;) for n boxes.</p>
-      <ul>
-        <li>It never exceeds the pushes really left, so A* stays optimal.</li>
-        <li>tests/test_sokoban.py checks it against brute force over every permutation.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Simple bound (nearest goal)</h3>
-      <p class="hiw-plain"><b>New to this?</b> It is like estimating a delivery round by adding up each parcel's distance to its nearest drop-off. The sum is easy to get, but two parcels may pick the same drop-off, so the total can come out too low.</p>
-      <p>h is the sum over boxes of the push distance to the nearest goal. It is admissible but weaker than the matching bound.</p>
-      <ul>
-        <li>A* with it expands 10,907 nodes across all 12 levels with pruning on, against 154 with the matching bound.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Deadlock pruning</h3>
-      <p class="hiw-plain"><b>New to this?</b> Some positions are lost before the search goes further. A sofa carried into a room corner, against two walls, can never be pulled back out. Spotting such positions early means the search never explores the hopeless branch below them.</p>
-      <p>Dead squares come from a backward search from each goal: a box on any other square can never reach a goal. A frozen box has a wall or frozen box on one horizontal side and one vertical side, so it can never move; off a goal, that is a deadlock. Pruning drops such a successor before it is stored.</p>
-      <ul>
-        <li>Pruning never removes a solvable state, so the optimal push count is the same either way.</li>
-      </ul>
-    </article>
+  <p class="hiw-lede">The solver is a <b>search</b> over pushes. Walking costs nothing in the search, so each step of the search is one push. The search stops at the first position where every box sits on a goal. Three priority rules (A*, greedy best-first and breadth-first search) share one loop. Two lower bounds on the pushes still needed, and two deadlock tests, keep the loop away from positions that cannot be finished.</p>
+
+  <h3 class="hiw-sub">States and pushes</h3>
+  <p class="hiw-note">A <b>state</b> is what the search remembers about a position. The player's exact square matters only through the region it can walk to, because every square in that region can start the same pushes. So a state keeps the smallest square of the player's region and the sorted list of box squares. The <b>walk region</b> R(p, B) is the set of floor squares the player can reach from p without crossing a box.</p>
+  <!-- sokoban/search.py:113,176 -->
+  <div class="math-fig">
+    <div class="math math-block">s = \bigl(\min R(p, B),\ B\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L113" target="_blank" rel="noopener" title="sokoban/search.py, lines 113, 176" aria-label="Code on GitHub: sokoban/search.py, lines 113, 176">1</a></span>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
+  <p class="hiw-note">Here <span class="math">p</span> is the player's square, <span class="math">B</span> is the set of box squares, and <span class="math">\min R(p, B)</span> is the smallest square in the walk region. The first state is built from the level's start. Each successor is made by a push: for each square <span class="math">p</span> in the walk region and each direction, if a box sits on the next square <span class="math">b</span> and the square beyond it is open and empty, the box moves there. The player then stands on <span class="math">b</span>. Each push costs one unit, so the depth of the search is the number of pushes.</p>
+
+  <h3 class="hiw-sub">A* search</h3>
+  <p class="hiw-note"><b>A\*</b> is a best-first search that always expands the state with the smallest priority <span class="math">f = g + h</span>. Here <span class="math">g</span> is the number of pushes from the start to the state, and <span class="math">h</span> is a <b>heuristic</b>, an estimate of the pushes still needed. A heuristic is <b>admissible</b> when it never exceeds the pushes really left. With an admissible heuristic, the first goal state taken from the queue has the fewest pushes.</p>
+  <p class="hiw-note">The page starts with A* using the matching bound and deadlock pruning on. HINT and SOLVE use the selected algorithm and heuristic from the side panel. COMPARE runs the same search twice, once with pruning off and once with it on.</p>
+  <!-- sokoban/search.py:123-128 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{priority}(g, h) = \begin{cases} (g,\ 0) & \text{BFS} \\ (h,\ g) & \text{greedy} \\ (g + h,\ h) & \text{A*} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L123-L128" target="_blank" rel="noopener" title="sokoban/search.py, lines 123–128" aria-label="Code on GitHub: sokoban/search.py, lines 123 to 128">2</a></span>
+  </div>
+  <p class="hiw-note">The priority is a pair. The first number is compared first, and the second breaks ties. For A*, the tie goes to the state with the smaller <span class="math">h</span>, which is the state closer to the goal by the estimate.</p>
+  <!-- sokoban/search.py:137-198, 201-225 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L86-L198" target="_blank" rel="noopener" title="sokoban/search.py, lines 86–198, 201–225" aria-label="Code on GitHub: sokoban/search.py, lines 86 to 198, 201 to 225">3</a></span>
+    <pre class="pseudo-simple">function SEARCH(level, rule):                   # rule is BFS, GREEDY or A*
+    OPEN ← {start state};  best-g[start] ← 0
+    while OPEN is not empty:
+        s ← the state in OPEN with the smallest priority
+        remove s from OPEN
+        if every box of s is on a goal:
+            return PLAN(s)
+        for each push t from s:                  # walking between pushes is free
+            if t is a deadlock:
+                continue                         # pruned before it is stored
+            if g(s) + 1 &lt; best-g[t]:
+                best-g[t] ← g(s) + 1
+                add t to OPEN
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>constants: DEFAULT-NODES = 20,000, DEFAULT-SECONDS = 10
+
+function SEARCH(level, algorithm, heuristic, prune, budget, time-limit):
+    if algorithm = BFS:
+        heuristic ← none                         # BFS has no heuristic
+    if prune and IS-DEADLOCK(start boxes):
+        return status exhausted                  # no push can help
+    start ← (MIN-REACHABLE(start player, start boxes), sorted start boxes)
+    best-g[start] ← 0;  info[start] ← (none, start player, −1, −1)
+    h-cache ← empty                              # h depends only on the boxes
+    CLOSED ← empty set
+    counter ← 0                                  # breaks ties between equal entries
+    OPEN ← heap holding (PRIORITY(0, h(start)), counter, start, 0)
+    expanded ← 0;  generated ← 0;  pruned ← 0
+    while OPEN is not empty:
+        (key, g) ← the entry in OPEN with the smallest priority; remove it
+        if key is in CLOSED or g &gt; best-g[key]:    # stale entry: expanded already, or a cheaper path came later
+            continue
+        boxes ← the box squares of key
+        if boxes = goals:                        # every box is on a goal
+            return status solved, PLAN(key)
+        if expanded ≥ budget:
+            return status budget
+        if the time since the start &gt; time-limit:
+            return status time
+        add key to CLOSED;  expanded ← expanded + 1
+        for each square p in WALK-REGION(player square in info[key], boxes):
+            for each direction d in (up, down, left, right):
+                b ← p + d                        # the square of the box to push
+                if no box is on b:
+                    continue
+                nb ← b + d                       # where the box lands
+                if nb is a wall or holds a box:
+                    continue
+                generated ← generated + 1
+                new-boxes ← (boxes − {b}) ∪ {nb}
+                if prune and IS-DEADLOCK(new-boxes):
+                    pruned ← pruned + 1
+                    continue
+                ckey ← (MIN-REACHABLE(b, new-boxes), new-boxes)   # the player now stands on b
+                if g + 1 ≥ best-g[ckey]:         # best-g of an unseen key is infinity
+                    continue
+                best-g[ckey] ← g + 1
+                remove ckey from CLOSED          # reopen: a cheaper path was found
+                info[ckey] ← (key, b, b, d)      # parent, player square, box square before the push, direction
+                if new-boxes is not in h-cache:
+                    h-cache[new-boxes] ← h(new-boxes)
+                counter ← counter + 1
+                push (PRIORITY(g + 1, h-cache[new-boxes]), counter, ckey, g + 1) onto OPEN
+    return status exhausted
+
+function PLAN(final-key):
+    chain ← the keys from the start to final-key, by following the parent links in info
+    player ← start player;  boxes ← start boxes;  moves ← empty
+    for each key in chain:
+        (parent, cell, b, d) ← info[key]
+        push-cell ← b − d                        # the player stands behind the box
+        walk ← WALK-PATH(player, push-cell, boxes)   # breadth-first, around the boxes
+        if walk does not exist:
+            raise error "the planned push cell is unreachable"
+        append walk, then the push letter in capitals, to moves
+        boxes ← (boxes − {b}) ∪ {b + d};  player ← b
+    return moves</pre>
+  </div>
+  <p class="hiw-note"><b>Lazy deletion.</b> The open list is a heap, and a state that gets a cheaper path is pushed again rather than moved in place. The older entry stays in the heap with a larger g, and the stale check skips it when it reaches the top.</p>
+  <p class="hiw-note"><b>Reopening.</b> When a cheaper path reaches a state that was already expanded, the state leaves the closed set and is expanded again. With a consistent heuristic this never happens. The matching bound's Manhattan fallback can break consistency, so reopening keeps A* optimal for any admissible heuristic.</p>
+  <p class="hiw-note"><b>Plan replay.</b> Each state stores its parent, the player's square, and the box that was pushed. PLAN walks the chain from the start and replays each push, so the plan is a move string that the page and the terminal can replay.</p>
+  <p class="hiw-note"><b>Budgets.</b> The node budget counts expansions, and the time limit is checked once for each state taken from the queue. The run also records a progress sample every <span class="math">\max\bigl(1, \lfloor \text{budget} / 200 \rfloor\bigr)</span> expansions, and the COMPARE counters replay those samples.</p>
+
+  <h3 class="hiw-sub">Greedy best-first search</h3>
+  <p class="hiw-note"><b>Greedy best-first search</b> uses the same loop with the priority <span class="math">(h, g)</span>: it always expands the state that looks closest to the goal by the heuristic, and g only breaks ties. The loop expands few states, but a state that looks close can lead to a dead end, so the plan it returns can be longer than the shortest one. The benchmark pairs it with the matching bound.</p>
+  <ul>
+    <li>It solves all 12 levels with pruning on and off, and 11 of the 12 plans are optimal in both runs.</li>
+    <li>On the Aisle level it returns a 20-push plan where the optimum is 18.</li>
+  </ul>
+
+  <h3 class="hiw-sub">Breadth-first search</h3>
+  <p class="hiw-note"><b>Breadth-first search</b> uses the same loop with the priority <span class="math">g</span> alone. It has no heuristic, so <span class="math">h = 0</span>. Every push costs one unit, so the first goal state taken from the queue has the fewest pushes, but it never looks toward the goal. It is the baseline for the node counts.</p>
+  <ul>
+    <li>With a 20,000-node budget it solves 8 of 12 levels with pruning off and 10 of 12 with pruning on.</li>
+  </ul>
+
+  <h3 class="hiw-sub">Matching bound (Hungarian algorithm)</h3>
+  <p class="hiw-note">Each box must end on its own goal, so the pushes still needed are at least the cost of the cheapest one-to-one pairing of boxes and goals. The cost <span class="math">c(b, g)</span> of pairing box <span class="math">b</span> with goal <span class="math">g</span> is the push distance from <span class="math">b</span> to <span class="math">g</span>, defined below. When no push path joins them, the cost is the Manhattan distance, the number of rows plus columns between the two squares. The matching bound is the minimum total cost over all pairings.</p>
+  <!-- sokoban/heuristics.py:34-37; sokoban/tables.py:83-97 -->
+  <div class="math-fig">
+    <div class="math math-block">h_{\text{match}}(B) = \min_{\sigma} \sum_{b \in B} c\bigl(b,\ \sigma(b)\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py#L34-L37" target="_blank" rel="noopener" title="sokoban/heuristics.py, lines 34–37" aria-label="Code on GitHub: sokoban/heuristics.py, lines 34 to 37">4</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\sigma</span> ranges over every one-to-one pairing of the boxes in <span class="math">B</span> with the goals <span class="math">G</span>, and <span class="math">\sigma(b)</span> is the goal paired with box <span class="math">b</span>. The number of boxes equals the number of goals, so each pairing covers every goal once. The minimum over pairings is computed by the Hungarian algorithm, an exact method for this <b>minimum-cost matching problem</b> that runs in O(n&sup3;) time for n boxes. It keeps dual potentials for the rows and columns, which keep every reduced cost non-negative, and it grows an alternating tree from one unmatched row at a time until it finds a free column.</p>
+  <!-- sokoban/matching.py:20-72 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py#L34-L37" target="_blank" rel="noopener" title="sokoban/heuristics.py, lines 34–37" aria-label="Code on GitHub: sokoban/heuristics.py, lines 34 to 37">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/matching.py#L20-L72" target="_blank" rel="noopener" title="sokoban/matching.py, lines 20–72" aria-label="Code on GitHub: sokoban/matching.py, lines 20 to 72">5</a></span>
+    <pre class="pseudo-simple">function MATCHING-BOUND(boxes):
+    cost ← the cost of pairing each box with each goal    # push distance, or Manhattan fallback
+    total ← MIN-COST-MATCHING(cost)                       # cheapest one-to-one pairing
+    return total</pre>
+    <pre class="pseudo-full" hidden>function MIN-COST-MATCHING(cost):              # rows and columns are numbered from 1 here
+    n ← the number of rows
+    u, v ← n + 1 zeros                            # potentials for rows and columns
+    p, way ← n + 1 zeros                          # p[j]: the row matched to column j, 0 for none
+    for i from 1 to n:
+        p[0] ← i;  j0 ← 0
+        minv ← n + 1 copies of infinity           # cheapest reduced cost from the tree to each column
+        used ← n + 1 copies of false
+        while True:
+            used[j0] ← true
+            i0 ← p[j0]
+            delta ← infinity;  j1 ← 0
+            for j from 1 to n:
+                if not used[j]:
+                    cur ← cost[i0][j] − u[i0] − v[j]     # reduced cost, never negative (the code indexes cost from 0)
+                    if cur &lt; minv[j]:
+                        minv[j] ← cur;  way[j] ← j0
+                    if minv[j] &lt; delta:
+                        delta ← minv[j];  j1 ← j
+            for j from 0 to n:
+                if used[j]:
+                    u[p[j]] ← u[p[j]] + delta;  v[j] ← v[j] − delta
+                else:
+                    minv[j] ← minv[j] − delta
+            j0 ← j1
+            if p[j0] = 0:                         # a free column: the tree has reached one
+                break
+        while True:                               # flip the augmenting path back to the root
+            j1 ← way[j0]
+            p[j0] ← p[j1]
+            j0 ← j1
+            if j0 = 0:
+                break
+    match ← n zeros
+    for j from 1 to n:
+        match[p[j] − 1] ← j − 1
+    total ← sum of cost[r][match[r]] over every row r
+    return total, match</pre>
+  </div>
+  <p class="hiw-note"><b>Potentials.</b> The vectors <span class="math">u</span> (rows) and <span class="math">v</span> (columns) are dual potentials. The <b>reduced cost</b> <span class="math">\text{cost} - u - v</span> is never negative, and it is zero on the edges the tree has made tight. Each step finds the smallest reduced cost <span class="math">\delta</span> to an unused column and shifts the potentials by it, which makes one more edge tight.</p>
+  <p class="hiw-note"><b>Augmenting path.</b> When the tree reaches a free column, the flip along <code>way</code> adds one matched pair and keeps all the others, so after row <span class="math">i</span> rows 1 to <span class="math">i</span> are matched. The costs are integers, so the total is exact.</p>
+  <p class="hiw-note">In a solvable position the matching bound never exceeds the pushes really left. A real solution gives each box its own goal, and the pushes a box makes are at least its push distance to that goal, so the solution's total is one of the pairings the minimum ranges over. A* therefore stays optimal. The algorithm is checked against a brute force over every permutation of random cost matrices up to 5 by 5. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L121-L130" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 121–130" aria-label="Code on GitHub: tests/test_sokoban.py, lines 121 to 130">6</a></p>
+
+  <h3 class="hiw-sub">Simple bound (nearest goal)</h3>
+  <p class="hiw-note">The <b>simple bound</b> sums, over the boxes, the cost of the nearest goal for each box. It needs one minimum per box and no pairing, so two boxes may choose the same goal. Dropping the one-goal-per-box rule makes it a relaxation of the matching bound, so it is never larger.</p>
+  <!-- sokoban/heuristics.py:29-31 -->
+  <div class="math-fig">
+    <div class="math math-block">h_{\text{simple}}(B) = \sum_{b \in B} \min_{g \in G} c(b, g)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py#L29-L31" target="_blank" rel="noopener" title="sokoban/heuristics.py, lines 29–31" aria-label="Code on GitHub: sokoban/heuristics.py, lines 29 to 31">7</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">G</span> is the set of goals, and <span class="math">c(b, g)</span> is the cost defined in the matching section. The bound is also admissible, because each box needs at least its cheapest cost to any goal.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py#L29-L31" target="_blank" rel="noopener" title="sokoban/heuristics.py, lines 29–31" aria-label="Code on GitHub: sokoban/heuristics.py, lines 29 to 31">7</a></span>
+    <pre class="pseudo-simple">function SIMPLE-BOUND(boxes):
+    total ← 0
+    for each box b in boxes:
+        total ← total + the smallest cost[b][g] over the goals g
+    return total                                  # two boxes may claim one goal</pre>
+    <pre class="pseudo-full" hidden>function SIMPLE-BOUND(boxes):
+    total ← 0
+    for each box b in boxes:
+        row ← cost[b]                             # one entry per goal, from BUILD-TABLES
+        total ← total + min(row)
+    return total</pre>
+  </div>
+  <p class="hiw-note">The simple bound is never larger than the matching bound, since every pairing's total is at least the sum of each box's cheapest cost. It is weaker when boxes compete for the same goal, and the benchmark shows the effect: A* with it expands 10,907 nodes across all 12 levels with pruning on, against 154 with the matching bound.</p>
+
+  <h3 class="hiw-sub">Push distances and dead squares</h3>
+  <p class="hiw-note">The <b>push distance</b> from a square <span class="math">x</span> to a goal <span class="math">g</span> is the fewest pushes that move a single box from <span class="math">x</span> to <span class="math">g</span>, with the other boxes ignored. It is computed by a backward breadth-first search from each goal, which runs the push rule in reverse: a box on <span class="math">y</span> could have been pushed there from <span class="math">x = y - \delta</span> if <span class="math">x</span> and the square <span class="math">x - \delta</span> behind it are floor.</p>
+  <!-- sokoban/tables.py:55-68 -->
+  <div class="math-fig">
+    <div class="math math-block">d_g(g) = 0, \qquad d_g(x) = 1 + \min\bigl\{\, d_g(x + \delta) \;:\; \delta \in \{-w, +w, -1, +1\},\ x \text{ and } x - \delta \text{ are floor},\ d_g(x + \delta) \text{ is defined} \,\bigr\}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py#L55-L68" target="_blank" rel="noopener" title="sokoban/tables.py, lines 55–68" aria-label="Code on GitHub: sokoban/tables.py, lines 55 to 68">8</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">w</span> is the padded width of the grid, so <span class="math">\pm w</span> steps one row and <span class="math">\pm 1</span> one column. The minimum is over the neighbours <span class="math">x + \delta</span> that already have a distance. The breadth-first order makes this the shortest push count, and an undefined distance means no push path exists. The search ignores the other boxes, so each distance is a lower bound on the real pushes.</p>
+  <p class="hiw-note">A floor square with no defined distance to any goal is a <b>dead square</b>: a box there can never reach a goal, so the state is a deadlock.</p>
+  <div class="math-fig">
+    <div class="math math-block">\text{dead}(i) = 1 \iff d_g(i) \text{ is undefined for every goal } g \in G</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py#L96" target="_blank" rel="noopener" title="sokoban/tables.py, line 96" aria-label="Code on GitHub: sokoban/tables.py, line 96">9</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">i</span> is a floor square and <span class="math">G</span> is the set of goals. The goal squares themselves have distance 0 and are never dead.</p>
+  <p class="hiw-note">The cost <span class="math">c(i, g)</span> used by both bounds is the push distance when it is defined, and the Manhattan distance between the two squares otherwise, where <span class="math">(r_i, k_i)</span> are the row and column of square <span class="math">i</span>.</p>
+  <!-- sokoban/tables.py:87-92 -->
+  <div class="math-fig">
+    <div class="math math-block">c(i, g) = \begin{cases} d_g(i) & \text{if } d_g(i) \text{ is defined} \\ |r_i - r_g| + |k_i - k_g| & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py#L87-L92" target="_blank" rel="noopener" title="sokoban/tables.py, lines 87–92" aria-label="Code on GitHub: sokoban/tables.py, lines 87 to 92">10</a></span>
+  </div>
+  <!-- sokoban/tables.py:55-68 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py#L46-L68" target="_blank" rel="noopener" title="sokoban/tables.py, lines 46–68" aria-label="Code on GitHub: sokoban/tables.py, lines 46 to 68">11</a></span>
+    <pre class="pseudo-simple">function PUSH-DISTANCES(level, goal):
+    dist ← the push count from every square back to goal    # −1 when no push path exists
+    queue ← [goal]
+    while queue is not empty:
+        y ← the front of queue
+        for each direction d:
+            x ← y − d                                       # the box came from x, pushed by d
+            if x is floor and dist[x] is unset and x − d is floor:
+                dist[x] ← dist[y] + 1
+                append x to queue
+    return dist</pre>
+    <pre class="pseudo-full" hidden>function PUSH-DISTANCES(level, goal):
+    dist ← −1 for every square                    # −1 marks unreachable, the UNREACHABLE constant
+    dist[goal] ← 0
+    queue ← [goal]
+    while queue is not empty:
+        y ← remove the front of queue
+        for each offset d in (−width, +width, −1, +1):
+            x ← y − d                             # the box could have come from x
+            if x is not floor or dist[x] ≠ −1:
+                continue
+            if x − d is not floor:                # the player must have stood at x − d
+                continue
+            dist[x] ← dist[y] + 1
+            append x to queue
+    return dist
+
+function BUILD-TABLES(level):
+    for each goal g: dist-g ← PUSH-DISTANCES(level, g)
+    for each square i:
+        if i is a wall:
+            cost[i] ← empty;  nearest[i] ← −1
+            continue
+        entries ← empty;  feasible ← empty
+        for each goal g in order:
+            if dist-g[i] ≠ −1:
+                append dist-g[i] to entries and to feasible
+            else:
+                append |row(i) − row(g)| + |column(i) − column(g)| to entries
+        cost[i] ← entries
+        if feasible is empty:
+            dead[i] ← 1
+        else:
+            nearest[i] ← min(feasible)
+    return dead, cost, nearest</pre>
+  </div>
+  <p class="hiw-note"><b>Cost table.</b> BUILD-TABLES runs PUSH-DISTANCES once per goal. The tables depend only on the walls and goals, so they are computed once per level layout and cached, and every starting position of that level reuses them. The Manhattan fallback keeps the cost finite for a pair that no push path joins, so the matching bound is defined when deadlock pruning is off. It stays a lower bound, because a real solution never pairs a box with a goal it cannot reach.</p>
+  <p class="hiw-note"><b>Example.</b> In a test row <code>#.  $ #</code>, the goal is in column 1. A box in column 4 needs 3 pushes, and a box in column 3 needs 2. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L98-L103" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 98–103" aria-label="Code on GitHub: tests/test_sokoban.py, lines 98 to 103">12</a></p>
+
+  <h3 class="hiw-sub">Frozen boxes and deadlock pruning</h3>
+  <p class="hiw-note">A <b>frozen box</b> is a box that no push can ever move again. A box can move along an axis only when both of its neighbours on that axis are free: one to stand on and one to slide into. A neighbour is <b>blocked</b> when it is a wall or a frozen box. A box is frozen when one of its two horizontal neighbours is blocked and one of its two vertical neighbours is blocked. The frozen set is the greatest set with this property. The code finds it by starting from every box and removing any box that is not blocked on both axes, until nothing changes.</p>
+  <!-- sokoban/deadlock.py:24-41 -->
+  <div class="math-fig">
+    <div class="math math-block">B_F(c) = [c \text{ is a wall}] \lor [c \in F], \qquad b \in F \iff \bigl(B_F(b-1) \lor B_F(b+1)\bigr) \land \bigl(B_F(b-w) \lor B_F(b+w)\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/deadlock.py#L24-L41" target="_blank" rel="noopener" title="sokoban/deadlock.py, lines 24–41" aria-label="Code on GitHub: sokoban/deadlock.py, lines 24 to 41">13</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">F</span> is the frozen set, <span class="math">B_F(c)</span> is 1 when square <span class="math">c</span> is blocked, and <span class="math">[\cdot]</span> is 1 when its condition holds and 0 otherwise. The squares <span class="math">b \pm 1</span> are the left and right neighbours and <span class="math">b \pm w</span> the upper and lower ones.</p>
+  <!-- sokoban/deadlock.py:44-50 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{deadlock}(B) = \bigl[\exists\, b \in B : \text{dead}(b) = 1\bigr] \lor \bigl[\exists\, f \in F(B) : f \notin G\bigr]</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/deadlock.py#L44-L50" target="_blank" rel="noopener" title="sokoban/deadlock.py, lines 44–50" aria-label="Code on GitHub: sokoban/deadlock.py, lines 44 to 50">14</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">F(B)</span> is the frozen set of the box layout <span class="math">B</span>. A position is a deadlock when a box sits on a dead square, or when a frozen box is not on a goal. A frozen box on a goal is harmless. The test ignores the player, so it is sound: it never flags a solvable position.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/deadlock.py#L24-L50" target="_blank" rel="noopener" title="sokoban/deadlock.py, lines 24–50" aria-label="Code on GitHub: sokoban/deadlock.py, lines 24 to 50">15</a></span>
+    <pre class="pseudo-simple">function FROZEN-BOXES(boxes):
+    frozen ← boxes                              # assume every box is frozen
+    while some box b in frozen is not blocked on both axes:
+        remove b from frozen                     # b can move, so it is not frozen
+    return frozen</pre>
+    <pre class="pseudo-full" hidden>function FROZEN-BOXES(level, boxes):
+    frozen ← boxes
+    changed ← true
+    while changed:
+        changed ← false
+        for each b in a copy of frozen:            # the copy is taken at the start of the pass
+            left-blocked ← (b − 1 is a wall) or (b − 1 in frozen)
+            right-blocked ← (b + 1 is a wall) or (b + 1 in frozen)
+            up-blocked ← (b − width is a wall) or (b − width in frozen)
+            down-blocked ← (b + width is a wall) or (b + width in frozen)
+            if not ((left-blocked or right-blocked) and (up-blocked or down-blocked)):
+                remove b from frozen
+                changed ← true
+    return frozen
+
+function IS-DEADLOCK(level, boxes):
+    for each box b in boxes:
+        if b is a dead square:
+            return true
+    for each frozen box f in FROZEN-BOXES(level, boxes):
+        if f is not a goal:
+            return true
+    return false</pre>
+  </div>
+  <p class="hiw-note"><b>Why a removed box can move.</b> A box with a free side on some axis can move there if the player reaches the other side, so dropping it from the set is always justified. The boxes left in the set are stuck: each one's first move would need a blocking neighbour to move first, and none of them ever does.</p>
+  <p class="hiw-note"><b>Example.</b> Four boxes in a 2 by 2 block, with the goals outside it, are all frozen and none is on a goal, so the position is a deadlock. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L108-L113" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 108–113" aria-label="Code on GitHub: tests/test_sokoban.py, lines 108 to 113">16</a></p>
+
+  <h3 class="hiw-sub">Parameters</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>What it controls</th><th class="num">Value</th></tr></thead><tbody>
     <tr><td>Push distance</td><td>Fewest pushes to move one box to one goal, ignoring the other boxes</td><td class="num">Integer, weight 1; a backward BFS per goal</td></tr>
     <tr><td>Manhattan fallback</td><td>Row and column distance, used only when no push path joins a box and a goal</td><td class="num">|row gap| + |column gap|, weight 1</td></tr>
     <tr><td>Simple bound</td><td>Sum over boxes of the push distance to the nearest goal</td><td class="num">One integer term per box</td></tr>
@@ -238,13 +497,22 @@
     <tr><td>Node budget</td><td>States expanded per run</td><td class="num">20,000 (page default and server cap)</td></tr>
     <tr><td>Time limit</td><td>Wall-clock seconds per run</td><td class="num">5 s on the server, 10 s in the benchmark</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> none is tuned or learned. The push distances, dead squares and frozen-box test follow from the push rule, and the matching total is the exact minimum for its relaxation. The Manhattan fallback is a deliberate choice that keeps the bound finite when pruning is off; it can break consistency, so the search reopens a state that a cheaper path reaches later. The 20,000-node and 5 s caps bound CPU per request on the shared server (<code>server/sokoban_api.py</code>). Levels 1 to 7 are hand-drawn; levels 8 to 12 were generated, keeping the scramble with the most optimal pushes among 40 seeds.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py">sokoban/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/heuristics.py">sokoban/heuristics.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/matching.py">sokoban/matching.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/tables.py">sokoban/tables.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/deadlock.py">sokoban/deadlock.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/levels.py">sokoban/levels.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/sokoban_benchmark.md">results/sokoban_benchmark.md</a></p>
+  <p class="hiw-note">The 20,000-node and 5 s caps bound CPU per request on the shared server. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sokoban_api.py#L33-L34" target="_blank" rel="noopener" title="server/sokoban_api.py, lines 33–34" aria-label="Code on GitHub: server/sokoban_api.py, lines 33 to 34">17</a> None of these values is tuned or learned. The push distances, dead squares and frozen-box test follow from the push rule, and the matching total is the exact minimum for its relaxation. The Manhattan fallback is a deliberate choice that keeps the bound finite when pruning is off. Levels 1 to 7 are hand-drawn. Levels 8 to 12 were generated, keeping the scramble with the most optimal pushes among 40 seeds. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/levels.py#L3-L6" target="_blank" rel="noopener" title="sokoban/levels.py, lines 3–6" aria-label="Code on GitHub: sokoban/levels.py, lines 3 to 6">18</a></p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note">The benchmark runs four configurations on all 12 levels, each with pruning off and on, under a 20,000-node budget and a 10 s limit per run. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/benchmark.py#L27-L32" target="_blank" rel="noopener" title="sokoban/benchmark.py, lines 27–32" aria-label="Code on GitHub: sokoban/benchmark.py, lines 27 to 32">19</a> The numbers below come from the committed results. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/sokoban_benchmark.md" target="_blank" rel="noopener" title="results/sokoban_benchmark.md" aria-label="Code on GitHub: results/sokoban_benchmark.md">20</a></p>
+  <ul>
+    <li>A* with the matching bound expands 154 nodes across all 12 levels with pruning on, against 269 with it off. Both runs find the optimal push count on every level.</li>
+    <li>A* with the simple bound expands 10,907 nodes across all 12 levels with pruning on, and solves 10 of 12 levels with pruning off within the budget.</li>
+    <li>Pruning never removes a solvable state. On the first eight levels the optimal push count is the same with pruning on and off. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L143-L148" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 143–148" aria-label="Code on GitHub: tests/test_sokoban.py, lines 143 to 148">21</a></li>
+  </ul>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/sokoban.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

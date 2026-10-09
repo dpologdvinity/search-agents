@@ -26,8 +26,8 @@ const BOT_VERB = { f: 'folds', k: 'checks', c: 'calls', b: 'bets', r: 'raises' }
 const KIND = { f: 'fold', k: 'call', c: 'call', b: 'bet', r: 'bet' };
 const KIND_LABEL = { fold: 'FOLD', call: 'CALL / CHECK', bet: 'BET / RAISE' };
 const KIND_ORDER = ['fold', 'call', 'bet'];
-// Pause after each move in watch mode. The server allows about 120 moves a minute, so the slowest setting
-// is the fastest that stays under the limit; the gap between hands keeps deals under 30 a minute.
+// Pause after each move in watch mode. The fastest setting sends about 100 moves a minute, under the server's
+// limit of 120; a hand takes at least one move and the gap below, so deals stay under the limit of 30 a minute.
 const WATCH_MS = { slow: 1500, normal: 1000, fast: 600 };
 const HAND_GAP_MS = 2200;
 
@@ -178,7 +178,7 @@ function renderChanceMix() {
     ? `CHANCE'S ROUND ${m.round} DECISION: it chose ${LABEL[m.action]}`
     : "CHANCE'S FIXED ODDS: the same at every card";
   renderBars(probs, m ? KIND[m.action] : null, KIND_LABEL, KIND_ORDER);
-  $('mix-note').textContent = 'Chance reads no card. It draws each action from these odds, renormalised over the legal actions: check or bet when nothing is owed, fold, call or raise when a bet is owed, and no raise once the cap is reached.';
+  $('mix-note').textContent = 'Chance reads no card: each action is drawn from these odds, over the legal actions only.';
 }
 
 function renderMix() {
@@ -186,7 +186,7 @@ function renderMix() {
   if (S.hintMode && v && v.hint) {
     $('mix-title').textContent = 'YOUR EQUILIBRIUM MIX: the probability of each action for your card here';
     renderBars(v.hint.probs);
-    $('mix-note').textContent = 'Equilibrium says play this mix. Any single action is a best response only in spots where the bot is indifferent, so mixing is part of the equilibrium, not a hedge.';
+    $('mix-note').textContent = 'The equilibrium mix for your card in this spot.';
     return;
   }
   if (opponent() === 'chance') return renderChanceMix();
@@ -197,13 +197,13 @@ function renderMix() {
     if (!m.probs) {
       // Mid-hand the mix depends on the bot's hidden card, so the page shows the action and nothing else.
       $('mix-title').textContent = `${title}. Its mix is shown at the showdown.`;
-      $('mix-note').textContent = 'The bot draws each move from a mix that depends on its own card, and that card stays hidden until the showdown. The explainer shows how often it bets with each card in this same spot.';
+      $('mix-note').textContent = 'The mix depends on the bot\'s hidden card. The explainer shows its bet rate for each card.';
       $('mix-bars').replaceChildren();
       return;
     }
     $('mix-title').textContent = `${title}, ${pct(m.probs[m.action])} of the time`;
     renderBars(m.probs, m.action);
-    $('mix-note').textContent = 'Its card is shown now. The mix only depends on what the bot can see: its own card, the public card once it is turned up, and the betting so far.';
+    $('mix-note').textContent = 'Its card is now shown. The mix depends only on what the bot could see.';
     return;
   }
   $('mix-title').textContent = 'Waiting for the bot\'s first decision.';
@@ -227,9 +227,9 @@ function renderChanceExplain() {
   const el = $('explain');
   const v = S.view;
   const odds = chanceOdds();
-  let html = `<p><span class="value">Chance is a dice roll.</span> Its odds come from one table, ${odds ? `fold ${pct(odds.fold)}, call or check ${pct(odds.call_or_check)}, bet or raise ${pct(odds.bet_or_raise)}` : 'a fixed table'}, whatever card it holds. A bet tells you nothing about its hand, so there is no bluff to explain.</p>`;
+  let html = `<p><span class="value">Chance is a dice roll.</span> Its odds are one table, ${odds ? `fold ${pct(odds.fold)}, call or check ${pct(odds.call_or_check)}, bet or raise ${pct(odds.bet_or_raise)}` : 'a fixed table'}, whatever its card.</p>`;
   if (v && v.terminal) {
-    html += `<p>It held <b>${v.bot_card}</b>. That card did not change its odds: every decision in this hand was drawn from the same table, renormalised over the actions it could take.</p>`;
+    html += `<p>It held <b>${v.bot_card}</b>. Its card did not change any decision in this hand.</p>`;
   }
   el.innerHTML = html;
 }
@@ -241,32 +241,31 @@ function renderExplain() {
   const bets = S.handMoves.filter((m) => m.action === 'b' || m.action === 'r');
   const move = bets[0] || S.handMoves[0];
   if (!move) {
-    el.innerHTML = 'The bot has not decided anything this hand yet. When it bets, this panel shows how often it bets with each card it could hold, then explains the bet once its card is shown.';
+    el.innerHTML = 'The bot has not acted yet. Its bet rate for each card appears here once it bets.';
     return;
   }
   const rows = aggression(move);
   const table = `<table><tr><th>card</th><th>bets here</th></tr>${rows.map((x) =>
     `<tr${v && v.terminal && x.rank === v.bot_card ? ' style="color:var(--yellow)"' : ''}><td>${x.rank}</td><td>${x.p === null ? '—' : pct(x.p)}</td></tr>`).join('')}</table>`;
   const why = `
-    <p>The bot's mix is a random draw: it bets with some cards and checks with others in this exact spot, on purpose. Here is how often it bets with each card it could hold:</p>
+    <p>How often the bot bets with each card in this spot:</p>
     ${table}`;
   if (!v || !v.terminal) {
-    el.innerHTML = `${why}<p>Its card is hidden until the showdown. The explanation follows once it is shown.</p>`;
+    el.innerHTML = `${why}<p>Its card is hidden until the showdown.</p>`;
     return;
   }
   const held = v.bot_card;
   const round1 = move.round === 1;
   let verdict;
   if (held === 'J') {
-    verdict = `<p><span class="bluff">A bluff.</span> It held a <b>J</b>, the weakest card, which loses to any Q or K at showdown. The bet only wins if you fold.</p>
-      ${round1 ? '<p>It bet before the public card was shown, so a pair was possible (about 1 time in 5), but it bets without that knowledge.</p>' : ''}`;
+    verdict = `<p><span class="bluff">A bluff.</span> It held a <b>J</b>, the weakest rank. It loses to an unpaired Q or K at showdown, and it wins only if the public card is the other J, which makes a pair. The bet only wins if you fold.</p>
+      ${round1 ? '<p>It bet before the public card was shown, so a pair was possible (about 1 time in 5).</p>' : ''}`;
   } else if (held === 'K') {
-    verdict = '<p><span class="value">A value bet.</span> A <b>K</b> beats any Q or J at showdown, so the bot wants you to call. Its bets with weaker cards keep this one from being readable.</p>';
+    verdict = '<p><span class="value">A value bet.</span> A <b>K</b> beats any unpaired Q or J at showdown, so the bot wants you to call. Its bets with weaker cards keep this one from being readable.</p>';
   } else {
-    verdict = '<p>A <b>Q</b> sits in the middle: it beats a J and loses to a K. Its bet mixes value with pressure, at the frequency the table shows.</p>';
+    verdict = '<p>A <b>Q</b> sits in the middle: it beats an unpaired J and loses to an unpaired K. Its bet mixes value with pressure, at the frequency the table shows.</p>';
   }
-  el.innerHTML = `${verdict}${why}
-    <p><b>Why mixing is the point.</b> If the bot never bluffed, you could fold every bet and lose nothing. If it always bluffed, you could call every bet and win with every Q and K. At equilibrium its bluff frequency leaves you indifferent between calling and folding, so neither choice can be exploited. That is the sense in which the mix is optimal.</p>`;
+  el.innerHTML = `${verdict}${why}`;
 }
 
 // ── Settling a hand and the session ────────────────────────────────────
@@ -524,8 +523,7 @@ function renderSides() {
   const cfr = meta.opponents.find((o) => o.name === 'cfr');
   const chance = meta.opponents.find((o) => o.name === 'chance');
   if (S.mode === 'watch') {
-    $('pg-sub').textContent = 'Watch the CFR+ AI play against chance. The AI draws each move from its committed average strategy. Chance draws from fixed odds and never reads its card. Pause or step whenever you like; the score builds as hands finish.';
-    $('sides').textContent = `CFR+ AI: ${cfr.label}  ·  OPPONENT: ${chance.label}`;
+      $('sides').textContent = `CFR+ AI: ${cfr.label}  ·  OPPONENT: ${chance.label}`;
     $('you-name').textContent = 'CFR+ AI';
     $('bot-name').textContent = 'CHANCE';
     return;
@@ -534,9 +532,6 @@ function renderSides() {
   const opp = chanceMode ? chance : cfr;
   $('you-name').textContent = 'YOU';
   $('bot-name').textContent = chanceMode ? 'CHANCE' : 'BOT';
-  $('pg-sub').textContent = chanceMode
-    ? "Heads-up Leduc hold'em against chance, which draws each action from fixed odds and never reads its card. You play every decision yourself; the hint still shows the equilibrium mix for your card."
-    : "Heads-up Leduc hold'em against a bot that plays its CFR+ average strategy. It never reads your card, and it bluffs on purpose, at the frequency that keeps you guessing.";
   $('sides').textContent = `YOU  ·  OPPONENT: ${opp.label}`;
 }
 
@@ -631,10 +626,9 @@ async function init() {
     renderChanceOdds();
     renderSides();
     $('chip-expl').textContent = `${mbb(meta.exploitability)} mbb/hand`;
-    $('chip-value').textContent = `${meta.value_seat0.toFixed(4)} chips`;
     const runs = training.runs.map((r) => `${r.algorithm} ${r.iterations.at(-1)}`).join(' · ');
     const kuhn = training.kuhn_check?.['cfr+'];
-    $('chart-note').textContent = `${runs} iterations. ${kuhn ? `Kuhn check: CFR+ lands within ${kuhn.value_error.toExponential(1)} of the exact -1/18.` : ''}`;
+    $('chart-note').textContent = `Game value for seat 0: ${meta.value_seat0.toFixed(4)} chips. ${runs} iterations. ${kuhn ? `Kuhn check: CFR+ lands within ${kuhn.value_error.toExponential(1)} of the exact -1/18.` : ''}`;
     drawChart();
     $('chip-status').textContent = 'READY';
     say('Deal a hand to start. You act first in both rounds.');

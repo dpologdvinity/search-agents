@@ -9,6 +9,7 @@ import pytest
 
 from bandits.rng import Rng
 from markov import (
+    COPY_RUN,
     CORPORA,
     NGramModel,
     copy_report,
@@ -103,26 +104,49 @@ def test_generation_emits_the_requested_count_and_stays_in_vocabulary():
     assert all(0 < p.prob <= 1 for p in gen.picks)
 
 
-def test_order_five_copies_the_corpus_when_it_does_not_restart():
+def test_copy_share_rises_with_order():
+    """Alice, words, seed 1, 120 picks: order 1 copies no pick and order 5 copies every pick. The seed fixes the
+    run, so these shares are exact, not approximate."""
     toks = tokenize(load_corpus("alice").body)
-    model = NGramModel(toks, 5)
-    for seed in range(1, 6):
-        gen = generate(model, Rng(seed), 40)
-        report = copy_report(gen, ngram_sets(toks), 5)
-        if gen.restarts == 0:
-            assert report.copied_pct == 100.0
-            assert report.longest_run >= 5
+    sets = ngram_sets(toks)
+    shares = {}
+    for order in (1, 5):
+        gen = generate(NGramModel(toks, order), Rng(1), 120)
+        shares[order] = copy_report(gen, sets, COPY_RUN["word"]).copied_pct
+    assert shares[1] == 0.0
+    assert shares[5] == 100.0
 
 
 def test_copy_report_flags_novel_text():
     toks = "a b c d e".split()
-    # Prompt "a b", then "zzz" (never in the corpus) and then "c": the order-2 windows ending at them are
-    # "b zzz" (novel) and "zzz c" (novel); "a b" would have been a copy.
+    # With min_run 2 the corpus windows are "a b", "b c", "c d" and "d e". The prompt "a b" is a copied window, but
+    # the picks are not: "b zzz" and "zzz c" are novel, and "c" alone is not a window with its neighbour.
     gen = Generation(["a", "b", "zzz", "c"], 2, [Pick(2, "zzz", 1.0), Pick(3, "c", 1.0)], 0)
     report = copy_report(gen, ngram_sets(toks), 2)
     assert report.copied == [False, False]
     assert report.copied_pct == 0.0
     assert report.longest_run == 1  # "c" alone is in the corpus; "zzz c" is not
+
+
+def test_copy_report_matches_a_brute_force_check_on_sampled_text():
+    """Each pick is copied exactly when some window of COPY_RUN tokens that covers it occurs in the corpus. This
+    checks every window that covers the token, a different route from the marking loop in copy_report."""
+    toks = tokenize(load_corpus("sonnets").body)
+    sets = ngram_sets(toks)
+    min_run = COPY_RUN["word"]
+    corpus_windows = {tuple(toks[i : i + min_run]) for i in range(len(toks) - min_run + 1)}
+    for order in (1, 3):
+        gen = generate(NGramModel(toks, order), Rng(5), 80)
+        out = gen.tokens
+        covered = [
+            any(
+                tuple(out[s : s + min_run]) in corpus_windows
+                for s in range(max(0, t - min_run + 1), min(t, len(out) - min_run) + 1)
+            )
+            for t in range(len(out))
+        ]
+        report = copy_report(gen, sets, min_run)
+        assert report.copied == [covered[p.index] for p in gen.picks], order
 
 
 @pytest.mark.parametrize("name", CORPORA)

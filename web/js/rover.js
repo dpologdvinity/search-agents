@@ -6,7 +6,7 @@
 // report: the expansions each one spent on a replan and the cost each one reports from the rover's cell.
 //
 // Cell colours: unseen cells are dark, seen-free cells are faint cyan, walls found by the sensor are pink.
-// A pink dashed outline marks a wall you dropped that the sensor has not reached yet. The heat map shows
+// A pink dashed outline marks a wall you dropped that the rover's belief does not contain yet. The heat map shows
 // D* Lite's g or rhs for every cell. Green outlines show the cells the last replan expanded.
 
 import { DStarLite, Explorer, INF, generate } from './rover_core.js';
@@ -24,7 +24,7 @@ const state = {
   ex: null,
   running: false,
   timer: 0,
-  ghosts: new Set(),         // cells the user made walls that the sensor has not seen yet
+  ghosts: new Set(),         // cells the user made walls that the rover's belief does not contain yet
   flash: { cells: [], t0: 0 }, // expansions of the latest replan, drawn in green
   paths: { dstar: [], astar: [] },
   series: [],                // one point per step: cumulative expansions of each planner
@@ -145,12 +145,12 @@ function drawMap(now) {
     ctx.stroke();
   }
 
-  // Wall drops the sensor has not reached: dashed pink outlines, so the player knows what is there.
+  // Wall drops the rover's belief does not contain yet: dashed pink outlines, so the player knows what is there.
   ctx.setLineDash([3, 3]);
   ctx.strokeStyle = COL.pink;
   ctx.lineWidth = 1.2;
   for (const i of state.ghosts) {
-    if (ex.seen[i] || !ex.world.walls[i]) continue;
+    if (ex.belief[i] || !ex.world.walls[i]) continue;
     const r = Math.floor(i / n), c = i % n;
     ctx.strokeRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2);
   }
@@ -279,7 +279,7 @@ function drawChart() {
     cctx.beginPath(); cctx.moveTo(pad.l, y); cctx.lineTo(pad.l + w, y); cctx.stroke();
     cctx.fillText(Math.round(yMax * (1 - k / 4)).toString(), 6, y + 3);
   }
-  cctx.fillText('steps', pad.l + w - 30, cssH - 8);
+  cctx.fillText('steps', pad.l + w / 2 - 14, cssH - 8);
   cctx.fillText('0', pad.l - 4, cssH - 8);
   cctx.fillText(String(Math.round(xMax)), pad.l + w - 18, cssH - 8);
 
@@ -373,7 +373,7 @@ function afterStep(before, { user = false } = {}) {
   if (!last || last.steps !== ex.steps || last.d !== t.d || last.a !== t.a) {
     if (state.series.length < CHART_POINTS) state.series.push({ steps: ex.steps, d: t.d, a: t.a });
   }
-  for (const c of [...state.ghosts]) if (ex.seen[c]) state.ghosts.delete(c);
+  for (const c of [...state.ghosts]) if (ex.belief[c]) state.ghosts.delete(c);
   updateChips();
   refreshPaths();
   if (ex.done) finish();
@@ -468,13 +468,15 @@ function toggleAt(cell) {
   if (cell === ex.world.goal) { think('The goal cannot be walled off in this game. Pick another cell.', { warn: true }); return; }
   const wasWall = ex.world.walls[cell] === 1;
   const before = { ...totals(), replans: ex.replans, pos: ex.pos };
+  const beliefBefore = ex.belief[cell];
   ex.edit(cell, !wasWall);
   const dropped = !wasWall;
-  const inView = ex.seen[cell] === 1;
-  if (dropped && !inView) state.ghosts.add(cell);
+  // The sensor has the cell in view when the rover's belief changes there. A wall it has not reached stays a marker.
+  const inSight = ex.belief[cell] !== beliefBefore;
+  if (dropped && !ex.belief[cell]) state.ghosts.add(cell);
   if (!dropped) state.ghosts.delete(cell);
   const where = labelOf(cell, n);
-  if (ex.replans !== before.replans) {
+  if (inSight) {
     const now = totals();
     state.flash = { cells: (state.view === 'astar' ? ex.planners.astar : ex.planners.dstar).lastExpanded.slice(0, 4000), t0: performance.now() };
     const lead = dropped
@@ -510,8 +512,8 @@ function describe(cell) {
   let what;
   if (cell === ex.pos) what = 'the rover';
   else if (ex.belief[cell]) what = 'wall (found)';
-  else if (ex.seen[cell]) what = 'free (sensed)';
   else if (state.ghosts.has(cell)) what = 'your wall, not sensed yet';
+  else if (ex.seen[cell]) what = 'free (sensed)';
   else what = 'unseen';
   const g = ex.planners.dstar.g[cell], rhs = ex.planners.dstar.rhs[cell];
   const vals = ex.belief[cell] ? '' : ` · D* g ${g === INF ? '∞' : g}, rhs ${rhs === INF ? '∞' : rhs}`;

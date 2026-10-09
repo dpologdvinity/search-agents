@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -32,7 +33,7 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">04 // CONSTRAINT SATISFACTION</div>
       <h1 class="proj-pg-title neon-green glitch" data-text="SUDOKU CSP">SUDOKU CSP</h1>
-      <div class="proj-pg-sub">Plain backtracking · MRV + forward checking · constraint propagation · watch every guess and backtrack</div>
+      <div class="proj-pg-sub">Watch three solvers fill a grid, one guess at a time.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -43,6 +44,13 @@
       </div>
     </div>
   </div>
+
+<section class="howto" aria-labelledby="howto-title">
+  <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+  <p>The goal of a sudoku is to fill every empty square so that each row, each column and each 3×3 box holds the digits 1 to 9 once each. On this page the solvers do the filling, and the replay shows each step of their search.</p>
+  <p style="margin-top:0.5rem">Choose a puzzle with RANDOM or HARD, pick a solver, and press SOLVE + REPLAY. Cyan squares are guesses, purple digits are forced by propagation, and red squares are guesses that backtracking undid.</p>
+  <p style="margin-top:0.5rem">SKIP TO END jumps to the answer. RUN ALL THREE compares the three solvers on the puzzle on screen. A puzzle of your own can be typed under MORE SETTINGS.</p>
+</section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -58,9 +66,9 @@
           </div>
         </div>
         <div class="inline" style="justify-content:center">
-          <button class="cyber-btn green" id="btn-solve"><span class="btn-txt">▶ SOLVE + REPLAY</span></button>
-          <button class="cyber-btn" id="btn-skip" disabled><span class="btn-txt">⏭ SKIP TO END</span></button>
-          <button class="cyber-btn" id="btn-reset"><span class="btn-txt">↺ RESET</span></button>
+          <button class="cyber-btn green" id="btn-solve" title="Run the selected solver on the server, then replay each guess and backtrack. Each run stops at 200,000 guesses."><span class="btn-txt">▶ SOLVE + REPLAY</span></button>
+          <button class="cyber-btn" id="btn-skip" title="Show the final answer and stop the replay" disabled><span class="btn-txt">⏭ SKIP TO END</span></button>
+          <button class="cyber-btn" id="btn-reset" title="Restore the puzzle and clear the replay"><span class="btn-txt">↺ RESET</span></button>
         </div>
         <div class="inline field-hint" style="justify-content:center;gap:1.2rem">
           <span><span class="legend-dot" style="background:rgba(0,245,255,0.6)"></span>guess</span>
@@ -71,7 +79,7 @@
 
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">COMPARE SOLVERS ON THIS PUZZLE</div>
-        <button class="cyber-btn" id="btn-compare"><span class="btn-txt">⇶ RUN ALL THREE</span></button>
+        <button class="cyber-btn" id="btn-compare" title="Run all three solvers on this puzzle and compare their work"><span class="btn-txt">⇶ RUN ALL THREE</span></button>
         <table class="cmp-table" style="margin-top:0.7rem">
           <thead><tr><th>Solver</th><th>Status</th><th class="num">Guesses</th><th class="num">Backtracks</th><th style="width:30%">Guesses (log scale)</th><th class="num">Time</th></tr></thead>
           <tbody id="cmp-body"></tbody>
@@ -84,77 +92,399 @@
         <div class="section-title green-ttl">PUZZLE</div>
         <div class="stack">
           <div class="inline">
-            <button class="cyber-btn grow" id="btn-easy"><span class="btn-txt">RANDOM</span></button>
-            <button class="cyber-btn pink grow" id="btn-hard"><span class="btn-txt">HARD</span></button>
+            <button class="cyber-btn grow" id="btn-easy" title="Load one of the 200 generated puzzles at random"><span class="btn-txt">RANDOM</span></button>
+            <button class="cyber-btn pink grow" id="btn-hard" title="Load one of the four hard puzzles"><span class="btn-txt">HARD</span></button>
           </div>
           <div class="field-hint" id="puzzle-name">—</div>
-          <div>
-            <div class="field-lbl">CUSTOM (81 digits, 0 or . for empty)</div>
-            <div class="inline">
-              <input type="text" class="cyber-input grow" id="custom">
-              <button class="cyber-btn" id="btn-load"><span class="btn-txt">LOAD</span></button>
-            </div>
-            <div class="field-err" id="custom-err"></div>
-          </div>
         </div>
       </div>
       <div>
         <div class="section-title green-ttl">SOLVER</div>
+        <select class="cyber-select" id="solver" style="width:100%" title="Choose the search method"></select>
+      </div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <select class="cyber-select" id="solver" style="width:100%"></select>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="solver-desc"></div></div>
+          <div>
+            <div class="field-lbl">CUSTOM (81 digits, 0 or . for empty)</div>
+            <div class="inline">
+              <input type="text" class="cyber-input grow" id="custom" title="Type or paste 81 digits, row by row. Use 0 or . for an empty square.">
+              <button class="cyber-btn" id="btn-load" title="Load the typed puzzle"><span class="btn-txt">LOAD</span></button>
+            </div>
+            <div class="field-err" id="custom-err"></div>
+          </div>
           <div>
             <div class="field-lbl">REPLAY SPEED: <span id="speed-lbl" style="color:var(--green)">40</span> STEPS / SECOND</div>
-            <input type="range" class="cyber-range" id="speed" min="5" max="400" value="40">
+            <input type="range" class="cyber-range" id="speed" min="5" max="400" value="40" title="How many search steps the replay shows each second">
           </div>
         </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">NOTES</div>
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div class="field-hint">Each solver records every guess and backtrack on the server; the board replays them. Plain backtracking may need hundreds of thousands of guesses, so it stops at 200,000.</div>
-        </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The sudoku solvers are search programs, not learners. Each one fills the grid one square at a time, guessing a digit and backtracking when a digit leads to a contradiction; the three differ in which square they fill next and how much they deduce before guessing. A guess is one digit tried in one square, so the guess count is the measure of wasted work.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Plain backtracking</h3>
-      <p class="hiw-plain"><b>New to this?</b> Fill the empty squares in reading order, trying 1 to 9 in each. When no digit fits, step back to the previous square and try its next digit. It always finds an answer, but it can wander far down a dead end before noticing.</p>
-      <p>Row-major order, and each digit is checked only against its row, column and box. There is no ordering and no lookahead. With the benchmark's 2,000,000-guess cap, it solved 198 of 200 generated puzzles, averaging 119,468 guesses.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>MRV + forward checking</h3>
-      <p class="hiw-plain"><b>New to this?</b> Before guessing, look at every empty square and pick the one with the fewest candidate digits. That square is the most likely to be a dead end, so testing it first exposes mistakes sooner.</p>
-      <p>MRV (minimum remaining values) picks the empty square with the fewest legal digits, stopping early when it finds one with a single digit. Forward checking undoes a digit placement at once if any empty square in its row, column or box is left with no legal digit. This is the page's default.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Constraint propagation</h3>
-      <p class="hiw-plain"><b>New to this?</b> Some squares have only one possible digit, and filling them can force more squares. Keep making the forced moves until nothing new follows, and only then take a guess.</p>
-      <p>Candidate digits are stored as 9-bit masks. Naked singles (a square with one candidate) and hidden singles (a digit with one possible square in a row, column or box) are applied to a fixed point, then MRV branching takes over. Forced fills are not counted as guesses. Averaged 7 guesses over the 200 generated puzzles.</p>
-    </article>
+  <p class="hiw-lede">A <b>constraint satisfaction problem</b> (CSP) is a set of <b>variables</b>, each with a set of allowed values called its <b>domain</b>, together with <b>constraints</b> that restrict which values may be used together. A sudoku is a CSP: its 81 squares are the variables, the digits 1 to 9 are the domains, and the rule that the nine squares of each row, column and box hold different digits is the constraint. The three solvers on this page are search programs, not learned models. Each one fills the empty squares one at a time, guessing a digit and undoing the guess (<b>backtracking</b>) when the guess leads to a contradiction. They differ in the order in which they fill squares and in how much they deduce before guessing. A <b>guess</b> is one digit tried in one square, so the guess count measures the wasted work.</p>
+
+  <h3 class="hiw-sub">Sudoku as a CSP</h3>
+  <p class="hiw-note">Two squares are <b>peers</b> when they share a row, a column or a box. The 27 <b>units</b> are the nine rows, the nine columns and the nine boxes. Every square lies in three units and has 20 peers. The solver tables are built from these lists<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L22-L28" target="_blank" rel="noopener" title="sudoku/solver.py, lines 22–28" aria-label="Code on GitHub: sudoku/solver.py, lines 22 to 28">1</a>. A square's <b>legal digits</b> are the digits that none of its peers holds<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L99-L103" target="_blank" rel="noopener" title="sudoku/solver.py, lines 99–103" aria-label="Code on GitHub: sudoku/solver.py, lines 99 to 103">2</a>.</p>
+  <!-- sudoku/solver.py:99-103 -->
+  <div class="math-fig">
+    <div class="math math-block">L(i) = \{\, d \in \{1,\dots,9\} : d \notin \{\, c_j : j \in P(i) \,\} \,\}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L99-L103" target="_blank" rel="noopener" title="sudoku/solver.py, lines 99–103" aria-label="Code on GitHub: sudoku/solver.py, lines 99 to 103">2</a></span>
   </div>
+  <p class="hiw-note">Here <span class="math">i</span> is a square, <span class="math">P(i)</span> is its 20 peers, <span class="math">c_j</span> is the digit in peer <span class="math">j</span> (0 when that peer is empty), and <span class="math">L(i)</span> is the set of legal digits. A 0 never equals a digit from 1 to 9, so empty peers remove nothing. The code keeps the peers' digits as one 10-bit mask, in which bit <span class="math">d</span> is set when digit <span class="math">d</span> is used. Empty peers set bit 0, which is never tested. One pass over the peers builds the mask, and one test per digit reads off the legal digits. <em>Example.</em> If a square's row holds 5 and 9, its column holds 2, and its box holds 1, then <span class="math">L(i) = \{3, 4, 6, 7, 8\}</span>.</p>
+
+  <h3 class="hiw-sub">Plain backtracking</h3>
+  <p class="hiw-note"><b>Backtracking</b> is a depth-first search over partial fillings. It places a digit in the next empty square, recurses on the rest, and removes the digit again if the recursion fails. Plain backtracking visits the empty squares in reading order (row by row, from the top left) and tries the legal digits in ascending order. It has no lookahead and no ordering, so it can explore a long dead end before it notices the contradiction.</p>
+  <p class="hiw-note">Each digit placed is one <b>guess</b>, and each digit removed is one <b>backtrack</b><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L81-L92" target="_blank" rel="noopener" title="sudoku/solver.py, lines 81–92" aria-label="Code on GitHub: sudoku/solver.py, lines 81 to 92">3</a>. The benchmark caps a run at 2,000,000 guesses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/__main__.py#L57" target="_blank" rel="noopener" title="sudoku/__main__.py, line 57" aria-label="Code on GitHub: sudoku/__main__.py, line 57">4</a>. Within that cap, plain backtracking solved 198 of the 200 generated puzzles, with a mean of 119,468 guesses. The means include the runs that hit the cap. The server stops any solver at 200,000 guesses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py#L25" target="_blank" rel="noopener" title="server/sudoku_api.py, line 25" aria-label="Code on GitHub: server/sudoku_api.py, line 25">5</a>, so a run that reaches that limit ends with the status limit.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L108-L131" target="_blank" rel="noopener" title="sudoku/solver.py, lines 108–131, 33–37, 52–53, 81–96" aria-label="Code on GitHub: sudoku/solver.py, lines 108 to 131, 33 to 37, 52 to 53, 81 to 96">6</a></span>
+    <pre class="pseudo-simple">function SOLVE-PLAIN(board, k):                  # k is the index of the next empty square
+    if k = number of empty squares:
+        return true                              # every square is filled
+    i ← the empty square number k, in reading order
+    for each digit d in LEGAL-DIGITS(board, i):  # the digits 1 to 9 that no peer holds
+        board[i] ← d
+        if SOLVE-PLAIN(board, k + 1):
+            return true
+        board[i] ← 0                             # undo the guess
+    return false                                 # no digit fits: back up</pre>
+    <pre class="pseudo-full" hidden>function SOLVE-PLAIN(puzzle, max-nodes, trace-limit):
+    cells ← PARSE(puzzle)                        # 81 digits, 0 for an empty square
+    if not GIVENS-CONSISTENT(cells):             # two clues share a digit in a unit
+        return unsolvable
+    empties ← the indices i with cells[i] = 0, in reading order
+    function BT(k):
+        if k = number of empties:
+            return true                          # every square is filled
+        i ← empties[k]
+        for d in LEGAL-DIGITS(cells, i):         # 1 to 9, in ascending order
+            cells[i] ← d
+            nodes ← nodes + 1                    # one guess
+            if nodes > max-nodes:
+                raise guess-limit reached
+            RECORD(assign, i, d) if the trace has room
+            if BT(k + 1):
+                return true
+            cells[i] ← 0
+            backtracks ← backtracks + 1          # one backtrack
+            RECORD(undo, i) if the trace has room
+        return false                             # no digit fits: back up
+    try:
+        if BT(0):
+            return solved, with cells as the solution
+        return unsolvable
+    on guess-limit reached:
+        return limit</pre>
+  </div>
+  <p class="hiw-note"><b>Givens.</b> The clues in the starting puzzle are its <b>givens</b>. GIVENS-CONSISTENT rejects a puzzle whose givens already repeat a digit in a unit, since no grid can satisfy it, so the search returns at once.</p>
+  <p class="hiw-note"><b>Trace.</b> RECORD writes each guess and each undo to a list of events, up to the trace limit (20,000 events on the server<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py#L26" target="_blank" rel="noopener" title="server/sudoku_api.py, line 26" aria-label="Code on GitHub: server/sudoku_api.py, line 26">7</a>), so that the page can replay the search. Stopping the list at a fixed length keeps long runs small.</p>
+  <p class="hiw-note"><b>Guess limit.</b> The count is checked as each guess is made. When it passes the limit, the raise jumps out of the recursion to the handler, which returns the status limit. A hopeless run therefore stops after a bounded amount of work.</p>
+
+  <h3 class="hiw-sub">MRV and forward checking</h3>
+  <p class="hiw-note"><b>MRV</b> (minimum remaining values) is a rule for choosing the next square: take the empty square with the fewest legal digits. That square is the most likely to be a dead end, so trying it first exposes a mistake sooner. The scan stops early at a square with at most one legal digit, because no later square can beat it. A square with no legal digit is also chosen, and the search then backs up at once.</p>
+  <!-- sudoku/solver.py:144-153 -->
+  <div class="math-fig">
+    <div class="math math-block">i^{*} = \operatorname*{arg\,min}_{\,i \,:\, c_i = 0} \; |L(i)|</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L144-L153" target="_blank" rel="noopener" title="sudoku/solver.py, lines 144–153" aria-label="Code on GitHub: sudoku/solver.py, lines 144 to 153">8</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">c_i = 0</span> marks an empty square, <span class="math">|L(i)|</span> is the number of its legal digits, and <span class="math">i^{*}</span> is the square chosen. Ties go to the lowest index, because the scan replaces the best square only when a count is strictly smaller.</p>
+  <p class="hiw-note"><b>Forward checking</b> looks one step ahead after each placement. After a digit goes into a square, the solver checks each of its peers. If an empty peer is left with no legal digit, the placement is undone at once, and the search never goes below it. This is the default solver on this page<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/sudoku.js#L177" target="_blank" rel="noopener" title="web/js/sudoku.js, line 177" aria-label="Code on GitHub: web/js/sudoku.js, line 177">9</a> and on the server<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py#L45" target="_blank" rel="noopener" title="server/sudoku_api.py, line 45" aria-label="Code on GitHub: server/sudoku_api.py, line 45">10</a>.</p>
+  <!-- sudoku/solver.py:155-156 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{FC}(i) = \bigwedge_{j \in P(i)} \bigl( c_j \neq 0 \;\lor\; L(j) \neq \varnothing \bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L155-L156" target="_blank" rel="noopener" title="sudoku/solver.py, lines 155–156" aria-label="Code on GitHub: sudoku/solver.py, lines 155 to 156">11</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\text{FC}(i)</span> is true when every peer of square <span class="math">i</span> is either filled or still has a legal digit. The test runs over all 20 peers, and a filled peer always passes it. The solver keeps the placement only while <span class="math">\text{FC}(i)</span> holds.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L136-L174" target="_blank" rel="noopener" title="sudoku/solver.py, lines 136–174, 144–153, 155–156, 158–169" aria-label="Code on GitHub: sudoku/solver.py, lines 136 to 174, 144 to 153, 155 to 156, 158 to 169">12</a></span>
+    <pre class="pseudo-simple">function MRV-FC(board):
+    if no square is empty:
+        return true                              # the grid is full
+    i ← the empty square with the fewest legal digits
+    for each digit d in LEGAL-DIGITS(board, i):
+        board[i] ← d
+        if FORWARD-CHECK(board, i) and MRV-FC(board):
+            return true
+        board[i] ← 0                             # undo the guess
+    return false</pre>
+    <pre class="pseudo-full" hidden>function SOLVE-MRV-FC(puzzle, max-nodes, trace-limit):
+    cells ← PARSE(puzzle)
+    if not GIVENS-CONSISTENT(cells):
+        return unsolvable
+    function MRV-CELL():
+        best ← none;  best-n ← 10                # 10 is more than any count
+        for i in 0 to 80:
+            if cells[i] = 0:
+                n ← number of LEGAL-DIGITS(cells, i)
+                if n &lt; best-n:
+                    best ← i;  best-n ← n
+                    if n ≤ 1:
+                        break                    # no later square can beat one digit
+        return best
+    function FORWARD-CHECK(i):
+        for each peer j of i:
+            if cells[j] = 0 and LEGAL-DIGITS(cells, j) is empty:
+                return false                     # a peer is stuck: undo the placement
+        return true
+    function BT():
+        i ← MRV-CELL()
+        if i is none:
+            return true                          # no empty square left
+        for d in LEGAL-DIGITS(cells, i):
+            cells[i] ← d
+            nodes ← nodes + 1                    # one guess
+            if nodes > max-nodes:
+                raise guess-limit reached
+            RECORD(assign, i, d) if the trace has room
+            if FORWARD-CHECK(i) and BT():
+                return true
+            cells[i] ← 0
+            backtracks ← backtracks + 1          # one backtrack
+            RECORD(undo, i) if the trace has room
+        return false
+    try:
+        if BT():
+            return solved, with cells as the solution
+        return unsolvable
+    on guess-limit reached:
+        return limit</pre>
+  </div>
+  <p class="hiw-note"><b>Early stop in MRV.</b> Forward checking keeps every empty square at one or more legal digits, so a square with one digit is the smallest count the scan can usefully find, and the scan stops there. The exception is a puzzle that is already dead at the start. The search still rejects it, only later.</p>
+  <p class="hiw-note"><b>Forward check.</b> FORWARD-CHECK runs after the placement and before the recursion, so a placement that leaves a peer with no digit is undone without extending the search below it. Its undo is recorded in the trace like any other backtrack.</p>
+
+  <h3 class="hiw-sub">Constraint propagation</h3>
+  <p class="hiw-note"><b>Constraint propagation</b> removes digits that cannot appear in any solution, and fills the squares that are forced, before the solver guesses again. Each square's candidates are stored as a <b>bitmask</b>, a binary number in which bit <span class="math">d</span> is set when digit <span class="math">d</span> is still possible. Bit 0 is never used, so the full set of candidates is the mask below.</p>
+  <!-- sudoku/solver.py:29-30 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{ALL} = \sum_{d=1}^{9} 2^{d} = 1022</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L29-L30" target="_blank" rel="noopener" title="sudoku/solver.py, lines 29–30" aria-label="Code on GitHub: sudoku/solver.py, lines 29 to 30">13</a></span>
+  </div>
+  <p class="hiw-note"><span class="math">\text{ALL}</span> is the mask that allows every digit, and the code writes it as 0x3FE. A square set to digit <span class="math">d</span> has the mask <span class="math">2^{d}</span>. A mask is a <b>single</b> when exactly one of its bits is set. The code tests this without a loop, because <span class="math">D \,\&\, (D-1)</span> clears the lowest set bit of <span class="math">D</span>. The result is zero exactly when <span class="math">D</span> has at most one bit set, and the test is written as the following condition.</p>
+  <!-- sudoku/solver.py:195 -->
+  <div class="math-fig">
+    <div class="math math-block">|D| = 1 \iff D \neq 0 \;\land\; D \,\&\, (D-1) = 0</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L195" target="_blank" rel="noopener" title="sudoku/solver.py, line 195" aria-label="Code on GitHub: sudoku/solver.py, line 195">14</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">D</span> is a square's mask, <span class="math">\&</span> is bitwise AND, and <span class="math">|D|</span> is the number of bits set. The code skips any square where <span class="math">D \,\&\, (D-1)</span> is not zero, because such a square is not a single yet.</p>
+  <p class="hiw-note">Two rules are applied. A <b>naked single</b> is a square whose mask is a single, and its digit is removed from every peer. A <b>hidden single</b> is a digit that fits in only one square of a unit, and that square must take the digit. Every square whose mask changes goes onto a queue, and the queue is emptied. The rules therefore run to a <b>fixed point</b>, the state in which no rule changes anything. An empty mask, or a digit with no place left in a unit, shows that the state is contradictory.</p>
+  <!-- sudoku/solver.py:198-205 -->
+  <div class="math-fig">
+    <div class="math math-block">D(j) \leftarrow D(j) \,\&\, \lnot\, 2^{d} \quad \text{for each peer } j \text{ of } i, \text{ when } D(i) = 2^{d}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L198-L205" target="_blank" rel="noopener" title="sudoku/solver.py, lines 198–205" aria-label="Code on GitHub: sudoku/solver.py, lines 198 to 205">15</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">D(i)</span> is the mask of the naked single <span class="math">i</span>, and <span class="math">\lnot</span> is bitwise NOT. Clearing bit <span class="math">d</span> removes digit <span class="math">d</span> from peer <span class="math">j</span>. A peer whose mask becomes empty means the state is contradictory, and a peer whose mask becomes a single joins the queue.</p>
+  <!-- sudoku/solver.py:206-214 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned} P_{u,d} &= \{\, j \in u : d \in D(j) \,\} \\ |P_{u,d}| = 1 &\;\Rightarrow\; D(j) \leftarrow \{d\} \text{ for the one } j \in P_{u,d} \end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L206-L214" target="_blank" rel="noopener" title="sudoku/solver.py, lines 206–214" aria-label="Code on GitHub: sudoku/solver.py, lines 206 to 214">16</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u</span> is a unit, and <span class="math">P_{u,d}</span> is the set of squares in <span class="math">u</span> that can still take digit <span class="math">d</span>. The code checks all nine digits in each of the three units that contain the square just fixed. Only those units need the check: the fixed square removes digits only from its peers, and every peer shares one of those units with it. A square set by a hidden single is itself queued, so its own units are checked later. <em>Example.</em> If digit 7 can go only in column 4 of a row, the square in column 4 is forced to 7, even when it still had several candidates.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py#L179-L245" target="_blank" rel="noopener" title="sudoku/solver.py, lines 179–245, 190–215, 217–235" aria-label="Code on GitHub: sudoku/solver.py, lines 179 to 245, 190 to 215, 217 to 235">17</a></span>
+    <pre class="pseudo-simple">function SOLVE(domains):                         # one candidate mask per square
+    if not PROPAGATE(domains, the givens):
+        return fail
+    return SEARCH(domains)
+
+function SEARCH(domains):
+    i ← the undecided square with the fewest candidates
+    if there is no undecided square:
+        return domains                           # every square has one candidate
+    for each digit d in domains[i]:
+        trial ← copy of domains with domains[i] ← {d}
+        if PROPAGATE(trial, [i]):
+            solved ← SEARCH(trial)
+            if solved is not fail:
+                return solved
+    return fail</pre>
+    <pre class="pseudo-full" hidden>function SOLVE-PROPAGATE(puzzle, max-nodes, trace-limit):
+    cells ← PARSE(puzzle)
+    if not GIVENS-CONSISTENT(cells):
+        return unsolvable
+    for i in 0 to 80:
+        domains[i] ← ALL if cells[i] = 0, else the bit for cells[i]
+    function PROPAGATE(dom, changed):            # changed: the squares to examine
+        queue ← changed
+        while queue is not empty:
+            i ← the last item of queue, removed
+            if |dom[i]| ≠ 1:
+                continue                         # not a single yet: skip it
+            bit ← dom[i]
+            for each peer j of i:                # naked single
+                if dom[j] contains bit:
+                    dom[j] ← dom[j] minus bit
+                    if dom[j] is empty:
+                        return false
+                    if |dom[j]| = 1:
+                        RECORD(propagate, j, digit of dom[j])
+                        queue ← queue + [j]
+            for each unit u containing i:        # hidden single
+                for d in 1 to 9:
+                    places ← [j in u : dom[j] contains d]
+                    if places is empty:
+                        return false
+                    if |places| = 1 and dom[places[0]] ≠ {d}:
+                        dom[places[0]] ← {d}
+                        RECORD(propagate, places[0], d)
+                        queue ← queue + [places[0]]
+        return true
+    function SEARCH(dom):
+        best ← none;  best-n ← 10
+        for i in 0 to 80:
+            n ← |dom[i]|
+            if 1 &lt; n &lt; best-n:                  # undecided squares only
+                best ← i;  best-n ← n
+        if best is none:
+            return dom                           # every square has one candidate
+        for d in 1 to 9:
+            if dom[best] contains d:
+                trial ← copy of dom;  trial[best] ← {d}
+                nodes ← nodes + 1                # one guess
+                if nodes > max-nodes:
+                    raise guess-limit reached
+                RECORD(assign, best, d) if the trace has room
+                if PROPAGATE(trial, [best]):
+                    solved ← SEARCH(trial)
+                    if solved is not none:
+                        return solved
+                backtracks ← backtracks + 1      # one backtrack
+                RECORD(undo, best) if the trace has room
+        return none
+    try:
+        if not PROPAGATE(domains, [i for i with cells[i] ≠ 0]):
+            return unsolvable
+        solved ← SEARCH(domains)
+    on guess-limit reached:
+        return limit
+    if solved is none:
+        return unsolvable
+    return solved, with each mask replaced by its digit</pre>
+  </div>
+  <p class="hiw-note"><b>Queue.</b> The queue holds the squares whose masks changed, and the code takes the last one, so the work is depth-first. A square that is popped while its mask still has two or more bits is skipped, since only singles fire the rules.</p>
+  <p class="hiw-note"><b>Copies.</b> Each guess works on a copy of the masks, so a failed branch leaves the parent's masks unchanged. Forced fills are recorded as propagate events. They are not counted as guesses, and the replay shows them in purple.</p>
+  <p class="hiw-note">When propagation stops with undecided squares left, the solver guesses. It picks the undecided square with the fewest candidates (the MRV rule, applied to masks with two or more bits), tries each candidate in turn, and runs propagation again after each guess. Averaged over the 200 generated puzzles, constraint propagation needed 7 guesses. Thirty of those puzzles needed no guess at all, because propagation alone solved them<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/puzzles.txt" target="_blank" rel="noopener" title="sudoku/puzzles.txt" aria-label="Code on GitHub: sudoku/puzzles.txt">18</a>.</p>
+
+  <h3 class="hiw-sub">Generated and hard puzzles</h3>
+  <p class="hiw-note">The generator<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L87-L96" target="_blank" rel="noopener" title="sudoku/generate.py, lines 87–96" aria-label="Code on GitHub: sudoku/generate.py, lines 87 to 96">19</a> starts from a complete grid, then removes clues one at a time in random order. A removal is kept only if the puzzle still has exactly one solution. The uniqueness test is COUNT-SOLUTIONS<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L37-L84" target="_blank" rel="noopener" title="sudoku/generate.py, lines 37–84" aria-label="Code on GitHub: sudoku/generate.py, lines 37 to 84">20</a>, which stops after it finds two solutions, so it returns 0, 1 or 2.</p>
+  <p class="hiw-note">The complete grid is a shuffled copy of a base pattern<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L23-L34" target="_blank" rel="noopener" title="sudoku/generate.py, lines 23–34" aria-label="Code on GitHub: sudoku/generate.py, lines 23 to 34">21</a>. In the base pattern, the digit index in row <span class="math">r</span> and column <span class="math">c</span> is <span class="math">(3(r \bmod 3) + \lfloor r/3 \rfloor + c) \bmod 9</span>. The row order keeps each band of three rows together, the column order keeps each stack of three columns together, and the digits are relabelled by a random permutation.</p>
+  <!-- sudoku/generate.py:30-34 -->
+  <div class="math-fig">
+    <div class="math math-block">S_{9a+b} = \pi\bigl( (3(r_a \bmod 3) + \lfloor r_a/3 \rfloor + c_b) \bmod 9 \bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L30-L34" target="_blank" rel="noopener" title="sudoku/generate.py, lines 30–34" aria-label="Code on GitHub: sudoku/generate.py, lines 30 to 34">22</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">S_{9a+b}</span> is the square in row <span class="math">a</span> and column <span class="math">b</span> of the finished grid, counting from 0. <span class="math">r_a</span> and <span class="math">c_b</span> are the base rows and columns that the shuffled orders place at positions <span class="math">a</span> and <span class="math">b</span>. <span class="math">\pi</span> is a random permutation of the digits 1 to 9, and <span class="math">\pi(k)</span> is the digit at index <span class="math">k</span>.</p>
+  <!-- sudoku/generate.py:94-95 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{keep the removal of clue } i \iff \min(N,\,2) = 1</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L94-L95" target="_blank" rel="noopener" title="sudoku/generate.py, lines 94–95" aria-label="Code on GitHub: sudoku/generate.py, lines 94 to 95">23</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">N</span> is the number of solutions of the puzzle after the removal, and <span class="math">\min(N,\,2)</span> is the value that COUNT-SOLUTIONS returns, since it stops at 2. A clue is restored whenever this count is not 1. The finished puzzle is minimal: a clue that was needed when it was tested stays needed, because removing further clues can only add solutions.</p>
+  <p class="hiw-note">Difficulty is the number of guesses the propagation solver needs for the puzzle<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L99-L103" target="_blank" rel="noopener" title="sudoku/generate.py, lines 99–103" aria-label="Code on GitHub: sudoku/generate.py, lines 99 to 103">24</a>. The committed set has 200 puzzles, generated with seed 0<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L120" target="_blank" rel="noopener" title="sudoku/generate.py, line 120" aria-label="Code on GitHub: sudoku/generate.py, line 120">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/puzzles.txt#L1" target="_blank" rel="noopener" title="sudoku/puzzles.txt, line 1" aria-label="Code on GitHub: sudoku/puzzles.txt, line 1">26</a>. They have 21 to 28 clues, 24.3 on average, and a mean difficulty of 7 guesses.</p>
+  <p class="hiw-note"><b>Hard puzzles.</b> The benchmark also uses four well-known hard puzzles<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/__main__.py#L18-L24" target="_blank" rel="noopener" title="sudoku/__main__.py, lines 18–24" aria-label="Code on GitHub: sudoku/__main__.py, lines 18 to 24">27</a>. Their keys are inkala_2012, which is the 2012 puzzle by Arto Inkala, ai_escargot, norvig_hard1 and platinum_blonde. Each was published by its author.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L87-L96" target="_blank" rel="noopener" title="sudoku/generate.py, lines 87–96, 23–34, 37–84" aria-label="Code on GitHub: sudoku/generate.py, lines 87 to 96, 23 to 34, 37 to 84">19</a></span>
+    <pre class="pseudo-simple">function MAKE-PUZZLE():
+    solution ← a random complete grid
+    puzzle ← copy of solution
+    for each square i in random order:
+        remove the clue at i
+        if the puzzle does not have exactly one solution:
+            put the clue back
+    return puzzle, solution</pre>
+    <pre class="pseudo-full" hidden>function MAKE-PUZZLE():
+    solution ← RANDOM-SOLUTION()
+    cells ← copy of solution
+    for i in a random order of 0 to 80:
+        kept ← cells[i]
+        cells[i] ← 0                             # try removing this clue
+        if COUNT-SOLUTIONS(cells, 2) ≠ 1:
+            cells[i] ← kept                      # not unique: restore the clue
+    return cells, solution
+
+function RANDOM-SOLUTION():
+    rows ← SHUFFLED-GROUPS()
+    cols ← SHUFFLED-GROUPS()
+    digits ← a random permutation of 1 to 9
+    return [digits[(3·(r mod 3) + ⌊r / 3⌋ + c) mod 9] for r in rows for c in cols]
+
+function SHUFFLED-GROUPS():
+    groups ← a random permutation of 0, 1, 2
+    return [3·g + i for g in groups for i in a random permutation of 0, 1, 2]</pre>
+  </div>
+  <p class="hiw-note"><b>Random order.</b> Each square is tried once, in a random order, so the removals do not follow the board.</p>
+  <p class="hiw-note"><b>Shuffled groups.</b> SHUFFLED-GROUPS draws the order of the three bands and, for each band, a fresh order of its three rows. The same function is used for columns, so the shuffled grid keeps the band and stack structure of the base pattern.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py#L37-L84" target="_blank" rel="noopener" title="sudoku/generate.py, lines 37–84, 41–61, 65–80" aria-label="Code on GitHub: sudoku/generate.py, lines 37 to 84, 41 to 61, 65 to 80">20</a></span>
+    <pre class="pseudo-simple">function COUNT-SOLUTIONS(board, limit):
+    found ← 0
+    function SEARCH(domains):
+        i ← the undecided square with the fewest candidates
+        if there is none:
+            found ← found + 1                    # a complete grid
+            return
+        for each digit d in domains[i]:
+            if found &lt; limit:
+                trial ← copy of domains with domains[i] ← {d}
+                if PROPAGATE(trial, [i]):        # naked and hidden singles
+                    SEARCH(trial)
+    if PROPAGATE(candidates from board, its clues):
+        SEARCH(candidates from board)
+    return found</pre>
+    <pre class="pseudo-full" hidden>function COUNT-SOLUTIONS(cells, limit):
+    for i in 0 to 80:
+        dom[i] ← the bit for cells[i] if cells[i] ≠ 0, else ALL
+    found ← 0
+    if not ELIMINATE(dom, [i with cells[i] ≠ 0]):
+        return found                             # the clues already contradict
+    function SEARCH(dom):
+        best ← none;  best-n ← 10
+        for i in 0 to 80:
+            n ← |dom[i]|
+            if 1 &lt; n &lt; best-n:
+                best ← i;  best-n ← n
+        if best is none:
+            found ← found + 1                    # a complete grid
+            return
+        for d in 1 to 9:
+            if dom[best] contains d and found &lt; limit:
+                trial ← copy of dom;  trial[best] ← {d}
+                if ELIMINATE(trial, [best]):
+                    SEARCH(trial)
+    SEARCH(dom)
+    return found
+
+function ELIMINATE(dom, queue):                  # the same loop as PROPAGATE above, with no RECORD
+    the naked-single and hidden-single steps, run until the queue is empty
+    return false on an empty mask or a digit with no place, otherwise true</pre>
+  </div>
+  <p class="hiw-note"><b>Stopping early.</b> Once <span class="math">\text{found}</span> reaches the limit, the loops stop trying new digits, so the search ends soon after the second solution. A complete grid adds one to the count, and a contradiction returns without adding to it.</p>
+
   <h3 class="hiw-sub">Heuristics and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
     <tr><td>MRV</td><td>Number of legal digits left in each empty square. The square with the fewest is chosen next.</td><td class="num">None. It is a rule for picking the next square, not a score.</td></tr>
-    <tr><td>Forward checking</td><td>Whether every empty square in a unit still has a legal digit after an assignment.</td><td class="num">None. Pass or undo.</td></tr>
+    <tr><td>Forward checking</td><td>Whether every empty peer still has a legal digit after a placement.</td><td class="num">None. The placement is kept or undone.</td></tr>
     <tr><td>Naked single</td><td>A square with only one candidate digit.</td><td class="num">None. The digit is forced.</td></tr>
     <tr><td>Hidden single</td><td>A digit that fits in only one square of a row, column or box.</td><td class="num">None. The digit is forced there.</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> these are standard constraint-satisfaction techniques, fixed by design, with no numbers to tune. The puzzles come from <code>sudoku/generate.py</code>: a random solved grid, then clues removed in random order, keeping each removal only if the puzzle still has exactly one solution (checked with the propagation solver). Difficulty is the number of guesses the propagation solver needs. The 200 committed puzzles use seed 0. The four hard puzzles in the benchmark are published examples from the literature.</p>
+  <p class="hiw-note">None of these heuristics has a numeric weight. They are standard constraint-satisfaction techniques, fixed in the code, so there is no tuning run to report.</p>
 
-  <p class="hiw-note"><b>Benchmark</b> (<code>results/sudoku.md</code>): on 200 generated puzzles, plain backtracking had a mean of 119,468 guesses (198 solved), MRV + forward checking 364 (200 solved), and constraint propagation 7 (200 solved). On the four hard puzzles, plain backtracking solved 3 of 4 (mean 781,593 guesses), MRV + forward checking 4 of 4 (865), and constraint propagation 4 of 4 (44). The server stops any solver at 200,000 guesses, so plain backtracking can fail on hard puzzles here.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/solver.py">sudoku/solver.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/sudoku/generate.py">sudoku/generate.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py">server/sudoku_api.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/sudoku.md">results/sudoku.md</a></p>
+  <h3 class="hiw-sub">Benchmark results</h3>
+  <p class="hiw-note"><b>Benchmark</b><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/sudoku.md" target="_blank" rel="noopener" title="results/sudoku.md" aria-label="Code on GitHub: results/sudoku.md">28</a> on 200 generated puzzles: plain backtracking had a mean of 119,468 guesses (198 solved), MRV with forward checking 364 (200 solved), and constraint propagation 7 (200 solved). On the four hard puzzles, plain backtracking solved 3 of 4 (mean 781,593 guesses), MRV with forward checking 4 of 4 (mean 865), and constraint propagation 4 of 4 (mean 44). These runs used the benchmark cap of 2,000,000 guesses. A run that hit the cap contributes its capped count to the mean, so a mean for plain backtracking is a lower bound on its true cost.</p>
+  <p class="hiw-note">The server stops any solver at 200,000 guesses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sudoku_api.py#L25" target="_blank" rel="noopener" title="server/sudoku_api.py, line 25" aria-label="Code on GitHub: server/sudoku_api.py, line 25">5</a>, so plain backtracking can fail on the hard puzzles here. The other two solvers finished all four hard puzzles well inside that cap.</p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/sudoku.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

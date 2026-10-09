@@ -151,6 +151,7 @@ def _solve_json(result: PlanResult, grid: Grid, planner: str) -> dict:
     }
     if planner == "cbs":
         body["trace"] = [_plain(entry, grid) for entry in result.trace]
+        body["solution_id"] = result.solution  # the tree node whose plan is returned; the page marks it
     return body
 
 

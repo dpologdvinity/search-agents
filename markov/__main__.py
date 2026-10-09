@@ -18,6 +18,7 @@ from bandits.rng import Rng
 
 from .corpus import CORPORA, load_corpus
 from .model import (
+    COPY_RUN,
     DEFAULT_ALPHA,
     NGramModel,
     copy_report,
@@ -70,11 +71,12 @@ def cmd_generate(args: argparse.Namespace) -> int:
     rng = Rng(args.seed)
     gen = generate(model, rng, args.words, args.temperature)
     print(detokenize(gen.tokens, args.level))
-    report = copy_report(gen, ngram_sets(tokens), args.order)
+    min_run = COPY_RUN[args.level]
+    report = copy_report(gen, ngram_sets(tokens), min_run)
     print(
         f"\n[{corpus.name} | {args.level} | order {args.order} | T {args.temperature:g} | seed {args.seed}] "
         f"vocab {model.vocab_size}, contexts {model.context_count}, "
-        f"copied {report.copied_pct:.1f}% of {len(report.copied)} order-{args.order} n-grams, "
+        f"copied {report.copied_pct:.1f}% of {len(report.copied)} picks in verbatim runs of {min_run}+ tokens, "
         f"longest verbatim run {report.longest_run}, restarts {gen.restarts}",
         file=sys.stderr,
     )

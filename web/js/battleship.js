@@ -16,9 +16,9 @@
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
+import { SIZE, randomFleet as drawFleet, shipCells } from './battleship-core.js';
 
 const $ = (id) => document.getElementById(id);
-const SIZE = 10;
 const COLS = 'ABCDEFGHIJ';
 const AIM_MS = 650; // reticle time before each shot in battle
 // Time between shots in a watched race. An AI shot costs two requests (the shot and the AI's next odds) and an
@@ -75,18 +75,6 @@ const boards = { me: [], enemy: [] };
 
 // ── Geometry and placement ───────────────────────────────────────────────
 
-/** Cells of a ship of `length` starting at `start`, or null if it would leave the board. */
-function shipCells(start, length, vertical) {
-  const r0 = Math.floor(start / SIZE), c0 = start % SIZE;
-  const cells = [];
-  for (let k = 0; k < length; k++) {
-    const r = r0 + (vertical ? k : 0), c = c0 + (vertical ? 0 : k);
-    if (r >= SIZE || c >= SIZE) return null;
-    cells.push(r * SIZE + c);
-  }
-  return cells;
-}
-
 function fleetDef() {
   return state.meta ? state.meta.fleet : [];
 }
@@ -107,27 +95,10 @@ function previewAt(i) {
   return { cells, ok: cells.every((c) => !taken.has(c)) };
 }
 
-/** Random legal fleet: each ship gets random spots until one fits. Gives up and retries after too many misses. */
+/** Random legal fleet for the page's ships, drawn uniformly over legal fleets (see randomFleet in battleship-core.js). */
 function randomFleet() {
-  for (let attempt = 0; attempt < 200; attempt++) {
-    const placed = [];
-    const taken = new Set();
-    let ok = true;
-    fleetDef().forEach((def, idx) => {
-      if (!ok) return;
-      for (let t = 0; t < 300; t++) {
-        const cells = shipCells(Math.floor(Math.random() * SIZE * SIZE), def.length, Math.random() < 0.5);
-        if (cells && cells.every((c) => !taken.has(c))) {
-          cells.forEach((c) => taken.add(c));
-          placed.push({ idx, name: def.name, length: def.length, cells });
-          return;
-        }
-      }
-      ok = false;
-    });
-    if (ok) return placed;
-  }
-  return [];
+  const def = fleetDef();
+  return drawFleet(def.map((d) => d.length)).map((cells, idx) => ({ idx, name: def[idx].name, length: def[idx].length, cells }));
 }
 
 function fleetComplete() {
@@ -269,7 +240,8 @@ function hintText() {
   if (state.phase === 'watch') {
     const paused = state.paused ? ' Paused: step for one shot or resume.' : '';
     if (state.solo) return `AI alone: ${LABEL.probability} hunts your fleet, and nothing shoots back. Its odds glow over your grid.${paused}`;
-    return `AI: ${LABEL.probability} fires at the server's fleet. ${oppLabel()} fires at the fleet on this page. Shots alternate.${paused}`;
+    const tally = state.score.ai + state.score.opp > 0 ? ` Races: AI ${state.score.ai}, ${oppName()} ${state.score.opp}.` : '';
+    return `AI: ${LABEL.probability} fires at the server's fleet. ${oppLabel()} fires at the fleet on this page. Shots alternate.${tally}${paused}`;
   }
   return 'Start a new match to play again.';
 }
@@ -288,8 +260,7 @@ function paintStats() {
   $('chip-shots').textContent = `${state.shotsMine} / ${state.shotsAgent}`;
   $('chip-status').textContent = state.phase === 'over' ? state.endTitle
     : state.phase === 'watch' ? (state.paused ? 'PAUSED' : state.solo ? 'WATCHING' : STATUS.watch) : STATUS[state.phase] || '';
-  $('chip-score-wrap').hidden = !watching && state.score.ai + state.score.opp === 0;
-  $('chip-score').textContent = `${state.score.ai} / ${state.score.opp}`;
+  $('chance-block').hidden = $('opponent').value !== 'chance';
   $('btn-launch').disabled = !(state.phase === 'place' && fleetComplete()) || state.busy;
   $('btn-random').disabled = state.phase !== 'place' || state.busy;
   $('btn-rotate').disabled = state.phase !== 'place';
@@ -760,9 +731,7 @@ function paintChanceTable() {
     span.style.background = `rgba(0,245,255,${(0.08 + 0.5 * (weight(i) / max)).toFixed(3)})`;
     grid.appendChild(span);
   }
-  $('chance-profile').textContent = `profile = ${c.profile.join(' ')}. ${c.rule}.`;
-  $('chance-desc').textContent = c.description;
-  $('agent-desc').textContent = `${state.meta.agent.label}: ${state.meta.agent.description}`;
+  grid.title = `profile = ${c.profile.join(' ')}. ${c.rule}.`;
 }
 
 function wire() {
@@ -817,6 +786,7 @@ function wire() {
   $('speed').onchange = (e) => {
     state.speed = e.target.value;
   };
+  $('opponent').onchange = paint;
   addEventListener('keydown', (e) => {
     if ((e.key === 'r' || e.key === 'R') && state.phase === 'place') {
       state.vertical = !state.vertical;

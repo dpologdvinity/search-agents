@@ -52,9 +52,9 @@ def sum_of_costs(paths: Sequence[Path]) -> int:
 def find_conflicts(paths: Sequence[Path], first_only: bool = False) -> list[Conflict]:
     """Every collision in the plan, ordered by time (or only the earliest one if ``first_only``).
 
-    The check walks time step by step. At each step it looks for two robots on one cell (vertex),
-    then for pairs that swapped cells during the step (edge). Robots that have finished stay put,
-    so the check runs up to the makespan and nothing is missed after an early arrival.
+    Checked at every step from 0 to the makespan. Finished robots stay put, so they can still be hit.
+    Vertex rule: each robot on a cell that an earlier robot in the list holds at that step gives one conflict,
+    paired with the first robot holding that cell. Edge rule: each swapping pair gives one conflict.
     """
     found: list[Conflict] = []
     if not paths:

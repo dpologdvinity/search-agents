@@ -7,6 +7,8 @@
 
 const TWO32 = 4294967296;
 export const MAX_RUN = 20;
+// Shortest verbatim run that counts as copied, per token level (COPY_RUN in markov/model.py).
+export const COPY_RUN = { word: 8, char: 20 };
 const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*|[^\sA-Za-z]/g;
 const NO_SPACE_BEFORE = new Set(['.', ',', ';', ':', '!', '?', ')']);
 const NO_SPACE_AFTER = new Set(['(']);
@@ -175,26 +177,39 @@ export function ngramSets(tokens, maxLen = MAX_RUN) {
   return sets;
 }
 
-// Copy check for the token at position p of out, as in markov/model.py copy_report: is the order-n window ending
-// there in the corpus, and how long is the longest suffix ending there that is (capped at MAX_RUN)?
-export function windowStats(out, p, order, sets) {
-  const copied = sets[order - 1].has(out.slice(p - order + 1, p + 1).join(SEP));
-  let length = 1;
-  while (length <= Math.min(MAX_RUN, p + 1) && sets[length - 1].has(out.slice(p - length + 1, p + 1).join(SEP))) {
-    length += 1;
-  }
-  return { copied, run: length - 1 };
+// Longest run of verbatim corpus tokens that ends at out[p], capped at MAX_RUN (run_ending_at in markov/model.py).
+// The suffix grows while it occurs in the corpus; the first miss ends it.
+export function runEndingAt(out, p, sets) {
+  let n = 0;
+  while (n < Math.min(MAX_RUN, p + 1) && sets[n].has(out.slice(p - n, p + 1).join(SEP))) n += 1;
+  return n;
 }
 
-// Copy statistics over a whole generation.
-export function copyReport(gen, sets, order) {
-  const copied = [];
-  let longest = 0;
-  for (const pick of gen.picks) {
-    const s = windowStats(gen.tokens, pick.index, order, sets);
-    copied.push(s.copied);
-    longest = Math.max(longest, s.run);
+// Marks every output token that lies in a copied window: a window of minRun tokens that occurs in the corpus. The
+// windows ending at index from or later are checked, so the page can call this after each step; earlier windows
+// were checked already. Returns the indices that became marked in this call.
+export function markCopied(out, sets, minRun, marks, from = 0) {
+  const fresh = [];
+  const windows = sets[minRun - 1];
+  for (let q = Math.max(from, minRun - 1); q < out.length; q++) {
+    if (!windows.has(out.slice(q - minRun + 1, q + 1).join(SEP))) continue;
+    for (let t = q - minRun + 1; t <= q; t++) {
+      if (!marks[t]) {
+        marks[t] = true;
+        fresh.push(t);
+      }
+    }
   }
+  return fresh;
+}
+
+// Copy statistics over a whole generation, as copy_report in markov/model.py.
+export function copyReport(gen, sets, minRun) {
+  const marks = [];
+  markCopied(gen.tokens, sets, minRun, marks);
+  const copied = gen.picks.map((p) => Boolean(marks[p.index]));
+  let longest = 0;
+  for (const p of gen.picks) longest = Math.max(longest, runEndingAt(gen.tokens, p.index, sets));
   const pct = copied.length ? (100 * copied.filter(Boolean).length) / copied.length : 0;
   return { copied, copiedPct: pct, longestRun: longest };
 }

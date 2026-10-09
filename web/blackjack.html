@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="blackjack.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,19 +32,25 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">06 // MARKOV DECISION PROCESS · DYNAMIC PROGRAMMING</div>
+      <div class="proj-pg-tag">06 // MARKOV DECISION PROCESS</div>
       <h1 class="proj-pg-title neon-green glitch" data-text="BLACKJACK">BLACKJACK</h1>
-      <div class="proj-pg-sub">The rules are fixed, so the best play is an exact answer: dynamic programming over every hand the player can reach. The table below is that answer.</div>
+      <div class="proj-pg-sub">Play hands against the dealer, with the exact best move shown beside every hand.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip green">BANKROLL <span class="val" id="chip-bankroll">500</span></span>
-        <span class="stat-chip pink">HOUSE EDGE <span class="val" id="chip-edge">—</span></span>
-        <span class="stat-chip">RECORD <span class="val" id="chip-record">0 · 0 · 0</span></span>
-        <span class="stat-chip purple">NET <span class="val" id="chip-net">0</span></span>
+        <span class="stat-chip green" title="Chips you hold. Starts at 500.">BANKROLL <span class="val" id="chip-bankroll">500</span></span>
+        <span class="stat-chip pink" title="Expected loss per bet with perfect basic strategy, in the infinite-deck model.">HOUSE EDGE <span class="val" id="chip-edge">—</span></span>
+        <span class="stat-chip" title="Hands won, lost and pushed this session.">RECORD <span class="val" id="chip-record">0 · 0 · 0</span></span>
+        <span class="stat-chip purple" title="Chips won or lost this session.">NET <span class="val" id="chip-net">0</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to end with more chips than you started with, by beating the dealer's total without going over 21. Pick a bet and press DEAL, then choose HIT, STAND, DOUBLE or SPLIT, or press t, s, d or p.</p>
+    <p style="margin-top:0.5rem">The ADVISOR lists the expected chips of each legal move for your hand, from the exact table. Press LEARN to watch the Monte Carlo learner work out the same table from simulated hands.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -66,14 +73,14 @@
 
       <div class="bj-controls">
         <div class="bj-chips" role="group" aria-label="Bet size">
-          <button class="bj-bet" type="button" data-bet="5">5</button>
-          <button class="bj-bet" type="button" data-bet="10">10</button>
-          <button class="bj-bet" type="button" data-bet="25">25</button>
-          <button class="bj-bet" type="button" data-bet="50">50</button>
-          <button class="bj-bet" type="button" data-bet="100">100</button>
+          <button class="bj-bet" type="button" data-bet="5" title="Bet 5 chips">5</button>
+          <button class="bj-bet" type="button" data-bet="10" title="Bet 10 chips">10</button>
+          <button class="bj-bet" type="button" data-bet="25" title="Bet 25 chips">25</button>
+          <button class="bj-bet" type="button" data-bet="50" title="Bet 50 chips">50</button>
+          <button class="bj-bet" type="button" data-bet="100" title="Bet 100 chips">100</button>
         </div>
         <div class="bj-actions">
-          <button class="cyber-btn pink" id="btn-deal" type="button"><span class="btn-txt">▶ DEAL</span></button>
+          <button class="cyber-btn pink" id="btn-deal" type="button" title="Deal a hand at the chosen bet (Enter). Starts a new bankroll when broke."><span class="btn-txt">▶ DEAL</span></button>
           <button class="cyber-btn" id="btn-hit" type="button" title="Take a card (t)"><span class="btn-txt">+ HIT</span></button>
           <button class="cyber-btn green" id="btn-stand" type="button" title="Stand (s)"><span class="btn-txt">■ STAND</span></button>
           <button class="cyber-btn purple" id="btn-double" type="button" title="Double (d)"><span class="btn-txt">×2 DOUBLE</span></button>
@@ -86,12 +93,11 @@
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">BASIC STRATEGY · EXACT</div>
         <div class="viz-panel">
-          <div class="viz-title">Best move for each hand (rows) against each dealer upcard (columns). Brightness shows the expected value of the best move. The outlined cell is your hand.</div>
           <div class="bj-legend">
             <span><i class="sw S"></i>Stand</span><span><i class="sw H"></i>Hit</span>
             <span><i class="sw D"></i>Double</span><span><i class="sw P"></i>Split</span>
           </div>
-          <div class="bj-grid" id="strategy-grid" role="table" aria-label="Basic strategy table"></div>
+          <div class="bj-grid" id="strategy-grid" role="table" aria-label="Basic strategy table" title="Best move for each hand (rows) against each dealer upcard (columns). Brighter cells are worth more per bet. The outlined cell is your hand."></div>
           <div class="field-hint" id="strategy-note">Solving the table…</div>
         </div>
       </div>
@@ -99,23 +105,25 @@
       <div style="margin-top:1.6rem">
         <div class="section-title pink-ttl">MONTE CARLO LEARNER</div>
         <div class="viz-panel">
-          <div class="viz-title">Nothing is solved here. The learner plays simulated hands, tries actions, and averages what each one paid. Its greedy table goes green where it matches the exact table.</div>
           <div class="bj-learn-controls">
-            <select class="cyber-select" id="learn-hands" aria-label="Hands to play">
+            <button class="cyber-btn pink" id="btn-learn" type="button" title="Run the learner on the server and step through its tables."><span class="btn-txt">▶ LEARN</span></button>
+            <div class="bj-learn-stats">
+              <span title="Simulated hands the learner has played in the run shown.">HANDS <b id="learn-episodes">0</b></span>
+              <span title="Share of the decisive cells where the learner's move is the exact best move.">AGREEMENT <b id="learn-agree">—</b></span>
+              <span title="Mean exact value given up per table cell by following the learner's moves. Lower is better.">VALUE LOST <b id="learn-loss">—</b></span>
+            </div>
+          </div>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <select class="cyber-select" id="learn-hands" aria-label="Hands to play" title="Simulated hands per learning run. The server caps a run at 100,000.">
               <option value="10000">10,000 hands</option>
               <option value="40000" selected>40,000 hands</option>
               <option value="100000">100,000 hands</option>
             </select>
-            <button class="cyber-btn pink" id="btn-learn" type="button"><span class="btn-txt">▶ LEARN</span></button>
-            <div class="bj-learn-stats">
-              <span>HANDS <b id="learn-episodes">0</b></span>
-              <span>AGREEMENT <b id="learn-agree">—</b></span>
-              <span>VALUE LOST <b id="learn-loss">—</b></span>
-            </div>
-          </div>
+          </details>
           <canvas class="bj-chart" id="learn-chart" aria-label="Agreement with the exact table over hands played"></canvas>
-          <div class="bj-grid learn" id="learn-grid" role="table" aria-label="Learned table"></div>
-          <div class="field-hint" id="learn-status">Agreement counts the cells where the exact best move is clear (a margin of at least 0.01 of a bet).</div>
+          <div class="bj-grid learn" id="learn-grid" role="table" aria-label="Learned table" title="The learner's move for each cell. Green matches the exact best move, red does not, and dots are cells it has not tried."></div>
+          <div class="field-hint" id="learn-status">Agreement counts the decisive cells: those where the exact best move beats the runner-up by at least 0.01 of a bet.</div>
         </div>
       </div>
 
@@ -125,9 +133,9 @@
       <div>
         <div class="section-title green-ttl">ADVISOR</div>
         <div class="viz-panel bj-advisor">
-          <div class="viz-title" id="advice-best">Deal to see the expected value of each move.</div>
+          <div class="viz-title" id="advice-best" title="Expected chips include the dealer's blackjack check when the upcard is an ace or ten.">Deal to see the expected value of each move.</div>
           <div class="bj-advice-list" id="advice-list"></div>
-          <div class="field-hint" id="advice-note">Expected chips include the dealer's blackjack check when the upcard is an ace or ten.</div>
+          <div class="field-hint" id="advice-note">Expected chips from the exact table.</div>
         </div>
       </div>
 
@@ -141,74 +149,392 @@
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">HOW IT IS SOLVED</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">THE DEALER</div>
-            <div class="field-hint">Dealer probabilities come from a recursion on the dealer's next card. Every final total, 17 to 21 or bust, gets an exact probability for each upcard.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">THE PLAYER</div>
-            <div class="field-hint">Each hand is a state: hard total, ace, and whether it is still two cards. Hitting always adds a card, so each state depends only on larger totals. Backward induction then gives each move's exact value.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">THE LEARNER</div>
-            <div class="field-hint">Monte Carlo control never reads the probabilities. It plays hands, keeps a running average of what each move paid, and mostly takes the best move so far, with some exploration.</div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title purple-ttl">GAME LOG</div>
+      <details class="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(155,0,255,0.35)"></div>
-      </div>
+      </details>
     </div>
   </div>
+
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Two methods, both on the same rules. The advisor and the basic-strategy table come from an exact solver: dynamic programming over every hand the player can reach, in an infinite-deck model. The Monte Carlo learner starts knowing nothing. It plays simulated hands and averages what each action paid, and its table is then compared with the exact one. It is never trained on that table.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Dynamic programming (exact)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Picture a maze solved from the exit backwards. Once you know the value of every spot next to the exit, each earlier choice is a simple comparison. Blackjack fits this shape: a hit always adds a card, so every hand you can reach depends only on hands with a higher total. The solver fills in values from the end of the game back to the first two cards.</p>
-      <p>The dealer's final-total probabilities come from a recursion on the dealer's next card, for each upcard. For each player state (hard total, whether it holds an ace, two cards or more) the solver computes stand, hit and double, and for pairs also split. The table has 33 rows (hard 5 to 19, soft A,2 to A,9, and ten pairs) by 10 upcards, 330 cells. The advisor uses the same values.</p>
-      <ul>
-        <li>The dealer's blackjack peek is applied last. With p the chance of a dealer blackjack, each value becomes -p + (1 - p) × v. That map is increasing, so the best action does not change.</li>
-        <li>Split is exact because the infinite deck makes the two hands independent: its value is twice the average of one hand's best play.</li>
-        <li>Under this model, perfect basic strategy has a house edge of 0.570% of each bet.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Monte Carlo control (the learner)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Say you are new to a city and want the best restaurant. You try a few, keep a running average of how each meal went, and mostly go back to the highest average while sometimes trying something new. You never look up a guide. You learn from results alone, and the occasional new try keeps you from missing a better option.</p>
-      <p>LEARN plays simulated rounds on the server with a fresh random seed. It never reads the probabilities or the solver. Each round starts from a random table cell, so rare starts still get played. The learner credits each decision with what the hands it affected paid, and keeps a plain average per action. Stand, hit and double share estimates by upcard, hard total and ace flag. Split has one estimate per pair.</p>
-      <ul>
-        <li>No discounting. The only reward arrives when a round settles.</li>
-        <li>Only the first decision of a round is chosen uniformly among legal actions. Later decisions are epsilon-greedy, and an untried action counts as worth 0.</li>
-      </ul>
-    </article>
-  </div>
+  <p class="hiw-lede">Blackjack contains chance, but its rules and the deck's make-up fix every probability, so the best play can be computed exactly. This page uses two methods on the same rules. The first is an exact solver that uses **dynamic programming**, which computes the values of small sub-problems first and reuses them for larger ones. It produces the advisor and the basic-strategy table. The second is a **Monte Carlo** learner. Monte Carlo methods estimate a quantity by averaging the outcomes of random simulations. The learner starts with no knowledge of the probabilities and learns from simulated hands, and its table is then compared with the exact one. While it learns, the learner never reads the solver's values.</p>
+
   <h3 class="hiw-sub">Rules and parameters</h3>
+  <p class="hiw-note">The rules are the same in the exact solver, the learner and the playable table. The module docstring lists them<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L1-L14" target="_blank" rel="noopener" title="blackjack/rules.py, lines 1–14" aria-label="Code on GitHub: blackjack/rules.py, lines 1 to 14">1</a>, and the playable table follows the same rules<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/blackjack.js#L1-L5" target="_blank" rel="noopener" title="web/js/blackjack.js, lines 1–5" aria-label="Code on GitHub: web/js/blackjack.js, lines 1 to 5">2</a>. Each row of the table below points to the code that sets it.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Rule or parameter</th><th>What it means</th><th class="num">Value</th></tr></thead><tbody>
-    <tr><td>Decks</td><td>Shoe used for play and simulation</td><td class="num">6 decks, reshuffled after 75% is dealt</td></tr>
-    <tr><td>Dealer</td><td>Stands on every total of 17 or more, soft 17 included (S17)</td><td class="num">DEALER_STAND = 17</td></tr>
-    <tr><td>Dealer peek</td><td>Checks for blackjack under an ace or a ten, before the player acts</td><td class="num">dealer blackjack ends the round</td></tr>
-    <tr><td>Blackjack</td><td>Natural pays on the bet; a player natural against a dealer natural pushes</td><td class="num">3:2 (1.5 per unit)</td></tr>
-    <tr><td>Double</td><td>Doubles the bet and takes exactly one card</td><td class="num">any two cards</td></tr>
-    <tr><td>Split</td><td>Two hands from a pair; split aces take one card each and stop; doubling after a split is allowed</td><td class="num">one split (MAX_HANDS = 2)</td></tr>
-    <tr><td>Exploration rate</td><td>Learner's epsilon after a number of hands</td><td class="num">0.2 / (1 + hands / 2000), floor 0.01</td></tr>
-    <tr><td>Hands per run</td><td>Choices on the page, and the server cap</td><td class="num">10,000, 40,000, 100,000 (cap 100,000)</td></tr>
-    <tr><td>Decisive cell</td><td>Cell counted in agreement only if the best action beats the runner-up by this much</td><td class="num">0.01 of a bet (321 of 330 cells)</td></tr>
+    <tr><td>Decks</td><td>Shoe used for play and simulation</td><td class="num">6 decks, reshuffled after 75% is dealt<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L28-L29" target="_blank" rel="noopener" title="blackjack/game.py, lines 28–29" aria-label="Code on GitHub: blackjack/game.py, lines 28 to 29">3</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L46-L49" target="_blank" rel="noopener" title="blackjack/game.py, lines 46–49" aria-label="Code on GitHub: blackjack/game.py, lines 46 to 49">4</a></td></tr>
+    <tr><td>Dealer</td><td>Stands on every total of 17 or more, soft 17 included (S17)</td><td class="num">DEALER_STAND = 17<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L23" target="_blank" rel="noopener" title="blackjack/rules.py, line 23" aria-label="Code on GitHub: blackjack/rules.py, line 23">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L185-L188" target="_blank" rel="noopener" title="blackjack/game.py, lines 185–188" aria-label="Code on GitHub: blackjack/game.py, lines 185 to 188">6</a></td></tr>
+    <tr><td>Dealer peek</td><td>Checks for blackjack under an ace or a ten, before the player acts</td><td class="num">dealer blackjack ends the round<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L121-L126" target="_blank" rel="noopener" title="blackjack/game.py, lines 121–126" aria-label="Code on GitHub: blackjack/game.py, lines 121 to 126">7</a></td></tr>
+    <tr><td>Blackjack</td><td>Natural pays on the bet; a player natural against a dealer natural pushes</td><td class="num">3:2 (1.5 per unit)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L22" target="_blank" rel="noopener" title="blackjack/rules.py, line 22" aria-label="Code on GitHub: blackjack/rules.py, line 22">8</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L190-L205" target="_blank" rel="noopener" title="blackjack/game.py, lines 190–205" aria-label="Code on GitHub: blackjack/game.py, lines 190 to 205">9</a></td></tr>
+    <tr><td>Double</td><td>Doubles the bet and takes exactly one card</td><td class="num">any two cards<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L155-L156" target="_blank" rel="noopener" title="blackjack/game.py, lines 155–156" aria-label="Code on GitHub: blackjack/game.py, lines 155 to 156">10</a></td></tr>
+    <tr><td>Split</td><td>Two hands from a pair; split aces take one card each and stop; doubling after a split is allowed</td><td class="num">one split, two hands<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L157" target="_blank" rel="noopener" title="blackjack/game.py, line 157" aria-label="Code on GitHub: blackjack/game.py, line 157">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L176-L183" target="_blank" rel="noopener" title="blackjack/game.py, lines 176–183" aria-label="Code on GitHub: blackjack/game.py, lines 176 to 183">12</a></td></tr>
+    <tr><td>Exploration rate</td><td>Learner's epsilon after a number of hands</td><td class="num">0.2 / (1 + hands / 2000), floor 0.01<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L41-L43" target="_blank" rel="noopener" title="blackjack/learner.py, lines 41–43" aria-label="Code on GitHub: blackjack/learner.py, lines 41 to 43">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L161-L162" target="_blank" rel="noopener" title="blackjack/learner.py, lines 161–162" aria-label="Code on GitHub: blackjack/learner.py, lines 161 to 162">14</a></td></tr>
+    <tr><td>Hands per run</td><td>Choices on the page, and the server cap</td><td class="num">10,000, 40,000, 100,000 (cap 100,000)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/blackjack_api.py#L31" target="_blank" rel="noopener" title="server/blackjack_api.py, line 31" aria-label="Code on GitHub: server/blackjack_api.py, line 31">15</a></td></tr>
+    <tr><td>Decisive cell</td><td>Cell counted in agreement only if the best action beats the runner-up by this much</td><td class="num">0.01 of a bet (321 of 330 cells)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L30" target="_blank" rel="noopener" title="blackjack/solver.py, line 30" aria-label="Code on GitHub: blackjack/solver.py, line 30">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L277" target="_blank" rel="noopener" title="blackjack/learner.py, line 277" aria-label="Code on GitHub: blackjack/learner.py, line 277">17</a></td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> the rules are fixed choices, not learned, set to match the TABLE RULES panel. The 6-deck shoe and 75% reshuffle point are the defaults of the shoe class. The exploration constants (start 0.2, floor 0.01, the 2,000-hand scale) and the 0.01 decisive margin were set by hand. The repository has no sweep over them. The exact solver assumes an infinite deck, so the table is basic strategy for that model, and the shoe is where the measured result departs from it.</p>
-  <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">Training is simulation only. Each run starts with empty statistics and no stored model. The page takes 16 snapshots during a run. With seed 1, after 40,000 hands the learner agrees with the exact table on 72.6% of the 321 decisive cells (mean value lost per cell 0.039). After 100,000 hands it agrees on 78.2% (0.023 lost). Agreement rises slowly as hands increase. Simulating exact basic strategy through the 6-deck shoe for 200,000 rounds (seed 1) gives -0.66% ± 0.26% per unit bet, close to the 0.570% infinite-deck edge. No committed result file covers Blackjack, so these figures come from re-running the code.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py">blackjack/solver.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py">blackjack/learner.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py">blackjack/rules.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py">blackjack/game.py</a> · <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/blackjack_api.py">server/blackjack_api.py</a></p>
+  <p class="hiw-note"><b>How these were chosen:</b> the rules are fixed choices, not learned. They match the TABLE RULES panel. The 6-deck shoe and the 75% reshuffle point are the defaults of the shoe class<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L28-L29" target="_blank" rel="noopener" title="blackjack/game.py, lines 28–29" aria-label="Code on GitHub: blackjack/game.py, lines 28 to 29">3</a>. The exploration constants (start 0.2, floor 0.01, the 2,000-hand scale) and the 0.01 decisive margin were set by hand, and the repository has no sweep over them. The exact solver assumes an infinite deck, so its table is basic strategy for that model. The shoe is where the measured result departs from it.</p>
+
+  <h3 class="hiw-sub">Dynamic programming (exact)</h3>
+  <p class="hiw-note">The solver uses the **infinite-deck** model, in which every card is an independent draw with the probabilities of its value. Under that model the player's decisions form a **Markov decision process** (MDP): a model in which the agent picks an action in each state, and the next state depends only on the current state and the chosen action. A state here is the hard total of the player's hand, whether it holds an ace, whether it still has two cards, and the dealer's upcard<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L1-L7" target="_blank" rel="noopener" title="blackjack/solver.py, lines 1–7" aria-label="Code on GitHub: blackjack/solver.py, lines 1 to 7">18</a>.</p>
+  <p class="hiw-note">A hit always adds a card, so every state's value depends only on states with a larger hard total. The values can therefore be computed from the largest totals downwards, in a recursion with no cycles. This is **backward induction**, the dynamic-programming step that fills in values from the end of the process back to the start. The recursion is **memoised**, which means each result is stored once and reused, so every state is solved once<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L135-L141" target="_blank" rel="noopener" title="blackjack/solver.py, lines 135–141" aria-label="Code on GitHub: blackjack/solver.py, lines 135 to 141">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L146-L149" target="_blank" rel="noopener" title="blackjack/solver.py, lines 146–149" aria-label="Code on GitHub: blackjack/solver.py, lines 146 to 149">20</a>.</p>
+  <p class="hiw-note">The dealer draws until its best total is 17 or more, and soft 17 stands. The dealer's final total therefore falls on 17, 18, 19, 20, 21 or bust. For each hard total and ace flag, the solver computes the chance of each outcome by recursing on the dealer's next card, weighted by that card's chance<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L39-L54" target="_blank" rel="noopener" title="blackjack/solver.py, lines 39–54" aria-label="Code on GitHub: blackjack/solver.py, lines 39 to 54">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L23" target="_blank" rel="noopener" title="blackjack/rules.py, line 23" aria-label="Code on GitHub: blackjack/rules.py, line 23">5</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:39-54 -->
+    <div class="math math-block">\text{DEALER}(h, a) = \begin{cases} \mathbf{e}_{\text{bust}} &amp; \text{if } h \gt 21 \\ \mathbf{e}_{t-17} &amp; \text{if } t = \text{TOTAL}(h, a) \ge 17 \\ \sum_{v} p_v\,\text{DEALER}\bigl(h + v,\ a \lor [v = 1]\bigr) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L39-L54" target="_blank" rel="noopener" title="blackjack/solver.py, lines 39–54" aria-label="Code on GitHub: blackjack/solver.py, lines 39 to 54">21</a></span>
+  </div>
+  <div class="math-fig">
+    <!-- blackjack/rules.py:39-44 -->
+    <div class="math math-block">\text{TOTAL}(h, a) = \begin{cases} h + 10 &amp; \text{if } a \text{ and } h + 10 \le 21 \\ h &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L39-L44" target="_blank" rel="noopener" title="blackjack/rules.py, lines 39–44" aria-label="Code on GitHub: blackjack/rules.py, lines 39 to 44">22</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">h</span> is a hard total, with every ace counted as 1, and <span class="math">a</span> is true when the hand holds an ace. <span class="math">t</span> is the best total. <span class="math">\mathbf{e}_k</span> is the unit vector with a 1 in position <span class="math">k</span> of the six outcomes, ordered 17, 18, 19, 20, 21 and bust, so bust is position 5<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L26" target="_blank" rel="noopener" title="blackjack/solver.py, line 26" aria-label="Code on GitHub: blackjack/solver.py, line 26">23</a>. The chance of a card of value <span class="math">v</span> is <span class="math">p_v = 4/13</span> for <span class="math">v = 10</span>, since the ten, jack, queen and king each have that value, and <span class="math">p_v = 1/13</span> for the ace (<span class="math">v = 1</span>) through 9<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L20" target="_blank" rel="noopener" title="blackjack/rules.py, line 20" aria-label="Code on GitHub: blackjack/rules.py, line 20">24</a>. The bracket <span class="math">[v = 1]</span> is 1 when the card is an ace, so <span class="math">a \lor [v = 1]</span> keeps the ace flag.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L39-L54" target="_blank" rel="noopener" title="blackjack/solver.py, lines 39–54" aria-label="Code on GitHub: blackjack/solver.py, lines 39 to 54">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L39-L44" target="_blank" rel="noopener" title="blackjack/rules.py, lines 39–44" aria-label="Code on GitHub: blackjack/rules.py, lines 39 to 44">22</a></span>
+    <pre class="pseudo-simple">function DEALER(hard, ace):
+    # chances of 17, 18, 19, 20, 21, bust
+    if hard &gt; 21:
+        return the outcome bust
+    best ← TOTAL(hard, ace)
+    if best ≥ 17:
+        return the outcome best − 17            # soft 17 stands (S17)
+    result ← zeros for the six outcomes
+    for each card value v with chance p(v):
+        result ← result + p(v) × DEALER(hard + v, ace or v = 1)
+    return result</pre>
+    <pre class="pseudo-full" hidden>constants: DEALER-STAND = 17, BUST = 5, p(v) = 4/13 if v = 10, else 1/13
+
+function DEALER(hard, ace):                 # memoised: each (hard, ace) is solved once
+    if hard &gt; 21:
+        return one-hot(BUST)
+    best ← TOTAL(hard, ace)
+    if best ≥ DEALER-STAND:                # S17: soft 17 stands too
+        return one-hot(best − DEALER-STAND)
+    out ← zeros for the six outcomes
+    for each card value v with chance p(v):
+        for i from 0 to 5:
+            out[i] ← out[i] + p(v) × DEALER(hard + v, ace or v = 1)[i]
+    return out
+
+function TOTAL(hard, ace):
+    if ace and hard + 10 ≤ 21:
+        return hard + 10                       # the ace counts as 11
+    return hard
+
+function DEALER-OUTCOMES(upcard):              # the dealer's outcomes, given no blackjack
+    if upcard = 1:
+        h ← 10                                 # the hole card that would make blackjack
+    else if upcard = 10:
+        h ← 1
+    else:
+        h ← none                               # upcards 2 to 9 cannot make blackjack
+    p_bj ← p(h) if h is not none, else 0
+    dist ← zeros for the six outcomes
+    for each hole value x with x ≠ h:
+        for i from 0 to 5:
+            dist[i] ← dist[i] + p(x) × DEALER(upcard + x, upcard = 1 or x = 1)[i] ÷ (1 − p_bj)
+    return p_bj, dist</pre>
+  </div>
+  <p class="hiw-note"><b>Full version.</b> The memo is the <code>@cache</code> decorator on the dealer recursion, so each (hard, ace) pair is computed once<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L39" target="_blank" rel="noopener" title="blackjack/solver.py, line 39" aria-label="Code on GitHub: blackjack/solver.py, line 39">25</a>. The total is computed with the ace as 11 only when that keeps the hand at 21 or less, which is what makes a soft total soft<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/rules.py#L39-L44" target="_blank" rel="noopener" title="blackjack/rules.py, lines 39–44" aria-label="Code on GitHub: blackjack/rules.py, lines 39 to 44">22</a>. The division by <code>1 − p_bj</code> is the renormalisation described next, and it is applied to every outcome.</p>
+
+  <p class="hiw-note">With an ace or a ten showing, the dealer may hold a blackjack. The hole card that would make it is a ten under an ace, or an ace under a ten. The solver removes that card and rescales the others, because the player's decisions are made only in the cases where the peek found no blackjack. The chance of a dealer blackjack is kept for the last step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L57-L72" target="_blank" rel="noopener" title="blackjack/solver.py, lines 57–72" aria-label="Code on GitHub: blackjack/solver.py, lines 57 to 72">26</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:57-72 -->
+    <div class="math math-block">\mathbf{d}_u = \frac{1}{1 - p_{\text{BJ}}} \sum_{h \ne h^*_u} p_h\,\text{DEALER}\bigl(u + h,\ [u = 1] \lor [h = 1]\bigr), \qquad p_{\text{BJ}} = \begin{cases} p_{10} &amp; u = 1 \\ p_{1} &amp; u = 10 \\ 0 &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L57-L72" target="_blank" rel="noopener" title="blackjack/solver.py, lines 57–72" aria-label="Code on GitHub: blackjack/solver.py, lines 57 to 72">26</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u</span> is the upcard value, and <span class="math">h^*_u</span> is the hole card that makes a blackjack with it (10 under an ace, 1 under a ten). For upcards 2 to 9 nothing is removed and <span class="math">p_{\text{BJ}} = 0</span>. <span class="math">\mathbf{d}_u</span> is the dealer's distribution over the six outcomes, given that there is no blackjack.</p>
+
+  <p class="hiw-note">For each player state the solver computes the value of every legal action, in units of the bet: +1 for a win, −1 for a loss and 0 for a push. Standing compares the player's total <span class="math">T</span> with the dealer's distribution. A dealer bust pays 1. Otherwise the player wins against each dealer total below <span class="math">T</span>, loses to each total above it, and pushes on a tie<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L75-L87" target="_blank" rel="noopener" title="blackjack/solver.py, lines 75–87" aria-label="Code on GitHub: blackjack/solver.py, lines 75 to 87">27</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:75-87 -->
+    <div class="math math-block">V_{\text{stand}}(T) = d_{\text{bust}} + \sum_{t=17}^{21} d_t\,\bigl([T \gt t] - [T \lt t]\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L75-L87" target="_blank" rel="noopener" title="blackjack/solver.py, lines 75–87" aria-label="Code on GitHub: blackjack/solver.py, lines 75 to 87">27</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">d_t</span> is the chance that the dealer finishes on total <span class="math">t</span>, and <span class="math">d_{\text{bust}}</span> is the chance that it busts. The brackets are 1 when their comparison holds and 0 otherwise.</p>
+  <p class="hiw-note">Hitting draws one card. If the hard total goes past 21 the hand busts and loses the bet. Otherwise the player continues from a state with a larger hard total, and its best action is already known. Doubling doubles the bet, takes exactly one card and then must stand<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L146-L154" target="_blank" rel="noopener" title="blackjack/solver.py, lines 146–154" aria-label="Code on GitHub: blackjack/solver.py, lines 146 to 154">28</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:146-149 -->
+    <div class="math math-block">Q_{\text{hit}}(h, a) = \sum_{v} p_v \begin{cases} -1 &amp; \text{if } h + v \gt 21 \\ \max\bigl(Q_{\text{stand}}, Q_{\text{hit}}\bigr)(h + v,\ a \lor [v = 1]) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L146-L149" target="_blank" rel="noopener" title="blackjack/solver.py, lines 146–149" aria-label="Code on GitHub: blackjack/solver.py, lines 146 to 149">20</a></span>
+  </div>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:152-154 -->
+    <div class="math math-block">Q_{\text{double}}(h, a) = 2 \sum_{v} p_v \begin{cases} -1 &amp; \text{if } h + v \gt 21 \\ V_{\text{stand}}\bigl(\text{TOTAL}(h + v,\ a \lor [v = 1])\bigr) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L152-L154" target="_blank" rel="noopener" title="blackjack/solver.py, lines 152–154" aria-label="Code on GitHub: blackjack/solver.py, lines 152 to 154">29</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">Q_a(h, a)</span> is the conditional value of action <span class="math">a</span>, meaning the value with no dealer blackjack. The factor 2 in the double is the doubled bet. In the hit formula, the maximum is taken over stand and hit only, because the state reached has more than two cards and cannot double.</p>
+  <p class="hiw-note"><b>Split.</b> A pair of value <span class="math">r</span> can split, and its two hands are then worth one unit each. The formula for the split is written for each card <span class="math">x</span> that completes one hand. An ace split takes one card each and stands on the soft total <span class="math">1 + x</span>, which is its only action. Any other split hand can hit or double, but it cannot split again<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L161-L180" target="_blank" rel="noopener" title="blackjack/solver.py, lines 161–180" aria-label="Code on GitHub: blackjack/solver.py, lines 161 to 180">30</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:161-180 -->
+    <div class="math math-block">Q_{\text{split}}(r) = 2 \sum_{x} p_x \begin{cases} V_{\text{stand}}\bigl(\text{TOTAL}(1 + x,\ \text{true})\bigr) &amp; \text{if } r = 1 \\ \max\bigl(Q_{\text{stand}}, Q_{\text{hit}}, Q_{\text{double}}\bigr)(r + x,\ [x = 1]) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L161-L180" target="_blank" rel="noopener" title="blackjack/solver.py, lines 161–180" aria-label="Code on GitHub: blackjack/solver.py, lines 161 to 180">30</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">r</span> is the card value of the pair (1 for a pair of aces), and <span class="math">x</span> is the card that completes one of the two hands. Under the infinite deck the two hands are independent, so the split is twice the average, over <span class="math">x</span>, of one hand's best play.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L135-L156" target="_blank" rel="noopener" title="blackjack/solver.py, lines 135–156" aria-label="Code on GitHub: blackjack/solver.py, lines 135 to 156">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L161-L189" target="_blank" rel="noopener" title="blackjack/solver.py, lines 161–189" aria-label="Code on GitHub: blackjack/solver.py, lines 161 to 189">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L75-L87" target="_blank" rel="noopener" title="blackjack/solver.py, lines 75–87" aria-label="Code on GitHub: blackjack/solver.py, lines 75 to 87">27</a></span>
+    <pre class="pseudo-simple">function VALUES(hard, ace, two, u):
+    # conditional on no dealer blackjack
+    dist ← the dealer's outcomes for upcard u
+    values ← {stand: STAND-VALUE(TOTAL(hard, ace), dist)}
+    values[hit] ← 0
+    for each card value v with chance p(v):
+        if hard + v &gt; 21:
+            values[hit] ← values[hit] − p(v)       # busted: lose the bet
+        else:
+            values[hit] ← values[hit] + p(v) × max(VALUES(hard + v, ace or v = 1, no, u))
+    if two:
+        values[double] ← 2 × (the same sum, with one card and then a stand)
+    return values</pre>
+    <pre class="pseudo-full" hidden>function VALUES(hard, ace, two, u):
+    # memoised by (hard, ace, two, u)
+    p_bj, dist ← DEALER-OUTCOMES(u)
+    values ← {stand: STAND-VALUE(TOTAL(hard, ace), dist)}
+    values[hit] ← 0
+    for each card value v with chance p(v):
+        if hard + v &gt; 21:
+            values[hit] ← values[hit] + p(v) × −1          # busted: lose the bet
+        else:
+            values[hit] ← values[hit] + p(v) × max(VALUES(hard + v, ace or v = 1, no, u))
+    if two:                                    # double: one card, then the hand must stand
+        values[double] ← 0
+        for each card value v with chance p(v):
+            if hard + v &gt; 21:
+                values[double] ← values[double] + p(v) × −1
+            else:
+                values[double] ← values[double] + p(v) × STAND-VALUE(TOTAL(hard + v, ace or v = 1), dist)
+        values[double] ← 2 × values[double]
+    return values
+
+function STAND-VALUE(total, dist):
+    ev ← dist[bust]                           # a dealer bust pays 1
+    for each dealer total t from 17 to 21, with chance dist[t]:
+        if total &gt; t:
+            ev ← ev + dist[t]
+        else if total &lt; t:
+            ev ← ev − dist[t]
+    return ev
+
+function PAIR-VALUES(r, u):                    # a pair of card value r (1 = aces)
+    values ← VALUES(2 × r, r = 1, yes, u)     # the actions that do not split
+    second ← 0
+    for each card value x with chance p(x):
+        if r = 1:
+            second ← second + p(x) × STAND-VALUE(TOTAL(1 + x, yes), dist)   # split aces stand
+        else:
+            second ← second + p(x) × max(VALUES(r + x, x = 1, yes, u))      # no re-split
+    values[split] ← 2 × second                 # two hands, each one unit of the opening bet
+    return values
+
+function ADJUST(values, p_bj):                 # add the dealer's blackjack peek
+    for each action a in values:
+        values[a] ← −p_bj + (1 − p_bj) × values[a]
+    return values</pre>
+  </div>
+  <p class="hiw-note"><b>Full version.</b> <code>VALUES</code> is <code>_state</code> and <code>STAND-VALUE</code> is <code>stand_value</code> in solver.py<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L135-L156" target="_blank" rel="noopener" title="blackjack/solver.py, lines 135–156" aria-label="Code on GitHub: blackjack/solver.py, lines 135 to 156">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L75-L87" target="_blank" rel="noopener" title="blackjack/solver.py, lines 75–87" aria-label="Code on GitHub: blackjack/solver.py, lines 75 to 87">27</a>. The split values come from <code>PAIR-VALUES</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L161-L180" target="_blank" rel="noopener" title="blackjack/solver.py, lines 161–180" aria-label="Code on GitHub: blackjack/solver.py, lines 161 to 180">30</a>, and <code>ADJUST</code> applies the peek<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L182-L189" target="_blank" rel="noopener" title="blackjack/solver.py, lines 182–189" aria-label="Code on GitHub: blackjack/solver.py, lines 182 to 189">33</a>. A pair's non-split actions are valued as a two-card hand with the pair's total, since <code>PAIR-VALUES</code> calls <code>VALUES</code> with that total and the two-card flag set. The ace flag is kept with the hard total, so a soft total stays soft after a hit. The memo is keyed by the two-card flag too, because a hand with two cards may double and a longer hand may not.</p>
+  <p class="hiw-note">A dealer blackjack costs the opening bet whatever the player does, because the peek ends the round before the player acts. Each conditional value <span class="math">Q_a</span> is therefore mapped to <span class="math">V_a = -p_{\text{BJ}} + (1 - p_{\text{BJ}})\,Q_a</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L182-L189" target="_blank" rel="noopener" title="blackjack/solver.py, lines 182–189" aria-label="Code on GitHub: blackjack/solver.py, lines 182 to 189">33</a>. The map is increasing, so the best action is the same with or without the peek. A player natural pays 3:2 unless the dealer has a blackjack, which pushes it. Its value is therefore <span class="math">(1 - p_{\text{BJ}}) \times 1.5</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L213-L215" target="_blank" rel="noopener" title="blackjack/solver.py, lines 213–215" aria-label="Code on GitHub: blackjack/solver.py, lines 213 to 215">34</a>.</p>
+  <p class="hiw-note"><b>Example.</b> Against a dealer 6, the dealer's outcome distribution is 17: 0.165, 18: 0.106, 19: 0.106, 20: 0.102, 21: 0.097, and bust: 0.423, from the code<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L57-L72" target="_blank" rel="noopener" title="blackjack/solver.py, lines 57–72" aria-label="Code on GitHub: blackjack/solver.py, lines 57 to 72">26</a>. A hard 11 that stands is worth 0.423 − 0.577 = −0.154, because 11 loses to every total from 17 to 21. Hitting once is worth 0.334, and doubling is worth 0.667. The exact table therefore doubles 11 against a 6.</p>
+
+  <h3 class="hiw-sub">Basic strategy and the advisor</h3>
+  <p class="hiw-note">The strategy table has 33 rows and 10 upcards, 330 cells in all. The rows are the hard totals 5 to 19, the soft totals A,2 to A,9, and the ten pairs (A,A to 10,10). Hard 4 and hard 20 have no two-card form except the pairs 2,2 and 10,10, so those pairs stand in for them<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L90-L97" target="_blank" rel="noopener" title="blackjack/solver.py, lines 90–97" aria-label="Code on GitHub: blackjack/solver.py, lines 90 to 97">35</a>. Each cell shows the action with the highest value, and the cell's brightness shows that value. The advisor uses the same values for the exact hand in front of the player, with the same peek, natural and split-ace rules<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L201-L222" target="_blank" rel="noopener" title="blackjack/solver.py, lines 201–222" aria-label="Code on GitHub: blackjack/solver.py, lines 201 to 222">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L256-L259" target="_blank" rel="noopener" title="blackjack/solver.py, lines 256–259" aria-label="Code on GitHub: blackjack/solver.py, lines 256 to 259">37</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L201-L222" target="_blank" rel="noopener" title="blackjack/solver.py, lines 201–222" aria-label="Code on GitHub: blackjack/solver.py, lines 201 to 222">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L256-L259" target="_blank" rel="noopener" title="blackjack/solver.py, lines 256–259" aria-label="Code on GitHub: blackjack/solver.py, lines 256 to 259">37</a></span>
+    <pre class="pseudo-simple">function ADVISE(cards, u):
+    # best action for one hand
+    values ← ACTION-VALUES(cards, u)
+    return the action with the highest value</pre>
+    <pre class="pseudo-full" hidden>function ACTION-VALUES(cards, u, from-split, split-aces):
+    hard ← sum of the card values
+    ace ← yes if an ace is among the cards
+    if TOTAL(hard, ace) &gt; 21:
+        raise error "the hand is over 21"
+    p_bj, dist ← DEALER-OUTCOMES(u)
+    if two cards are an ace and a ten and not from-split:
+        return {stand: (1 − p_bj) × 1.5}           # natural: 3:2, or a push against a dealer blackjack
+    if split-aces:
+        values ← {stand: STAND-VALUE(TOTAL(hard, ace), dist)}
+    else if two cards have equal values and not from-split:
+        values ← PAIR-VALUES(first card value, u)
+    else:
+        values ← VALUES(hard, ace, number of cards is 2, u)
+    return ADJUST(values, p_bj)
+
+function ADVISE(cards, u):                     # cached per hand and upcard
+    return the action with the largest value in ACTION-VALUES(cards, u)</pre>
+  </div>
+  <p class="hiw-note"><b>Full version.</b> <code>ACTION-VALUES</code> is <code>hand_values</code>, which the advisor and the simulation call, and <code>ADVISE</code> is <code>basic_action</code>, whose results are cached, up to 200,000 entries<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L201-L222" target="_blank" rel="noopener" title="blackjack/solver.py, lines 201–222" aria-label="Code on GitHub: blackjack/solver.py, lines 201 to 222">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L256-L259" target="_blank" rel="noopener" title="blackjack/solver.py, lines 256–259" aria-label="Code on GitHub: blackjack/solver.py, lines 256 to 259">37</a>. The natural check comes first. A split hand that makes 21 is not a natural, so it falls through to the normal values and pays 1:1. A hand from a split can never split again, so the pair branch is skipped for it.</p>
+  <div class="math-fig">
+    <!-- blackjack/solver.py:224-235 -->
+    <div class="math math-block">\text{EDGE} = -\sum_{u} \sum_{c_1} \sum_{c_2} p_u\,p_{c_1}\,p_{c_2}\,\max_{a}\, Q_a(c_1, c_2, u)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L224-L235" target="_blank" rel="noopener" title="blackjack/solver.py, lines 224–235" aria-label="Code on GitHub: blackjack/solver.py, lines 224 to 235">38</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u</span> is the upcard, and <span class="math">c_1</span> and <span class="math">c_2</span> are the player's first two cards, each drawn independently from the infinite deck. <span class="math">Q_a</span> includes the peek, and the maximum is the best action for that opening hand. A positive edge means the house wins on average. With perfect basic strategy the edge is 0.570% of each bet<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/solver.py#L224-L235" target="_blank" rel="noopener" title="blackjack/solver.py, lines 224–235" aria-label="Code on GitHub: blackjack/solver.py, lines 224 to 235">38</a>.</p>
+
+  <h3 class="hiw-sub">Monte Carlo control (the learner)</h3>
+  <p class="hiw-note"><b>Monte Carlo control</b> learns action values from sampled episodes, here simulated hands, and improves its policy as it goes. The action value <span class="math">Q(s, a)</span> is the expected payoff of taking action <span class="math">a</span> in state <span class="math">s</span> and then playing on. The learner estimates <span class="math">Q</span> as the average payoff of the hands in which that action was taken. It draws cards from the same infinite deck as the solver, so the two are comparable<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L3-L4" target="_blank" rel="noopener" title="blackjack/learner.py, lines 3–4" aria-label="Code on GitHub: blackjack/learner.py, lines 3 to 4">39</a>.</p>
+  <p class="hiw-note">Each round starts from a uniformly chosen cell of the strategy table: an upcard, and a two-card hand that makes the row. Without this, rare starts such as a two-card 5 against a 6 would be seen only a few times in a thousand hands. Starting from a state does not bias that state's estimates, because a value is the payoff from that state onward. The first decision of each round is chosen uniformly among the legal actions, so each action at each cell is tried about equally often over a run<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L7-L10" target="_blank" rel="noopener" title="blackjack/learner.py, lines 7–10" aria-label="Code on GitHub: blackjack/learner.py, lines 7 to 10">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L87-L103" target="_blank" rel="noopener" title="blackjack/learner.py, lines 87–103" aria-label="Code on GitHub: blackjack/learner.py, lines 87 to 103">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L209-L212" target="_blank" rel="noopener" title="blackjack/learner.py, lines 209–212" aria-label="Code on GitHub: blackjack/learner.py, lines 209 to 212">42</a>.</p>
+  <p class="hiw-note">Stand, hit and double each have one estimate per upcard, hard total and ace flag. The future after a stand or hit does not depend on how many cards the hand already holds, so every hand that passes through a state teaches the same estimate. Double is offered only on two cards. Split has one estimate per pair<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L11-L14" target="_blank" rel="noopener" title="blackjack/learner.py, lines 11–14" aria-label="Code on GitHub: blackjack/learner.py, lines 11 to 14">43</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L59-L70" target="_blank" rel="noopener" title="blackjack/learner.py, lines 59–70" aria-label="Code on GitHub: blackjack/learner.py, lines 59 to 70">44</a>.</p>
+  <p class="hiw-note">The learner uses no discounting. The only reward arrives when a round settles, and each decision is credited with the payoffs of the hands it affected, in units of the opening bet. A double pays twice<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L225-L228" target="_blank" rel="noopener" title="blackjack/learner.py, lines 225–228" aria-label="Code on GitHub: blackjack/learner.py, lines 225 to 228">45</a>. A split credits its decision with the sum of its two hands' payoffs, because the split is worth both hands<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L15-L19" target="_blank" rel="noopener" title="blackjack/learner.py, lines 15–19" aria-label="Code on GitHub: blackjack/learner.py, lines 15 to 19">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L229-L233" target="_blank" rel="noopener" title="blackjack/learner.py, lines 229–233" aria-label="Code on GitHub: blackjack/learner.py, lines 229 to 233">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L256-L257" target="_blank" rel="noopener" title="blackjack/learner.py, lines 256–257" aria-label="Code on GitHub: blackjack/learner.py, lines 256 to 257">48</a>. The learner's hands are table cells, and none of them is an ace and a ten, so a natural is never learned. Its 3:2 payout is used only by the advisor.</p>
+  <div class="math-fig">
+    <!-- blackjack/learner.py:192-196 -->
+    <div class="math math-block">Q(s, a) \leftarrow Q(s, a) + \frac{G - Q(s, a)}{N(s, a)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L192-L196" target="_blank" rel="noopener" title="blackjack/learner.py, lines 192–196" aria-label="Code on GitHub: blackjack/learner.py, lines 192 to 196">49</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">G</span> is the payoff credited to the decision, and <span class="math">N(s, a)</span> is the number of visits to that state and action, including this one. The update is an incremental form of the average, so after <span class="math">N</span> updates <span class="math">Q</span> is the mean of all <span class="math">N</span> payoffs.</p>
+  <p class="hiw-note">Exploration is epsilon-greedy. The exploration rate <span class="math">\varepsilon</span> starts at 0.2, halves at 2,000 hands and decays further, with a floor of 0.01<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L41-L43" target="_blank" rel="noopener" title="blackjack/learner.py, lines 41–43" aria-label="Code on GitHub: blackjack/learner.py, lines 41 to 43">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L161-L162" target="_blank" rel="noopener" title="blackjack/learner.py, lines 161–162" aria-label="Code on GitHub: blackjack/learner.py, lines 161 to 162">14</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/learner.py:161-162 -->
+    <div class="math math-block">\varepsilon(n) = \max\!\left(0.01,\ \frac{0.2}{1 + n / 2000}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L41-L43" target="_blank" rel="noopener" title="blackjack/learner.py, lines 41–43" aria-label="Code on GitHub: blackjack/learner.py, lines 41 to 43">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L161-L162" target="_blank" rel="noopener" title="blackjack/learner.py, lines 161–162" aria-label="Code on GitHub: blackjack/learner.py, lines 161 to 162">14</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the number of hands played so far. The rate is 0.2 at the start, 0.1 at 2,000 hands, and reaches the floor of 0.01 at 38,000 hands.</p>
+  <div class="math-fig">
+    <!-- blackjack/learner.py:178-190 -->
+    <div class="math math-block">a = \begin{cases} \text{uniform over the legal actions} &amp; \text{if it is the first decision of the hand, or with probability } \varepsilon \\ \arg\max_{a \in A(s)} Q(s, a) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L178-L190" target="_blank" rel="noopener" title="blackjack/learner.py, lines 178–190" aria-label="Code on GitHub: blackjack/learner.py, lines 178 to 190">50</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">A(s)</span> is the set of legal actions in state <span class="math">s</span>. An action that has never been tried has <span class="math">Q = 0</span>. Ties go to the option listed first, because the comparison is strict<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L186-L190" target="_blank" rel="noopener" title="blackjack/learner.py, lines 186–190" aria-label="Code on GitHub: blackjack/learner.py, lines 186 to 190">51</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L198-L257" target="_blank" rel="noopener" title="blackjack/learner.py, lines 198–257" aria-label="Code on GitHub: blackjack/learner.py, lines 198 to 257">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L161-L162" target="_blank" rel="noopener" title="blackjack/learner.py, lines 161–162" aria-label="Code on GitHub: blackjack/learner.py, lines 161 to 162">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L87-L103" target="_blank" rel="noopener" title="blackjack/learner.py, lines 87–103" aria-label="Code on GitHub: blackjack/learner.py, lines 87 to 103">41</a></span>
+    <pre class="pseudo-simple">function LEARN(hands):
+    # Monte Carlo control with exploring starts
+    played ← 0
+    repeat hands times:
+        ε ← the exploration rate after played hands
+        upcard, cards ← a uniform random cell of the strategy table
+        play one round from that start, with CHOOSE and ε
+        for each decision in the round:          # every visit counts
+            UPDATE(the decision, the payoff it affected)
+        played ← played + 1</pre>
+    <pre class="pseudo-full" hidden>constants: EPSILON-START = 0.2, EPSILON-MIN = 0.01, EPSILON-HALF-LIFE = 2000
+
+function LEARN(hands):
+    played ← 0
+    repeat hands times:                        # the server caps this at 100,000
+        ε ← max(EPSILON-MIN, EPSILON-START ÷ (1 + played ÷ EPSILON-HALF-LIFE))
+        upcard, combos ← a uniform random cell of the strategy table     # exploring start
+        hole ← a uniform random rank, 13 ranks, with the four ten-valued ranks counted as 10
+        if upcard = 1 and hole = 10, or upcard = 10 and hole = 1:
+            pass                               # dealer blackjack: the round ends before any decision
+        else:
+            EPISODE(upcard, hole, a uniform random hand from combos, ε)
+        played ← played + 1
+
+function EPISODE(upcard, hole, cards, ε):
+    first hand ← HAND(cards, from-split = no)
+    hands ← [first hand]                       # hands still in play at the end of the round
+    queue ← [first hand]                       # hands still to play, in order
+    log ← empty                                # (slot, hands the decision affected)
+    first ← yes                                # only the first decision of a round explores
+    while queue is not empty:
+        hand ← the first of queue, removed
+        while hand is not done:
+            options ← OPTIONS(upcard, hand)
+            code, slot ← CHOOSE(options, ε, first)
+            first ← no
+            append (slot, [hand]) to log
+            if code is stand:
+                hand.done ← yes
+            else if code is hit:
+                hand.add(a random rank value)
+                hand.done ← hand.best ≥ 21
+            else if code is double:
+                hand.bet ← 2
+                hand.add(a random rank value)
+                hand.done ← yes
+            else:                              # split: the pair becomes two hands
+                left ← HAND([pair value, a random rank value], from-split = yes)
+                right ← HAND([pair value, a random rank value], from-split = yes)
+                replace the last entry of log with (slot, [left, right])
+                hands ← hands without hand, plus left and right
+                put left and right at the front of queue
+                hand.done ← yes
+
+    dealer ← upcard + hole, with the ace flag (upcard = 1 or hole = 1)
+    if some hand in hands has hard total ≤ 21:  # the dealer plays only for live hands
+        while TOTAL(dealer) &lt; 17:             # S17: soft 17 stands
+            add a random rank value to the dealer's hard total, and update its ace flag
+    for each hand in hands:
+        if hand.hard &gt; 21:
+            payoff ← −hand.bet
+        else if the dealer busts or hand.best &gt; dealer total:
+            payoff ← hand.bet
+        else if hand.best &lt; dealer total:
+            payoff ← −hand.bet
+        else:
+            payoff ← 0
+    for each (slot, affected) in log:
+        UPDATE(slot, sum of the payoffs of affected)</pre>
+  </div>
+  <p class="hiw-note"><b>Full version.</b> <code>LEARN</code> and <code>EPISODE</code> are <code>run</code> and <code>_episode</code> in learner.py<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L164-L168" target="_blank" rel="noopener" title="blackjack/learner.py, lines 164–168" aria-label="Code on GitHub: blackjack/learner.py, lines 164 to 168">53</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L198-L257" target="_blank" rel="noopener" title="blackjack/learner.py, lines 198–257" aria-label="Code on GitHub: blackjack/learner.py, lines 198 to 257">52</a>. Hands that begin with a dealer blackjack are skipped, but they still count toward the hands played, so the exploration schedule runs on the same count the page reports<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L203-L207" target="_blank" rel="noopener" title="blackjack/learner.py, lines 203–207" aria-label="Code on GitHub: blackjack/learner.py, lines 203 to 207">54</a>.</p>
+  <p class="hiw-note">A split is a single decision that is credited with both hands. Its entry in the log is replaced when the split happens, so the decision is credited with the sum of the two hands' payoffs, not with the first hand alone<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L229-L236" target="_blank" rel="noopener" title="blackjack/learner.py, lines 229–236" aria-label="Code on GitHub: blackjack/learner.py, lines 229 to 236">55</a>. Only one split is allowed per round, so only the opening hand can have a pair value.</p>
+  <p class="hiw-note">The dealer plays once, after the player's decisions, and only when some hand is still live. The engine settles a round the same way, with the dealer drawing only when a hand has neither busted nor been dealt a natural<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L238-L246" target="_blank" rel="noopener" title="blackjack/learner.py, lines 238–246" aria-label="Code on GitHub: blackjack/learner.py, lines 238 to 246">56</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L207-L219" target="_blank" rel="noopener" title="blackjack/game.py, lines 207–219" aria-label="Code on GitHub: blackjack/game.py, lines 207 to 219">57</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L59-L70" target="_blank" rel="noopener" title="blackjack/learner.py, lines 59–70" aria-label="Code on GitHub: blackjack/learner.py, lines 59 to 70">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L178-L190" target="_blank" rel="noopener" title="blackjack/learner.py, lines 178–190" aria-label="Code on GitHub: blackjack/learner.py, lines 178 to 190">50</a></span>
+    <pre class="pseudo-simple">function CHOOSE(options, ε, first):
+    if first or a random number is below ε:
+        return a uniform random option
+    return the option with the highest Q               # untried options count as 0</pre>
+    <pre class="pseudo-full" hidden>function CHOOSE(options, ε, first):
+    if first or random &lt; ε:                  # explore: the first decision picks uniformly
+        return a uniform random option
+    best ← options[1]
+    for each option o after the first:
+        if Q[o] &gt; Q[best]:                    # strict: a tie keeps the earlier option
+            best ← o
+    return best
+
+function OPTIONS(upcard, hand):                # the legal actions, each with its statistics slot
+    if hand is an opening pair:                # the pair value is set only for the opening two cards
+        return [(split, pair slot), (stand, state slot), (hit, state slot), (double, state slot)]
+    if hand has two cards:
+        return [(stand, state slot), (hit, state slot), (double, state slot)]
+    return [(stand, state slot), (hit, state slot)]      # state slot = (upcard, hard, ace)
+
+function HAND(cards, from-split):
+    hard ← sum of the card values
+    ace ← yes if 1 is among the cards
+    pair value ← the card value, if from-split is no and the two cards are equal, else 0
+    done ← yes if from-split and the first card is an ace, or if TOTAL(hard, ace) = 21
+    return a hand with bet 1 and no payoff</pre>
+  </div>
+  <p class="hiw-note"><b>Full version.</b> <code>CHOOSE</code> is <code>_choose</code>, <code>OPTIONS</code> is <code>_options</code>, and <code>HAND</code> is the constructor of <code>_Hand</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L178-L190" target="_blank" rel="noopener" title="blackjack/learner.py, lines 178–190" aria-label="Code on GitHub: blackjack/learner.py, lines 178 to 190">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L59-L70" target="_blank" rel="noopener" title="blackjack/learner.py, lines 59–70" aria-label="Code on GitHub: blackjack/learner.py, lines 59 to 70">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L127-L137" target="_blank" rel="noopener" title="blackjack/learner.py, lines 127–137" aria-label="Code on GitHub: blackjack/learner.py, lines 127 to 137">58</a>. The options are built so that a pair can split only as the opening hand, and double is offered only on two cards. The ace-and-ten natural is never generated by the learner, because the start cells never contain one.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L192-L196" target="_blank" rel="noopener" title="blackjack/learner.py, lines 192–196" aria-label="Code on GitHub: blackjack/learner.py, lines 192 to 196">49</a></span>
+    <pre class="pseudo-simple">function UPDATE(slot, payoff):
+    N[slot] ← N[slot] + 1
+    Q[slot] ← Q[slot] + (payoff − Q[slot]) ÷ N[slot]     # running mean of the payoffs</pre>
+  </div>
+  <p class="hiw-note"><b>Example.</b> A decision affects three hands with payoffs +1, −1 and +1. The running mean after each update is 1, then 0, then 1/3. That equals the plain average (1 − 1 + 1) ÷ 3, which is the point of the incremental form.</p>
+
+  <h3 class="hiw-sub">Training and tuning</h3>
+  <p class="hiw-note">Training is simulation only. Each run starts with empty statistics and no stored model. The page asks the server for 16 snapshots of one run, and each snapshot is the learner's greedy table after an evenly spaced number of hands<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L296-L308" target="_blank" rel="noopener" title="blackjack/learner.py, lines 296–308" aria-label="Code on GitHub: blackjack/learner.py, lines 296 to 308">59</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/blackjack.js#L430" target="_blank" rel="noopener" title="web/js/blackjack.js, line 430" aria-label="Code on GitHub: web/js/blackjack.js, line 430">60</a>. With a fixed seed, every run gives the same snapshots. The page picks a new random seed each time, so its live numbers differ from the seed 1 results below.</p>
+  <p class="hiw-note">The learner's only parameters are the exploration schedule described above. The exact table only scores the snapshots. It never changes the learner's estimates, so nothing is tuned against it during training.</p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note">Two measures compare the learner with the exact table. <b>Agreement</b> is the share of the decisive cells where the learner's greedy move is the exact best move. <b>Value lost</b> is the mean exact value given up per cell by following the learner's moves. An untried cell counts as its worst action for value lost, and as a miss for agreement. Both are computed from the same exact table<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L260-L282" target="_blank" rel="noopener" title="blackjack/learner.py, lines 260–282" aria-label="Code on GitHub: blackjack/learner.py, lines 260 to 282">61</a>.</p>
+  <div class="math-fig">
+    <!-- blackjack/learner.py:260-282 -->
+    <div class="math math-block">\text{agreement} = \frac{\#\{c \in D : \pi(c) = a^*(c)\}}{|D|}, \qquad \text{value lost} = \frac{1}{|C|} \sum_{c \in C} \bigl(V^*(c) - V(c, \pi(c))\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L260-L282" target="_blank" rel="noopener" title="blackjack/learner.py, lines 260–282" aria-label="Code on GitHub: blackjack/learner.py, lines 260 to 282">61</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">C</span> is the 330 table cells, and <span class="math">D</span> is the set of decisive cells, 321 of them. <span class="math">\pi(c)</span> is the learner's greedy move in cell <span class="math">c</span>, <span class="math">a^*(c)</span> is the exact best move, <span class="math">V^*(c)</span> is the exact value of that best move, and <span class="math">V(c, \pi(c))</span> is the exact value of the learner's move. The exact values are taken without the peek, because the learner's rounds never include a dealer blackjack<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/learner.py#L106-L114" target="_blank" rel="noopener" title="blackjack/learner.py, lines 106–114" aria-label="Code on GitHub: blackjack/learner.py, lines 106 to 114">62</a>.</p>
+  <p class="hiw-note"><b>Learning curve.</b> With seed 1, the learner agrees with the exact table on 64.8% of the decisive cells after 20,000 hands, 72.6% after 40,000, 74.5% after 60,000, 75.4% after 80,000 and 78.2% after 100,000. The value lost per cell falls from 0.072 to 0.023 over the same hands. Agreement keeps rising, more slowly as the hands increase<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/blackjack_learner_mc.json" target="_blank" rel="noopener" title="results/blackjack_learner_mc.json" aria-label="Code on GitHub: results/blackjack_learner_mc.json">63</a>.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Hands</th><th class="num">Agreement, decisive cells</th><th class="num">Value lost per cell</th></tr></thead><tbody>
+    <tr><td>20,000</td><td class="num">64.8%</td><td class="num">0.072</td></tr>
+    <tr><td>40,000</td><td class="num">72.6%</td><td class="num">0.039</td></tr>
+    <tr><td>60,000</td><td class="num">74.5%</td><td class="num">0.030</td></tr>
+    <tr><td>80,000</td><td class="num">75.4%</td><td class="num">0.028</td></tr>
+    <tr><td>100,000</td><td class="num">78.2%</td><td class="num">0.023</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>Shoe check.</b> The exact table was also played through the 6-deck shoe, with its reshuffle at 75%, for 200,000 rounds at seed 1. The measured return is −0.662% of each unit bet, with a standard error of 0.256%. The infinite-deck edge is −0.570%, so the shoe result is within half a standard error of the model<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/blackjack_simulate.md" target="_blank" rel="noopener" title="results/blackjack_simulate.md" aria-label="Code on GitHub: results/blackjack_simulate.md">64</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/blackjack/game.py#L231-L250" target="_blank" rel="noopener" title="blackjack/game.py, lines 231–250" aria-label="Code on GitHub: blackjack/game.py, lines 231 to 250">65</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/blackjack.js"></script>
 </body>

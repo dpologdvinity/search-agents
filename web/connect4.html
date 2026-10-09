@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -30,30 +31,35 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">02 // ADVERSARIAL SEARCH · SELF-PLAY LEARNING</div>
+      <div class="proj-pg-tag">02 // ADVERSARIAL SEARCH</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="CONNECT FOUR">CONNECT FOUR</h1>
-      <div class="proj-pg-sub">AlphaZero-style PUCT + policy-value network trained by self-play · alpha-beta minimax · Monte Carlo tree search · chance (fixed odds)</div>
+      <div class="proj-pg-sub">Play a self-taught network, a search or a fixed-odds baseline, or watch two of them play.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">YOU <span class="val" id="chip-you">—</span></span>
-        <span class="stat-chip">AI <span class="val" id="chip-ai">—</span></span>
         <span class="stat-chip green">MOVE <span class="val" id="chip-move">1</span></span>
         <span class="stat-chip">STATUS <span class="val" id="chip-status">YOUR TURN</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Get four discs in a row, across, down or diagonally, before the opponent.</p>
+    <p>Click a column to drop a disc. Red moves first.</p>
+    <p>Choose AI vs AI to watch two algorithms play each other.</p>
+  </section>
+
   <div class="proj-body">
 
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
         <div id="c4" class="c4-board"></div>
-        <div class="field-hint" id="c4-hint">Click a column to drop a piece.</div>
         <div class="inline" style="justify-content:center">
-          <button class="cyber-btn pink" id="btn-new"><span class="btn-txt">↺ NEW GAME</span></button>
-          <button class="cyber-btn" id="btn-undo"><span class="btn-txt">◀ UNDO</span></button>
-          <button class="cyber-btn green" id="btn-hint"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn pink" id="btn-new" title="Start a new game with the settings on the right"><span class="btn-txt">↺ NEW GAME</span></button>
+          <button class="cyber-btn" id="btn-undo" title="Take back your last move and the reply that followed it"><span class="btn-txt">◀ UNDO</span></button>
+          <button class="cyber-btn green" id="btn-hint" title="Ask AlphaZero for a suggested column (minimax if the network is not available)"><span class="btn-txt">✦ HINT</span></button>
         </div>
       </div>
 
@@ -63,7 +69,7 @@
           <div class="viz-title" id="an-title">Make a move to see the agent's reasoning.</div>
           <div class="c4-bars" id="an-bars"></div>
           <div class="inline" id="an-legend" style="gap:1.2rem"></div>
-          <div id="an-value" class="hidden" style="margin-top:0.4rem">
+          <div id="an-value" class="hidden" style="margin-top:0.4rem" title="The win probability is the search's mean backed-up value, shown as a percentage.">
             <div class="field-lbl" id="an-value-lbl">WIN PROBABILITY</div>
             <div class="c4-value"><div id="an-value-bar"></div></div>
           </div>
@@ -71,10 +77,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -83,16 +89,9 @@
         <div class="stack">
           <div>
             <div class="field-lbl">MODE</div>
-            <select class="cyber-select" id="mode" style="width:100%">
+            <select class="cyber-select" id="mode" style="width:100%" title="Play against the AI, or watch two AI players against each other">
               <option value="human">You vs AI</option>
               <option value="ai">AI vs AI (watch)</option>
-            </select>
-          </div>
-          <div id="first-wrap">
-            <div class="field-lbl">WHO MOVES FIRST</div>
-            <select class="cyber-select" id="first" style="width:100%">
-              <option value="human">You (red)</option>
-              <option value="ai">AI (red)</option>
             </select>
           </div>
         </div>
@@ -101,11 +100,47 @@
       <div>
         <div class="section-title pink-ttl" id="agent-a-title">OPPONENT</div>
         <div class="stack">
-          <select class="cyber-select" id="agent-a" style="width:100%"></select>
+          <select class="cyber-select" id="agent-a" style="width:100%" title="The algorithm that plays your opponent (or AI A in watch mode)"></select>
           <div>
-            <div class="field-lbl">STRENGTH</div>
+            <div class="field-lbl">STRENGTH (SEARCH BUDGET)</div>
             <select class="cyber-select" id="level-a" style="width:100%">
               <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="agent-b-wrap" class="hidden">
+        <div class="section-title purple-ttl" id="agent-b-title">AI B</div>
+        <div class="stack">
+          <select class="cyber-select" id="agent-b" style="width:100%" title="The algorithm that plays AI B in watch mode"></select>
+          <div>
+            <div class="field-lbl">STRENGTH (SEARCH BUDGET)</div>
+            <select class="cyber-select" id="level-b" style="width:100%">
+              <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
+            </select>
+          </div>
+          <button class="cyber-btn green" id="btn-watch" title="Start playing games between AI A and AI B"><span class="btn-txt">▶ START MATCH</span></button>
+          <div class="inline">
+            <button class="cyber-btn" id="btn-pause" disabled title="Pause after the current move; press again to resume"><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" id="btn-step" disabled title="While paused, play one move and pause again"><span class="btn-txt">▶ STEP</span></button>
+          </div>
+          <div>
+            <div class="field-lbl">MATCH SCORE (AI A)</div>
+            <div class="field-hint" id="score"></div>
+            <button class="cyber-btn" id="btn-reset-score" style="margin-top:0.5rem"><span class="btn-txt">RESET SCORE</span></button>
+          </div>
+        </div>
+      </div>
+
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <div id="first-wrap">
+            <div class="field-lbl">WHO MOVES FIRST</div>
+            <select class="cyber-select" id="first" style="width:100%">
+              <option value="human">You (red)</option>
+              <option value="ai">AI (red)</option>
             </select>
           </div>
           <div id="side-wrap" class="hidden">
@@ -115,108 +150,465 @@
               <option value="yellow">Yellow (moves second)</option>
             </select>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="desc-a"></div></div>
-        </div>
-      </div>
-
-      <div id="agent-b-wrap" class="hidden">
-        <div class="section-title purple-ttl" id="agent-b-title">AI B</div>
-        <div class="stack">
-          <select class="cyber-select" id="agent-b" style="width:100%"></select>
-          <div>
-            <div class="field-lbl">STRENGTH</div>
-            <select class="cyber-select" id="level-b" style="width:100%">
-              <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
-            </select>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="desc-b"></div></div>
-          <div>
-            <div class="field-lbl">SPEED</div>
+          <div id="pace-wrap" class="hidden">
+            <div class="field-lbl">DELAY BETWEEN MOVES</div>
             <select class="cyber-select" id="speed" style="width:100%">
-              <option value="800">Slow</option><option value="350" selected>Normal</option><option value="120">Fast</option>
+              <option value="800">Slow (800 ms)</option><option value="350" selected>Normal (350 ms)</option><option value="120">Fast (120 ms)</option>
             </select>
-          </div>
-          <label class="field-hint inline"><input type="checkbox" id="auto" checked> AUTO-RESTART after each game</label>
-          <button class="cyber-btn green" id="btn-watch"><span class="btn-txt">▶ START MATCH</span></button>
-          <div class="inline">
-            <button class="cyber-btn" id="btn-pause" disabled><span class="btn-txt">❚❚ PAUSE</span></button>
-            <button class="cyber-btn" id="btn-step" disabled><span class="btn-txt">STEP</span></button>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div class="field-lbl">MATCH SCORE</div>
-            <div class="field-hint" id="score"></div>
-            <button class="cyber-btn" id="btn-reset-score" style="margin-top:0.5rem"><span class="btn-txt">RESET SCORE</span></button>
+            <label class="field-hint inline" style="margin-top:0.6rem"><input type="checkbox" id="auto" checked> AUTO-RESTART after each game</label>
           </div>
         </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">NOTES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">ALPHAZERO</div>
-            <div class="field-hint">The network learned Connect Four only from games against itself. Its prior says which columns look promising; search visits refine that, and the win probability is its own estimate.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">MINIMAX</div>
-            <div class="field-hint">Looks ahead as many moves as its time budget allows and scores the leaves by counting open lines of four. Reports forced wins it can prove.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">CHANCE</div>
-            <div class="field-hint">Draws a column from fixed odds: 6% / 12% / 19% / 25% / 19% / 12% / 6% on an empty board, renormalised over the open columns. It does no search or lookahead, so it is a baseline for the search agents.</div>
-          </div>
-        </div>
-      </div>
+      </details>
     </div>
 
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The AlphaZero agent is a neural network that learned to play by playing itself, combined with a tree search that uses the network to choose moves. Two classic baselines sit beside it: minimax with alpha-beta pruning, which looks a fixed number of moves ahead with a hand-written score, and Monte Carlo tree search, which judges positions by random games. A chance player sits at the bottom of the scale: it rolls for its column with fixed odds and never looks at the position.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>AlphaZero (PUCT search with a network)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A chess player looks at a few candidate moves, pictures how each might go, and trusts a sense of who is winning. Here the network supplies the sense and the search does the picturing. Each game it plays against itself sharpens both.</p>
-      <p>PUCT tree search. At each node it picks the move that maximises Q + U, where U = c_puct · P · √(N+1) / (1 + N(move)), P is the network's prior for the move, and N counts visits. The move played is the most visited one.</p>
-      <ul><li>c_puct = 2.0</li><li>50, 200 or 800 simulations per move at Fast, Normal and Strong</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Minimax with alpha-beta pruning</h3>
-      <p class="hiw-plain"><b>New to this?</b> Plan a few moves ahead, assume each side picks its best reply, and score the position at the end. Alpha-beta skips branches that cannot change the final choice, so the same look-ahead costs less.</p>
-      <p>Negamax with alpha-beta pruning, a transposition table, and iterative deepening: each depth finishes before the next starts, and an unfinished depth is thrown away. Columns are tried centre-first (3, 2, 4, 1, 5, 0, 6), so good moves prune more.</p>
-      <ul><li>Time budget 0.1 s, 0.5 s or 2.0 s at Fast, Normal and Strong; maximum depth 42</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Monte Carlo tree search (MCTS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> To judge a position, play many random games from it and count how often you win. Each round spends more effort on moves that have looked good so far, and less on the rest.</p>
-      <p>UCT tree search with random rollouts to the end of the game and no neural network. The move chosen is the child visited most often.</p>
-      <ul><li>UCB1 exploration constant c = 1.4</li><li>300, 1,500 or 5,000 simulations, capped at 3 seconds</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like the tile spawner in 2048: no thinking, just a weighted die roll over the moves that are legal.</p>
-      <p>No search, evaluation or lookahead. Each column has a fixed weight of 1, 2, 3, 4, 3, 2, 1 from the left, so the centre columns come up more often. The weights are renormalised over the columns that are not full, and the move is one draw from that distribution.</p>
-      <ul><li>Odds on an empty board: 6% / 12% / 19% / 25% / 19% / 12% / 6%</li><li>Strength has no effect: the same odds at Fast, Normal and Strong</li></ul>
-    </article>
+  <p class="hiw-lede">Connect Four is played on a grid of seven columns and six rows. Players take turns dropping a disc into a column, and the disc falls to the lowest empty cell of that column. The first player to make four discs in a row wins. A full board with no four in a row is a draw. This page offers four ways to choose a column: an AlphaZero-style agent, which combines a tree search with a neural network trained by self-play; alpha-beta minimax, which searches ahead with a hand-written evaluation; Monte Carlo tree search, which judges moves by random games; and a chance agent, which draws a column from fixed odds.</p>
+
+  <h3 class="hiw-sub">The board</h3>
+  <p class="hiw-note">A <b>position</b> is stored as two integers, each with seven bits per column. Bits 0 to 5 of a column are its six cells, from the bottom up, and bit 6 is a spare bit that stops line checks from carrying into the next column. The integer <code>mask</code> marks every stone on the board. The integer <code>current</code> marks the stones of the player to move. The other player's stones are <code>current ^ mask</code>, so the pair describes the position from either side<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L1-L18" target="_blank" rel="noopener" title="connect4/board.py, lines 1–18" aria-label="Code on GitHub: connect4/board.py, lines 1 to 18">1</a>.</p>
+  <p class="hiw-note">Dropping a disc in column c is <code>mask | (mask + bottom(c))</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L84-L87" target="_blank" rel="noopener" title="connect4/board.py, lines 84–87" aria-label="Code on GitHub: connect4/board.py, lines 84 to 87">2</a>. The addition carries up through the stones already in the column and sets the lowest empty cell, clearing the stones it passed; the OR restores them. A column is full when its top cell is set<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L78-L79" target="_blank" rel="noopener" title="connect4/board.py, lines 78–79" aria-label="Code on GitHub: connect4/board.py, lines 78 to 79">3</a>. A <b>four in a row</b> is detected with two shift-and-AND steps per direction: a pair of adjacent stones ANDed with the same pair two steps further on leaves a run of four<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L43-L49" target="_blank" rel="noopener" title="connect4/board.py, lines 43–49" aria-label="Code on GitHub: connect4/board.py, lines 43 to 49">4</a>. The integer <code>current + mask</code> is the position's <b>key</b>, which the transposition table below uses to recognise a repeated position<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L104-L106" target="_blank" rel="noopener" title="connect4/board.py, lines 104–106" aria-label="Code on GitHub: connect4/board.py, lines 104 to 106">5</a>.</p>
+
+  <h3 class="hiw-sub">AlphaZero: PUCT search guided by a network</h3>
+  <p class="hiw-note"><b>Tree search</b> builds a <b>game tree</b>. The root is the current position, each legal move is a branch, and each reply is a further branch. The tree grows one <b>simulation</b> at a time. A simulation starts at the root, follows branches down to a <b>leaf</b> (a position whose moves have not been expanded yet, or a <b>terminal position</b>: a four in a row, or a full board), evaluates the leaf, and passes the result back up the path.</p>
+  <p class="hiw-note">The selection rule is <b>PUCT</b>, a variant of <b>UCT</b> (upper confidence bounds applied to trees) in which the exploration bonus is scaled by a <b>prior</b>. The prior is the probability that the network's <b>policy</b> gives each move before the move has been searched. The <b>policy</b> is a distribution over the seven columns. For each position s and column a, the search keeps the <b>visit count</b> N(s,a), the number of simulations that passed through a; the total value W(s,a), the sum of the values backed up through a; and the prior P(s,a). The mean value Q(s,a) is zero for an unvisited move.</p>
+  <!-- connect4/puct.py:70-74 -->
+  <div class="math-fig">
+    <div class="math math-block">a^{\star}=\arg\max_{a\in\mathrm{Legal}(s)}\bigl(Q(s,a)+U(s,a)\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L70-L74" target="_blank" rel="noopener" title="connect4/puct.py, lines 70–74" aria-label="Code on GitHub: connect4/puct.py, lines 70 to 74">6</a></span>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Win</td><td>A four in a row for the side to move, or against it.</td><td class="num">1,000,000 minus the ply, so faster wins score higher</td></tr>
-    <tr><td>Open windows</td><td>Each of the 69 four-cell lines that holds stones of only one player scores for that player: 1 stone, 2 stones, 3 stones.</td><td class="num">1, 8 and 64 points (4 stones is a win, scored separately)</td></tr>
-    <tr><td>Centre column</td><td>Stones in the middle column, for each side.</td><td class="num">+3 per own stone, −3 per opponent stone</td></tr>
+  <!-- connect4/puct.py:71 -->
+  <div class="math-fig">
+    <div class="math math-block">Q(s,a)=\begin{cases}W(s,a)\,/\,N(s,a) & N(s,a)>0\\ 0 & \text{otherwise}\end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L71" target="_blank" rel="noopener" title="connect4/puct.py, line 71" aria-label="Code on GitHub: connect4/puct.py, line 71">7</a></span>
+  </div>
+  <!-- connect4/puct.py:70, 72 -->
+  <div class="math-fig">
+    <div class="math math-block">U(s,a)=c_{\mathrm{puct}}\;P(s,a)\;\frac{\sqrt{N(s)+1}}{1+N(s,a)},\qquad N(s)=\sum_{b}N(s,b)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L70" target="_blank" rel="noopener" title="connect4/puct.py, lines 70, 72" aria-label="Code on GitHub: connect4/puct.py, lines 70, 72">8</a></span>
+  </div>
+  <p class="hiw-note">Here <var>a*</var> is the chosen column, Legal(s) is the set of columns that are not full, and c_puct = 2.0 is the default both in the <code>Tree</code> constructor<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L57" target="_blank" rel="noopener" title="connect4/puct.py, line 57" aria-label="Code on GitHub: connect4/puct.py, line 57">9</a> and in <code>search</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L149" target="_blank" rel="noopener" title="connect4/puct.py, line 149" aria-label="Code on GitHub: connect4/puct.py, line 149">10</a>, which the agent calls without overriding it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L59" target="_blank" rel="noopener" title="connect4/agents.py, line 59" aria-label="Code on GitHub: connect4/agents.py, line 59">11</a>. The prior P(s,a) is the network's probability for column a, zero for a full column. The term N(s) sums the visits of all columns of s, and the +1 inside the square root keeps U non-zero before the first visit. The first term favours moves that have done well so far. The second favours moves that have a high prior and few visits. As visits accumulate, U shrinks relative to Q, so the search concentrates on the lines it has found good.</p>
+  <p class="hiw-note"><b>Expansion.</b> When a simulation reaches a leaf that is not terminal, the network is called once. It returns the priors over the legal columns and a <b>value</b> v in [−1, 1], the network's estimate of the result for the player to move, where 1 is a win and −1 a loss. The priors are stored at the leaf and v is backed up. A terminal leaf needs no network call. Its value is −1 if the player to move has lost, which is the case when the previous move made four in a row, and 0 for a full board.</p>
+  <p class="hiw-note"><b>Backup.</b> The value changes sign at each step up the path, because a position that is good for the player to move is bad for the player who moved into it. Each move on the path gains one visit, and its total value gains the value as seen by the player who chose that move.</p>
+  <!-- connect4/puct.py:93-96 -->
+  <div class="math-fig">
+    <div class="math math-block">v\leftarrow -v,\qquad N(s,a)\leftarrow N(s,a)+1,\qquad W(s,a)\leftarrow W(s,a)+v</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L93-L96" target="_blank" rel="noopener" title="connect4/puct.py, lines 93–96" aria-label="Code on GitHub: connect4/puct.py, lines 93 to 96">12</a></span>
+  </div>
+  <p class="hiw-note">Each step applies these three updates to the move (s,a) that was chosen at each node on the path, from the leaf back to the root. The sign flip happens before the update, so W(s,a) is always the value seen by the player who chose a at s.</p>
+  <p class="hiw-note"><b>Choosing the move.</b> After the simulations, the agent plays the column with the most visits<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L65" target="_blank" rel="noopener" title="connect4/agents.py, line 65" aria-label="Code on GitHub: connect4/agents.py, line 65">13</a>. The win probability shown on the page is the mean of all root backups, mapped from [−1, 1] to a percentage<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L114-L117" target="_blank" rel="noopener" title="connect4/puct.py, lines 114–117" aria-label="Code on GitHub: connect4/puct.py, lines 114 to 117">14</a> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L73" target="_blank" rel="noopener" title="connect4/agents.py, line 73" aria-label="Code on GitHub: connect4/agents.py, line 73">15</a>:</p>
+  <!-- connect4/puct.py:114-117, connect4/agents.py:73 -->
+  <div class="math-fig">
+    <div class="math math-block">p_{\mathrm{win}}=\frac{1}{2}\Bigl(1+\frac{\sum_{a}W(s_0,a)}{\sum_{a}N(s_0,a)}\Bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L114-L117" target="_blank" rel="noopener" title="connect4/puct.py, lines 114–117" aria-label="Code on GitHub: connect4/puct.py, lines 114 to 117">14</a> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L73" target="_blank" rel="noopener" title="connect4/agents.py, line 73" aria-label="Code on GitHub: connect4/agents.py, line 73">15</a></span>
+  </div>
+  <p class="hiw-note">Here s_0 is the root position. The sum runs over the seven columns, so the numerator and denominator together are the total value and total visits over all simulations from the root. The result is a search estimate, not the value of a single network call.</p>
+
+  <!-- connect4/puct.py:66-80 (select_leaf), 82-96 (expand_and_backup), 127-146 (run_simulations) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L66-L80" target="_blank" rel="noopener" title="connect4/puct.py, lines 66–80, 82–96, 127–146" aria-label="Code on GitHub: connect4/puct.py, lines 66 to 80, 82 to 96, 127 to 146">16</a></span>
+    <pre class="pseudo-simple">function PUCT-SEARCH(position, simulations):
+    EXPAND(root, NETWORK-PRIORS(position))
+    repeat simulations times:
+        leaf, path ← SELECT(root)               # follow the largest Q + U
+        if leaf is terminal:
+            value ← TERMINAL-VALUE(leaf)        # −1 lost, 0 draw
+        else:
+            priors, value ← NETWORK(leaf)
+            EXPAND(leaf, priors)
+        BACKUP(path, value)                     # the sign flips at each level
+    return the column with the most visits</pre>
+    <pre class="pseudo-full" hidden>function PUCT-SEARCH(position, simulations, c_puct = 2.0):
+    root ← NODE(position)
+    priors, value ← NETWORK(position)           # the root's value is not used
+    if self-play:
+        priors ← MIX-NOISE(priors)              # (1 − ε) prior + ε η, root only
+    root.prior ← priors
+    repeat simulations times:
+        node ← root
+        path ← empty list
+        while node is expanded and node is not terminal:
+            N ← sum of visits of node over all columns
+            for each legal column a:
+                if N(node, a) > 0:
+                    Q ← W(node, a) / N(node, a)
+                else:
+                    Q ← 0
+                U ← c_puct · prior(node, a) · sqrt(N + 1) / (1 + N(node, a))
+                score(a) ← Q + U
+            a ← argmax over legal columns of score(a)
+            append (node, a) to path
+            node ← child of node after a, created if missing
+        if node is terminal:
+            value ← TERMINAL-VALUE(node)        # −1 if the player to move lost, 0 if full
+        else:
+            priors, value ← NETWORK(node.position)
+            node.prior ← priors
+        for (node, a) in reversed(path):
+            value ← −value                      # the parent's player is the leaf's opponent
+            N(node, a) ← N(node, a) + 1
+            W(node, a) ← W(node, a) + value
+    return the column a with the largest N(root, a)</pre>
+  </div>
+  <p class="hiw-note"><b>Selection, in the full version.</b> The loop descends while the node already has priors and is not terminal. Q and U are computed for each legal column and the largest sum is taken. A column that has never been visited has Q = 0, so its U term alone decides whether it is tried. The child node is created the first time a path reaches it.</p>
+  <p class="hiw-note"><b>Terminal values.</b> A terminal leaf is scored without the network. The value is −1 when the player to move has lost, because the previous move made four in a row, and 0 for a full board<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L39-L42" target="_blank" rel="noopener" title="connect4/puct.py, lines 39–42" aria-label="Code on GitHub: connect4/puct.py, lines 39 to 42">17</a>. Because the value is taken from the player to move at the leaf, the backup flip gives the correct sign at every level above it.</p>
+  <p class="hiw-note"><b>Batching.</b> Self-play runs many games at once. In each round every game selects its leaf, and all the leaves are sent to the network in one call<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L127-L146" target="_blank" rel="noopener" title="connect4/puct.py, lines 127–146" aria-label="Code on GitHub: connect4/puct.py, lines 127 to 146">18</a>. The result is the same search as the one-game version above, but the network is called once per round instead of once per leaf.</p>
+  <p class="hiw-note"><b>Tree reuse.</b> After a move is played, the child node for that move becomes the new root and keeps its subtree of visits. During self-play the new root receives fresh Dirichlet noise<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L119-L124" target="_blank" rel="noopener" title="connect4/puct.py, lines 119–124" aria-label="Code on GitHub: connect4/puct.py, lines 119 to 124">19</a>. Playing against a person uses no noise.</p>
+  <!-- connect4/puct.py:98-102, train_az.py:152 -->
+  <div class="math-fig">
+    <div class="math math-block">P'(s_0,a)=(1-\varepsilon)\,P(s_0,a)+\varepsilon\,\eta_a,\qquad \eta\sim\mathrm{Dir}(\alpha,\dots,\alpha)\ \text{over the legal columns}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L98-L102" target="_blank" rel="noopener" title="connect4/puct.py, lines 98–102" aria-label="Code on GitHub: connect4/puct.py, lines 98 to 102">20</a> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L152" target="_blank" rel="noopener" title="connect4/train_az.py, line 152" aria-label="Code on GitHub: connect4/train_az.py, line 152">21</a></span>
+  </div>
+  <p class="hiw-note">The <b>Dirichlet distribution</b> Dir(α) gives a random probability vector over the legal columns. The parameter α = 1.0 and the mixing weight ε = 0.25 are both set in the self-play trees<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L152" target="_blank" rel="noopener" title="connect4/train_az.py, line 152" aria-label="Code on GitHub: connect4/train_az.py, line 152">21</a>. P' replaces the root prior, so each self-play game explores moves the network would not choose on its own. The noise is only applied at the root, not at deeper nodes<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L90-L91" target="_blank" rel="noopener" title="connect4/puct.py, lines 90–91" aria-label="Code on GitHub: connect4/puct.py, lines 90 to 91">22</a>.</p>
+
+  <h3 class="hiw-sub">The network</h3>
+  <p class="hiw-note">A <b>neural network</b> is a function whose weights are learned from data. The network here is a <b>policy-value network</b> with two outputs: the <b>policy</b>, one score per column, and the <b>value</b>, a number in [−1, 1] for the player to move. Its input is two 6×7 planes. Plane 0 marks the stones of the player to move, and plane 1 the other player's<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py#L29-L35" target="_blank" rel="noopener" title="connect4/net.py, lines 29–35" aria-label="Code on GitHub: connect4/net.py, lines 29 to 35">23</a>.</p>
+  <p class="hiw-note">The <b>trunk</b> is a 3×3 <b>convolution</b> stem (a learned filter applied at every cell), followed by four <b>residual blocks</b>. A residual block is two 3×3 convolutions whose output is added back to the block's input, so each block learns a change to its input. Each convolution is followed by <b>batch normalisation</b> during training, a learned rescaling of its channels. For serving, that rescaling is folded into the convolution weights<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L97-L102" target="_blank" rel="noopener" title="connect4/train_az.py, lines 97–102" aria-label="Code on GitHub: connect4/train_az.py, lines 97 to 102">24</a>, so the website runs the network in plain NumPy with no torch.</p>
+  <!-- connect4/net.py:72-76 (train_az.py:73-76 for the training forward pass) -->
+  <div class="math-fig">
+    <div class="math math-block">h_0=\mathrm{ReLU}\bigl(\mathrm{Conv}_{\mathrm{stem}}(x)\bigr),\qquad h_i=\mathrm{ReLU}\Bigl(h_{i-1}+\mathrm{Conv}_{i,2}\bigl(\mathrm{ReLU}(\mathrm{Conv}_{i,1}(h_{i-1}))\bigr)\Bigr)\quad i=1,\dots,4</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py#L72-L76" target="_blank" rel="noopener" title="connect4/net.py, lines 72–76" aria-label="Code on GitHub: connect4/net.py, lines 72 to 76">25</a> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L73-L76" target="_blank" rel="noopener" title="connect4/train_az.py, lines 73–76" aria-label="Code on GitHub: connect4/train_az.py, lines 73 to 76">26</a></span>
+  </div>
+  <!-- connect4/net.py:77-82 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{logits}=W_{\mathrm{pol}}\,\mathrm{ReLU}\bigl(\mathrm{Conv}^{\mathrm{pol}}_{1\times1}(h_4)\bigr)+b_{\mathrm{pol}},\qquad v=\tanh\Bigl(W_2\,\mathrm{ReLU}\bigl(W_1\,\mathrm{ReLU}(\mathrm{Conv}^{\mathrm{val}}_{1\times1}(h_4))+b_1\bigr)+b_2\Bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py#L77-L82" target="_blank" rel="noopener" title="connect4/net.py, lines 77–82" aria-label="Code on GitHub: connect4/net.py, lines 77 to 82">27</a></span>
+  </div>
+  <!-- connect4/net.py:84-94 -->
+  <div class="math-fig">
+    <div class="math math-block">P(s,a)=\frac{\exp(z_a)}{\sum_{b\in\mathrm{Legal}(s)}\exp(z_b)}\ \text{for } a\in\mathrm{Legal}(s),\qquad P(s,a)=0 \text{ otherwise}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py#L84-L94" target="_blank" rel="noopener" title="connect4/net.py, lines 84–94" aria-label="Code on GitHub: connect4/net.py, lines 84 to 94">28</a></span>
+  </div>
+  <p class="hiw-note">Here x is the encoded position, z the logits, and ReLU(x) = max(x, 0). Conv<sub>1×1</sub> is a 1×1 convolution, a linear map across channels at each cell. W and b are learned weights and biases, and tanh squashes the value into [−1, 1]. The shipped weights have the sizes of the defaults: 4 blocks of 32 channels, a policy head with 2 channels feeding a 84-to-7 layer, and a value head with 1 channel feeding a 42-to-64 layer and then a 64-to-1 layer (checked in the shipped weights file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/data/az_connect4.npz" target="_blank" rel="noopener" title="connect4/data/az_connect4.npz" aria-label="Code on GitHub: connect4/data/az_connect4.npz">29</a>). The <b>masked softmax</b> sets illegal columns to zero before normalising, so the priors are a distribution over legal columns only<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py#L90-L94" target="_blank" rel="noopener" title="connect4/net.py, lines 90–94" aria-label="Code on GitHub: connect4/net.py, lines 90 to 94">30</a>.</p>
+
+  <h3 class="hiw-sub">Training by self-play</h3>
+  <p class="hiw-note"><b>Self-play</b> means the network plays games against itself, and its own search chooses every move. Each iteration plays a batch of games: 128 per iteration on the laptop runs (the script default<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L311" target="_blank" rel="noopener" title="connect4/train_az.py, line 311" aria-label="Code on GitHub: connect4/train_az.py, line 311">31</a>), and 512 on the Kaggle run<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md" target="_blank" rel="noopener" title="docs/connect4-training.md" aria-label="Code on GitHub: docs/connect4-training.md">32</a>. Two details keep the games varied. The root of each search gets Dirichlet noise, as described above. And during the first 8 moves of each game, the move is sampled from the visit counts rather than taken as the most visited column<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L162-L164" target="_blank" rel="noopener" title="connect4/train_az.py, lines 162–164" aria-label="Code on GitHub: connect4/train_az.py, lines 162 to 164">33</a>.</p>
+  <!-- connect4/train_az.py:163 -->
+  <div class="math-fig">
+    <div class="math math-block">\pi(a)=\frac{N(s,a)}{\sum_{b}N(s,b)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L163" target="_blank" rel="noopener" title="connect4/train_az.py, line 163" aria-label="Code on GitHub: connect4/train_az.py, line 163">34</a></span>
+  </div>
+  <p class="hiw-note">The <b>policy target</b> π is the distribution of root visits, computed with <code>temperature = 1.0</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py#L104-L112" target="_blank" rel="noopener" title="connect4/puct.py, lines 104–112" aria-label="Code on GitHub: connect4/puct.py, lines 104 to 112">35</a>. For a position s, N(s,a) is the number of simulations of that search that chose column a at the root. The move is sampled from π while the board has fewer than 8 stones, and is the column with the largest π after that.</p>
+  <p class="hiw-note">Each game gives training rows. A row holds the board, the policy target π, and the <b>outcome</b> z for the player to move there. The outcome is +1 for a win, 0 for a draw and −1 for a loss, seen from that player's side<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L167-L170" target="_blank" rel="noopener" title="connect4/train_az.py, lines 167–170, 179" aria-label="Code on GitHub: connect4/train_az.py, lines 167 to 170, 179">36</a>. Every row is also stored with its <b>mirror image</b>, the board reflected left to right and π reversed in the same way, since a Connect Four position and its reflection have the same game-theoretic value<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L181" target="_blank" rel="noopener" title="connect4/train_az.py, line 181" aria-label="Code on GitHub: connect4/train_az.py, line 181">37</a>.</p>
+  <p class="hiw-note">Training samples minibatches from a <b>replay buffer</b>, a rolling store of the newest rows. The laptop runs kept the script's default of 200,000 rows and used its default minibatch of 256<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L314-L315" target="_blank" rel="noopener" title="connect4/train_az.py, lines 314–315" aria-label="Code on GitHub: connect4/train_az.py, lines 314 to 315">38</a>. The Kaggle run used <code>--buffer 400000 --batch 512</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md" target="_blank" rel="noopener" title="docs/connect4-training.md" aria-label="Code on GitHub: docs/connect4-training.md">32</a>. For each sample the loss has two parts. The <b>mean squared error</b> compares the value with the outcome. The <b>cross-entropy</b> compares the policy with the visit distribution π.</p>
+  <!-- connect4/train_az.py:229-231 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathcal{L}=\frac{1}{B}\sum_{i=1}^{B}\bigl(v_i-z_i\bigr)^2\;-\;\frac{1}{B}\sum_{i=1}^{B}\sum_{a}\pi_{i,a}\,\log p_{i,a}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L229-L231" target="_blank" rel="noopener" title="connect4/train_az.py, lines 229–231" aria-label="Code on GitHub: connect4/train_az.py, lines 229 to 231">39</a></span>
+  </div>
+  <p class="hiw-note">Here B is the minibatch size, v_i and z_i are the value and outcome of row i, π_i is its visit target, and p_i = softmax(logits) is the network's policy for row i, so log p is taken with log-softmax. The loss is minimised with <b>AdamW</b>, an Adam optimiser with decoupled <b>weight decay</b>: the weights are shrunk by a factor each step, which discourages large weights. The learning rate is 0.001<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L317" target="_blank" rel="noopener" title="connect4/train_az.py, line 317" aria-label="Code on GitHub: connect4/train_az.py, line 317">40</a> and the weight decay is 0.0001<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L352" target="_blank" rel="noopener" title="connect4/train_az.py, line 352" aria-label="Code on GitHub: connect4/train_az.py, line 352">41</a>. The weight decay is applied by the optimiser, not added to the loss.</p>
+
+  <!-- connect4/train_az.py:367-399 (training loop), 149-183 (self_play), 229-240 (train_step) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py#L367-L399" target="_blank" rel="noopener" title="connect4/train_az.py, lines 367–399, 149–183, 229–240" aria-label="Code on GitHub: connect4/train_az.py, lines 367 to 399, 149 to 183, 229 to 240">42</a></span>
+    <pre class="pseudo-simple">function TRAIN(iterations):
+    network ← NEW-NETWORK()
+    buffer ← empty, keeps the newest rows
+    repeat iterations times:
+        rows ← SELF-PLAY(network)               # games played by the search
+        add rows to buffer
+        repeat steps times:
+            batch ← rows drawn at random from buffer
+            loss ← (value − outcome)² + cross-entropy(policy, visit targets)
+            update the network weights to reduce loss
+        save the checkpoint and the NumPy weights</pre>
+    <pre class="pseudo-full" hidden>function TRAIN(iterations, games, simulations, steps, batch, buffer_size):
+    network ← NEW-NETWORK()                     # 4 residual blocks, 32 channels
+    optimiser ← ADAMW(learning rate 0.001, weight decay 0.0001)
+    buffer ← empty, with maximum length buffer_size
+    repeat iterations times:
+        rows, results ← SELF-PLAY(network, games, simulations)
+        append rows to buffer                   # the oldest rows drop out first
+        repeat steps times:
+            minibatch ← min(batch, length of buffer) rows drawn at random from buffer
+            value_loss ← mean over minibatch of (v − z)²
+            policy_loss ← mean over minibatch of −sum over a of π(a) · log p(a)
+            loss ← value_loss + policy_loss
+            take one AdamW step on loss
+        save the checkpoint                     # so a run can resume
+        export the weights as NumPy arrays with batch norm folded in
+
+function SELF-PLAY(network, games, simulations):
+    trees ← one search tree per game, each with root noise (ε = 0.25, α = 1.0)
+    histories ← one empty list per game
+    active ← every game
+    while active is not empty:
+        RUN-SIMULATIONS(trees of the active games, simulations)   # one batched network call per round
+        for each game g in active:
+            board ← root board of tree g
+            π ← root visit counts of tree g, divided by their sum
+            if board has fewer than 8 stones:
+                move ← a column sampled from π
+            else:
+                move ← the column with the largest π
+            append (board, π) to histories[g]
+            next ← RESULT(board, move)
+            if next has four in a row:          # the player who moved wins
+                result[g] ← +1 if the mover is the first player, else −1
+                remove g from active
+            else if next is full:
+                result[g] ← 0
+                remove g from active
+            else:
+                ADVANCE(tree g, move)           # keep the subtree of the chosen move
+    rows ← empty list
+    for each game g:
+        for each (board, π) in histories[g]:
+            z ← result[g] if the mover of board is the first player, else −result[g]
+            append (board, π, z) to rows
+            append (MIRROR(board), π reversed, z) to rows
+    return rows, results</pre>
+  </div>
+
+  <h3 class="hiw-sub">Results of the served network</h3>
+  <p class="hiw-note">The network is trained only on its own games, with no human games, no opening book and no positions labelled by another engine. The first 37 iterations ran on a laptop CPU (Intel Core i7-1265U, no GPU) and produced 4,736 self-play games. A Kaggle notebook then continued from that checkpoint for 8 hours on 4 CPU threads, with no GPU attached. It ran 59 iterations, to iteration 96 and 34,944 games, and the weights served on this page are the export from iteration 96<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md" target="_blank" rel="noopener" title="docs/connect4-training.md" aria-label="Code on GitHub: docs/connect4-training.md">32</a>. Each iteration of the Kaggle run used 512 games and 100 simulations per move, with 400 training steps.</p>
+  <p class="hiw-note">The table compares the served network with the iteration-19 network it replaced. Every match is against fixed-depth alpha-beta minimax with no time limit, 100 games per depth, 200 simulations per move, colours alternating, and two random opening moves per game<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/evaluate.py" target="_blank" rel="noopener" title="connect4/evaluate.py" aria-label="Code on GitHub: connect4/evaluate.py">43</a>. The score counts a draw as half a win.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Match</th><th class="num">Wins</th><th class="num">Draws</th><th class="num">Losses</th><th class="num">Score</th></tr></thead><tbody>
+    <tr><td>Iteration 96 vs minimax depth 2</td><td class="num">67</td><td class="num">8</td><td class="num">25</td><td class="num">71%</td></tr>
+    <tr><td>Iteration 96 vs minimax depth 4</td><td class="num">79</td><td class="num">4</td><td class="num">17</td><td class="num">81%</td></tr>
+    <tr><td>Iteration 96 vs minimax depth 6</td><td class="num">77</td><td class="num">8</td><td class="num">15</td><td class="num">81%</td></tr>
+    <tr><td>Iteration 19 vs minimax depth 2</td><td class="num">61</td><td class="num">5</td><td class="num">34</td><td class="num">63.5%</td></tr>
+    <tr><td>Iteration 19 vs minimax depth 4</td><td class="num">53</td><td class="num">10</td><td class="num">37</td><td class="num">58%</td></tr>
+    <tr><td>Iteration 19 vs minimax depth 6</td><td class="num">29</td><td class="num">20</td><td class="num">51</td><td class="num">39%</td></tr>
+    <tr><td>Plain MCTS, 1,000 rollouts, vs minimax depth 4 (50 games)</td><td class="num">32</td><td class="num">2</td><td class="num">16</td><td class="num">66%</td></tr>
+    <tr><td>AlphaZero, level 1 (50 simulations), vs chance (20 games)</td><td class="num">20</td><td class="num">0</td><td class="num">0</td><td class="num">100%</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The numbers are fixed in <code>connect4/minimax.py</code> and no tuning run is recorded. The code describes the evaluation as a standard hand-built one but cites no source. The MCTS constant and the PUCT constant were also set by hand; no sweep is recorded.</p>
+  <p class="hiw-note">The iteration-96 numbers are in the results file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/connect4_eval.json" target="_blank" rel="noopener" title="results/connect4_eval.json" aria-label="Code on GitHub: results/connect4_eval.json">44</a>. The iteration-19 rows use the same protocol and openings and are kept in the same file under <code>previous_network</code>. The MCTS row is from the earlier 50-game evaluation, which does not depend on the network. The chance row is in the results file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/connect4_chance_match.md" target="_blank" rel="noopener" title="results/connect4_chance_match.md" aria-label="Code on GitHub: results/connect4_chance_match.md">45</a>, which plays with colours alternating and seed 0<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/__main__.py#L77" target="_blank" rel="noopener" title="connect4/__main__.py, line 77" aria-label="Code on GitHub: connect4/__main__.py, line 77">46</a>. Over 100 games the iteration-19 network scores lower than in its earlier 50-game run (77% against depth 4), which shows how far 50 games can move from noise. The goal of winning nearly every game against depth 6 was not reached: the served network still loses 15 of 100 games there.</p>
 
-  <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">The network learns from self-play only: no human games, no opening book, and no positions labelled by another engine. The architecture is a residual network with 4 blocks of 32 channels, a policy head that scores the 7 columns, and a value head that predicts the result from the side to move. Each laptop iteration played 128 games at once and trains on a replay buffer with mirrored positions. The loss is value mean squared error plus policy cross-entropy against the search's visit counts. During self-play, the root gets Dirichlet noise (alpha 1.0, weight 0.25), and the first 8 moves of each game are sampled from the visit counts.</p>
-  <p class="hiw-note">The laptop runs used 64 simulations per move and 100 training steps per iteration (<code>--simulations 64 --steps 100</code>; the script's defaults are 100 and 400). On one shared laptop CPU (Intel Core i7-1265U, no GPU), the first 37 iterations produced 4,736 self-play games. A Kaggle notebook then continued from that checkpoint for 8 hours on 4 CPU threads, with 512 games, 100 simulations and 400 training steps per iteration, reaching iteration 96 and 34,944 games. The weights served on this page are that iteration-96 export. Against alpha-beta minimax at depths 2, 4 and 6 (100 games each, 200 simulations per move), it scored 71%, 81% and 81%; the iteration-19 network served before it scored 63.5%, 58% and 39% on the same openings. Plain MCTS with 1,000 simulations scored 32 wins, 2 draws, 16 losses against depth 4 (50 games). The full run is in <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a>.</p>
+  <h3 class="hiw-sub">Minimax with alpha-beta pruning</h3>
+  <p class="hiw-note"><b>Minimax</b> is a decision rule for two-player, zero-sum games, where one player's gain is exactly the other's loss. It assumes each player chooses the move that is best for them. The algorithm searches the <b>game tree</b> to a fixed <b>depth</b>, the number of <b>plies</b> (single moves) searched, and at the bottom scores each position with a <b>heuristic evaluation</b>, a fast estimate of how good the position is for the player to move.</p>
+  <p class="hiw-note">The code uses <b>negamax</b>, a form of minimax that is written once for both players. A position's score is seen from the side to move, and the score of a move is the negation of the score of the position it leads to. The best move is the one with the largest negated score.</p>
+  <!-- connect4/minimax.py:119-127 -->
+  <div class="math-fig">
+    <div class="math math-block">V(s)=\max_{a\in\mathrm{Legal}(s)}\bigl(-V(s\cdot a)\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L119-L127" target="_blank" rel="noopener" title="connect4/minimax.py, lines 119–127" aria-label="Code on GitHub: connect4/minimax.py, lines 119 to 127">47</a></span>
+  </div>
+  <p class="hiw-note">Here V(s) is the score of position s for the side to move, s·a is the position after column a, and the leaf value at depth 0 is the evaluation E(s) below. A draw has score 0.</p>
+  <p class="hiw-note"><b>Alpha-beta pruning</b> carries two bounds down the tree. <b>Alpha</b> is the lowest score the side to move can already guarantee. <b>Beta</b> is the highest score the opponent would allow, because the opponent would avoid any line that gives more. When a move's score reaches beta, the opponent will not let play reach this position, so the rest of its moves are not searched. The root's value is the same as plain negamax gives, with fewer positions visited. How soon the best move is tried decides how many branches are cut.</p>
+  <p class="hiw-note"><b>Iterative deepening</b> searches to depth 1, then depth 2, and so on, until the time budget runs out. A depth that does not finish is thrown away, and the move from the last finished depth is played. The result of each depth also orders the next one: the previous best move is tried first<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L146-L158" target="_blank" rel="noopener" title="connect4/minimax.py, lines 146–158" aria-label="Code on GitHub: connect4/minimax.py, lines 146 to 158">48</a>.</p>
+  <p class="hiw-note">A <b>transposition table</b> remembers positions that different move orders reach. For each key it stores the depth searched, a <b>flag</b>, the value and the best move. EXACT means the value is exact. LOWER means the true value is at least the stored value, because the search failed high (a score reached beta). UPPER means the true value is at most the stored value, because the search failed low (no score exceeded the starting alpha). An entry is used only when it was searched to at least the current depth.</p>
+  <p class="hiw-note">Columns are tried in the order 3, 2, 4, 1, 5, 0, 6, centre first<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L28" target="_blank" rel="noopener" title="connect4/board.py, line 28" aria-label="Code on GitHub: connect4/board.py, line 28">49</a>, after the table's suggested move. The centre column lies on more four-cell lines than any other, so a centre move is more likely to be good, and trying it early cuts more branches.</p>
+  <p class="hiw-note">At depth 0, a position is scored by counting <b>windows</b>. A window is one of the 69 lines of four cells on the board. A window that holds stones of only one player scores for that player: 1 point for one stone, 8 for two, 64 for three. Stones in the centre column add to the score (3 points each for the side to move, −3 for the opponent)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L19-L34" target="_blank" rel="noopener" title="connect4/minimax.py, lines 19–34, 49" aria-label="Code on GitHub: connect4/minimax.py, lines 19 to 34, 49">50</a>.</p>
+  <!-- connect4/minimax.py:33-34, 37-50 -->
+  <div class="math-fig">
+    <div class="math math-block">E(s)=\sum_{w\in\mathcal{W}}\Bigl(P_{a_w}\,\mathbf{1}[b_w=0]-P_{b_w}\,\mathbf{1}[a_w=0]\Bigr)+3\,\bigl(c_{\mathrm{me}}-c_{\mathrm{opp}}\bigr),\qquad P=(0,\,1,\,8,\,64,\,0)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L33-L34" target="_blank" rel="noopener" title="connect4/minimax.py, lines 33–34, 37–50" aria-label="Code on GitHub: connect4/minimax.py, lines 33 to 34, 37 to 50">51</a></span>
+  </div>
+  <p class="hiw-note">Here W is the set of 69 windows, a_w and b_w are the numbers of stones of the side to move and of the opponent in window w, and P_k is the points for k stones (P_0 = 0, and P_4 = 0 because a four in a row is caught as a win before evaluation). The bracket 1[·] is 1 when its condition holds and 0 otherwise. c_me and c_opp count the stones of each side in the centre column (column 3). A window with stones of both players scores nothing, which is why the bracketed terms vanish when both a_w and b_w are non-zero.</p>
+  <p class="hiw-note">A win is scored as WIN minus the number of moves from the search's root to the winning move, with WIN = 1,000,000. A faster win therefore scores higher, and the agent prefers it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L16" target="_blank" rel="noopener" title="connect4/minimax.py, lines 16, 92–94" aria-label="Code on GitHub: connect4/minimax.py, lines 16, 92 to 94">52</a>.</p>
+  <!-- connect4/minimax.py:94 -->
+  <div class="math-fig">
+    <div class="math math-block">V_{\mathrm{win}}=\mathrm{WIN}-p-1,\qquad \mathrm{WIN}=10^{6}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L94" target="_blank" rel="noopener" title="connect4/minimax.py, line 94" aria-label="Code on GitHub: connect4/minimax.py, line 94">53</a></span>
+  </div>
+  <p class="hiw-note">Here p is the number of moves already made from the search's root when the side to move finds its winning column, so p + 1 counts that winning move too. Scores within 64 of WIN are treated as forced results. When the root's best score is forced, the search stops deepening, since a deeper search cannot change a forced result<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L162-L163" target="_blank" rel="noopener" title="connect4/minimax.py, lines 162–163" aria-label="Code on GitHub: connect4/minimax.py, lines 162 to 163">54</a>.</p>
+  <p class="hiw-note"><b>How the evaluation was chosen:</b> hand-set. The window points, the centre weight of 3 and WIN are constants in the minimax file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py" target="_blank" rel="noopener" title="connect4/minimax.py" aria-label="Code on GitHub: connect4/minimax.py">55</a>. No tuning run is recorded in <code>results/</code>.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py">connect4/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/puct.py">connect4/puct.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/net.py">connect4/net.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/train_az.py">connect4/train_az.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py">connect4/minimax.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py">connect4/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/evaluate.py">connect4/evaluate.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/docs/connect4-training.md">docs/connect4-training.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/connect4_eval.json">results/connect4_eval.json</a></p>
+  <!-- connect4/minimax.py:83-131 (_negamax), 133-166 (search) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L83-L131" target="_blank" rel="noopener" title="connect4/minimax.py, lines 83–131, 133–166" aria-label="Code on GitHub: connect4/minimax.py, lines 83 to 131, 133 to 166">56</a></span>
+    <pre class="pseudo-simple">function ALPHA-BETA(position, depth, α, β):
+    if a column wins at once for the side to move:
+        return WIN − ply − 1                # a faster win scores higher
+    if no column is legal:
+        return 0                            # a full board is a draw
+    if depth = 0:
+        return EVALUATE(position)           # score for the side to move
+    best ← −infinity
+    for each legal column m, centre first:
+        score ← −ALPHA-BETA(RESULT(position, m), depth − 1, −β, −α)
+        best ← max(best, score)
+        α ← max(α, score)
+        if α ≥ β:
+            break                           # prune: the opponent avoids this line
+    return best</pre>
+    <pre class="pseudo-full" hidden>function SEARCH(position, max_depth, max_seconds):
+    deadline ← now + max_seconds
+    nodes ← 0
+    for each legal column m:
+        if m wins at once:
+            return m                        # a win in one move needs no search
+    best ← (first legal column in centre order, score 0, depth 0)
+    depth ← 0
+    repeat max_depth times:
+        depth ← depth + 1
+        try:
+            scores ← empty map
+            α ← −2 · WIN
+            order ← legal columns in centre order
+            if best.depth > 0:
+                move best.move to the front of order
+            for each column m in order:
+                scores[m] ← −ALPHA-BETA(RESULT(position, m), depth − 1, −2 · WIN, −α, 1)
+                α ← max(α, scores[m])
+        on time-limit reached:
+            stop                            # an unfinished depth is thrown away
+        move ← the column with the highest score, ties to the more central column
+        best ← (move, scores[move], depth, nodes, root scores)
+        if |scores[move]| ≥ WIN − 64:
+            stop                            # a forced result; deeper search cannot change it
+    return best
+
+function ALPHA-BETA(position, depth, α, β, ply):
+    nodes ← nodes + 1
+    if nodes mod 1024 = 0 and now > deadline:
+        raise time-limit reached
+    if a node limit is set and nodes > node limit:
+        raise time-limit reached                       # the page does not set a node limit
+    if a column wins at once for the side to move:
+        return WIN − ply − 1
+    if no column is legal:
+        return 0
+    if depth = 0:
+        return EVALUATE(position)
+    α0 ← α
+    key ← KEY(position)
+    move_tt ← none
+    if key is in TABLE:
+        (d, flag, value, move_tt) ← TABLE[key]
+        if d ≥ depth:
+            if flag = EXACT:
+                return value
+            if flag = LOWER and value ≥ β:
+                return value
+            if flag = UPPER and value ≤ α:
+                return value
+    order ← legal columns in centre order
+    if move_tt is in order:
+        move move_tt to the front of order
+    best ← −2 · WIN
+    best_move ← order[0]
+    for each column m in order:
+        score ← −ALPHA-BETA(RESULT(position, m), depth − 1, −β, −α, ply + 1)
+        if score > best:
+            best, best_move ← score, m
+        α ← max(α, best)
+        if α ≥ β:
+            break                           # beta cutoff
+    if best ≤ α0:
+        flag ← UPPER
+    else if best ≥ β:
+        flag ← LOWER
+    else:
+        flag ← EXACT
+    TABLE[key] ← (depth, flag, best, best_move)
+    return best</pre>
+  </div>
+  <p class="hiw-note"><b>The root.</b> The outer procedure is iterative deepening. Each finished depth replaces the previous answer, and the root search in each depth uses the previous best move first. The timeout is checked once every 1,024 nodes, so the search stops close to the budget without a clock call at every node.</p>
+  <p class="hiw-note"><b>The root window.</b> At the root, each child is searched with the window from −2·WIN to −α. Each later column is searched only far enough to show whether it can beat the best score found so far. Only the chosen column's score is exact; the scores of the other columns are bounds, which is why the page marks them as upper bounds.</p>
+  <p class="hiw-note"><b>The transposition table.</b> The key is <code>current + mask</code>, a single integer for the position<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/board.py#L104-L106" target="_blank" rel="noopener" title="connect4/board.py, lines 104–106" aria-label="Code on GitHub: connect4/board.py, lines 104 to 106">5</a>. An entry searched to at least the current depth can be reused, which saves work. A win score stores its distance from the node where it was found, so a reused entry can misjudge which of two wins is faster, but never whether a position is won<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/minimax.py#L78-L80" target="_blank" rel="noopener" title="connect4/minimax.py, lines 78–80" aria-label="Code on GitHub: connect4/minimax.py, lines 78 to 80">57</a>.</p>
+  <p class="hiw-note"><b>Ordering.</b> The table's best move is tried first, then the other columns in centre order. A good first move raises alpha early, and that makes the cutoffs on later moves more frequent.</p>
+
+  <h3 class="hiw-sub">Monte Carlo tree search</h3>
+  <p class="hiw-note"><b>Monte Carlo tree search</b> (MCTS) estimates the value of a move by simulated games, not by a hand-written evaluation or a learned network. A <b>rollout</b> plays random legal moves from a position until one side makes four in a row or the board fills, then returns the result. The search uses <b>UCT</b> to choose which branch to follow: at each node, the child with the largest <b>upper confidence bound</b> is chosen. The bound used here is <b>UCB1</b>, which adds to the child's mean result an exploration bonus that is large when the child has few visits compared with its parent.</p>
+  <!-- connect4/mcts.py:69-71 -->
+  <div class="math-fig">
+    <div class="math math-block">a^{\star}=\arg\max_{i}\Bigl(\frac{w_i}{n_i}+c\sqrt{\frac{\ln N}{n_i}}\Bigr),\qquad c=1.4</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L69-L71" target="_blank" rel="noopener" title="connect4/mcts.py, lines 69–71" aria-label="Code on GitHub: connect4/mcts.py, lines 69 to 71">58</a></span>
+  </div>
+  <p class="hiw-note">Here i ranges over the children of the node, w_i is the total result of child i for the player who moved into it, n_i is its visit count, N is the node's own visit count, and ln is the natural logarithm. The constant c = 1.4 is the default in the MCTS constructor<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L48" target="_blank" rel="noopener" title="connect4/mcts.py, line 48" aria-label="Code on GitHub: connect4/mcts.py, line 48">59</a>, and the agent does not change it.</p>
+  <p class="hiw-note">Each simulation has four steps. <b>Selection</b> descends by the formula above until it reaches a node with an untried move. <b>Expansion</b> adds one child for a randomly chosen untried move. <b>Rollout</b> plays the rest of the game at random, and its result is taken for the player who moved into the new child. <b>Backup</b> adds the result to every node on the path, flipping its sign at each level. The move played is the child with the most visits. A move that wins at once is played without any search<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L58-L60" target="_blank" rel="noopener" title="connect4/mcts.py, lines 58–60" aria-label="Code on GitHub: connect4/mcts.py, lines 58 to 60">60</a>.</p>
+
+  <!-- connect4/mcts.py:55-91 (search), 31-44 (_rollout) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L55-L91" target="_blank" rel="noopener" title="connect4/mcts.py, lines 55–91, 31–44" aria-label="Code on GitHub: connect4/mcts.py, lines 55 to 91, 31 to 44">61</a></span>
+    <pre class="pseudo-simple">function MCTS-SEARCH(position, simulations):
+    repeat simulations times:
+        node ← SELECT(root)                 # follow UCB1 down the tree
+        if node has untried moves:
+            node ← EXPAND(node)             # add one random untried move
+        result ← ROLLOUT(node.position)     # random play to the end
+        BACKUP(node, result)                # flip the sign at each level
+    return the child of the root with the most visits</pre>
+    <pre class="pseudo-full" hidden>function MCTS-SEARCH(position, simulations, max_seconds, c = 1.4):
+    start ← now
+    root ← NODE(position)
+    for each legal column m:
+        if m wins at once:
+            return m                        # an immediate win needs no search
+    sims ← 0
+    repeat simulations times:
+        try:
+            if max_seconds is set and sims mod 64 = 0 and now − start &gt; max_seconds:
+                raise time-limit reached
+            node ← root
+            while node has no untried moves and node has children:          # selection
+                node ← the child of node with the largest w/n + c · sqrt(ln N_node / n)
+            if node has untried moves:                                      # expansion
+                m ← a random untried move, removed from the list
+                child ← NODE(RESULT(node.position, m), parent node, move m)
+                add child to the children of node
+                node ← child
+            if node.position has four in a row:                              # simulation
+                result ← +1
+            else:
+                result ← −ROLLOUT(node.position)
+            while node is not empty:                                         # backup
+                node.visits ← node.visits + 1
+                node.value ← node.value + result
+                result ← −result            # the parent's player is the opponent
+                node ← node.parent
+            sims ← sims + 1
+        on time-limit reached:
+            stop
+    m* ← the child of root with the most visits
+    return m*, sims, visit counts, elapsed time
+
+function ROLLOUT(position):
+    if position has four in a row for the player who moved last:
+        return −1
+    sign ← +1
+    loop:
+        moves ← legal columns of position
+        if moves is empty:
+            return 0                        # full board: draw
+        m ← a random column from moves
+        if m wins at once for the player to move:
+            return sign                     # the player to move wins
+        position ← RESULT(position, m)
+        sign ← −sign</pre>
+  </div>
+  <p class="hiw-note"><b>Why the rollout sign alternates.</b> The rollout starts from the position after the expansion, where the player to move is the opponent of the player who moved into the new node. Its result is therefore negated before backup<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L79" target="_blank" rel="noopener" title="connect4/mcts.py, line 79" aria-label="Code on GitHub: connect4/mcts.py, line 79">62</a>. Within the rollout, each random move passes the turn, so the sign flips after every move<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/mcts.py#L44" target="_blank" rel="noopener" title="connect4/mcts.py, line 44" aria-label="Code on GitHub: connect4/mcts.py, line 44">63</a>.</p>
+  <p class="hiw-note"><b>Why there is no learned knowledge.</b> The rollouts are uniform random play, so the search does not know that centre columns are better. Its estimates come only from the random games it has played, and the page labels it as plain MCTS for that reason.</p>
+
+  <h3 class="hiw-sub">Chance</h3>
+  <p class="hiw-note">The <b>chance</b> agent is a baseline with no search, evaluation or lookahead. It draws a column from fixed weights, one per column, that favour the centre: w = (1, 2, 3, 4, 3, 2, 1) from the left<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L29" target="_blank" rel="noopener" title="connect4/agents.py, line 29" aria-label="Code on GitHub: connect4/agents.py, line 29">64</a>. A full column has weight zero, and the remaining weights are renormalised so that they sum to one.</p>
+  <!-- connect4/agents.py:29, 115-122 -->
+  <div class="math-fig">
+    <div class="math math-block">p(c)=\frac{w_c\,\mathbf{1}[c\text{ open}]}{\sum_{c'}w_{c'}\,\mathbf{1}[c'\text{ open}]},\qquad w=(1,2,3,4,3,2,1)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L29" target="_blank" rel="noopener" title="connect4/agents.py, lines 29, 115–122" aria-label="Code on GitHub: connect4/agents.py, lines 29, 115 to 122">64</a></span>
+  </div>
+  <p class="hiw-note">Here c is a column, and 1[c open] is 1 when the column has room and 0 when it is full. On an empty board the weights sum to 16, so the odds are 6.25%, 12.5%, 18.75%, 25%, 18.75%, 12.5% and 6.25%. The page shows them rounded to whole percent: 6%, 12%, 19%, 25%, 19%, 12% and 6%<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L26-L28" target="_blank" rel="noopener" title="connect4/agents.py, lines 26–28" aria-label="Code on GitHub: connect4/agents.py, lines 26 to 28">65</a>. The strength setting has no effect on this agent.</p>
+
+  <!-- connect4/agents.py:125-136 (chance_move), 115-122 (chance_odds) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L125-L136" target="_blank" rel="noopener" title="connect4/agents.py, lines 125–136, 115–122" aria-label="Code on GitHub: connect4/agents.py, lines 125 to 136, 115 to 122">66</a></span>
+    <pre class="pseudo-simple">function CHANCE-MOVE(position):
+    for each column c:
+        weight[c] ← 0 if column c is full, else CHANCE-WEIGHTS[c]
+    return one column drawn with probability weight[c] / sum of weights</pre>
+    <pre class="pseudo-full" hidden>function CHANCE-MOVE(position, rng):
+    weights ← empty list
+    for each column c:
+        if column c is full:
+            weights[c] ← 0
+        else:
+            weights[c] ← CHANCE-WEIGHTS[c]  # (1, 2, 3, 4, 3, 2, 1)
+    total ← sum of weights
+    odds ← weights[c] / total for each column c   # sums to 1, full columns get 0
+    column ← one draw from 0 to 6 with probabilities odds, using rng
+    return column, odds rounded to four places</pre>
+  </div>
+  <p class="hiw-note">The draw uses an unseeded random generator in the page's API<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/connect4_api.py#L77" target="_blank" rel="noopener" title="server/connect4_api.py, line 77" aria-label="Code on GitHub: server/connect4_api.py, line 77">67</a>, which passes no rng<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/connect4/agents.py#L125-L136" target="_blank" rel="noopener" title="connect4/agents.py, lines 125–136" aria-label="Code on GitHub: connect4/agents.py, lines 125 to 136">66</a>, so the same position can give different columns on different requests. The agent returns its odds with its move, and the page draws them as the bars of the analysis panel.</p>
+
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/connect4.js"></script>
 </body>

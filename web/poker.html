@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="poker.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">08 // IMPERFECT INFORMATION · COUNTERFACTUAL REGRET MINIMIZATION</div>
+      <div class="proj-pg-tag">08 // IMPERFECT INFORMATION</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="POKER">POKER</h1>
-      <div class="proj-pg-sub" id="pg-sub">Heads-up Leduc hold'em against a bot that plays its CFR+ average strategy. It never reads your card, and it bluffs on purpose, at the frequency that keeps you guessing.</div>
+      <div class="proj-pg-sub" id="pg-sub">Leduc hold'em against a CFR+ bot or against chance, or watch the AI play.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -41,35 +42,44 @@
         <span class="stat-chip green">NET <span class="val" id="chip-net">0</span></span>
         <span class="stat-chip">HANDS <span class="val" id="chip-hands">0</span></span>
         <span class="stat-chip" id="expl-chip">BOT EXPLOITABILITY <span class="val" id="chip-expl">—</span></span>
-        <span class="stat-chip">GAME VALUE <span class="val" id="chip-value">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Heads-up Leduc hold'em is a six-card poker game for two seats. Each hand, you win chips by holding the better card at the showdown, or by making the other seat fold.</p>
+    <p>Choose YOU to play a hand against the CFR+ bot or against chance, then press DEAL. Act with the buttons or the keys k, b, c, r and f, and press h to see the equilibrium mix for your card.</p>
+    <p>Choose WATCH THE AI to run the CFR+ bot against chance with no input. Press START, and pause or step whenever you like.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="pk-modes">
         <div class="pk-seg" role="group" aria-label="Mode">
-          <button class="pk-seg-btn active" id="mode-play" type="button" aria-pressed="true">YOU</button>
-          <button class="pk-seg-btn" id="mode-watch" type="button" aria-pressed="false">WATCH THE AI</button>
+          <button class="pk-seg-btn active" id="mode-play" type="button" aria-pressed="true" title="Play a hand yourself">YOU</button>
+          <button class="pk-seg-btn" id="mode-watch" type="button" aria-pressed="false" title="Watch the CFR+ AI play chance, with no input">WATCH THE AI</button>
         </div>
         <div class="pk-seg" role="group" aria-label="Opponent" id="opp-group">
-          <button class="pk-seg-btn active" id="opp-cfr" type="button" data-opp="cfr" aria-pressed="true">vs CFR+ BOT</button>
-          <button class="pk-seg-btn" id="opp-chance" type="button" data-opp="chance" aria-pressed="false">vs CHANCE</button>
+          <button class="pk-seg-btn active" id="opp-cfr" type="button" data-opp="cfr" aria-pressed="true" title="Play against the CFR+ bot, which samples its average strategy">vs CFR+ BOT</button>
+          <button class="pk-seg-btn" id="opp-chance" type="button" data-opp="chance" aria-pressed="false" title="Play against chance: fixed odds that ignore the card">vs CHANCE</button>
         </div>
       </div>
       <div class="pk-sides" id="sides" aria-live="polite"></div>
       <div class="pk-watch" id="watch-bar" hidden>
-        <button class="cyber-btn green" id="watch-toggle" type="button"><span class="btn-txt">▶ START</span></button>
-        <button class="cyber-btn" id="watch-step" type="button"><span class="btn-txt">STEP ›</span></button>
-        <label class="pk-field">SPEED
-          <select class="cyber-select" id="watch-speed" aria-label="Watch speed">
-            <option value="slow">slow</option>
-            <option value="normal" selected>normal</option>
-            <option value="fast">fast</option>
-          </select>
-        </label>
-        <label class="pk-field"><input type="checkbox" id="watch-auto" checked> AUTO-RESTART</label>
+        <button class="cyber-btn green" id="watch-toggle" type="button" title="Start or pause the CFR+ AI"><span class="btn-txt">▶ START</span></button>
+        <button class="cyber-btn" id="watch-step" type="button" title="While paused, play one move"><span class="btn-txt">STEP ›</span></button>
+        <details class="more-settings pk-watch-more">
+          <summary>More settings</summary>
+          <label class="pk-field" title="How long to pause after each move">SPEED
+            <select class="cyber-select" id="watch-speed" aria-label="Watch speed">
+              <option value="slow">slow</option>
+              <option value="normal" selected>normal</option>
+              <option value="fast">fast</option>
+            </select>
+          </label>
+          <label class="pk-field" title="Deal the next hand automatically"><input type="checkbox" id="watch-auto" checked> AUTO-RESTART</label>
+        </details>
       </div>
 
       <div class="pk-table" id="table" aria-label="Poker table">
@@ -90,20 +100,20 @@
       </div>
 
       <div class="pk-actions" id="actions">
-        <button class="cyber-btn pink" id="btn-deal" type="button"><span class="btn-txt">↺ DEAL</span></button>
+        <button class="cyber-btn pink" id="btn-deal" type="button" title="Deal a new hand (n)"><span class="btn-txt">↺ DEAL</span></button>
         <button class="cyber-btn" id="btn-k" type="button" data-action="k"><span class="btn-txt">CHECK · k</span></button>
         <button class="cyber-btn pink" id="btn-b" type="button" data-action="b"><span class="btn-txt">BET · b</span></button>
         <button class="cyber-btn green" id="btn-c" type="button" data-action="c"><span class="btn-txt">CALL · c</span></button>
         <button class="cyber-btn pink" id="btn-r" type="button" data-action="r"><span class="btn-txt">RAISE · r</span></button>
         <button class="cyber-btn" id="btn-f" type="button" data-action="f"><span class="btn-txt">FOLD · f</span></button>
-        <button class="cyber-btn green" id="btn-hint" type="button" aria-pressed="false"><span class="btn-txt">✦ HINT · h</span></button>
+        <button class="cyber-btn green" id="btn-hint" type="button" aria-pressed="false" title="Show your equilibrium mix for your card in this spot (h)"><span class="btn-txt">✦ HINT · h</span></button>
       </div>
 
-      <div style="margin-top:1.4rem">
-        <div class="section-title pink-ttl">THE HAND LOG</div>
+      <div class="pk-score" id="score" aria-live="off"></div>
+      <details class="log-fold" id="log-fold">
+        <summary>Hand log</summary>
         <div class="pk-log" id="log" aria-live="off"></div>
-        <div class="pk-score" id="score" aria-live="off"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -112,21 +122,21 @@
         <div class="viz-panel pk-panel">
           <div class="viz-title" id="mix-title">Waiting for the bot's first decision.</div>
           <div class="pk-bars" id="mix-bars"></div>
-          <div class="field-hint" id="mix-note">Each bar is the probability the bot chose that action. It draws its move from this mix, so a bet it could have checked is a sampled choice, not a mistake.</div>
+          <div class="field-hint" id="mix-note">Each bar is the probability of one action in the mix.</div>
         </div>
       </div>
 
       <div>
         <div class="section-title pink-ttl">WHY IT BLUFFED</div>
         <div class="viz-panel pk-panel">
-          <div class="pk-explain" id="explain">Play a hand. When the bot bets, this panel shows its mix for every card it could hold, and explains the bet once the cards are shown.</div>
+          <div class="pk-explain" id="explain">Play a hand. The bot's bet rate for each card appears here when it bets.</div>
         </div>
       </div>
 
       <div>
         <div class="section-title" style="color:var(--yellow)">EXPLOITABILITY OVER ITERATIONS</div>
         <div class="viz-panel pk-panel">
-          <div class="viz-title">How far a best-responding opponent gains against the bot, in chips per hand, on a log scale. Zero is equilibrium.</div>
+          <div class="viz-title">Chips per hand that a best-responding opponent gains, log scale. Zero is equilibrium.</div>
           <canvas id="chart" class="pk-chart" width="520" height="260" role="img" aria-label="Exploitability of CFR and CFR+ against training iterations"></canvas>
           <div class="pk-legend">
             <span class="pk-key cfr"></span> CFR (vanilla)
@@ -136,84 +146,291 @@
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">HOW IT THINKS</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">REGRET</div>
-            <div class="field-hint">For every decision it asks: how much better would this action have done than the mix I played? Those gains and losses add up, and it plays each action in proportion to its positive total.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">THE AVERAGE IS THE ANSWER</div>
-            <div class="field-hint">The strategy it plays keeps moving. The average of those strategies over the iterations is the equilibrium, and that average is what the bot samples from.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">IT CANNOT SEE YOUR CARD</div>
-            <div class="field-hint">Its decisions are per information set: its own card and the betting, never yours. Bluffs are how it stays unreadable when it holds the worst card.</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The bot plays a near-equilibrium strategy for Leduc hold'em, a six-card poker game with one shared card. The strategy was trained offline with counterfactual regret minimization (CFR) and its faster variant CFR+. The server only looks up the trained probabilities, so no search runs during play.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>CFR+ (the bot)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Picture a player who, after each hand, asks "would I have done better always betting here, or always checking?" and shifts future play toward the moves they wish they had made more often. Repeated over thousands of hands, the average of all that play is hard to beat.</p>
-      <p>Each information set (the bot's card, the public card once shown, and the betting so far) keeps one regret per action. Regret matching plays each action in proportion to its positive regret. CFR+ floors regrets at zero, and its average strategy weights iteration t by t. The bot samples each move from that average.</p>
-      <ul>
-        <li>Leduc: six cards (two each of J, Q, K), an ante of 1, bets of 2 and 4 chips, at most two bets or raises per round, and one public card between the rounds. The game has 288 information sets.</li>
-        <li>Committed run: 5,000 iterations. Exploitability of the saved table: 0.00010694 chips per hand.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Think of the tile spawner in 2048: it places a 2 nine times in ten and a 4 otherwise, whatever is on the board. Chance works like that. It never looks at its card, never searches, and never plans ahead. Each action is a fixed draw.</p>
-      <p>At each decision it keeps only the actions that are legal, weights each by the odds for its kind, renormalises over the legal set, and samples with a seeded random generator. The odds are one table in <code>poker/chance.py</code>, and the same table is used in both rounds and for both seats.</p>
-      <ul id="chance-odds">
-        <li>Fold 15%, call or check 55%, bet or raise 30%, renormalised over the legal actions.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Vanilla CFR (comparison)</h3>
-      <p class="hiw-plain"><b>New to this?</b> It is the same regret idea with a slower habit. It keeps every regret, positive or negative, and gives every past iteration the same weight. It still converges, just more slowly.</p>
-      <p>The training page charts it next to CFR+ on the same game and the same iteration counts.</p>
-      <ul>
-        <li>After 5,000 iterations its exploitability is 0.00358651 chips, against 0.0000148 for CFR+ (the unrounded log values).</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Baselines: random, always-call, hand-strength</h3>
-      <p class="hiw-plain"><b>New to this?</b> These are the opponents you would meet at a casual table: one plays at random, one calls every bet, and one follows a few rules about its own card. They are yardsticks, not proof of skill, so the benchmark also plays the bot against itself.</p>
-      <p>Win rates for the bot, in milli-big-blinds per hand (big blind 2 chips), over 200,000 hands each:</p>
-      <ul>
-        <li>Random +358.0 (95% CI +350.2 to +365.7); always-call +317.7; hand-strength +68.2.</li>
-        <li>Self-play +3.1 (CI -1.4 to +7.6), which contains zero as equilibrium play requires.</li>
-      </ul>
-    </article>
+  <p class="hiw-lede"><b>Leduc hold'em</b> is a small two-player poker game with six cards and one shared public card. The CFR+ bot plays a table of probabilities computed offline by <b>counterfactual regret minimization</b> (CFR), and its faster variant CFR+. During play the server only looks up those probabilities, so no search runs while a hand is in progress.</p>
+
+  <h3 class="hiw-sub">The game: Leduc hold'em</h3>
+  <p class="hiw-note">The deck has six cards: two each of J, Q and K <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L28-L29" target="_blank" rel="noopener" title="poker/leduc.py, lines 28–29" aria-label="Code on GitHub: poker/leduc.py, lines 28 to 29">1</a>. Each seat puts in an <b>ante</b> of 1 chip <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L30" target="_blank" rel="noopener" title="poker/leduc.py, line 30" aria-label="Code on GitHub: poker/leduc.py, line 30">2</a> and is dealt one private card face down <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L74-L77" target="_blank" rel="noopener" title="poker/leduc.py, lines 74–77" aria-label="Code on GitHub: poker/leduc.py, lines 74 to 77">3</a>. Round 1 betting follows with bets of 2 chips. A <b>public card</b> is then turned up for both seats, and round 2 betting follows with bets of 4 chips <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L31" target="_blank" rel="noopener" title="poker/leduc.py, line 31" aria-label="Code on GitHub: poker/leduc.py, line 31">4</a>. Seat 0 acts first in both rounds <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L93-L95" target="_blank" rel="noopener" title="poker/leduc.py, lines 93–95" aria-label="Code on GitHub: poker/leduc.py, lines 93 to 95">5</a>.</p>
+  <p class="hiw-note">In each round, a <b>check</b> passes when nothing is owed, and a <b>bet</b> opens the betting. Once a bet is owed, a <b>call</b> matches it and closes the round, a <b>raise</b> adds one bet size on top of it, and a <b>fold</b> gives up the pot and ends the hand <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/betting.py#L24-L26" target="_blank" rel="noopener" title="poker/betting.py, lines 24–26" aria-label="Code on GitHub: poker/betting.py, lines 24 to 26">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/betting.py#L34-L44" target="_blank" rel="noopener" title="poker/betting.py, lines 34–44" aria-label="Code on GitHub: poker/betting.py, lines 34 to 44">7</a>. This is <b>fixed-limit</b> betting, where every bet is one fixed size. At most two bets or raises are allowed in a round <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L32" target="_blank" rel="noopener" title="poker/leduc.py, line 32" aria-label="Code on GitHub: poker/leduc.py, line 32">8</a>.</p>
+  <p class="hiw-note">A seat's <b>put</b> is its ante plus every bet and call it has made. A call matches the outstanding amount, and a bet or raise sets the raiser's total to the highest total so far plus one bet size <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/betting.py#L47-L63" target="_blank" rel="noopener" title="poker/betting.py, lines 47–63" aria-label="Code on GitHub: poker/betting.py, lines 47 to 63">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L111-L118" target="_blank" rel="noopener" title="poker/leduc.py, lines 111–118" aria-label="Code on GitHub: poker/leduc.py, lines 111 to 118">10</a>.</p>
+  <p class="hiw-note">At the <b>showdown</b>, a private card that matches the public card makes a <b>pair</b>, and a pair beats any hand without one. Otherwise the higher rank wins, and equal ranks split the pot <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L133-L143" target="_blank" rel="noopener" title="poker/leduc.py, lines 133–143" aria-label="Code on GitHub: poker/leduc.py, lines 133 to 143">11</a>. Each rank has two cards, so a pair means the other card of the public card's rank.</p>
+  <p class="hiw-note">The payoff is the net chips for seat 0, written <span class="math">u_0</span>. The game is <b>zero-sum</b>: seat 1's payoff is the negative of seat 0's, so one seat's gain is exactly the other's loss. Seat 0 is you in play mode and the CFR+ AI in watch mode.</p>
+  <!-- poker/leduc.py:120-131 -->
+  <div class="math-fig">
+    <div class="math math-block">u_0=\begin{cases}\mathrm{put}_1 &amp; \text{seat 1 folded, or seat 0 wins the showdown}\\ -\mathrm{put}_0 &amp; \text{seat 0 folded, or seat 1 wins the showdown}\\ 0 &amp; \text{split pot}\end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L120-L131" target="_blank" rel="noopener" title="poker/leduc.py, lines 120–131" aria-label="Code on GitHub: poker/leduc.py, lines 120 to 131">12</a></span>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Pair with the public card</td><td>Strongest hand: a pair made with the public card</td><td class="num">Bet when unbet; facing a bet, raise if legal, else call</td></tr>
-    <tr><td>King, no pair</td><td>Second strongest rank</td><td class="num">Bet; call a bet</td></tr>
-    <tr><td>Queen, no pair</td><td>Middle rank</td><td class="num">Check; call a bet</td></tr>
-    <tr><td>Jack, no pair</td><td>Weakest rank</td><td class="num">Check; fold to a bet</td></tr>
-    <tr><td>Ante</td><td>Chips each seat puts in at the deal</td><td class="num">1 chip</td></tr>
-    <tr><td>Bet sizes</td><td>Chips per bet in round 1 and round 2</td><td class="num">2 and 4 chips</td></tr>
-    <tr><td>Raise cap</td><td>Bets plus raises allowed per round</td><td class="num">2</td></tr>
-    <tr><td>Probability rounding</td><td>Precision of the saved strategy</td><td class="num">4 decimals, then renormalised</td></tr>
+  <p class="hiw-note">Here <span class="math">put_0</span> and <span class="math">put_1</span> are the two seats' puts at the end of the hand. A fold gives the other seat the pot, so the winner takes the loser's put. Seat 0 wins a showdown, and so takes seat 1's put <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L120-L131" target="_blank" rel="noopener" title="poker/leduc.py, lines 120–131" aria-label="Code on GitHub: poker/leduc.py, lines 120 to 131">12</a>.</p>
+  <p class="hiw-note">A seat sees its own card, the public card once it is turned up, and the betting so far, and nothing else. Leduc is therefore an <b>imperfect-information</b> game, in which each seat's view of the hand is partial <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L145-L154" target="_blank" rel="noopener" title="poker/leduc.py, lines 145–154" aria-label="Code on GitHub: poker/leduc.py, lines 145 to 154">13</a>.</p>
+  <p class="hiw-note"><i>Example.</i> You hold a J, the bot holds a K, and the public card is the other J. Both seats check in round 1. In round 2 you bet 4 and the bot calls. Each seat's put is 5 chips, so the pot is 10. Your J pairs the public card and wins, so your net is the bot's put, 5 chips <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L120-L131" target="_blank" rel="noopener" title="poker/leduc.py, lines 120–131" aria-label="Code on GitHub: poker/leduc.py, lines 120 to 131">12</a>.</p>
+
+  <h3 class="hiw-sub">The game tree and information sets</h3>
+  <p class="hiw-note">The solver works on an explicit <b>game tree</b>. Its root is a <b>chance node</b> that deals two distinct private cards. There are 30 equally likely deals, since the cards are dealt in order from six <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L73-L77" target="_blank" rel="noopener" title="poker/leduc.py, lines 73–77" aria-label="Code on GitHub: poker/leduc.py, lines 73 to 77">14</a>. Each round 1 ending that does not fold leads to a public-card chance node, where each of the four cards not held is equally likely <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L78-L81" target="_blank" rel="noopener" title="poker/leduc.py, lines 78–81" aria-label="Code on GitHub: poker/leduc.py, lines 78 to 81">15</a>. A <b>decision node</b> is a point where a seat chooses an action, and a <b>terminal node</b> ends the hand and carries its payoff <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L50-L106" target="_blank" rel="noopener" title="poker/tree.py, lines 50–106" aria-label="Code on GitHub: poker/tree.py, lines 50 to 106">16</a>.</p>
+  <p class="hiw-note">The tree has 9,451 nodes: 3,780 decision nodes, 151 chance nodes and 5,520 terminal nodes. The 151 chance nodes are the deal, plus one public-card node for each of the 30 deals after each of the five round 1 endings that do not fold: kk, bc, brc, kbc and kbrc.</p>
+  <p class="hiw-note">An <b>information set</b> is the set of histories that one seat cannot tell apart. Its key is the seat's card, the public card once shown (or <code>-</code>), and the betting. For example, <code>K|-|kb</code> is a king facing a bet after a round 1 check, with the public card still hidden <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L145-L154" target="_blank" rel="noopener" title="poker/leduc.py, lines 145–154" aria-label="Code on GitHub: poker/leduc.py, lines 145 to 154">13</a>. Every history in an information set shares one strategy. The tree checks that every node in a set offers the same actions and sits at the same depth <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L90-L92" target="_blank" rel="noopener" title="poker/tree.py, lines 90–92" aria-label="Code on GitHub: poker/tree.py, lines 90 to 92">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L100-L105" target="_blank" rel="noopener" title="poker/tree.py, lines 100–105" aria-label="Code on GitHub: poker/tree.py, lines 100 to 105">18</a>. Leduc has 288 information sets <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_strategy.json" target="_blank" rel="noopener" title="poker/data/leduc_strategy.json" aria-label="Code on GitHub: poker/data/leduc_strategy.json">19</a>.</p>
+
+  <h3 class="hiw-sub">Regret and regret matching</h3>
+  <p class="hiw-note">A <b>regret</b> for an action is how much better that action would have done, summed over the iterations, than the mixed strategy the seat played at an information set. The solver keeps one regret per action at each information set <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L92-L96" target="_blank" rel="noopener" title="poker/cfr.py, lines 92–96" aria-label="Code on GitHub: poker/cfr.py, lines 92 to 96">20</a>.</p>
+  <p class="hiw-note">The update uses <b>counterfactual</b> values. Each history is weighted by the probability that the other seat and chance lead to it, not by the seat's own probability. So the regret measures the change in the seat's value from that information set alone <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L117-L123" target="_blank" rel="noopener" title="poker/cfr.py, lines 117–123" aria-label="Code on GitHub: poker/cfr.py, lines 117 to 123">21</a>. An iteration's regret delta for an action is:</p>
+  <!-- poker/cfr.py:117-123 -->
+  <div class="math-fig">
+    <div class="math math-block">d_t(I,a)=\sum_{h\in I}\pi_{-i}(h)\bigl(v_t(h a)-v_t(h)\bigr),\qquad v_t(h)=\sum_{b\in A(I)}\sigma_t(I,b)\,v_t(h b)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L117-L123" target="_blank" rel="noopener" title="poker/cfr.py, lines 117–123" aria-label="Code on GitHub: poker/cfr.py, lines 117 to 123">21</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">I</span> is an information set of the seat, <span class="math">h</span> ranges over its histories, <span class="math">a</span> is an action, <span class="math">\sigma_t(I,b)</span> is the probability of action <span class="math">b</span> at <span class="math">I</span> on iteration <span class="math">t</span>, <span class="math">A(I)</span> is the set of legal actions there, and <span class="math">\pi_{-i}(h)</span> is the probability that the other seat and chance lead to <span class="math">h</span>. The code's <code>pi_other</code> is this weight, and <code>vals</code> and <code>node_value</code> are <span class="math">v_t(ha)</span> and <span class="math">v_t(h)</span> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L117-L123" target="_blank" rel="noopener" title="poker/cfr.py, lines 117–123" aria-label="Code on GitHub: poker/cfr.py, lines 117 to 123">21</a>.</p>
+  <p class="hiw-note">The cumulative regret <span class="math">R_t(I,a)</span> adds this delta. Vanilla CFR keeps negative regrets, and CFR+ floors them at zero (see the next topic) <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L89-L90" target="_blank" rel="noopener" title="poker/cfr.py, lines 89–90" aria-label="Code on GitHub: poker/cfr.py, lines 89 to 90">22</a>:</p>
+  <!-- poker/cfr.py:89-90 -->
+  <div class="math-fig">
+    <div class="math math-block">R_t(I,a)=R_{t-1}(I,a)+d_t(I,a)\quad\text{(vanilla CFR)},\qquad R_t(I,a)=\max\bigl(R_{t-1}(I,a)+d_t(I,a),\,0\bigr)\quad\text{(CFR+)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L89-L90" target="_blank" rel="noopener" title="poker/cfr.py, lines 89–90" aria-label="Code on GitHub: poker/cfr.py, lines 89 to 90">22</a></span>
+  </div>
+  <p class="hiw-note"><b>Regret matching</b> turns the positive regrets into the strategy for the next iteration. An action is played in proportion to its positive regret, and every action is equally likely when none has positive regret. Here <span class="math">R^{+}=\max(R,0)</span> and <span class="math">|A(I)|</span> is the number of legal actions <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L30-L36" target="_blank" rel="noopener" title="poker/cfr.py, lines 30–36" aria-label="Code on GitHub: poker/cfr.py, lines 30 to 36">23</a>.</p>
+  <!-- poker/cfr.py:30-36 -->
+  <div class="math-fig">
+    <div class="math math-block">\sigma_t(I,a)=\begin{cases}\dfrac{R_t^{+}(I,a)}{\sum_{b\in A(I)}R_t^{+}(I,b)} &amp; \text{if the denominator is positive}\\[6pt] \dfrac{1}{|A(I)|} &amp; \text{otherwise}\end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L30-L36" target="_blank" rel="noopener" title="poker/cfr.py, lines 30–36" aria-label="Code on GitHub: poker/cfr.py, lines 30 to 36">23</a></span>
+  </div>
+  <p class="hiw-note">The uniform fallback lets a new information set start with no preference. Pseudocode for the rule follows.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L30-L36" target="_blank" rel="noopener" title="poker/cfr.py, lines 30–36" aria-label="Code on GitHub: poker/cfr.py, lines 30 to 36">23</a></span>
+    <pre class="pseudo-simple">function REGRET-MATCHING(regret):
+    positive ← each regret with negatives set to 0
+    if the positives sum to more than 0:
+        return each positive divided by that sum
+    return the uniform distribution over the actions</pre>
+    <pre class="pseudo-full" hidden>function REGRET-MATCHING(regret):
+    for each action a:
+        pos(a) ← max(regret(a), 0)          # R⁺: only positive regret counts
+    total ← the sum of pos(a) over all actions
+    if total &gt; 0:
+        return pos(a) / total for each action a
+    return 1 / (number of actions) for each action a</pre>
+  </div>
+  <p class="hiw-note">The full version has the same steps as the code.</p>
+
+  <h3 class="hiw-sub">CFR+ and the average strategy</h3>
+  <p class="hiw-note"><b>CFR+</b> is a variant of CFR that makes two changes. First, the cumulative regrets are floored at zero, so an action that was bad for a long time can recover quickly <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L89-L90" target="_blank" rel="noopener" title="poker/cfr.py, lines 89–90" aria-label="Code on GitHub: poker/cfr.py, lines 89 to 90">22</a>. Second, iteration <span class="math">t</span> is weighted by <span class="math">t</span> in the <b>average strategy</b>, which is the <b>linear averaging</b> rule <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L79" target="_blank" rel="noopener" title="poker/cfr.py, line 79" aria-label="Code on GitHub: poker/cfr.py, line 79">24</a>. Later strategies are closer to equilibrium, so they count more. Vanilla CFR gives every iteration weight 1 and keeps negative regrets <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L79" target="_blank" rel="noopener" title="poker/cfr.py, line 79" aria-label="Code on GitHub: poker/cfr.py, line 79">24</a>.</p>
+  <p class="hiw-note">The strategy that the bot plays is the average, not the current strategy. Each iteration adds the strategy it played to a running sum, and the average is the normalized sum <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L63-L69" target="_blank" rel="noopener" title="poker/cfr.py, lines 63–69" aria-label="Code on GitHub: poker/cfr.py, lines 63 to 69">25</a>:</p>
+  <!-- poker/cfr.py:123, 63-69 -->
+  <div class="math-fig">
+    <div class="math math-block">S_T(I,a)=\sum_{t=1}^{T} w_t\sum_{h\in I}\pi_i(h)\,\sigma_t(I,a),\qquad \bar\sigma_T(I,a)=\frac{S_T(I,a)}{\sum_{b\in A(I)}S_T(I,b)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L63-L69" target="_blank" rel="noopener" title="poker/cfr.py, lines 63–69" aria-label="Code on GitHub: poker/cfr.py, lines 63 to 69">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L123" target="_blank" rel="noopener" title="poker/cfr.py, line 123" aria-label="Code on GitHub: poker/cfr.py, line 123">26</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\pi_i(h)</span> is the seat's own probability of reaching <span class="math">h</span>, which is the weight that makes the average follow the seat's own play. The weight <span class="math">w_t</span> is <span class="math">t</span> for CFR+ and 1 for vanilla CFR, and <span class="math">\bar\sigma_T</span> is uniform when the denominator is zero <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L63-L69" target="_blank" rel="noopener" title="poker/cfr.py, lines 63–69" aria-label="Code on GitHub: poker/cfr.py, lines 63 to 69">25</a>.</p>
+  <p class="hiw-note">Each iteration makes two walks, one for each seat. A walk updates the regrets and the average of that seat's information sets only. The walk for seat 1 runs after seat 0's regrets are updated, so it responds to seat 0's newest strategy, not to the strategy from the start of the iteration <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L71-L90" target="_blank" rel="noopener" title="poker/cfr.py, lines 71–90" aria-label="Code on GitHub: poker/cfr.py, lines 71 to 90">27</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L71-L90" target="_blank" rel="noopener" title="poker/cfr.py, lines 71–90" aria-label="Code on GitHub: poker/cfr.py, lines 71 to 90">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L92-L124" target="_blank" rel="noopener" title="poker/cfr.py, lines 92–124" aria-label="Code on GitHub: poker/cfr.py, lines 92 to 124">28</a></span>
+    <pre class="pseudo-simple">function CFR-PLUS(tree, iterations):
+    repeat iterations times:
+        for each seat in 0 and 1:
+            σ ← REGRET-MATCHING(regret) for every information set
+            WALK(root, seat)                   # regret and average of this seat
+            floor the regrets of this seat's information sets at 0
+    return the average strategy σ̄              # weighted by t, normalized</pre>
+    <pre class="pseudo-full" hidden>function CFR-PLUS(tree, iterations):
+    for t in 1 to iterations:
+        w ← t                                  # CFR+ weights iteration t by t (vanilla: w ← 1)
+        for seat in 0, 1:
+            σ ← REGRET-MATCHING(R(I)) for every information set I
+            D ← 0 for every (I, a)             # regret deltas of this walk
+            WALK(root, seat, 1, 1, σ, D, w)
+            for each information set I of seat:
+                for each action a of I:
+                    R(I, a) ← max(R(I, a) + D(I, a), 0)   # CFR+ floor (vanilla: no max)
+        if t is a checkpoint:
+            record t and EXPLOITABILITY(σ̄)     # see the best-response section
+    return σ̄
+
+function WALK(n, seat, π_seat, π_other, σ, D, w):
+    if n is terminal:
+        return u_0(n) if seat = 0, otherwise −u_0(n)
+    if n is a chance node:
+        return the sum over children c of p(c) · WALK(c, seat, π_seat, π_other · p(c), σ, D, w)
+    I ← the information set of n;  s ← σ(I)
+    if the player at n is not seat:
+        return the sum over actions a of s(a) · WALK(child, seat, π_seat, π_other · s(a), σ, D, w)
+    for each action a_j with child c_j:
+        v_j ← WALK(c_j, seat, π_seat · s(a_j), π_other, σ, D, w)
+    v ← the sum over j of s(a_j) · v_j            # value of n under σ
+    for each action a_j:
+        D(I, a_j) ← D(I, a_j) + π_other · (v_j − v)   # counterfactual regret
+        S(I, a_j) ← S(I, a_j) + w · π_seat · s(a_j)   # average strategy numerator
+    return v</pre>
+  </div>
+  <p class="hiw-note"><b>Reach</b> is the probability that a path is followed. The walk carries two reaches: <code>pi_seat</code> for the seat's own moves and <code>pi_other</code> for the opponent's moves and chance. Regrets use only <code>pi_other</code>, and the average uses only <code>pi_seat</code>. This split is what makes the regret counterfactual.</p>
+  <p class="hiw-note">A seat's own move is not weighted in its regret, because the regret asks what each action would have earned. The seat's own choice enters only the average, which records how often the seat actually plays each action.</p>
+  <p class="hiw-note">The floor in CFR+ is applied after each walk, to the cumulative regrets. The average weight <code>w</code> is the iteration number, so the strategies from late iterations dominate the average.</p>
+
+  <h3 class="hiw-sub">Exploitability and best response</h3>
+  <p class="hiw-note">A <b>best response</b> is the strategy that gives one seat the highest payoff against a fixed strategy of the other seat. The <b>exploitability</b> of a profile (one strategy per seat) is how much the two best responses gain against it on average. It is zero exactly at a <b>Nash equilibrium</b>, the profile where neither seat gains by deviating <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L184-L193" target="_blank" rel="noopener" title="poker/tree.py, lines 184–193" aria-label="Code on GitHub: poker/tree.py, lines 184 to 193">29</a>.</p>
+  <p class="hiw-note">The game value <span class="math">v</span> is seat 0's expected payoff under the profile. Seat 1's expected payoff is <span class="math">-v</span>. So seat 0's gain from its best response is <span class="math">b_0 - v</span>, and seat 1's is <span class="math">b_1 + v</span>, where <span class="math">b_1</span> is seat 1's best response value in its own payoff. The two gains add to <span class="math">b_0 + b_1</span>, and the average is the exploitability <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L184-L193" target="_blank" rel="noopener" title="poker/tree.py, lines 184–193" aria-label="Code on GitHub: poker/tree.py, lines 184 to 193">29</a>.</p>
+  <!-- poker/tree.py:184-193 -->
+  <div class="math-fig">
+    <div class="math math-block">e(\bar\sigma)=\tfrac12\bigl(b_0+b_1\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L184-L193" target="_blank" rel="noopener" title="poker/tree.py, lines 184–193" aria-label="Code on GitHub: poker/tree.py, lines 184 to 193">29</a></span>
+  </div>
+  <p class="hiw-note">A best response cannot be found by picking the best child at each node. A seat must choose one action per information set, the same at every history in it. The code uses two passes over the tree. The forward pass computes the reach of each node from the opponent and chance, and the backward pass, deepest level first, chooses each information set's action by its counterfactual value <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L124-L137" target="_blank" rel="noopener" title="poker/tree.py, lines 124–137" aria-label="Code on GitHub: poker/tree.py, lines 124 to 137">30</a>:</p>
+  <!-- poker/tree.py:138-180 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{CFV}(I,a)=\sum_{h\in I}\rho(h)\,b(h a),\qquad a^{\star}=\operatorname*{arg\,max}_{a}\,\mathrm{CFV}(I,a)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L172-L181" target="_blank" rel="noopener" title="poker/tree.py, lines 172–181" aria-label="Code on GitHub: poker/tree.py, lines 172 to 181">31</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\rho(h)</span> is the reach of <span class="math">h</span> from the opponent and chance, and <span class="math">b(h)</span> is the best response value from <span class="math">h</span>. The reach update is <span class="math">\rho(c)=\rho(n)\,p(c)</span> at a chance node, <span class="math">\rho(c)=\rho(n)\,\sigma(I(n),a)</span> at an opponent node, and <span class="math">\rho(c)=\rho(n)</span> at the seat's own node <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L138-L155" target="_blank" rel="noopener" title="poker/tree.py, lines 138–155" aria-label="Code on GitHub: poker/tree.py, lines 138 to 155">32</a>. The value of a terminal node is <span class="math">\pm u_0</span>, the sign being <span class="math">+</span> for seat 0 <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L157-L164" target="_blank" rel="noopener" title="poker/tree.py, lines 157–164" aria-label="Code on GitHub: poker/tree.py, lines 157 to 164">33</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L124-L181" target="_blank" rel="noopener" title="poker/tree.py, lines 124–181" aria-label="Code on GitHub: poker/tree.py, lines 124 to 181">34</a></span>
+    <pre class="pseudo-simple">function BEST-RESPONSE(tree, σ, seat):
+    reach ← chance and the opponent's probability of reaching each node
+    for each level from the deepest to the root:
+        terminal: value ← the payoff for seat
+        chance or opponent: value ← the average over children
+        seat's information set I: for each action a, CFV(I, a) ← the sum of reach(h) · value(h·a)
+            every node of I takes the value of the action with the largest CFV
+    return value(root)</pre>
+    <pre class="pseudo-full" hidden>function BEST-RESPONSE(tree, σ, seat):
+    reach(root) ← 1
+    for each node n from the root down:                 # parents before children
+        if n is a chance node:
+            for each child c: reach(c) ← reach(c) + reach(n) · p(c)
+        else if the player at n is not seat:
+            for each action a with child c: reach(c) ← reach(c) + reach(n) · σ(I(n), a)
+        else:                                          # the seat's own move
+            for each child c: reach(c) ← reach(c) + reach(n)
+    sign ← +1 if seat = 0, otherwise −1
+    for each level from the deepest to the root:
+        own ← empty map from information set to nodes
+        for each node n in the level:
+            if n is terminal:
+                value(n) ← sign · u_0(n)
+            else if n is a chance node:
+                value(n) ← the sum over children c of p(c) · value(c)
+            else if the player at n is not seat:
+                value(n) ← the sum over actions a of σ(I(n), a) · value(child)
+            else:
+                add n to own[I(n)]
+        for each information set I in own:
+            CFV(I, a) ← 0 for each action a
+            for each node n in own[I]:
+                for each action a with child c: CFV(I, a) ← CFV(I, a) + reach(n) · value(c)
+            best ← the first action with the largest CFV(I, a)
+            for each node n in own[I]:
+                value(n) ← value(child of n for action best)
+    return value(root)</pre>
+  </div>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L184-L193" target="_blank" rel="noopener" title="poker/tree.py, lines 184–193" aria-label="Code on GitHub: poker/tree.py, lines 184 to 193">29</a></span>
+    <pre class="pseudo-simple">function EXPLOITABILITY(tree, σ):
+    b_0 ← BEST-RESPONSE(tree, σ, seat 0)
+    b_1 ← BEST-RESPONSE(tree, σ, seat 1)       # seat 1's own payoff
+    return (b_0 + b_1) / 2</pre>
+    <pre class="pseudo-full" hidden>function EXPLOITABILITY(tree, σ):
+    b_0 ← BEST-RESPONSE(tree, σ, 0)
+    b_1 ← BEST-RESPONSE(tree, σ, 1)            # already in seat 1's own payoff
+    return (b_0 + b_1) / 2, b_0, b_1</pre>
+  </div>
+  <p class="hiw-note">Two details matter in the backward pass. The reach excludes the seat's own actions, because the seat is choosing them, so the choice at each information set maximizes the value weighted only by the opponent's reach. A tie goes to the first action in the list, so the result is deterministic <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py#L172-L181" target="_blank" rel="noopener" title="poker/tree.py, lines 172–181" aria-label="Code on GitHub: poker/tree.py, lines 172 to 181">31</a>.</p>
+  <p class="hiw-note">The committed strategy has exploitability 0.00010694 chips per hand. Since the big blind is 2 chips, that is about 0.053 milli-big-blinds per hand. It is measured on the rounded table, the one the bot plays <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py#L85-L96" target="_blank" rel="noopener" title="poker/train.py, lines 85–96" aria-label="Code on GitHub: poker/train.py, lines 85 to 96">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_strategy.json" target="_blank" rel="noopener" title="poker/data/leduc_strategy.json" aria-label="Code on GitHub: poker/data/leduc_strategy.json">19</a>.</p>
+  <p class="hiw-note"><b>Why mixing is the point.</b> If the bot never bluffed, you could fold every bet and lose nothing. If it always bluffed, you could call every bet and win with every Q and K. At equilibrium its bluff frequency leaves you indifferent between calling and folding, so neither choice can be exploited. That is the sense in which the mix is optimal.</p>
+
+  <h3 class="hiw-sub">The CFR+ bot</h3>
+  <p class="hiw-note">The CFR+ bot plays the committed average strategy. The table maps each information set key to probabilities over its legal actions <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py#L27-L34" target="_blank" rel="noopener" title="poker/strategy.py, lines 27–34" aria-label="Code on GitHub: poker/strategy.py, lines 27 to 34">36</a>. It is rounded to four decimals and renormalized, so each row sums to exactly one <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py#L22" target="_blank" rel="noopener" title="poker/strategy.py, line 22" aria-label="Code on GitHub: poker/strategy.py, line 22">37</a>. Its move is a lookup and a draw from that row <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L77-L86" target="_blank" rel="noopener" title="poker/bots.py, lines 77–86" aria-label="Code on GitHub: poker/bots.py, lines 77 to 86">38</a>.</p>
+  <p class="hiw-note">In play mode the bot is seat 1. It sees only its own card and the betting, since its information set key has no view of your card <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py#L145-L154" target="_blank" rel="noopener" title="poker/leduc.py, lines 145–154" aria-label="Code on GitHub: poker/leduc.py, lines 145 to 154">13</a>. The server holds the bot's card and each decision's mix back until the hand ends. Each response carries only the bot's actions, its round, and its <b>spot</b>, which is its information set with the card replaced by <code>?</code> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/poker_api.py#L102-L137" target="_blank" rel="noopener" title="server/poker_api.py, lines 102–137" aria-label="Code on GitHub: server/poker_api.py, lines 102 to 137">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/poker_api.py#L140-L164" target="_blank" rel="noopener" title="server/poker_api.py, lines 140–164" aria-label="Code on GitHub: server/poker_api.py, lines 140 to 164">40</a>.</p>
+  <p class="hiw-note">The spot lets the explainer look up the bot's bet rate for every card in the same betting spot. Its bet rate for a card is the sum of the bet and raise probabilities in that row <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/poker.js#L217-L223" target="_blank" rel="noopener" title="web/js/poker.js, lines 217–223" aria-label="Code on GitHub: web/js/poker.js, lines 217 to 223">41</a>. The strategy table is public at <code>/api/poker/strategy</code>, so this adds no information beyond the committed table. At the showdown, the response adds the bot's card and every decision with its mix <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/poker_api.py#L131-L136" target="_blank" rel="noopener" title="server/poker_api.py, lines 131–136" aria-label="Code on GitHub: server/poker_api.py, lines 131 to 136">42</a>. The page shows the bot's card face down until that point <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/poker.js#L98-L114" target="_blank" rel="noopener" title="web/js/poker.js, lines 98–114" aria-label="Code on GitHub: web/js/poker.js, lines 98 to 114">43</a>.</p>
+
+  <h3 class="hiw-sub">Chance (fixed odds)</h3>
+  <p class="hiw-note"><b>Chance</b> is the second opponent. It is not a solver. It draws each action from fixed odds and never reads its card, searches, or looks ahead <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L1-L16" target="_blank" rel="noopener" title="poker/chance.py, lines 1–16" aria-label="Code on GitHub: poker/chance.py, lines 1 to 16">44</a>. The odds are fold 15%, call or check 55%, and bet or raise 30%, the same at every decision in both rounds and for both seats <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L26" target="_blank" rel="noopener" title="poker/chance.py, line 26" aria-label="Code on GitHub: poker/chance.py, line 26">45</a>.</p>
+  <ul id="chance-odds">
+    <li>Fold 15%, call or check 55%, bet or raise 30%, renormalized over the legal actions.</li>
+  </ul>
+  <p class="hiw-note">At each decision, chance keeps only the legal actions, weights each by the odds for its kind, renormalizes over the legal set, and samples one with a seeded random generator <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L32-L41" target="_blank" rel="noopener" title="poker/chance.py, lines 32–41" aria-label="Code on GitHub: poker/chance.py, lines 32 to 41">46</a>. The weight of a legal action <span class="math">a</span> is:</p>
+  <!-- poker/chance.py:26, 32-41 -->
+  <div class="math-fig">
+    <div class="math math-block">w(a)=\frac{p_{\kappa(a)}}{\sum_{b\in L}p_{\kappa(b)}},\qquad p_{\text{fold}}=0.15,\quad p_{\text{call or check}}=0.55,\quad p_{\text{bet or raise}}=0.30</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L26" target="_blank" rel="noopener" title="poker/chance.py, line 26" aria-label="Code on GitHub: poker/chance.py, line 26">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L32-L41" target="_blank" rel="noopener" title="poker/chance.py, lines 32–41" aria-label="Code on GitHub: poker/chance.py, lines 32 to 41">46</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">L</span> is the set of legal actions and <span class="math">\kappa(a)</span> is the kind of <span class="math">a</span>. Check and call are one kind, and bet and raise are one kind <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L29" target="_blank" rel="noopener" title="poker/chance.py, line 29" aria-label="Code on GitHub: poker/chance.py, line 29">47</a>. <i>Example.</i> Facing a bet, the legal set is fold, call and raise, so the weights are 0.15, 0.55 and 0.30, which already sum to one. At the raise cap, the raise is removed, and fold and call become 0.15 / 0.70 and 0.55 / 0.70 <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L32-L41" target="_blank" rel="noopener" title="poker/chance.py, lines 32–41" aria-label="Code on GitHub: poker/chance.py, lines 32 to 41">46</a>.</p>
+  <p class="hiw-note">A draw is made by <b>inverse sampling</b>: draw a uniform number <span class="math">r</span> from <span class="math">[0,1)</span>, then take the first action whose cumulative probability exceeds it. The dict order is fixed, so a seeded generator repeats exactly <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py#L52-L62" target="_blank" rel="noopener" title="poker/strategy.py, lines 52–62" aria-label="Code on GitHub: poker/strategy.py, lines 52 to 62">48</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py#L32-L50" target="_blank" rel="noopener" title="poker/chance.py, lines 32–50" aria-label="Code on GitHub: poker/chance.py, lines 32 to 50">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py#L52-L62" target="_blank" rel="noopener" title="poker/strategy.py, lines 52–62" aria-label="Code on GitHub: poker/strategy.py, lines 52 to 62">48</a></span>
+    <pre class="pseudo-simple">function CHANCE-ACT(state, rng):
+    legal ← the legal actions at state
+    for each action a in legal:
+        raw(a) ← the odds for the kind of a
+    weights ← raw(a) divided by the sum of raw over legal
+    return SAMPLE(weights, rng)</pre>
+    <pre class="pseudo-full" hidden>function CHANCE-ACT(state, rng):
+    legal ← the legal actions at state
+    for each action a in legal:
+        raw(a) ← ODDS[KIND(a)]         # fold 0.15, check or call 0.55, bet or raise 0.30
+    total ← the sum of raw(a) over legal
+    for each action a in legal:
+        w(a) ← raw(a) / total          # renormalized over the legal set
+    return SAMPLE(w, rng)
+
+function SAMPLE(row, rng):
+    r ← a uniform random number in [0, 1)
+    acc ← 0
+    for each action a with probability p in row, in dict order:
+        acc ← acc + p
+        last ← a
+        if r &lt; acc:
+            return a
+    return last                        # float round-off can leave acc just below 1</pre>
+  </div>
+  <p class="hiw-note">The same sampler is used by the CFR+ bot, so both opponents are drawn the same way. The guard after the loop matters because the probabilities add up to one only up to floating point error. Without it, a draw of <span class="math">r</span> just below one could fall through the loop.</p>
+  <p class="hiw-note">In watch mode the browser draws the CFR+ AI's moves with the same rule, from the row the server sends for its turn <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/poker.js#L58-L68" target="_blank" rel="noopener" title="web/js/poker.js, lines 58–68" aria-label="Code on GitHub: web/js/poker.js, lines 58 to 68">50</a>. Each watch tick makes one request, and the page schedules the next tick <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/poker.js#L427-L439" target="_blank" rel="noopener" title="web/js/poker.js, lines 427–439" aria-label="Code on GitHub: web/js/poker.js, lines 427 to 439">51</a>.</p>
+
+  <h3 class="hiw-sub">Baselines and the benchmark</h3>
+  <p class="hiw-note">Three baselines give yardsticks. <b>Random</b> picks uniformly from the legal actions <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L34-L38" target="_blank" rel="noopener" title="poker/bots.py, lines 34–38" aria-label="Code on GitHub: poker/bots.py, lines 34 to 38">52</a>. <b>Always-call</b> calls any bet and checks when nothing is owed, so it never folds or bets <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L41-L46" target="_blank" rel="noopener" title="poker/bots.py, lines 41–46" aria-label="Code on GitHub: poker/bots.py, lines 41 to 46">53</a>. <b>Hand-strength</b> is a fixed rule that reads only the seat's own card and the public card once it is shown <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L49-L74" target="_blank" rel="noopener" title="poker/bots.py, lines 49–74" aria-label="Code on GitHub: poker/bots.py, lines 49 to 74">54</a>:</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Own card</th><th>Rule</th></tr></thead><tbody>
+    <tr><td>Pair with the public card</td><td>Bet when unbet; facing a bet, raise if legal, otherwise call</td></tr>
+    <tr><td>King, no pair</td><td>Bet; call a bet</td></tr>
+    <tr><td>Queen, no pair</td><td>Check; call a bet</td></tr>
+    <tr><td>Jack, no pair</td><td>Check; fold to a bet</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> the hand-strength rules are hand-picked, a plain reading of the card ranks, and they are not tuned. The ante, bet sizes and raise cap are the Leduc rules as coded. CFR+ and the 5,000-iteration run were chosen, not swept: the repository has no sweep over iterations or game settings. Probabilities are rounded to four decimals to keep the file small, and the exploitability in the file is measured on the rounded table, so it matches what the bot plays.</p>
-  <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">Trained offline with <code>python -m poker train --save --iterations 5000</code>, which runs CFR and CFR+ on Leduc for 5,000 iterations each. Without <code>--iterations</code> the command runs 10,000. Exploitability is computed exactly by best response, not sampled, at about 40 checkpoints spaced logarithmically (37 distinct iterations in the log). The committed run took 230.6 s. Its game value for the first seat is -0.085606 chips. The best responses are -0.08552004 and 0.08573392, so the exploitability is 0.00010694 chips. On Kuhn poker, where the exact value is -1/18, 10,000 iterations give a value error of 3.6e-9 for CFR+ and 8.0e-6 for vanilla CFR.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py">poker/cfr.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py">poker/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/tree.py">poker/tree.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py">poker/bots.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/chance.py">poker/chance.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/leduc.py">poker/leduc.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py">poker/strategy.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_strategy.json">poker/data/leduc_strategy.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_benchmark.md">results/poker_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_train_log.jsonl">results/poker_train_log.jsonl</a></p>
+  <p class="hiw-note">The hand-strength rules are hand-picked, a plain reading of the card ranks, and they are not tuned. The benchmark plays each deal twice, once in each seat, so the luck of the cards cancels. It uses seeded deals, 100,000 per matchup (200,000 hands each), and reports winnings in milli-big-blinds per hand <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/benchmark.py#L22-L52" target="_blank" rel="noopener" title="poker/benchmark.py, lines 22–52" aria-label="Code on GitHub: poker/benchmark.py, lines 22 to 52">55</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L132-L157" target="_blank" rel="noopener" title="poker/bots.py, lines 132–157" aria-label="Code on GitHub: poker/bots.py, lines 132 to 157">56</a>.</p>
+  <p class="hiw-note">For deal <span class="math">k</span>, let <span class="math">x_k</span> be the agent's net chips when it sits in seat 0, and <span class="math">y_k</span> its net chips when it sits in seat 1. The per-hand figure for that deal is the average of the two seats:</p>
+  <!-- poker/bots.py:132-157 -->
+  <div class="math-fig">
+    <div class="math math-block">d_k=\tfrac12\,(x_k+y_k),\qquad \bar d=\frac1n\sum_{k=1}^{n}d_k,\qquad s^2=\frac{n}{n-1}\Bigl(\frac1n\sum_{k=1}^{n}d_k^{2}-\bar d^{\,2}\Bigr),\qquad \mathrm{se}=\sqrt{s^2/n}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L132-L157" target="_blank" rel="noopener" title="poker/bots.py, lines 132–157" aria-label="Code on GitHub: poker/bots.py, lines 132 to 157">56</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the number of deals, <span class="math">\bar d</span> is the mean chips per hand, and <span class="math">s^2</span> is the sample variance of the per-deal figures. The variance is clamped at zero before the scaling, so rounding cannot make it negative. The standard error <span class="math">\mathrm{se}</span> measures the uncertainty of the mean <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L132-L157" target="_blank" rel="noopener" title="poker/bots.py, lines 132–157" aria-label="Code on GitHub: poker/bots.py, lines 132 to 157">56</a>.</p>
+  <!-- poker/bots.py:128-129, 152 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{mbb/hand}=\frac{1000}{2}\,\bar d,\qquad \text{95\% CI}=\text{mbb/hand}\pm 1.96\cdot\frac{1000}{2}\,\mathrm{se}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L128-L129" target="_blank" rel="noopener" title="poker/bots.py, lines 128–129" aria-label="Code on GitHub: poker/bots.py, lines 128 to 129">57</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L152" target="_blank" rel="noopener" title="poker/bots.py, line 152" aria-label="Code on GitHub: poker/bots.py, line 152">58</a></span>
+  </div>
+  <p class="hiw-note">A milli-big-blind is a thousandth of a big blind. The big blind is the round 1 bet, 2 chips, so the factor is 1000 / 2 <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L31" target="_blank" rel="noopener" title="poker/bots.py, line 31" aria-label="Code on GitHub: poker/bots.py, line 31">59</a>. The interval is a 95% confidence interval using the normal value 1.96 <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/bots.py#L128-L129" target="_blank" rel="noopener" title="poker/bots.py, lines 128–129" aria-label="Code on GitHub: poker/bots.py, lines 128 to 129">57</a>. Committed results over 200,000 hands each are below. The self-play row should be close to zero, since neither side can win in expectation at equilibrium <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_benchmark.md" target="_blank" rel="noopener" title="results/poker_benchmark.md" aria-label="Code on GitHub: results/poker_benchmark.md">60</a>.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Opponent</th><th class="num">mbb/hand</th><th class="num">95% CI</th></tr></thead><tbody>
+    <tr><td>Random</td><td class="num">+358.0</td><td class="num">+350.2 to +365.7</td></tr>
+    <tr><td>Always-call</td><td class="num">+317.7</td><td class="num">+313.1 to +322.2</td></tr>
+    <tr><td>Hand-strength</td><td class="num">+68.2</td><td class="num">+63.5 to +72.9</td></tr>
+    <tr><td>Self-play (CFR+ against CFR+)</td><td class="num">+3.1</td><td class="num">−1.4 to +7.6</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The self-play interval contains zero, which is what equilibrium play requires <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_benchmark.md" target="_blank" rel="noopener" title="results/poker_benchmark.md" aria-label="Code on GitHub: results/poker_benchmark.md">60</a>.</p>
+
+  <h3 class="hiw-sub">Training and results</h3>
+  <p class="hiw-note">The strategy file is produced with <code>python -m poker train --save --iterations 5000</code>. It runs CFR and CFR+ on Leduc for 5,000 iterations each, then writes the strategy, the curves and the log. Without <code>--iterations</code> the command runs 10,000 <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/__main__.py#L149-L179" target="_blank" rel="noopener" title="poker/__main__.py, lines 149–179" aria-label="Code on GitHub: poker/__main__.py, lines 149 to 179">61</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py#L85-L119" target="_blank" rel="noopener" title="poker/train.py, lines 85–119" aria-label="Code on GitHub: poker/train.py, lines 85 to 119">62</a>.</p>
+  <p class="hiw-note">Exploitability is computed exactly by best response, not sampled. It is measured at checkpoints spaced roughly logarithmically: with 40 points, the checkpoint at index <span class="math">i</span> is the iteration nearest <span class="math">T^{i/39}</span>, plus iterations 1 and <span class="math">T</span> <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L130-L137" target="_blank" rel="noopener" title="poker/cfr.py, lines 130–137" aria-label="Code on GitHub: poker/cfr.py, lines 130 to 137">63</a>. The committed curves have 37 distinct iterations each <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_training.json" target="_blank" rel="noopener" title="poker/data/leduc_training.json" aria-label="Code on GitHub: poker/data/leduc_training.json">64</a>.</p>
+  <!-- poker/cfr.py:130-137 -->
+  <div class="math-fig">
+    <div class="math math-block">m_i=\operatorname{round}\!\left(T^{\,i/39}\right),\qquad i=0,\dots,39</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/cfr.py#L130-L137" target="_blank" rel="noopener" title="poker/cfr.py, lines 130–137" aria-label="Code on GitHub: poker/cfr.py, lines 130 to 137">63</a></span>
+  </div>
+  <p class="hiw-note">The committed CFR+ run took 230.6 seconds. Its game value for seat 0 is −0.085606 chips. The best responses are −0.08552004 and 0.08573392, so the exploitability is <span class="math">(-0.08552004+0.08573392)/2 = 0.00010694</span> chips per hand <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_strategy.json" target="_blank" rel="noopener" title="poker/data/leduc_strategy.json" aria-label="Code on GitHub: poker/data/leduc_strategy.json">19</a>.</p>
+  <p class="hiw-note">Vanilla CFR, with the same checkpoints, ends at exploitability 0.00358651 chips after 5,000 iterations. CFR+ ends at about 0.0000148, which shows the effect of the floor and linear averaging <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/data/leduc_training.json" target="_blank" rel="noopener" title="poker/data/leduc_training.json" aria-label="Code on GitHub: poker/data/leduc_training.json">64</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/poker_train_log.jsonl" target="_blank" rel="noopener" title="results/poker_train_log.jsonl" aria-label="Code on GitHub: results/poker_train_log.jsonl">65</a>.</p>
+  <p class="hiw-note">Kuhn poker is a three-card game with a known game value of −1/18 for the first seat <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py#L24" target="_blank" rel="noopener" title="poker/train.py, line 24" aria-label="Code on GitHub: poker/train.py, line 24">66</a>. Trained on Kuhn for 10,000 iterations, CFR+ lands 3.6e-9 from that value, and vanilla CFR lands 8.0e-6 from it. This checks the solver on a game whose answer is known exactly <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/train.py#L75-L82" target="_blank" rel="noopener" title="poker/train.py, lines 75–82" aria-label="Code on GitHub: poker/train.py, lines 75 to 82">67</a>.</p>
+  <p class="hiw-note">The number of iterations and the algorithm were chosen rather than swept, since the repository has no sweep over iterations or game settings. The Leduc rules are the ones coded in the game module. The probabilities are rounded to four decimals so the file stays small <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/poker/strategy.py#L22" target="_blank" rel="noopener" title="poker/strategy.py, line 22" aria-label="Code on GitHub: poker/strategy.py, line 22">37</a>.</p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/poker.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

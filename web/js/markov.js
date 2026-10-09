@@ -6,7 +6,7 @@
 
 import { pop, shake } from './fx.js';
 import {
-  MAX_RUN, Rng, Walker, buildModel, distribution, ngramSets, spaceBefore, tokenize, windowStats,
+  COPY_RUN, MAX_RUN, Rng, Walker, buildModel, distribution, markCopied, ngramSets, runEndingAt, spaceBefore, tokenize,
 } from './markov-core.js';
 
 const $ = (id) => document.getElementById(id);
@@ -24,11 +24,11 @@ const CORPORA = [
 ];
 
 const ORDER_NOTES = [
-  'Order 1 reads nothing: each token is drawn by its frequency in the book alone.',
-  'Order 2 reads the one token before it.',
-  'Order 3 reads the two tokens before it.',
-  'Order 4 reads the three tokens before it.',
-  'Order 5 reads the four tokens before it. Nearly every phrase it writes is copied from the book.',
+  'reads nothing: frequencies only',
+  'reads the 1 token before it',
+  'reads the 2 tokens before it',
+  'reads the 3 tokens before it',
+  'reads the 4 tokens before it',
 ];
 
 const S = {
@@ -47,6 +47,10 @@ const S = {
   kinds: [],       // 'prompt' | 'gen' | 'jump' per entry, for the copy meter and the log
   highlight: [],   // indices currently marked as context or last
   last: null,      // the last step's result, to redraw the panel when the temperature moves
+  minRun: COPY_RUN.word, // shortest verbatim run that counts as copied at this level
+  marks: [],       // per entry of walker.out: true once the entry lies in a copied window (marks never clear)
+  checked: 0,      // entries before this index have had every window ending in them checked
+  rows: [],        // the transcript row per pick, keyed by entry index, so a late COPY can update its row
   picks: 0,
   copied: 0,
   longest: 0,
@@ -83,6 +87,7 @@ async function rebuild() {
     S.sets = ngramSets(tokens, MAX_RUN);
     S.setsKey = key;
   }
+  S.minRun = COPY_RUN[S.level];
   S.tokens = tokens;
   S.model = buildModel(tokens, S.order);
   $('source-note').textContent = `SOURCE: ${corpus.source}. Public domain.`;
@@ -106,9 +111,10 @@ function showChips() {
   $('chip-copied').textContent = S.picks ? `${pct.toFixed(0)}%` : '—';
   $('chip-run').textContent = S.picks ? String(S.longest) : '—';
   $('meter-fill').style.width = `${pct}%`;
+  const unit = S.level === 'char' ? 'characters' : 'words';
   $('meter-note').textContent = S.picks
-    ? `${S.copied} of ${S.picks} order-${S.order} n-grams are copied verbatim from the book. The longest copied run is ${S.longest} tokens.`
-    : 'Order 5 copies: a 5-word phrase the chain writes almost always already exists in the book. The longer the order, the more of the book it repeats.';
+    ? `${S.copied} of ${S.picks} picks copied: each lies in a verbatim run of ${S.minRun} ${unit} or more.`
+    : 'No picks yet.';
 }
 
 function setStatus(text) {
@@ -210,17 +216,36 @@ function renderPanel(r) {
   $('pick-line').textContent = `Sampled ${JSON.stringify(show(r.token))} with p = ${pctText(r.prob)} (rank ${rank} of ${ranked.length}).`;
 }
 
-function logPick(n, tok, prob, copied, jumps) {
+// The COPY or NEW tag of a transcript row. A pick can change from NEW to COPY later, when a window holding it completes.
+function setLogTag(row, copied) {
+  const tag = row.querySelector('.log-tag');
+  tag.className = copied ? 'log-tag log-best' : 'log-tag log-val';
+  tag.textContent = copied ? 'COPY' : 'NEW ';
+}
+
+function logPick(i, n, tok, prob, copied, jumps) {
   const log = $('log');
   const row = document.createElement('div');
   row.className = 'mk-row';
-  const tag = copied ? '<span class="log-best">COPY</span>' : '<span class="log-val">NEW </span>';
   const jump = jumps ? ' <span class="log-adv">JUMP</span>' : '';
-  row.innerHTML = `<span class="log-info">${String(n).padStart(3, '0')}</span> ${tag} <span class="log-move"></span> <span class="log-info">p=${pctText(prob)}</span>${jump}`;
+  row.innerHTML = `<span class="log-info">${String(n).padStart(3, '0')}</span> <span class="log-tag"></span> <span class="log-move"></span> <span class="log-info">p=${pctText(prob)}</span>${jump}`;
   row.querySelector('.log-move').textContent = JSON.stringify(show(tok));
+  setLogTag(row, copied);
+  S.rows[i] = row;
   log.appendChild(row);
   while (log.childElementCount > LOG_LINES) log.firstElementChild.remove();
   log.scrollTop = log.scrollHeight;
+}
+
+// A pick lies in a copied window now: its span and its transcript row change from new to copied. Called once per
+// pick, because marks never clear.
+function markPickCopied(i) {
+  S.copied += 1;
+  const span = S.spans[i];
+  span.classList.remove('mk-novel');
+  span.classList.add('mk-copied');
+  const row = S.rows[i];
+  if (row) setLogTag(row, true);
 }
 
 // ── The chain ────────────────────────────────────────────────────────────
@@ -232,6 +257,9 @@ function reset() {
   S.kinds = [];
   S.highlight = [];
   S.last = null;
+  S.marks = [];
+  S.checked = 0;
+  S.rows = [];
   S.picks = 0;
   S.copied = 0;
   S.longest = 0;
@@ -264,13 +292,15 @@ function step() {
   for (let i = S.spans.length; i < r.index; i++) appendToken(S.walker.out[i], 'jump', true);
   appendToken(r.token, 'gen', true);
 
-  const stats = windowStats(S.walker.out, r.index, S.order, S.sets);
   S.picks += 1;
-  if (stats.copied) S.copied += 1;
-  S.longest = Math.max(S.longest, stats.run);
+  // Windows ending in the new entries can complete a copied run that reaches back over earlier picks.
+  const fresh = markCopied(S.walker.out, S.sets, S.minRun, S.marks, S.checked);
+  S.checked = S.walker.out.length;
+  for (const i of fresh) if (S.kinds[i] === 'gen') markPickCopied(i);
+  const copied = Boolean(S.marks[r.index]);
   const span = S.spans[r.index];
-  if (!stats.copied) span.classList.add('mk-novel');
-  else span.classList.add('mk-copied');
+  if (!copied) span.classList.add('mk-novel');
+  S.longest = Math.max(S.longest, runEndingAt(S.walker.out, r.index, S.sets));
 
   highlightWindow(r.index);
   const rare = r.prob < RARE;
@@ -284,9 +314,9 @@ function step() {
 
   S.last = r;
   renderPanel(r);
-  logPick(S.picks, r.token, r.prob, stats.copied, r.jumps);
+  logPick(r.index, S.picks, r.token, r.prob, copied, r.jumps);
   showChips();
-  const parts = [`pick ${S.picks}/${S.max}`, `p ${pctText(r.prob)}`, stats.copied ? 'copied from the book' : 'new phrase'];
+  const parts = [`pick ${S.picks}/${S.max}`, `p ${pctText(r.prob)}`, copied ? 'copied from the book' : 'not copied yet'];
   if (rare) parts.push('low-probability pick');
   if (r.jumps) parts.push('jumped to a new window at the end of the book');
   setStatus(parts.join(' · '));

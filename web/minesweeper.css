@@ -100,9 +100,11 @@
 .ms-toggle { display: flex; gap: 0.5rem; align-items: flex-start; font-family: var(--raj); font-size: 0.85rem; color: var(--text); cursor: pointer; }
 .ms-toggle input { margin-top: 0.25rem; accent-color: var(--green); }
 
+/* The grid tracks and the cells use the same size, so the board fits the screen. A cell never goes below 24px,
+   so a large board scrolls inside .ms-wrap instead of shrinking to a size that cannot be tapped. */
 @media (max-width: 600px) {
-  .ms-board { padding: 6px; gap: 1px; }
-  .ms-cell { width: min(var(--cell), calc((100vw - 4rem) / var(--cols))); height: min(var(--cell), calc((100vw - 4rem) / var(--cols))); }
+  .ms-board { padding: 6px; gap: 1px; --tap: max(24px, min(var(--cell), calc((100vw - 4rem) / var(--cols)))); grid-template-columns: repeat(var(--cols), var(--tap)); }
+  .ms-cell { width: var(--tap); height: var(--tap); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -144,6 +144,17 @@ def test_cbs_solves_swap_corridor_with_a_wait():
     assert result.conflicts_resolved >= 1 and result.high_nodes > 1
 
 
+def test_cbs_names_the_tree_node_it_returns():
+    # The returned node is a leaf: it was never expanded, but it was created as a child of an expanded node.
+    # The page marks it by this id; a different leaf with the same cost must not be mistaken for it.
+    result = cbs(swap_problem())
+    children = {c["id"]: c for e in result.trace for c in e["children"] if "id" in c}
+    assert result.solution in children
+    assert children[result.solution]["cost"] == result.sum_of_costs
+    assert all(e["id"] != result.solution for e in result.trace)
+    assert cbs(swap_problem(), max_nodes=1).solution is None
+
+
 @pytest.mark.parametrize("seed", range(5))
 def test_cbs_is_collision_free_and_no_worse_than_prioritized(seed):
     problem = random_instance("bottleneck", 4, seed)

@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="optlab.css">
 </head>
 <body>
@@ -31,35 +32,41 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">OPTIMIZERS · LOSS LANDSCAPES · STOCHASTIC GRADIENTS</div>
+      <div class="proj-pg-tag">LAB // OPTIMIZATION</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="OPTIMIZER RACE">OPTIMIZER RACE</h1>
-      <div class="proj-pg-sub">Drop a start point on a loss landscape and let six optimizers race down it. Each leaves a comet trail. Some settle into a minimum, some blow up.</div>
+      <div class="proj-pg-sub">Six optimizers start from one point on a loss landscape. Some settle at a minimum, and some blow up.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip">SURFACE <span class="val" id="chip-surface">ROSENBROCK</span></span>
-        <span class="stat-chip green">STEP <span class="val" id="chip-step">0</span></span>
-        <span class="stat-chip pink">BEST LOSS <span class="val" id="chip-best">—</span></span>
-        <span class="stat-chip">SETTLED <span class="val" id="chip-reached">0/0</span></span>
+        <span class="stat-chip green" title="Steps taken by the race so far">STEP <span class="val" id="chip-step">0</span></span>
+        <span class="stat-chip pink" title="Lowest loss reached by a track that has not diverged">BEST LOSS <span class="val" id="chip-best">—</span></span>
+        <span class="stat-chip" title="Tracks that have reached a minimum, out of all tracks in the race">SETTLED <span class="val" id="chip-reached">0/0</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to see which optimizer reaches the bottom of a loss landscape, and which ones fail on the way. Every track starts at the same point and moves downhill by its own rule.</p>
+    <p style="margin-top:0.5rem">Press RUN RACE to watch all six, or STEP to advance one step at a time. Click the map to move the start point, and pick a surface in LANDSCAPE.</p>
+    <p style="margin-top:0.5rem">Each track leaves a trail. Its badge turns green when it settles at a minimum, or pink when it diverges. Hover the map to read the loss and the gradient at the cursor.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="ol-stage">
         <div class="ol-toolbar">
           <div class="ol-hint" id="ol-hint">Click the map to drop a start point. Hover to read the gradient at the cursor.</div>
-          <button class="cyber-btn" id="ol-view" type="button" aria-pressed="false"><span class="btn-txt">VIEW: 2D</span></button>
+          <button class="cyber-btn" id="ol-view" type="button" aria-pressed="false" title="Switch between the flat heat map and a tilted 3D view, where the height is the loss."><span class="btn-txt">VIEW: 2D</span></button>
         </div>
         <div class="ol-frame" id="ol-frame">
           <canvas id="ol-canvas" role="img" aria-label="Loss landscape with optimizer trails. Click to place the start point."></canvas>
           <div class="ol-readout" id="ol-readout" aria-live="off">hover the map</div>
         </div>
         <div class="inline ol-controls">
-          <button class="cyber-btn green" id="ol-run" type="button"><span class="btn-txt">▶ RUN RACE</span></button>
-          <button class="cyber-btn" id="ol-step" type="button"><span class="btn-txt">› STEP</span></button>
-          <button class="cyber-btn pink" id="ol-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
+          <button class="cyber-btn green" id="ol-run" type="button" title="Run the race. It pauses when every track has settled or diverged, or after 3000 steps."><span class="btn-txt">▶ RUN RACE</span></button>
+          <button class="cyber-btn" id="ol-step" type="button" title="Advance every track by one step."><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn pink" id="ol-reset" type="button" title="Restart every track from the start point."><span class="btn-txt">↺ RESET</span></button>
         </div>
       </div>
 
@@ -71,10 +78,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.4rem">
-        <div class="section-title pink-ttl">RACE LOG</div>
+      <details class="log-fold" id="ol-log-fold">
+        <summary>Race log</summary>
         <div class="agent-log" id="ol-log" style="max-height:190px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -83,7 +90,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">SURFACE</div>
-            <select class="cyber-select" id="ol-surface" style="width:100%">
+            <select class="cyber-select" id="ol-surface" style="width:100%" title="Bowl: x² + y², well conditioned.">
               <option value="bowl">Bowl (well conditioned)</option>
               <option value="ravine">Ravine (ill conditioned)</option>
               <option value="saddle">Saddle</option>
@@ -92,18 +99,17 @@
               <option value="rastrigin">Rastrigin (many local minima)</option>
               <option value="custom">Paint your own</option>
             </select>
-            <div class="heuristic-card ol-card"><div class="field-hint" id="ol-note"></div></div>
           </div>
           <div id="ol-paint-row" hidden>
             <div class="field-lbl">CLICK MAP TO <span class="field-hint">(paint mode)</span></div>
             <div class="inline ol-paint" role="radiogroup" aria-label="Click mode">
-              <label class="ol-radio"><input type="radio" name="ol-paint" value="start" checked> START</label>
-              <label class="ol-radio"><input type="radio" name="ol-paint" value="hill"> HILL +</label>
-              <label class="ol-radio"><input type="radio" name="ol-paint" value="valley"> VALLEY −</label>
+              <label class="ol-radio" title="Click the map to move the start point."><input type="radio" name="ol-paint" value="start" checked> START</label>
+              <label class="ol-radio" title="Click the map to add a hill: a Gaussian bump with amplitude +2.4 and width 0.55."><input type="radio" name="ol-paint" value="hill"> HILL +</label>
+              <label class="ol-radio" title="Click the map to add a valley: a Gaussian bump with amplitude −2.0 and width 0.55."><input type="radio" name="ol-paint" value="valley"> VALLEY −</label>
             </div>
             <div class="inline" style="margin-top:0.4rem">
-              <button class="cyber-btn" id="ol-undo" type="button"><span class="btn-txt">UNDO BUMP</span></button>
-              <button class="cyber-btn pink" id="ol-clear" type="button"><span class="btn-txt">CLEAR</span></button>
+              <button class="cyber-btn" id="ol-undo" type="button" title="Remove the last bump."><span class="btn-txt">UNDO BUMP</span></button>
+              <button class="cyber-btn pink" id="ol-clear" type="button" title="Remove every bump."><span class="btn-txt">CLEAR</span></button>
             </div>
             <div class="field-hint" style="margin-top:0.3rem" id="ol-bumps">Bumps: 2 of 12</div>
           </div>
@@ -113,130 +119,360 @@
       <div>
         <div class="section-title green-ttl">OPTIMIZERS</div>
         <div class="viz-panel ol-opts-panel">
-          <label class="ol-shared-row"><input type="checkbox" id="ol-shared"> one learning rate for all</label>
-          <div class="ol-shared-lr" id="ol-shared-lr-row" hidden>
-            <div class="field-lbl">SHARED LEARNING RATE <span class="field-hint" id="ol-shared-lr-val"></span></div>
-            <input class="cyber-range" id="ol-shared-lr" type="range" min="-4" max="0.7" step="0.01" value="-1.3" aria-label="shared learning rate">
-          </div>
           <div id="ol-opts"></div>
         </div>
       </div>
 
-      <div>
-        <div class="section-title">MOMENTUM AND ADAM</div>
-        <div class="viz-panel ol-hyper">
-          <div class="ol-slider"><div class="field-lbl">MOMENTUM <span class="field-hint" id="ol-momentum-val"></span></div>
-            <input class="cyber-range" id="ol-momentum" type="range" min="0" max="0.99" step="0.01" aria-label="momentum beta"></div>
-          <div class="ol-slider"><div class="field-lbl">ADAM <span class="field-hint" id="ol-beta1-val"></span></div>
-            <input class="cyber-range" id="ol-beta1" type="range" min="0.5" max="0.999" step="0.001" aria-label="Adam beta 1"></div>
-          <div class="ol-slider"><div class="field-lbl">ADAM <span class="field-hint" id="ol-beta2-val"></span></div>
-            <input class="cyber-range" id="ol-beta2" type="range" min="0.9" max="0.9999" step="0.0001" aria-label="Adam beta 2"></div>
-          <div class="ol-slider"><div class="field-lbl">EPSILON (ADAM, RMSPROP, ADAGRAD) <span class="field-hint" id="ol-eps-val"></span></div>
-            <input class="cyber-range" id="ol-eps" type="range" min="-12" max="-2" step="0.5" aria-label="epsilon, log10"></div>
-          <div class="ol-slider"><div class="field-lbl">RMSPROP <span class="field-hint" id="ol-rho-val"></span></div>
-            <input class="cyber-range" id="ol-rho" type="range" min="0.5" max="0.999" step="0.001" aria-label="RMSProp decay"></div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">NOISE AND SPEED</div>
-        <div class="viz-panel ol-hyper">
-          <div class="ol-slider"><div class="field-lbl">GRADIENT NOISE <span class="field-hint" id="ol-noise-val"></span></div>
-            <input class="cyber-range" id="ol-noise" type="range" min="0" max="1.5" step="0.01" aria-label="gradient noise"></div>
-          <div class="ol-slider"><div class="field-lbl">NOISE SEED <span class="field-hint">(same seed, same jitter for every optimizer)</span></div>
-            <div class="inline">
-              <input class="cyber-input" id="ol-seed" type="number" min="0" max="2147483647" value="7" style="flex:1">
-              <button class="cyber-btn" id="ol-seed-rnd" type="button"><span class="btn-txt">RANDOM</span></button>
-            </div></div>
-          <div class="ol-slider"><div class="field-lbl">SPEED <span class="field-hint" id="ol-speed-val"></span></div>
-            <input class="cyber-range" id="ol-speed" type="range" min="1" max="120" step="1" aria-label="steps per second"></div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">HOW TO READ IT</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">TRAILS</div>
-            <div class="field-hint">Each optimizer's path, from the start to its head. The brighter end is the latest step. Letters mark the heads: S, M, N, R, A, D.</div>
+          <div>
+            <label class="ol-shared-row" title="Give every optimizer the same learning rate, set by the slider below."><input type="checkbox" id="ol-shared"> one learning rate for all</label>
+            <div class="ol-shared-lr" id="ol-shared-lr-row" hidden>
+              <div class="field-lbl">SHARED LEARNING RATE <span class="field-hint" id="ol-shared-lr-val"></span></div>
+              <input class="cyber-range" id="ol-shared-lr" type="range" min="-4" max="0.7" step="0.01" value="-1.3" aria-label="shared learning rate">
+            </div>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">SETTLED ✓</div>
-            <div class="field-hint">The gradient is near zero and the surface curves upward in every direction, so the optimizer is at a minimum, not on a saddle.</div>
+          <div>
+            <div class="section-title">MOMENTUM AND ADAM</div>
+            <div class="viz-panel ol-hyper">
+              <div class="ol-slider"><div class="field-lbl">MOMENTUM <span class="field-hint" id="ol-momentum-val"></span></div>
+                <input class="cyber-range" id="ol-momentum" type="range" min="0" max="0.99" step="0.01" aria-label="momentum beta" title="Momentum coefficient β. The velocity keeps about 1/(1 − β) steps of memory."></div>
+              <div class="ol-slider"><div class="field-lbl">ADAM β₁ <span class="field-hint" id="ol-beta1-val"></span></div>
+                <input class="cyber-range" id="ol-beta1" type="range" min="0.5" max="0.999" step="0.001" aria-label="Adam beta 1" title="Adam decay of the mean gradient (momentum)."></div>
+              <div class="ol-slider"><div class="field-lbl">ADAM β₂ <span class="field-hint" id="ol-beta2-val"></span></div>
+                <input class="cyber-range" id="ol-beta2" type="range" min="0.9" max="0.9999" step="0.0001" aria-label="Adam beta 2" title="Adam decay of the mean squared gradient."></div>
+              <div class="ol-slider"><div class="field-lbl">EPSILON (ADAM, RMSPROP, ADAGRAD) <span class="field-hint" id="ol-eps-val"></span></div>
+                <input class="cyber-range" id="ol-eps" type="range" min="-12" max="-2" step="0.5" aria-label="epsilon, log10" title="Small constant added under the square root, so the step never divides by zero."></div>
+              <div class="ol-slider"><div class="field-lbl">RMSPROP ρ <span class="field-hint" id="ol-rho-val"></span></div>
+                <input class="cyber-range" id="ol-rho" type="range" min="0.5" max="0.999" step="0.001" aria-label="RMSProp decay" title="RMSProp decay of the squared gradients."></div>
+            </div>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">NaN DETONATION</div>
-            <div class="field-hint">A step size too large for the curvature makes the iterate grow each step until it overflows. The lab stops that track at its last finite point.</div>
+          <div>
+            <div class="section-title pink-ttl">NOISE, SEED AND SPEED</div>
+            <div class="viz-panel ol-hyper">
+              <div class="ol-slider"><div class="field-lbl">GRADIENT NOISE <span class="field-hint" id="ol-noise-val"></span></div>
+                <input class="cyber-range" id="ol-noise" type="range" min="0" max="1.5" step="0.01" aria-label="gradient noise" title="Standard deviation of the noise added to every gradient. Off at 0."></div>
+              <div class="ol-slider"><div class="field-lbl">NOISE SEED <span class="field-hint">(same seed, same jitter for every optimizer)</span></div>
+                <div class="inline">
+                  <input class="cyber-input" id="ol-seed" type="number" min="0" max="2147483647" value="7" style="flex:1" title="Seed of the random stream that draws the noise.">
+                  <button class="cyber-btn" id="ol-seed-rnd" type="button" title="Pick a new seed at random."><span class="btn-txt">RANDOM</span></button>
+                </div></div>
+              <div class="ol-slider"><div class="field-lbl">SPEED <span class="field-hint" id="ol-speed-val"></span></div>
+                <input class="cyber-range" id="ol-speed" type="range" min="1" max="120" step="1" aria-label="steps per second" title="Steps per second while the race runs."></div>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Every optimizer here does the same thing: look at the slope where it stands, then move downhill. They differ in how far they move and which past slopes they remember. The race starts all of them from one point with the same gradient noise, so the differences come from the update rules.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Gradient descent (SGD)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Stand on a hillside in fog. Feel which way is steepest uphill, and take a step the other way. Take a small step and you crawl; take a big one and you may overshoot the valley floor and land on the far side.</p>
-      <p>The gradient ∇f(x) points uphill, so one step moves against it:</p>
-      <ul>
-        <li><b>x</b> ← x − η ∇f(x)</li>
-        <li><b>η</b> is the learning rate (the step size).</li>
-      </ul>
-      <p>On a bowl this converges. On a ravine it zigzags: a step large enough to make progress along the gentle direction overshoots across the steep one, so the iterate flips sign there while it crawls along the valley.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Momentum and Nesterov</h3>
-      <p class="hiw-plain"><b>New to this?</b> A ball rolling down a bumpy slope keeps some speed. It does not reverse every time a small bump pushes it sideways, so it builds up speed along the valley and damps the zigzag across it.</p>
-      <p>Momentum keeps a velocity v that remembers past steps:</p>
-      <ul>
-        <li><b>v</b> ← β v − η ∇f(x), then <b>x</b> ← x + v</li>
-        <li>Nesterov takes the gradient at the look-ahead point x + β v instead of at x, so it sees the slope where it is about to be.</li>
-      </ul>
-      <p>With β near 1 the effective step is η / (1 − β): with the defaults, 0.02 / 0.1 = 0.2 per unit of slope along a consistent direction.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>RMSProp</h3>
-      <p class="hiw-plain"><b>New to this?</b> Some directions have steep slopes and some have gentle ones. RMSProp divides each direction's step by how big its recent slopes have been, so steep directions take smaller steps and gentle ones larger.</p>
-      <p>It keeps a running average of squared gradients, s, per coordinate:</p>
-      <ul>
-        <li><b>s</b> ← ρ s + (1 − ρ) g²</li>
-        <li><b>x</b> ← x − η g / (√s + ε)</li>
-      </ul>
-      <p>With a fixed η the step never shrinks to zero: near a minimum it hovers at a size set by η, which is why RMSProp can stall on the ravine without a decaying step.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Adam</h3>
-      <p class="hiw-plain"><b>New to this?</b> Adam combines the two ideas above. It keeps a velocity (the average slope) and a scale (the average squared slope), and corrects both for starting at zero, so its first steps are not tiny.</p>
-      <p>With g the gradient, t the step number:</p>
-      <ul>
-        <li><b>m</b> ← β₁ m + (1 − β₁) g, <b>v</b> ← β₂ v + (1 − β₂) g²</li>
-        <li>m̂ = m / (1 − β₁ᵗ), v̂ = v / (1 − β₂ᵗ) (bias correction)</li>
-        <li><b>x</b> ← x − η m̂ / (√v̂ + ε)</li>
-      </ul>
-      <p>Each step is about η in size per coordinate whatever the gradient's scale, so Adam is less sensitive to the scale of the loss than SGD. AdaGrad (in the race, optional) is the same idea without the decay: its scale only grows, so its steps shrink over time.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Conditioning and saddle points</h3>
-      <p class="hiw-plain"><b>New to this?</b> A landscape is well conditioned when all directions are about equally steep, so one step size fits all of them. It is ill conditioned when some directions are much steeper than others, like a narrow canyon.</p>
-      <p>The condition number is the ratio of the largest to smallest curvature (the Hessian's eigenvalues). The ravine has curvature 25 across and 1 along, so κ = 25. Gradient descent's safe step is below 2 / 25, while the step that moves quickly along the valley is much larger.</p>
-      <p>A saddle has zero gradient but is not a minimum: the curvature is positive along one direction and negative along another. The lab's "settled" test checks the Hessian for this, so the origin of the saddle surface is never reported as a minimum.</p>
-    </article>
+  <p class="hiw-lede">A <b>loss landscape</b> is a function <span class="math">f(x, y)</span> that gives a loss to every point of the plane, and an <b>optimizer</b> looks for a point where the loss is low. Each optimizer here uses the <b>gradient</b> <span class="math">\nabla f</span>, the vector of partial derivatives that points uphill, and moves downhill from the current point. The optimizers differ in the size of each step and in the past gradients they remember. Every track starts from the same point, and when noise is on, every track sees the same noise draw at each step, so the differences come from the update rules.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L284-L294" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 284–294" aria-label="Code on GitHub: web/js/optlab-core.js, lines 284 to 294">1</a></p>
+
+  <h3 class="hiw-sub">Gradient descent (SGD)</h3>
+  <p class="hiw-note"><b>Gradient descent</b> moves the position against the gradient. The step size is the <b>learning rate</b> <span class="math">\eta</span>, a positive number that each track has its own copy of, or one shared value for all tracks. The race calls the method SGD, the name used when the gradient may carry noise. With gradient noise at 0 the gradient is exact, and the method is plain gradient descent.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L160-L164" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 160–164" aria-label="Code on GitHub: web/js/optlab-core.js, lines 160 to 164">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L69-L73" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 69–73" aria-label="Code on GitHub: optlab/optimizers.py, lines 69 to 73">3</a></p>
+  <!-- web/js/optlab-core.js:160-164, optlab/optimizers.py:69-73 -->
+  <div class="math-fig">
+    <div class="math math-block">x_{t+1} = x_t - \eta\, g_t</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L160-L164" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 160–164" aria-label="Code on GitHub: web/js/optlab-core.js, lines 160 to 164">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L69-L73" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 69–73" aria-label="Code on GitHub: optlab/optimizers.py, lines 69 to 73">3</a></span>
   </div>
+  <p class="hiw-note">Here <span class="math">x_t = (x, y)</span> is the position at step <span class="math">t</span>, and <span class="math">g_t</span> is the gradient the optimizer uses at that step, which includes any noise (see <b>Gradient noise</b> below). The same rule is applied to both coordinates. The default learning rate for SGD is <span class="math">\eta = 0.05</span>.</p>
+  <p class="hiw-note">On a bowl every step shrinks the distance to the minimum, so the track converges. A ravine is ill conditioned: its curvature is 25 across the valley and 1 along it, so its gradient in <span class="math">y</span> is <span class="math">25y</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L49-L50" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 49–50" aria-label="Code on GitHub: web/js/optlab-core.js, lines 49 to 50">4</a> Applied to the <span class="math">y</span> coordinate, one step multiplies <span class="math">y</span> by <span class="math">1 - 25\eta</span>. With <span class="math">\eta = 0.05</span> that factor is <span class="math">1 - 1.25 = -0.25</span>. The sign flips at every step and the size falls to a quarter, which is the zigzag across the ravine. Along the valley the factor is <span class="math">1 - \eta = 0.95</span>, so progress is slow.</p>
+  <div class="math-fig">
+    <div class="math math-block">y_{t+1} = (1 - 25\eta)\, y_t = -0.25\, y_t \qquad (\eta = 0.05)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L49-L50" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 49–50" aria-label="Code on GitHub: web/js/optlab-core.js, lines 49 to 50">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L160-L164" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 160–164" aria-label="Code on GitHub: web/js/optlab-core.js, lines 160 to 164">2</a></span>
+  </div>
+  <p class="hiw-note"><b>Example.</b> Starting from <span class="math">y = 0.9</span>, one step gives <span class="math">y = -0.25 \times 0.9 = -0.225</span>. The iterate has crossed the valley floor at <span class="math">y = 0</span> and landed on the other side, closer to the floor than before.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L160-L164" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 160–164" aria-label="Code on GitHub: web/js/optlab-core.js, lines 160 to 164">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L69-L73" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 69–73" aria-label="Code on GitHub: optlab/optimizers.py, lines 69 to 73">3</a></span>
+    <pre class="pseudo-simple">function GRADIENT-DESCENT(x, η, steps):
+    repeat steps times:
+        g ← ∇f(x)                                # gradient at the current point
+        x ← x − η g                              # step against the gradient
+    return x</pre>
+    <pre class="pseudo-full" hidden>constants: η = 0.05 (per track, from the OPTIMIZERS rows)
+function SGD-UPDATE(x, g, η):                    # the race calls this once per step
+    q ← x                                        # SGD takes its gradient at x itself
+    for each i in 1, 2:
+        x[i] ← x[i] − η · g[i]                   # the same rule for both coordinates
+    return x                                     # a new position; the old one is kept</pre>
+  </div>
+  <p class="hiw-note">The full version is the update the race applies to an SGD track. The gradient <span class="math">g</span> is computed by the race, at the query point <span class="math">q</span>, with noise added (see <b>Race step</b> below). Here <span class="math">q = x</span> because SGD does not look ahead, and the update returns a new position instead of changing <span class="math">x</span> in place.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L160-L164" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 160–164" aria-label="Code on GitHub: web/js/optlab-core.js, lines 160 to 164">2</a></p>
+
+  <h3 class="hiw-sub">Momentum and Nesterov</h3>
+  <p class="hiw-note"><b>Momentum</b>, also called heavy-ball momentum, keeps a <b>velocity</b> <span class="math">v</span> that adds up past steps. A velocity that is kept between steps lets the track build speed along a consistent direction and damp the zigzag across a ravine. The coefficient <span class="math">\beta</span> is the fraction of the old velocity that is kept at each step, and its default is 0.9.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L166-L178" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 166–178" aria-label="Code on GitHub: web/js/optlab-core.js, lines 166 to 178">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L76-L91" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 76–91" aria-label="Code on GitHub: optlab/optimizers.py, lines 76 to 91">6</a></p>
+  <div class="math-fig">
+    <div class="math math-block">v_{t+1} = \beta\, v_t - \eta\, g_t, \qquad x_{t+1} = x_t + v_{t+1}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L166-L178" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 166–178" aria-label="Code on GitHub: web/js/optlab-core.js, lines 166 to 178">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L76-L91" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 76–91" aria-label="Code on GitHub: optlab/optimizers.py, lines 76 to 91">6</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">v</span> starts at <span class="math">(0, 0)</span> and the gradient <span class="math">g_t</span> is taken at <span class="math">x_t</span>. Each step keeps the fraction <span class="math">\beta</span> of the velocity, so with the default <span class="math">\beta = 0.9</span> a gradient contributes to about <span class="math">1/(1 - \beta) = 10</span> later steps. The default learning rate is <span class="math">\eta = 0.02</span>, smaller than SGD's, because the velocity adds up.</p>
+  <p class="hiw-note"><b>Nesterov</b> momentum, or Nesterov accelerated gradient, is the same rule with the gradient taken at the look-ahead point <span class="math">q_t = x_t + \beta v_t</span>. That is the point the velocity alone would carry the track to, so the gradient there is the one the track is about to meet.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L180-L185" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 180–185" aria-label="Code on GitHub: web/js/optlab-core.js, lines 180 to 185">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L94-L101" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 94–101" aria-label="Code on GitHub: optlab/optimizers.py, lines 94 to 101">8</a></p>
+  <div class="math-fig">
+    <div class="math math-block">q_t = x_t + \beta\, v_t, \qquad v_{t+1} = \beta\, v_t - \eta\, g(q_t), \qquad x_{t+1} = x_t + v_{t+1}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L180-L185" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 180–185" aria-label="Code on GitHub: web/js/optlab-core.js, lines 180 to 185">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L94-L101" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 94–101" aria-label="Code on GitHub: optlab/optimizers.py, lines 94 to 101">8</a></span>
+  </div>
+  <p class="hiw-note"><b>Example.</b> With <span class="math">\eta = 0.02</span> and <span class="math">\beta = 0.9</span>, a constant slope of 1 makes the velocity approach <span class="math">-\eta / (1 - \beta) = -0.2</span> per step. Plain gradient descent with the same <span class="math">\eta</span> moves 0.02 per step, so the momentum track moves ten times as far.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L166-L185" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 166–185" aria-label="Code on GitHub: web/js/optlab-core.js, lines 166 to 185">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L76-L101" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 76–101" aria-label="Code on GitHub: optlab/optimizers.py, lines 76 to 101">10</a></span>
+    <pre class="pseudo-simple">function MOMENTUM-STEP(x, v, η, β):
+    g ← ∇f(x)                                    # gradient at the current point
+    v ← β · v − η · g                            # keep a fraction β of the old velocity
+    x ← x + v                                    # move by the new velocity
+    return x, v</pre>
+    <pre class="pseudo-full" hidden>constants: β = 0.9, η = 0.02, v starts at (0, 0)
+function MOMENTUM-STEP(x, v, σ, ξ, η, β, nesterov):
+    if nesterov:
+        q ← x + β · v                            # Nesterov: look ahead along the velocity
+    otherwise:
+        q ← x                                    # classic momentum: gradient at x
+    g ← ∇f(q) + σ · ξ                            # gradient at the query point, with noise
+    for each i in 1, 2:
+        v[i] ← β · v[i] − η · g[i]               # velocity update
+        x[i] ← x[i] + v[i]                       # position moves by the updated velocity
+    return x, v</pre>
+  </div>
+  <p class="hiw-note">The race evaluates the gradient at the query point <span class="math">q</span> before the update, so the same function covers both methods: classic momentum queries at <span class="math">x</span>, and Nesterov queries at the look-ahead point. The position update uses the velocity that was just computed for that coordinate. The code keeps the old position and returns a new one, so the update never reads a half-changed value.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L166-L185" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 166–185" aria-label="Code on GitHub: web/js/optlab-core.js, lines 166 to 185">9</a></p>
+
+  <h3 class="hiw-sub">RMSProp</h3>
+  <p class="hiw-note"><b>RMSProp</b> divides each coordinate's step by the root of a running average of its squared gradients. The average is an <b>exponential moving average</b> with decay <span class="math">\rho = 0.9</span>: each older squared gradient is weighted by a further power of <span class="math">\rho</span>, so gradients older than about <span class="math">1/(1 - \rho) = 10</span> steps have little influence. A steep coordinate has large squared gradients, so its step is shrunk. A gentle coordinate has small ones, so its step is not.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L187-L199" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 187–199" aria-label="Code on GitHub: web/js/optlab-core.js, lines 187 to 199">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L104-L117" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 104–117" aria-label="Code on GitHub: optlab/optimizers.py, lines 104 to 117">12</a></p>
+  <div class="math-fig">
+    <div class="math math-block">s_{t+1} = \rho\, s_t + (1 - \rho)\, g_t^2, \qquad x_{t+1} = x_t - \frac{\eta\, g_t}{\sqrt{s_{t+1}} + \varepsilon}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L187-L199" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 187–199" aria-label="Code on GitHub: web/js/optlab-core.js, lines 187 to 199">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L104-L117" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 104–117" aria-label="Code on GitHub: optlab/optimizers.py, lines 104 to 117">12</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">s</span> is kept for each coordinate and starts at 0. The square <span class="math">g_t^2</span> is taken coordinate by coordinate. The constant <span class="math">\varepsilon</span> is added under the root so that the step never divides by zero; the default is <span class="math">\varepsilon = 10^{-8}</span>. The defaults are <span class="math">\eta = 0.05</span> and <span class="math">\rho = 0.9</span>.</p>
+  <p class="hiw-note">When the gradient changes slowly, <span class="math">g / \sqrt{s}</span> is close to <span class="math">\pm 1</span>, so each step is about <span class="math">\eta</span> in size whatever the gradient's scale. With <span class="math">\eta</span> fixed, the step does not shrink to zero near a minimum, so the track hovers at a distance set by <span class="math">\eta</span>. On the ravine, the RMSProp track is at about <span class="math">(-0.025, 0.025)</span> after 500 steps and never reaches the gradient tolerance.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L187-L199" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 187–199" aria-label="Code on GitHub: web/js/optlab-core.js, lines 187 to 199">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L104-L117" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 104–117" aria-label="Code on GitHub: optlab/optimizers.py, lines 104 to 117">12</a></span>
+    <pre class="pseudo-simple">function RMSPROP-STEP(x, s, η, ρ, ε):
+    g ← ∇f(x)                                    # gradient at the current point
+    s ← ρ · s + (1 − ρ) · g · g                  # running average of squared gradients
+    x ← x − η · g / (sqrt(s) + ε)                # steps shrink where s is large
+    return x, s</pre>
+    <pre class="pseudo-full" hidden>constants: ρ = 0.9, ε = 1e−8, s starts at (0, 0)
+function RMSPROP-STEP(x, g, s, η, ρ, ε):         # g is the gradient at the query point
+    for each i in 1, 2:
+        s[i] ← ρ · s[i] + (1 − ρ) · (g[i] · g[i])
+        x[i] ← x[i] − η · g[i] / (sqrt(s[i]) + ε)
+    return x, s</pre>
+  </div>
+  <p class="hiw-note">The full version updates <span class="math">s</span> before it computes the step, so the step uses the average that includes the current gradient. Each coordinate has its own <span class="math">s</span>, which is why a steep direction and a gentle one can get different step sizes in the same move.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L190-L198" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 190–198" aria-label="Code on GitHub: web/js/optlab-core.js, lines 190 to 198">13</a></p>
+
+  <h3 class="hiw-sub">AdaGrad</h3>
+  <p class="hiw-note"><b>AdaGrad</b> divides by the root of the sum of all past squared gradients, with no decay. The sum is kept as <span class="math">G</span> for each coordinate. Because <span class="math">G</span> only grows, the effective step falls over time, so AdaGrad's default learning rate of 0.5 is large to begin with.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L201-L213" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 201–213" aria-label="Code on GitHub: web/js/optlab-core.js, lines 201 to 213">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L120-L133" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 120–133" aria-label="Code on GitHub: optlab/optimizers.py, lines 120 to 133">15</a></p>
+  <div class="math-fig">
+    <div class="math math-block">G_{t+1} = G_t + g_t^2, \qquad x_{t+1} = x_t - \frac{\eta\, g_t}{\sqrt{G_{t+1}} + \varepsilon}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L201-L213" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 201–213" aria-label="Code on GitHub: web/js/optlab-core.js, lines 201 to 213">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L120-L133" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 120–133" aria-label="Code on GitHub: optlab/optimizers.py, lines 120 to 133">15</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">G</span> starts at 0 for each coordinate, and <span class="math">\varepsilon = 10^{-8}</span> is the same constant as in RMSProp. The default <span class="math">\eta = 0.5</span> is used as is.</p>
+  <p class="hiw-note"><b>Example.</b> If the gradient stays near 1, <span class="math">G</span> after <span class="math">n</span> steps is about <span class="math">n</span>, so the step is about <span class="math">0.5 / \sqrt{n}</span>: 0.5 at step 1 and about 0.16 at step 10.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L201-L213" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 201–213" aria-label="Code on GitHub: web/js/optlab-core.js, lines 201 to 213">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L120-L133" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 120–133" aria-label="Code on GitHub: optlab/optimizers.py, lines 120 to 133">15</a></span>
+    <pre class="pseudo-simple">function ADAGRAD-STEP(x, G, η, ε):
+    g ← ∇f(x)                                    # gradient at the current point
+    G ← G + g · g                                # sum of every squared gradient so far
+    x ← x − η · g / (sqrt(G) + ε)                # the divisor never shrinks
+    return x, G</pre>
+    <pre class="pseudo-full" hidden>constants: η = 0.5, ε = 1e−8, G starts at (0, 0)
+function ADAGRAD-STEP(x, g, G, η, ε):            # g is the gradient at the query point
+    for each i in 1, 2:
+        G[i] ← G[i] + g[i] · g[i]
+        x[i] ← x[i] − η · g[i] / (sqrt(G[i]) + ε)
+    return x, G</pre>
+  </div>
+  <p class="hiw-note">The full version updates <span class="math">G</span> before the step, as RMSProp does with <span class="math">s</span>, but it adds the squares and never multiplies the old sum by a decay factor. That absence of decay is the whole difference between AdaGrad and RMSProp.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L204-L212" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 204–212" aria-label="Code on GitHub: web/js/optlab-core.js, lines 204 to 212">16</a></p>
+
+  <h3 class="hiw-sub">Adam</h3>
+  <p class="hiw-note"><b>Adam</b> (adaptive moment estimation) combines the two ideas above. It keeps a decaying mean <span class="math">m</span> of the gradients, which plays the part of momentum, and a decaying mean <span class="math">v</span> of the squared gradients, which plays the part of RMSProp. Both start at zero, so early on they are biased toward zero. Adam corrects this with a <b>bias correction</b>, which divides each mean by <span class="math">1 - \beta^t</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L215-L239" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 215–239" aria-label="Code on GitHub: web/js/optlab-core.js, lines 215 to 239">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L136-L159" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 136–159" aria-label="Code on GitHub: optlab/optimizers.py, lines 136 to 159">18</a></p>
+  <div class="math-fig">
+    <div class="math math-block">m_{t} = \beta_1\, m_{t-1} + (1 - \beta_1)\, g_t, \qquad v_{t} = \beta_2\, v_{t-1} + (1 - \beta_2)\, g_t^2</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L225-L232" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 225–232" aria-label="Code on GitHub: web/js/optlab-core.js, lines 225 to 232">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L148-L155" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 148–155" aria-label="Code on GitHub: optlab/optimizers.py, lines 148 to 155">20</a></span>
+  </div>
+  <div class="math-fig">
+    <div class="math math-block">\hat m_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat v_t = \frac{v_t}{1 - \beta_2^t}, \qquad x_{t+1} = x_t - \frac{\eta\, \hat m_t}{\sqrt{\hat v_t} + \varepsilon}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L233-L236" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 233–236" aria-label="Code on GitHub: web/js/optlab-core.js, lines 233 to 236">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L156-L158" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 156–158" aria-label="Code on GitHub: optlab/optimizers.py, lines 156 to 158">22</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">t</span> counts steps from 1, <span class="math">g_t</span> is the gradient, and <span class="math">\beta_1 = 0.9</span> and <span class="math">\beta_2 = 0.999</span> are the decay rates of the two means. These are the values from the Adam paper. The learning rate <span class="math">\eta = 0.1</span> and the constant <span class="math">\varepsilon = 10^{-8}</span> are the page's defaults. The code keeps <span class="math">\beta_1^t</span> and <span class="math">\beta_2^t</span> as running products, one multiplication per step, instead of calling a power function.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L226-L227" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 226–227" aria-label="Code on GitHub: web/js/optlab-core.js, lines 226 to 227">23</a></p>
+  <p class="hiw-note"><b>Example.</b> On step 1, <span class="math">\hat m_1 = g_1</span> and <span class="math">\hat v_1 = g_1^2</span>, so each coordinate moves by <span class="math">\eta\, g_1 / |g_1| = \eta</span>, up to <span class="math">\varepsilon</span>. The first step is therefore about <span class="math">\eta</span> in size per coordinate, whatever the scale of the gradient. The default <span class="math">\eta = 0.1</span> is much larger than the 0.001 suggested in the Adam paper, since the lab's surfaces are small two-dimensional problems where a larger step settles within a few hundred steps.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L215-L239" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 215–239" aria-label="Code on GitHub: web/js/optlab-core.js, lines 215 to 239">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py#L136-L159" target="_blank" rel="noopener" title="optlab/optimizers.py, lines 136–159" aria-label="Code on GitHub: optlab/optimizers.py, lines 136 to 159">18</a></span>
+    <pre class="pseudo-simple">function ADAM-STEP(x, m, v, t, η, β₁, β₂, ε):
+    g ← ∇f(x)                                    # gradient at the current point
+    m ← β₁ · m + (1 − β₁) · g                    # mean of the gradients (momentum)
+    v ← β₂ · v + (1 − β₂) · g · g                # mean of the squared gradients (RMSProp)
+    m̂ ← m / (1 − β₁^t)                           # bias correction: both means start at 0
+    v̂ ← v / (1 − β₂^t)
+    x ← x − η · m̂ / (sqrt(v̂) + ε)
+    return x, m, v</pre>
+    <pre class="pseudo-full" hidden>constants: β₁ = 0.9, β₂ = 0.999, ε = 1e−8, η = 0.1
+# m and v start at (0, 0); β₁ᵗ and β₂ᵗ start at 1
+function ADAM-STEP(x, g, m, v, β₁ᵗ, β₂ᵗ, η):    # g is the gradient at the query point
+    β₁ᵗ ← β₁ᵗ · β₁                               # running products, not a power function
+    β₂ᵗ ← β₂ᵗ · β₂
+    for each i in 1, 2:
+        m[i] ← β₁ · m[i] + (1 − β₁) · g[i]
+        v[i] ← β₂ · v[i] + (1 − β₂) · (g[i] · g[i])
+        m̂ ← m[i] / (1 − β₁ᵗ)
+        v̂ ← v[i] / (1 − β₂ᵗ)
+        x[i] ← x[i] − η · m̂ / (sqrt(v̂) + ε)
+    return x, m, v, β₁ᵗ, β₂ᵗ</pre>
+  </div>
+  <p class="hiw-note">The two running products are multiplied once per step, before the loop over coordinates, so every coordinate of a track sees the same <span class="math">\beta_1^t</span> and <span class="math">\beta_2^t</span>. Each coordinate keeps its own <span class="math">m</span> and <span class="math">v</span>. The corrected means <span class="math">\hat m</span> and <span class="math">\hat v</span> are computed for each coordinate, and only the stored <span class="math">m</span> and <span class="math">v</span> carry over to the next step.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L227-L236" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 227–236" aria-label="Code on GitHub: web/js/optlab-core.js, lines 227 to 236">24</a></p>
+
+  <h3 class="hiw-sub">Loss landscapes</h3>
+  <p class="hiw-note">Each surface is a function <span class="math">f</span> with its gradient written out by hand, and the tests check every gradient against central differences.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L47-L69" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 47–69" aria-label="Code on GitHub: web/js/optlab-core.js, lines 47 to 69">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab.py#L32-L40" target="_blank" rel="noopener" title="tests/test_optlab.py, lines 32–40" aria-label="Code on GitHub: tests/test_optlab.py, lines 32 to 40">26</a> The map colours each point by its loss on a logarithmic scale, measured above the floor (the known minimum, or the lowest sampled value for a painted surface). The height in the 3D view uses the same value, rescaled to [0, 1].</p>
+  <div class="math-fig">
+    <div class="math math-block">c(x, y) = \log_{10}\bigl(\max(f(x, y) - f_{\min}, 0) + 0.01\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L117-L121" target="_blank" rel="noopener" title="web/js/optlab.js, lines 117–121" aria-label="Code on GitHub: web/js/optlab.js, lines 117 to 121">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L163-L165" target="_blank" rel="noopener" title="web/js/optlab.js, lines 163–165" aria-label="Code on GitHub: web/js/optlab.js, lines 163 to 165">28</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">f_{\min}</span> is the floor, <span class="math">0.01</span> keeps the logarithm finite at the floor, and <span class="math">c</span> is then rescaled between the lowest and highest values on the grid to give the colour and the height.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L122-L125" target="_blank" rel="noopener" title="web/js/optlab.js, lines 122–125" aria-label="Code on GitHub: web/js/optlab.js, lines 122 to 125">29</a></p>
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+      \text{Bowl:}\quad & f = x^2 + y^2 \\
+      \text{Ravine:}\quad & f = \tfrac12\bigl(x^2 + 25\,y^2\bigr) \\
+      \text{Saddle:}\quad & f = x^2 - y^2 + \tfrac14\, y^4 \\
+      \text{Rosenbrock:}\quad & f = (1 - x)^2 + 100\,(y - x^2)^2 \\
+      \text{Himmelblau:}\quad & f = (x^2 + y - 11)^2 + (x + y^2 - 7)^2 \\
+      \text{Rastrigin:}\quad & f = 20 + \bigl(x^2 - 10\cos 2\pi x\bigr) + \bigl(y^2 - 10\cos 2\pi y\bigr)
+    \end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L47-L69" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 47–69" aria-label="Code on GitHub: web/js/optlab-core.js, lines 47 to 69">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L43-L93" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 43–93" aria-label="Code on GitHub: optlab/surfaces.py, lines 43 to 93">30</a></span>
+  </div>
+  <!-- web/js/optlab-core.js:47-69 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+      \nabla f_{\text{bowl}} &= (2x,\ 2y) \\
+      \nabla f_{\text{ravine}} &= (x,\ 25\,y) \\
+      \nabla f_{\text{saddle}} &= (2x,\ -2y + y^3) \\
+      \nabla f_{\text{Rosenbrock}} &= \bigl(-2(1 - x) - 400\,x\,(y - x^2),\ 200\,(y - x^2)\bigr) \\
+      \nabla f_{\text{Himmelblau}} &= (4x\,a + 2b,\ 2a + 4y\,b), \qquad a = x^2 + y - 11,\ b = x + y^2 - 7 \\
+      \nabla f_{\text{Rastrigin}} &= \bigl(2x + 20\pi \sin 2\pi x,\ 2y + 20\pi \sin 2\pi y\bigr)
+    \end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L47-L69" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 47–69" aria-label="Code on GitHub: web/js/optlab-core.js, lines 47 to 69">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L43-L93" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 43–93" aria-label="Code on GitHub: optlab/surfaces.py, lines 43 to 93">30</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\pi</span> is the circle constant and <span class="math">\cos</span> and <span class="math">\sin</span> are taken in radians. The ravine's gradient is <span class="math">(x, 25y)</span> because its loss is half the sum of <span class="math">x^2</span> and <span class="math">25y^2</span>. The Himmelblau gradient uses the two terms <span class="math">a</span> and <span class="math">b</span> of its loss.</p>
+  <p class="hiw-note">Every built-in surface has a known minimum value, and the chart uses it as zero. The bowl, the ravine, the Rosenbrock surface and the Rastrigin surface all have <span class="math">f = 0</span> at their minimum. The <b>saddle</b> surface has its origin at <span class="math">f = 0</span>, which is a saddle point, and its two minima at <span class="math">(0, \pm\sqrt2)</span> with <span class="math">f = -1</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L510-L517" target="_blank" rel="noopener" title="web/js/optlab.js, lines 510–517" aria-label="Code on GitHub: web/js/optlab.js, lines 510 to 517">31</a> The <b>Rosenbrock</b> surface is a curved, banana-shaped valley with its single minimum at <span class="math">(1, 1)</span>. <b>Himmelblau</b> has four minima with <span class="math">f = 0</span>, at <span class="math">(3, 2)</span>, <span class="math">(-2.805118, 3.131312)</span>, <span class="math">(-3.779310, -3.283186)</span> and <span class="math">(3.584428, -1.848126)</span>. <b>Rastrigin</b> is a regular grid of local minima around one global minimum at the origin.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L77-L91" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 77–91" aria-label="Code on GitHub: web/js/optlab-core.js, lines 77 to 91">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L71" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 71" aria-label="Code on GitHub: web/js/optlab-core.js, line 71">33</a></p>
+  <p class="hiw-note"><b>Paint your own</b> adds up to 12 Gaussian <b>bumps</b> to a gentle bowl. Each bump has a centre <span class="math">(c_x, c_y)</span>, an amplitude <span class="math">a</span> and a width <span class="math">\sigma</span>. A positive amplitude is a hill and a negative one a valley. The landscape is <span class="math">f = 0.1\,(x^2 + y^2) + \sum_k a_k \exp\!\bigl(-\frac{(x - c_{x,k})^2 + (y - c_{y,k})^2}{2\sigma_k^2}\bigr)</span>, and the gradient is the bowl's gradient plus a term for each bump.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L93-L127" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 93–127" aria-label="Code on GitHub: web/js/optlab-core.js, lines 93 to 127">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L183-L223" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 183–223" aria-label="Code on GitHub: optlab/surfaces.py, lines 183 to 223">35</a></p>
+  <div class="math-fig">
+    <div class="math math-block">\nabla f = \Bigl(0.2\,x - \sum_k e_k\,(x - c_{x,k}),\ 0.2\,y - \sum_k e_k\,(y - c_{y,k})\Bigr), \qquad e_k = \frac{a_k}{\sigma_k^2}\exp\!\Bigl(-\frac{(x - c_{x,k})^2 + (y - c_{y,k})^2}{2\sigma_k^2}\Bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L113-L124" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 113–124" aria-label="Code on GitHub: web/js/optlab-core.js, lines 113 to 124">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L203-L211" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 203–211" aria-label="Code on GitHub: optlab/surfaces.py, lines 203 to 211">37</a></span>
+  </div>
+  <p class="hiw-note">The lab starts with a hill of amplitude 3.0 at <span class="math">(0.6, -0.4)</span> with <span class="math">\sigma = 0.7</span>, and a valley of amplitude <span class="math">-2.5</span> at <span class="math">(-1.2, 1.1)</span> with <span class="math">\sigma = 0.9</span>. Each click adds a bump with amplitude <span class="math">+2.4</span> (hill) or <span class="math">-2.0</span> (valley) and width <span class="math">\sigma = 0.55</span>, up to 12 bumps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L93-L97" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 93–97" aria-label="Code on GitHub: web/js/optlab-core.js, lines 93 to 97">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L721-L722" target="_blank" rel="noopener" title="web/js/optlab.js, lines 721–722" aria-label="Code on GitHub: web/js/optlab.js, lines 721 to 722">39</a></p>
+
+  <h3 class="hiw-sub">Conditioning and the Hessian</h3>
+  <p class="hiw-note">The <b>Hessian</b> <span class="math">H</span> is the matrix of second derivatives, and it describes the curvature of the landscape. The lab does not write it out. It estimates <span class="math">H</span> from the gradient by central differences, with step <span class="math">h = 10^{-5}</span>, and symmetrises the off-diagonal entry.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L136-L147" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 136–147" aria-label="Code on GitHub: web/js/optlab-core.js, lines 136 to 147">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L236-L244" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 236–244" aria-label="Code on GitHub: optlab/surfaces.py, lines 236 to 244">41</a></p>
+  <div class="math-fig">
+    <div class="math math-block">h_{xx} = \frac{g_x(x + h, y) - g_x(x - h, y)}{2h}, \qquad h_{yy} = \frac{g_y(x, y + h) - g_y(x, y - h)}{2h}, \qquad h_{xy} = \tfrac12\!\left(\frac{g_x(x, y + h) - g_x(x, y - h)}{2h} + \frac{g_y(x + h, y) - g_y(x - h, y)}{2h}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L136-L147" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 136–147" aria-label="Code on GitHub: web/js/optlab-core.js, lines 136 to 147">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L236-L244" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 236–244" aria-label="Code on GitHub: optlab/surfaces.py, lines 236 to 244">41</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">g = (g_x, g_y)</span> is the gradient function and the subscripts name the entries of <span class="math">H</span>. Because <span class="math">h_{xy}</span> is averaged over its two estimates, <span class="math">H</span> is symmetric. The test suite checks that the Hessian of the bowl is <span class="math">2I</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab.py#L59-L64" target="_blank" rel="noopener" title="tests/test_optlab.py, lines 59–64" aria-label="Code on GitHub: tests/test_optlab.py, lines 59 to 64">42</a></p>
+  <p class="hiw-note">The <b>condition number</b> <span class="math">\kappa</span> is the ratio of the largest to the smallest eigenvalue of <span class="math">H</span>. The bowl's Hessian is <span class="math">2I</span>, so <span class="math">\kappa = 1</span> and one step size fits every direction. The ravine's Hessian is <span class="math">\operatorname{diag}(1, 25)</span>, so <span class="math">\kappa = 25</span>. Gradient descent on a quadratic whose largest curvature is <span class="math">L</span> converges only for <span class="math">\eta < 2/L</span>, which is <span class="math">2/25 = 0.08</span> on the ravine. A step that is safe across the ravine is therefore too slow along it.</p>
+  <p class="hiw-note">A <b>saddle point</b> has zero gradient but is not a minimum: <span class="math">H</span> has one positive and one negative eigenvalue. At the origin of the saddle surface <span class="math">H = \operatorname{diag}(2, -2)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab.py#L52-L56" target="_blank" rel="noopener" title="tests/test_optlab.py, lines 52–56" aria-label="Code on GitHub: tests/test_optlab.py, lines 52 to 56">43</a></p>
+
+  <h3 class="hiw-sub">Settling and divergence</h3>
+  <p class="hiw-note">A track is <b>settled</b> when the gradient norm is below the tolerance <span class="math">10^{-3}</span> and <span class="math">H</span> is <b>positive definite</b>. For a 2×2 symmetric matrix, that means its determinant and its trace are both positive. The gradient test alone would also accept a saddle or a maximum, and the Hessian test rejects them. The first step at which the test holds is recorded, and the track keeps moving after that.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L149-L155" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 149–155" aria-label="Code on GitHub: web/js/optlab-core.js, lines 149 to 155">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L247-L257" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 247–257" aria-label="Code on GitHub: optlab/surfaces.py, lines 247 to 257">45</a></p>
+  <div class="math-fig">
+    <div class="math math-block">\lVert \nabla f(x) \rVert < 10^{-3} \quad\text{and}\quad h_{xx}\,h_{yy} - h_{xy}^2 > 0 \quad\text{and}\quad h_{xx} + h_{yy} > 0</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L149-L155" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 149–155" aria-label="Code on GitHub: web/js/optlab-core.js, lines 149 to 155">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L247-L257" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 247–257" aria-label="Code on GitHub: optlab/surfaces.py, lines 247 to 257">45</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\lVert \cdot \rVert</span> is the Euclidean length of a vector. The tolerance and the determinant and trace tests are the three conditions, and all three must hold.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L11" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 11" aria-label="Code on GitHub: web/js/optlab-core.js, line 11">46</a></p>
+  <p class="hiw-note">A track <b>diverges</b> when its next position leaves the box <span class="math">[-10^6, 10^6]^2</span>, or when the position or the loss is not finite. A finite position outside the box is a <b>blow-up</b>, where the iterate grows each step and runs away. A position or loss that is not finite is a <b>NaN</b>, a value that is not a number, and the lab labels it NaN DETONATION. In both cases the track stops, and the lab marks the failure at its last finite position.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L12" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 12" aria-label="Code on GitHub: web/js/optlab-core.js, line 12">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L251-L253" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 251–253" aria-label="Code on GitHub: web/js/optlab-core.js, lines 251 to 253">48</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L296-L307" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 296–307" aria-label="Code on GitHub: web/js/optlab-core.js, lines 296 to 307">49</a></p>
+  <div class="math-fig">
+    <div class="math math-block">\text{diverged} \iff |x'| > 10^6 \ \text{or}\ |y'| > 10^6 \ \text{or}\ \text{the position or } f(x') \text{ is not finite}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L251-L253" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 251–253" aria-label="Code on GitHub: web/js/optlab-core.js, lines 251 to 253">48</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L296-L307" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 296–307" aria-label="Code on GitHub: web/js/optlab-core.js, lines 296 to 307">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L105-L111" target="_blank" rel="noopener" title="optlab/race.py, lines 105–111" aria-label="Code on GitHub: optlab/race.py, lines 105 to 111">50</a></span>
+  </div>
+  <p class="hiw-note"><b>Example.</b> On the Rosenbrock surface, plain SGD with <span class="math">\eta = 0.05</span> goes from <span class="math">(-1.5, 2.0)</span> to <span class="math">(6.25, 4.5)</span> at step 1 and to <span class="math">(-4314.6, 350.1)</span> at step 2. Both are inside the box. At step 3 the next position is far outside it, so the track is marked as a blow-up at step 3, and its last finite point is the one at step 2.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L89-L107" target="_blank" rel="noopener" title="optlab/race.py, lines 89–107" aria-label="Code on GitHub: optlab/race.py, lines 89 to 107">51</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L136-L155" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 136–155" aria-label="Code on GitHub: web/js/optlab-core.js, lines 136 to 155">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py#L236-L257" target="_blank" rel="noopener" title="optlab/surfaces.py, lines 236–257" aria-label="Code on GitHub: optlab/surfaces.py, lines 236 to 257">53</a></span>
+    <pre class="pseudo-simple">function IS-MINIMUM(x, gtol):
+    g ← ∇f(x)
+    if the length of g is not less than gtol:
+        return false                             # not flat enough to be a minimum
+    H ← HESSIAN(x)                               # numerical second derivatives
+    return det(H) > 0 and trace(H) > 0           # positive definite: a bowl, not a saddle</pre>
+    <pre class="pseudo-full" hidden>constants: gtol = 1e−3, h = 1e−5
+function IS-MINIMUM(x, y, gtol):
+    gx, gy ← ∇f(x, y)
+    if sqrt(gx · gx + gy · gy) is not less than gtol:
+        return false
+    a ← (g_x(x, y + h) − g_x(x, y − h)) / (2h)
+    b ← (g_y(x + h, y) − g_y(x − h, y)) / (2h)
+    hxx ← (g_x(x + h, y) − g_x(x − h, y)) / (2h)
+    hyy ← (g_y(x, y + h) − g_y(x, y − h)) / (2h)
+    hxy ← 0.5 · (a + b)
+    return hxx · hyy − hxy · hxy > 0 and hxx + hyy > 0</pre>
+  </div>
+  <p class="hiw-note">The gradient test comes first, so the Hessian is only estimated near a flat point. The off-diagonal entry <span class="math">h_{xy}</span> is the average of the two finite-difference estimates, which is the same as the code's <span class="math">0.5 \cdot (a + b)</span>. The determinant test separates a bowl from a saddle, since a saddle's determinant is negative.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L136-L155" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 136–155" aria-label="Code on GitHub: web/js/optlab-core.js, lines 136 to 155">52</a></p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L260-L314" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 260–314" aria-label="Code on GitHub: web/js/optlab-core.js, lines 260 to 314">54</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L89-L116" target="_blank" rel="noopener" title="optlab/race.py, lines 89–116" aria-label="Code on GitHub: optlab/race.py, lines 89 to 116">55</a></span>
+    <pre class="pseudo-simple">function RACE-STEP(race, σ):
+    t ← t + 1                                    # one step for the whole race
+    ξ ← (NORMAL(), NORMAL())                     # one noise draw, shared by every track
+    for each track T in race:
+        if T has not diverged:
+            q ← the point where T takes its gradient
+            g ← ∇f(q) + σ · ξ                    # gradient plus the shared noise
+            x' ← the position T's update rule gives from g
+            if x' is outside the box or f(x') is not finite:
+                T diverges at step t             # blow-up or NaN: the track stops
+            otherwise:
+                move T to x', record its loss
+                if T is settled and not yet recorded: record step t</pre>
+    <pre class="pseudo-full" hidden>constants: GTOL = 1e−3, BLOW = 1e6
+function RACE-STEP(race, σ):
+    t ← t + 1
+    ξ₁ ← NORMAL()                                # the x noise, one draw per step
+    ξ₂ ← NORMAL()                                # the y noise, drawn after ξ₁
+    for each track T in race:
+        if T has diverged:
+            skip T                               # a stopped track does not move again
+        otherwise:
+            q ← QUERY(T, x)                      # SGD: x; Nesterov: x + β·v
+            g ← ∇f(q) + σ · (ξ₁, ξ₂)             # gradient with the shared noise
+            x' ← UPDATE(T, x, g)                 # the optimizer's own rule
+            if x' is not finite in either coordinate:
+                T diverges at step t, cause NaN
+            otherwise:
+                if |x'₁| > BLOW or |x'₂| > BLOW:
+                    T diverges at step t, cause blow-up
+                otherwise:
+                    loss ← f(x')
+                    if loss is not finite:
+                        T diverges at step t, cause NaN
+                    otherwise:
+                        move T to x', append x' and loss to its path
+                        if T has not settled and IS-MINIMUM(x', GTOL):
+                            record t as the step T settled
+    return race</pre>
+  </div>
+  <p class="hiw-note">The noise is drawn once per step and shared by every track, so the tracks differ only by their update rules. Each track checks its new position before it evaluates the loss, so the loss is only computed at a finite point inside the box. A diverged track is never updated again. The race keeps running the other tracks, and the page pauses once every track has either settled or diverged.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L284-L314" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 284–314" aria-label="Code on GitHub: web/js/optlab-core.js, lines 284 to 314">56</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L554-L555" target="_blank" rel="noopener" title="web/js/optlab.js, lines 554–555" aria-label="Code on GitHub: web/js/optlab.js, lines 554 to 555">57</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L589-L593" target="_blank" rel="noopener" title="web/js/optlab.js, lines 589–593" aria-label="Code on GitHub: web/js/optlab.js, lines 589 to 593">58</a></p>
+
+  <h3 class="hiw-sub">Gradient noise and the random stream</h3>
+  <p class="hiw-note"><b>Gradient noise</b> adds the same random vector to every track's gradient at each step. The noisy gradient is <span class="math">g_t = \nabla f(q_t) + \sigma\, \xi_t</span>, where <span class="math">\sigma</span> is the noise level and <span class="math">\xi_t = (\xi_1, \xi_2)</span> is drawn once per step. With the default <span class="math">\sigma = 0</span> the race is deterministic. The seed (default 7) starts the random stream, and RANDOM picks a new seed at random.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L293-L294" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 293–294" aria-label="Code on GitHub: web/js/optlab-core.js, lines 293 to 294">59</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L92-L101" target="_blank" rel="noopener" title="optlab/race.py, lines 92–101" aria-label="Code on GitHub: optlab/race.py, lines 92 to 101">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L43-L44" target="_blank" rel="noopener" title="web/js/optlab.js, lines 43–44" aria-label="Code on GitHub: web/js/optlab.js, lines 43 to 44">61</a></p>
+  <div class="math-fig">
+    <div class="math math-block">g_t = \nabla f(q_t) + \sigma\, \xi_t</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L293-L294" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 293–294" aria-label="Code on GitHub: web/js/optlab-core.js, lines 293 to 294">59</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L92-L101" target="_blank" rel="noopener" title="optlab/race.py, lines 92–101" aria-label="Code on GitHub: optlab/race.py, lines 92 to 101">60</a></span>
+  </div>
+  <p class="hiw-note">The random stream is <b>mulberry32</b>, a 32-bit generator whose steps are integer operations: addition, exclusive OR, shifts and multiplication modulo <span class="math">2^{32}</span>. The browser and the Python package compute the same bits, so a seed gives the same race in either. A uniform value <span class="math">u</span> in <span class="math">[0, 1)</span> comes straight from the stream. A <b>normal</b> sample is built from twelve of them, which has mean 0 and variance 1, because each uniform value has variance <span class="math">1/12</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L24-L35" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 24–35" aria-label="Code on GitHub: web/js/optlab-core.js, lines 24 to 35">62</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/rng.py#L18-L36" target="_blank" rel="noopener" title="optlab/rng.py, lines 18–36" aria-label="Code on GitHub: optlab/rng.py, lines 18 to 36">63</a></p>
+  <div class="math-fig">
+    <div class="math math-block">\xi = \sum_{i=1}^{12} u_i - 6, \qquad u_i \in [0, 1)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L37-L42" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 37–42" aria-label="Code on GitHub: web/js/optlab-core.js, lines 37 to 42">64</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/rng.py#L31-L36" target="_blank" rel="noopener" title="optlab/rng.py, lines 31–36" aria-label="Code on GitHub: optlab/rng.py, lines 31 to 36">65</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u_i</span> are twelve uniform draws. Each step draws two normal values, one per coordinate, so it uses 24 uniform draws in all. The sum is bounded in <span class="math">[-6, 6]</span>.</p>
 
   <h3 class="hiw-sub">Default hyperparameters</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Optimizer</th><th>Setting</th><th class="num">Default</th><th>Why</th></tr></thead><tbody>
-    <tr><td>SGD</td><td>η</td><td class="num">0.05</td><td>On the ravine, 25 η = 1.25 is above 1, so the steep direction flips sign each step (the oscillation the lab shows) while the gentle direction still moves.</td></tr>
-    <tr><td>Momentum</td><td>η, β</td><td class="num">0.02, 0.9</td><td>β = 0.9 averages about the last 10 slopes. η is smaller than SGD's because the velocity adds up to roughly η / (1 − β) = 0.2.</td></tr>
-    <tr><td>Nesterov</td><td>η, β</td><td class="num">0.02, 0.9</td><td>Same as momentum, so the two can be compared directly. The look-ahead gradient is what differs.</td></tr>
-    <tr><td>RMSProp</td><td>η, ρ</td><td class="num">0.05, 0.9</td><td>ρ = 0.9 forgets squared slopes after about 10 steps. With a fixed η it hovers at a size set by η, not by the landscape.</td></tr>
-    <tr><td>Adam</td><td>η, β₁, β₂, ε</td><td class="num">0.1, 0.9, 0.999, 1e-8</td><td>The standard β values from the Adam paper. η is larger than the deep-learning default of 0.001 because these are two-dimensional toy problems with small gradients.</td></tr>
-    <tr><td>AdaGrad</td><td>η, ε</td><td class="num">0.5, 1e-8</td><td>Its accumulated squared gradients only grow, so the effective step falls over time; a large η compensates for the early steps.</td></tr>
-    <tr><td>Noise</td><td>σ, seed</td><td class="num">0, 7</td><td>Off by default, so the race is deterministic. When on, every optimizer sees the same noise draw at each step.</td></tr>
-    <tr><td>Tolerance</td><td>gradient norm</td><td class="num">1e-3</td><td>A track counts as settled once the gradient is below this and the Hessian is positive definite.</td></tr>
-    <tr><td>Divergence</td><td>position</td><td class="num">1e6</td><td>A track is stopped once it leaves the box [−10⁶, 10⁶]² or its loss is not finite.</td></tr>
+    <tr><td>SGD<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta</span></td><td class="num">0.05</td><td>On the ravine, <span class="math">25\eta = 1.25</span> is above 1, so the steep direction flips sign each step (the oscillation the lab shows) while the gentle direction still moves.</td></tr>
+    <tr><td>Momentum<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta, \beta</span></td><td class="num">0.02, 0.9</td><td><span class="math">\beta = 0.9</span> averages about the last 10 gradients. <span class="math">\eta</span> is smaller than SGD's because the velocity adds up to about <span class="math">\eta / (1 - \beta) = 0.2</span>.</td></tr>
+    <tr><td>Nesterov<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta, \beta</span></td><td class="num">0.02, 0.9</td><td>The same as momentum, so the two can be compared directly. Only the point where the gradient is taken differs.</td></tr>
+    <tr><td>RMSProp<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta, \rho</span></td><td class="num">0.05, 0.9</td><td><span class="math">\rho = 0.9</span> forgets squared gradients after about 10 steps. With a fixed <span class="math">\eta</span> it hovers at a size set by <span class="math">\eta</span>, not by the landscape.</td></tr>
+    <tr><td>Adam<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta, \beta_1, \beta_2, \varepsilon</span></td><td class="num">0.1, 0.9, 0.999, 1e-8</td><td>The decay rates are the Adam paper's values. <span class="math">\eta</span> is larger than the paper's 0.001 because the lab's problems are small and two-dimensional.</td></tr>
+    <tr><td>AdaGrad<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L13-L16" target="_blank" rel="noopener" title="web/js/optlab-core.js, lines 13–16" aria-label="Code on GitHub: web/js/optlab-core.js, lines 13 to 16">66</a></td><td><span class="math">\eta, \varepsilon</span></td><td class="num">0.5, 1e-8</td><td>Its accumulated squared gradients only grow, so the effective step falls over time. A large <span class="math">\eta</span> makes the early steps useful.</td></tr>
+    <tr><td>Noise<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab.js#L43-L44" target="_blank" rel="noopener" title="web/js/optlab.js, lines 43–44" aria-label="Code on GitHub: web/js/optlab.js, lines 43 to 44">61</a></td><td><span class="math">\sigma</span>, seed</td><td class="num">0, 7</td><td>Off by default, so the race is deterministic. When it is on, every optimizer sees the same noise draw at each step.</td></tr>
+    <tr><td>Tolerance<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L11" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 11" aria-label="Code on GitHub: web/js/optlab-core.js, line 11">46</a></td><td>gradient norm</td><td class="num">1e-3</td><td>A track counts as settled once the gradient norm is below this and the Hessian is positive definite.</td></tr>
+    <tr><td>Divergence<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L12" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 12" aria-label="Code on GitHub: web/js/optlab-core.js, line 12">47</a></td><td>position</td><td class="num">1e6</td><td>A track is stopped once it leaves the box <span class="math">[-10^6, 10^6]^2</span> or its position or loss is not finite.</td></tr>
+    <tr><td>Hessian step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js#L19" target="_blank" rel="noopener" title="web/js/optlab-core.js, line 19" aria-label="Code on GitHub: web/js/optlab-core.js, line 19">67</a></td><td><span class="math">h</span></td><td class="num">1e-5</td><td>The step of the central differences that estimate the Hessian for the settling test.</td></tr>
   </tbody></table></div>
 
   <h3 class="hiw-sub">Measured at the defaults</h3>
@@ -245,17 +481,18 @@
     <tr><td>Bowl, (2.4, 1.6)</td><td>RMSProp / Adam / AdaGrad</td><td class="num">77 / 146 / 69</td><td>All settled. RMSProp then hovers at a loss of about 1e-3.</td></tr>
     <tr class="best"><td>Ravine, (3.2, 0.9)</td><td>Nesterov</td><td class="num">86</td><td>Fastest on the ravine at these settings.</td></tr>
     <tr><td>Ravine, (3.2, 0.9)</td><td>Momentum / SGD / Adam</td><td class="num">150 / 158 / 155</td><td>Momentum edges out SGD. Adam is close to SGD here, not clearly faster.</td></tr>
-    <tr><td>Ravine, (3.2, 0.9)</td><td>RMSProp</td><td class="num">never</td><td>Settles to a noise floor and does not reach the tolerance.</td></tr>
-    <tr><td>Rosenbrock, (−1.5, 2.0)</td><td>SGD / Momentum / Nesterov</td><td class="num">diverge at steps 3 / 4 / 3</td><td>η = 0.05 is too large for the banana's steep walls.</td></tr>
-    <tr><td>Rosenbrock, (−1.5, 2.0)</td><td>RMSProp / Adam / AdaGrad</td><td class="num">not within 500</td><td>Adam ends near (0.90, 0.82), still moving.</td></tr>
+    <tr><td>Ravine, (3.2, 0.9)</td><td>AdaGrad</td><td class="num">108</td><td>Settles, between Nesterov and the three slower tracks.</td></tr>
+    <tr><td>Ravine, (3.2, 0.9)</td><td>RMSProp</td><td class="num">never</td><td>Hovers near (−0.025, 0.025) and does not reach the tolerance.</td></tr>
+    <tr><td>Rosenbrock, (−1.5, 2.0)</td><td>SGD / Momentum / Nesterov</td><td class="num">diverge at steps 3 / 4 / 3</td><td>Each one overshoots the banana's steep walls at its default step size.</td></tr>
+    <tr><td>Rosenbrock, (−1.5, 2.0)</td><td>RMSProp / Adam / AdaGrad</td><td class="num">not within 500</td><td>None settles. Adam ends near (0.90, 0.82) with its loss still falling.</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were measured:</b> the Python reference (optlab/race.py) with the defaults above, no noise, and the stated start point. The browser runs the same arithmetic (web/js/optlab-core.js), and a test checks the two agree to 1e-9 over the scenarios it covers. Numbers depend on the start point and settings; change either and the ranking can change. Nothing here is tuned for a particular start.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/optimizers.py">optlab/optimizers.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/surfaces.py">optlab/surfaces.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py">optlab/race.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/render.py">optlab/render.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/optlab-core.js">web/js/optlab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab.py">tests/test_optlab.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab_parity.py">tests/test_optlab_parity.py</a></p>
+  <p class="hiw-note"><b>How these were measured:</b> the Python reference (optlab/race.py) with the defaults above, no noise, and the stated start point.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/optlab/race.py#L20-L32" target="_blank" rel="noopener" title="optlab/race.py, lines 20–32" aria-label="Code on GitHub: optlab/race.py, lines 20 to 32">68</a> The browser runs the same arithmetic (web/js/optlab-core.js), and the parity test checks that the two agree to 1e-9 over the scenarios it covers.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab_parity.py#L23" target="_blank" rel="noopener" title="tests/test_optlab_parity.py, line 23" aria-label="Code on GitHub: tests/test_optlab_parity.py, line 23">69</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_optlab_parity.py#L93-L128" target="_blank" rel="noopener" title="tests/test_optlab_parity.py, lines 93–128" aria-label="Code on GitHub: tests/test_optlab_parity.py, lines 93 to 128">70</a> Numbers depend on the start point and settings. Change either and the ranking can change. Nothing here is tuned for a particular start.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/optlab.js"></script>
 </body>

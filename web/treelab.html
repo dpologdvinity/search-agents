@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="treelab.css">
 </head>
 <body>
@@ -20,8 +21,7 @@
 <nav id="nav">
   <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
   <ul class="nav-links" id="nav-links">
-    <li><a href="index.html">MAIN</a></li>
-  </ul>
+  <p class="hiw-note"><a href="index.html">MAIN</a></p>
 </nav>
 
 <div class="page act">
@@ -31,21 +31,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">09 // CART · BAGGING · RANDOM FOREST</div>
+      <div class="proj-pg-tag">LAB // DECISION TREES</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="TREE LAB">TREE LAB</h1>
-      <div class="proj-pg-sub">Paint the plane. A decision tree cuts it with one laser per split, then a random forest of bootstrap trees averages its way to a smooth boundary.</div>
+      <div class="proj-pg-sub">Paint points on a plane and watch a decision tree cut it into regions. A random forest averages many trees into one boundary.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip">MODE <span class="val" id="chip-mode">TREE</span></span>
-        <span class="stat-chip green">LEAVES <span class="val" id="chip-leaves">0</span></span>
-        <span class="stat-chip pink">DEPTH <span class="val" id="chip-depth">0</span></span>
-        <span class="stat-chip">TRAIN <span class="val" id="chip-train">—</span></span>
-        <span class="stat-chip green">TEST <span class="val" id="chip-test">—</span></span>
-        <span class="stat-chip">STATUS <span class="val" id="chip-status">READY</span></span>
+        <span class="stat-chip pink" title="Leaves in the tree shown. In forest mode, the number of trees.">LEAVES <span class="val" id="chip-leaves">0</span></span>
+        <span class="stat-chip" title="Accuracy on the training rows">TRAIN <span class="val" id="chip-train">—</span></span>
+        <span class="stat-chip green" title="Accuracy on the held-out test rows, which the model never trained on">TEST <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip" title="Whether the tree is growing, done, or waiting for points">STATUS <span class="val" id="chip-status">READY</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to see how a decision tree divides the plane into regions, and how a random forest smooths those regions. Paint points in two to four classes, or load a preset such as XOR.</p>
+    <p style="margin-top:0.5rem">Press STEP to make one split, or PLAY to let the tree grow on its own. Switch to RANDOM FOREST to train many trees on random samples. The forest retrains whenever a setting changes, and TRAIN FOREST retrains it on demand.</p>
+    <p style="margin-top:0.5rem">Hover the plane, or a box in the tree diagram, to see the region it covers. The accuracy chart shows where deeper trees start to overfit.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -61,14 +66,14 @@
         <div class="tl-readout-line" id="tl-hint" aria-live="polite">Paint points below, or load a preset. Hover the plane or a tree node to see the region it covers.</div>
         <div class="tl-paint">
           <div class="tl-swatches" role="radiogroup" aria-label="Class to paint">
-            <button class="tl-swatch" type="button" role="radio" aria-checked="true" data-c="0" style="--sw:var(--cyan)" title="Class A"><span>A</span></button>
-            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="1" style="--sw:var(--pink)" title="Class B"><span>B</span></button>
-            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="2" style="--sw:var(--green)" title="Class C" hidden><span>C</span></button>
-            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="3" style="--sw:var(--yellow)" title="Class D" hidden><span>D</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="true" data-c="0" style="--sw:var(--cyan)" title="Paint class A"><span>A</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="1" style="--sw:var(--pink)" title="Paint class B"><span>B</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="2" style="--sw:var(--green)" title="Paint class C (presets with three classes)" hidden><span>C</span></button>
+            <button class="tl-swatch" type="button" role="radio" aria-checked="false" data-c="3" style="--sw:var(--yellow)" title="Paint class D" hidden><span>D</span></button>
           </div>
-          <label class="tl-inline-lbl">BRUSH <input class="cyber-range" id="tl-brush" type="range" min="1" max="10" step="1" value="4"></label>
-          <button class="cyber-btn" id="tl-erase" type="button" aria-pressed="false"><span class="btn-txt">ERASE</span></button>
-          <button class="cyber-btn pink" id="tl-clear" type="button"><span class="btn-txt">CLEAR</span></button>
+          <label class="tl-inline-lbl" title="Brush radius. Each click scatters points inside the brush disc.">BRUSH <input class="cyber-range" id="tl-brush" type="range" min="1" max="10" step="1" value="4"></label>
+          <button class="cyber-btn" id="tl-erase" type="button" aria-pressed="false" title="Erase: points under the brush are removed"><span class="btn-txt">ERASE</span></button>
+          <button class="cyber-btn pink" id="tl-clear" type="button" title="Remove every point"><span class="btn-txt">CLEAR</span></button>
         </div>
       </div>
 
@@ -76,17 +81,17 @@
       <div class="tl-section-head">
         <div class="section-title">TREE DIAGRAM</div>
         <div class="tl-zoom" role="group" aria-label="Diagram zoom">
-          <button class="cyber-btn" id="tl-zoom-out" type="button" aria-label="Zoom out"><span class="btn-txt">−</span></button>
+          <button class="cyber-btn" id="tl-zoom-out" type="button" aria-label="Zoom out" title="Zoom out"><span class="btn-txt">−</span></button>
           <span class="tl-zoom-val" id="tl-zoom-val">100%</span>
-          <button class="cyber-btn" id="tl-zoom-in" type="button" aria-label="Zoom in"><span class="btn-txt">+</span></button>
-          <button class="cyber-btn" id="tl-zoom-fit" type="button"><span class="btn-txt">FIT</span></button>
+          <button class="cyber-btn" id="tl-zoom-in" type="button" aria-label="Zoom in" title="Zoom in"><span class="btn-txt">+</span></button>
+          <button class="cyber-btn" id="tl-zoom-fit" type="button" title="Fit the diagram to its box"><span class="btn-txt">FIT</span></button>
         </div>
       </div>
       <div class="tl-tree-wrap" id="tl-tree-wrap">
         <svg id="tl-svg" role="img" aria-label="Decision tree diagram. Hover a node to highlight its region on the plane."></svg>
         <div class="tl-tree-empty" id="tl-tree-empty">Paint at least two classes to grow a tree.</div>
       </div>
-      <div class="tl-legend field-hint">Each box: the split rule, impurity, sample count, and class bars. Pure leaves light up. Dashed boxes are still waiting in the queue.</div>
+      <div class="tl-legend field-hint">Box: split rule, impurity, rows, class bars. Pure leaves glow; dashed boxes are queued.</div>
       </div>
 
       <div class="tl-section-head">
@@ -104,7 +109,7 @@
           <div>
             <div class="field-lbl">PRESET</div>
             <div class="inline">
-              <select class="cyber-select" id="tl-preset" style="flex:1">
+              <select class="cyber-select" id="tl-preset" style="flex:1" title="Seeded point sets. Loading one replaces the painted points.">
                 <option value="blobs">Blobs (3 classes)</option>
                 <option value="xor" selected>XOR</option>
                 <option value="checkerboard">Checkerboard</option>
@@ -112,20 +117,8 @@
                 <option value="nested">Nested rings (3 classes)</option>
                 <option value="diagonal">Noisy diagonal</option>
               </select>
-              <button class="cyber-btn green" id="tl-load" type="button"><span class="btn-txt">LOAD</span></button>
+              <button class="cyber-btn green" id="tl-load" type="button" title="Generate the chosen preset with the seed under MORE SETTINGS"><span class="btn-txt">LOAD</span></button>
             </div>
-          </div>
-          <div>
-            <div class="field-lbl">SEED <span class="field-hint">(same seed, same points)</span></div>
-            <div class="inline">
-              <input class="cyber-input" id="tl-seed" type="number" min="0" max="2147483647" value="1" style="flex:1">
-              <button class="cyber-btn" id="tl-random-seed" type="button"><span class="btn-txt">RANDOM</span></button>
-            </div>
-          </div>
-          <div>
-            <div class="field-lbl">TEST SHARE <span class="field-hint" id="tl-test-val"></span></div>
-            <input class="cyber-range" id="tl-test" type="range" min="0.1" max="0.5" step="0.05" value="0.3" style="width:100%">
-            <div class="field-hint" id="tl-split-note">Rows outside the test set train the model; the test set is shuffled with a fixed seed.</div>
           </div>
         </div>
       </div>
@@ -135,40 +128,25 @@
         <div class="stack">
           <div>
             <div class="field-lbl">IMPURITY</div>
-            <select class="cyber-select" id="tl-criterion" style="width:100%">
+            <select class="cyber-select" id="tl-criterion" style="width:100%" title="Gini: 1 − Σp². Entropy: −Σp log₂p. Both are 0 for a pure node.">
               <option value="gini" selected>Gini (1 − Σp²)</option>
               <option value="entropy">Entropy (−Σp log₂p)</option>
             </select>
           </div>
           <div>
             <div class="field-lbl">MAX DEPTH <span class="field-hint" id="tl-depth-val"></span></div>
-            <input class="cyber-range" id="tl-depth" type="range" min="1" max="12" step="1" value="5" style="width:100%">
+            <input class="cyber-range" id="tl-depth" type="range" min="1" max="12" step="1" value="5" style="width:100%" title="Most splits between the root and any leaf">
           </div>
-          <div>
-            <div class="field-lbl">MIN SAMPLES PER LEAF <span class="field-hint" id="tl-minleaf-val"></span></div>
-            <input class="cyber-range" id="tl-minleaf" type="range" min="1" max="20" step="1" value="3" style="width:100%">
-          </div>
-          <label class="tl-check"><input type="checkbox" id="tl-extras" checked> <span>Extra features: x·y and x²+y² (curved cuts)</span></label>
         </div>
       </div>
 
       <div id="tl-tree-panel">
         <div class="section-title green-ttl">TREE</div>
-        <div class="stack">
-          <div class="inline tl-playback">
-            <button class="cyber-btn" id="tl-step" type="button"><span class="btn-txt">› STEP</span></button>
-            <button class="cyber-btn green" id="tl-play" type="button" aria-pressed="false"><span class="btn-txt">▶ PLAY</span></button>
-            <button class="cyber-btn pink" id="tl-grow" type="button"><span class="btn-txt">» GROW FULLY</span></button>
-            <button class="cyber-btn" id="tl-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
-          </div>
-          <div>
-            <div class="field-lbl">PRUNE α <span class="field-hint" id="tl-alpha-val"></span></div>
-            <input class="cyber-range" id="tl-alpha" type="range" min="0" max="0.1" step="0.0005" value="0" style="width:100%">
-            <div class="inline" style="margin-top:0.4rem">
-              <button class="cyber-btn" id="tl-sweep" type="button"><span class="btn-txt">SWEEP α</span></button>
-              <span class="field-hint" id="tl-prune-note">Cost-complexity pruning: raise α to collapse the weakest splits first.</span>
-            </div>
-          </div>
+        <div class="inline tl-playback">
+          <button class="cyber-btn" id="tl-step" type="button" title="Make the next split"><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn green" id="tl-play" type="button" aria-pressed="false" title="Make splits one after another until the tree is complete"><span class="btn-txt">▶ PLAY</span></button>
+          <button class="cyber-btn pink" id="tl-grow" type="button" title="Finish growing the tree at once"><span class="btn-txt">» GROW FULLY</span></button>
+          <button class="cyber-btn" id="tl-reset" type="button" title="Discard the splits and start the tree again"><span class="btn-txt">↺ RESET</span></button>
         </div>
       </div>
 
@@ -177,109 +155,371 @@
         <div class="stack">
           <div>
             <div class="field-lbl">TREES <span class="field-hint" id="tl-trees-val"></span></div>
-            <input class="cyber-range" id="tl-trees" type="range" min="1" max="100" step="1" value="25" style="width:100%">
+            <input class="cyber-range" id="tl-trees" type="range" min="1" max="100" step="1" value="25" style="width:100%" title="Number of trees in the forest (1 to 100)">
           </div>
-          <div>
-            <div class="field-lbl">FEATURES TRIED PER SPLIT</div>
-            <select class="cyber-select" id="tl-maxf" style="width:100%">
-              <option value="sqrt" selected>√(features), the usual choice</option>
-              <option value="all">All features (bagging only)</option>
-              <option value="1">One at random (most diverse)</option>
-            </select>
-          </div>
-          <label class="tl-check"><input type="checkbox" id="tl-boot" checked> <span>Bootstrap rows (sample with replacement)</span></label>
-          <div>
-            <div class="field-lbl">SHOW INDIVIDUAL TREES <span class="field-hint" id="tl-show-val"></span></div>
-            <input class="cyber-range" id="tl-show" type="range" min="0" max="25" step="1" value="8" style="width:100%">
-          </div>
-          <button class="cyber-btn green" id="tl-train-forest" type="button"><span class="btn-txt">▶ TRAIN FOREST</span></button>
+          <button class="cyber-btn green" id="tl-train-forest" type="button" title="Train the forest with the current data and settings"><span class="btn-txt">▶ TRAIN FOREST</span></button>
           <div class="viz-panel tl-forest-stats">
-            <div class="viz-title">OUT-OF-BAG ACCURACY</div>
+            <div class="viz-title" title="Each row is scored only by the trees whose bootstrap sample left it out. It estimates test accuracy without a separate test set.">OUT-OF-BAG ACCURACY</div>
             <div class="tl-big" id="tl-oob">—</div>
-            <div class="field-hint" id="tl-oob-note">Each row is scored only by the trees whose bootstrap sample left it out.</div>
             <div class="viz-title">TEST ACCURACY</div>
             <div class="tl-big green" id="tl-ftest">—</div>
             <div class="field-hint" id="tl-single">Single deep tree: —</div>
           </div>
           <div class="viz-panel">
-            <div class="viz-title">FEATURE IMPORTANCE (mean impurity decrease)</div>
+            <div class="viz-title" title="Impurity decrease each feature buys, summed over the splits that use it, weighted by rows, and averaged over trees">FEATURE IMPORTANCE</div>
             <div class="tl-imp" id="tl-imp"></div>
           </div>
         </div>
       </div>
 
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same points)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="tl-seed" type="number" min="0" max="2147483647" value="1" style="flex:1" title="Seeds the preset points and the forest's bootstrap samples and feature subsets">
+              <button class="cyber-btn" id="tl-random-seed" type="button" title="Pick a random seed and load a new preset"><span class="btn-txt">RANDOM</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">TEST SHARE <span class="field-hint" id="tl-test-val"></span></div>
+            <input class="cyber-range" id="tl-test" type="range" min="0.1" max="0.5" step="0.05" value="0.3" style="width:100%" title="Share of rows held out for the test set. The rest train the model. The test set is shuffled with a fixed seed.">
+          </div>
+          <div>
+            <div class="field-lbl">MIN SAMPLES PER LEAF <span class="field-hint" id="tl-minleaf-val"></span></div>
+            <input class="cyber-range" id="tl-minleaf" type="range" min="1" max="20" step="1" value="3" style="width:100%" title="Fewest training rows allowed in each child of a split">
+          </div>
+          <label class="tl-check" title="Adds x·y and x²+y² as features, so the tree can cut curved boundaries"><input type="checkbox" id="tl-extras" checked> <span>Extra features: x·y and x²+y² (curved cuts)</span></label>
+
+          <div id="tl-prune-more">
+            <div class="field-lbl">PRUNE α <span class="field-hint" id="tl-alpha-val"></span></div>
+            <input class="cyber-range" id="tl-alpha" type="range" min="0" max="0.1" step="0.0005" value="0" style="width:100%" title="Cost-complexity α: the price of a leaf. The weakest split collapses while its link strength is at most α.">
+            <div class="inline" style="margin-top:0.4rem">
+              <button class="cyber-btn" id="tl-sweep" type="button" title="Animate α from 0 up to the largest link strength, so the tree shrinks step by step"><span class="btn-txt">SWEEP α</span></button>
+              <span class="field-hint" id="tl-prune-note">Cost-complexity pruning: raise α to collapse the weakest splits first.</span>
+            </div>
+          </div>
+
+          <div id="tl-forest-more" hidden>
+            <div class="field-lbl">FEATURES TRIED PER SPLIT</div>
+            <select class="cyber-select" id="tl-maxf" style="width:100%" title="Features each split may choose from. The square root of the feature count is the usual random forest choice; all features is plain bagging.">
+              <option value="sqrt" selected>√(features), the usual choice</option>
+              <option value="all">All features (bagging only)</option>
+              <option value="1">One at random (most diverse)</option>
+            </select>
+            <label class="tl-check" title="Each tree trains on n rows drawn with replacement. Off: every tree sees all rows."><input type="checkbox" id="tl-boot" checked> <span>Bootstrap rows (sample with replacement)</span></label>
+            <div class="field-lbl" style="margin-top:0.6rem">SHOW INDIVIDUAL TREES <span class="field-hint" id="tl-show-val"></span></div>
+            <input class="cyber-range" id="tl-show" type="range" min="0" max="25" step="1" value="8" style="width:100%" title="How many single trees are drawn faintly on the plane">
+          </div>
+        </div>
+      </details>
+
       <div>
         <div class="section-title">READOUT</div>
         <div class="viz-panel tl-readout" id="tl-readout"></div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">HOW IT DECIDES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">ONE SPLIT AT A TIME</div>
-            <div class="field-hint">Each box asks one yes/no question about a feature, x &lt; t. The tree tries every midpoint and keeps the question that makes its two sides purest.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">FOREST</div>
-            <div class="field-hint">Each tree sees a random sample of the rows and only some of the features at each split. Their votes average into one boundary that is smoother than any single tree.</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">A decision tree answers a chain of yes/no questions about the features. Each question is a split x &lt; t that cuts the region in two; the tree keeps splitting while a split makes its pieces purer. A random forest trains many such trees on random samples and averages them. The page runs a JavaScript port of the Python trees that builds the same tree for the same seed.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Decision trees</h3>
-      <p class="hiw-plain"><b>New to this?</b> Play twenty questions with the plane. "Is x less than 0.4?" tells you which half to look in, and the next question narrows it further. A tree is a whole list of these questions, arranged so that each answer leads to the next. The last question in each branch gives a class.</p>
-      <p>Each internal node stores a feature and a threshold. A point goes left when feature &lt; threshold, right otherwise. Each leaf predicts the majority class of the training rows that reach it, and its confidence is that majority's share.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Gini vs entropy</h3>
-      <p class="hiw-plain"><b>New to this?</b> Impurity measures how mixed a group is. A group of only one class scores zero. A 50/50 group scores the worst. Both measures agree on the extremes; they differ only in the middle.</p>
-      <p>Gini impurity is 1 − Σp², the chance that two random rows from a node disagree on the class if you labelled one at random by the node's mix. Entropy is −Σp log₂p, the average surprise in bits. Gini needs no logarithm, so it is faster; entropy punishes mixed nodes a little more. A split is scored by how much it lowers the size-weighted impurity of its two children.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy splitting and the search</h3>
-      <p class="hiw-plain"><b>New to this?</b> Greedy means: take the best question right now and never reconsider it. It is not always the best tree overall, but finding the best tree exactly is hopeless, and the greedy choice works well in practice.</p>
-      <p>At a node, sort its rows on each feature. Test the midpoint between every pair of neighbouring values, count the classes on each side, and keep the threshold with the largest gain. Growth is breadth-first: each step splits the next node in the queue. A node stops when it is pure, has reached the depth limit, or would leave a child with fewer than the minimum samples per leaf.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Overfitting and pruning</h3>
-      <p class="hiw-plain"><b>New to this?</b> A tree can keep asking questions until every point has its own box. That memorises the training rows, including their noise. A test set, rows the tree never saw, shows when that stops helping.</p>
-      <p>Cost-complexity pruning scores each internal node by how much error it saves per extra leaf: g(t) = (R(t) − R(subtree)) / (leaves − 1), where R is the misclassification rate. The weakest link is collapsed first, and α sets the price of a leaf. The sequence of trees shrinks monotonically as α rises. Depth and minimum leaf size are the simpler brakes; the chart shows the depth at which test accuracy peaks.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Bagging and random forests</h3>
-      <p class="hiw-plain"><b>New to this?</b> One tree is unstable: move a few points and its questions change. Train many trees on slightly different data and average their votes, and the random wobbles cancel out.</p>
-      <p>Bagging draws n rows with replacement for each tree, so about 37% of rows are left out of each sample. Those out-of-bag rows score the tree without a separate test set. A random forest adds one more source of variety: at each split only a random subset of features, usually √p, is considered. The averaged class probabilities form the glowing forest boundary; the faint jagged lines are the individual trees.</p>
-    </article>
+  <p class="hiw-lede">A **decision tree** is a classifier that answers a chain of yes/no questions about a point's features. Each question is a **split** of the form x &lt; t on one feature, and the answer sends the point down one of two branches. A **random forest** trains many such trees on random samples of the data and averages their predictions. The page runs a JavaScript port of the Python package in `treelab/`, which builds the same tree node for node from the same seed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_treelab_parity.py#L1-L8" target="_blank" rel="noopener" title="tests/test_treelab_parity.py, lines 1–8" aria-label="Code on GitHub: tests/test_treelab_parity.py, lines 1 to 8">1</a>.</p>
+
+  <h3 class="hiw-sub">Tree structure and prediction</h3>
+  <p class="hiw-note">Each **internal node** stores a feature and a **threshold**. A point goes to the left child when its value on that feature is less than the threshold, and to the right child otherwise. A node with no children is a **leaf**. Each leaf predicts from the training rows that reached it. Its class distribution is the share of each class among those rows, and its label is the most frequent class, with ties going to the lowest class index<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L190-L201" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 190–201" aria-label="Code on GitHub: web/js/treelab-core.js, lines 190 to 201">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L136-L143" target="_blank" rel="noopener" title="treelab/tree.py, lines 136–143" aria-label="Code on GitHub: treelab/tree.py, lines 136 to 143">3</a>.</p>
+  <!-- web/js/treelab-core.js:197-208 -->
+  <div class="math-fig">
+    <div class="math math-block">\hat p_k = \frac{n_k}{n}, \qquad \text{label} = \arg\max_k n_k</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L197-L208" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 197–208" aria-label="Code on GitHub: web/js/treelab-core.js, lines 197 to 208">4</a></span>
   </div>
+  <p class="hiw-note">Here <span class="math">n_k</span> is the number of training rows of class <span class="math">k</span> that reached the leaf, and <span class="math">n</span> is the leaf's total. The label is the class with the largest <span class="math">n_k</span>.</p>
+
+  <h3 class="hiw-sub">Impurity: Gini and entropy</h3>
+  <p class="hiw-note">**Impurity** measures how mixed the classes in a node are. It is zero for a pure node and largest when the classes are evenly mixed. The lab offers two measures. **Gini impurity** is the chance that two rows drawn at random from the node, with replacement, have different classes. **Entropy** is the average number of bits needed to name the class of a random row from the node<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L37-L57" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 37–57" aria-label="Code on GitHub: web/js/treelab-core.js, lines 37 to 57">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L28-L45" target="_blank" rel="noopener" title="treelab/tree.py, lines 28–45" aria-label="Code on GitHub: treelab/tree.py, lines 28 to 45">6</a>.</p>
+  <!-- web/js/treelab-core.js:42-48, web/js/treelab-core.js:49-56, treelab/tree.py:34-45 -->
+  <div class="math-fig">
+    <div class="math math-block">G = 1 - \sum_{k=1}^{K} p_k^{2}, \qquad H = -\sum_{k:\,p_k > 0} p_k \log_2 p_k, \qquad p_k = \frac{n_k}{n}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L42-L48" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 42–48" aria-label="Code on GitHub: web/js/treelab-core.js, lines 42 to 48">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L49-L56" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 49–56" aria-label="Code on GitHub: web/js/treelab-core.js, lines 49 to 56">8</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L34-L45" target="_blank" rel="noopener" title="treelab/tree.py, lines 34–45" aria-label="Code on GitHub: treelab/tree.py, lines 34 to 45">9</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">K</span> is the number of classes, <span class="math">n_k</span> the rows of class <span class="math">k</span> in the node, <span class="math">n</span> the node's total, and <span class="math">p_k</span> the class share. The code returns 0 for an empty or pure node. In the entropy sum a term with <span class="math">p_k = 0</span> is skipped, since <span class="math">p \log_2 p</span> tends to 0 as <span class="math">p</span> tends to 0. Gini needs no logarithm, so it is cheaper to evaluate for every candidate threshold, and it is the default.</p>
+  <p class="hiw-note"><b>Example.</b> A node with 6 rows of class A and 2 of class B has <span class="math">p = (0.75,\ 0.25)</span>. Its Gini impurity is <span class="math">1 - (0.5625 + 0.0625) = 0.375</span>, and its entropy is <span class="math">-(0.75 \log_2 0.75 + 0.25 \log_2 0.25) \approx 0.811</span> bits.</p>
+
+  <h3 class="hiw-sub">Information gain</h3>
+  <p class="hiw-note">A split is scored by its **information gain**, the drop in impurity that it buys. The two children are weighted by their share of the rows, so a split does not win just by sending a few rows somewhere<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L90" target="_blank" rel="noopener" title="web/js/treelab-core.js, line 90" aria-label="Code on GitHub: web/js/treelab-core.js, line 90">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L91" target="_blank" rel="noopener" title="treelab/tree.py, line 91" aria-label="Code on GitHub: treelab/tree.py, line 91">11</a>.</p>
+  <!-- web/js/treelab-core.js:90, treelab/tree.py:91 -->
+  <div class="math-fig">
+    <div class="math math-block">\Delta = I(S) - \frac{n_L}{n}\, I(S_L) - \frac{n_R}{n}\, I(S_R)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L90" target="_blank" rel="noopener" title="web/js/treelab-core.js, line 90" aria-label="Code on GitHub: web/js/treelab-core.js, line 90">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L91" target="_blank" rel="noopener" title="treelab/tree.py, line 91" aria-label="Code on GitHub: treelab/tree.py, line 91">11</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">S</span> is the set of rows at the node, <span class="math">I</span> is the chosen impurity, and <span class="math">n = |S|</span>. The split sends <span class="math">S_L</span> left and <span class="math">S_R</span> right, with <span class="math">n_L</span> and <span class="math">n_R</span> rows. The code calls these <span class="math">m</span>, <span class="math">nl</span> and <span class="math">nr</span>.</p>
+  <p class="hiw-note"><b>Example.</b> A split that sends the six A rows left and the two B rows right leaves both children pure. Its gain is the whole parent impurity: <span class="math">0.375</span> with Gini.</p>
+
+  <h3 class="hiw-sub">Finding the best split</h3>
+  <p class="hiw-note">**Greedy** search means the best split at the current node is taken and never reconsidered. The search tries every split on each candidate feature. The rows are sorted on that feature, and a candidate threshold sits at the midpoint of each pair of neighbouring distinct values. A row goes left when its value is strictly less than the threshold. Candidates that leave a child with fewer rows than the **minimum samples per leaf** are skipped<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L65-L86" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 65–86" aria-label="Code on GitHub: web/js/treelab-core.js, lines 65 to 86">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L63-L87" target="_blank" rel="noopener" title="treelab/tree.py, lines 63–87" aria-label="Code on GitHub: treelab/tree.py, lines 63 to 87">13</a>.</p>
+  <p class="hiw-note">The midpoint is <span class="math">t = (v_i + v_{i+1}) / 2</span> for neighbouring sorted values <span class="math">v_i &lt; v_{i+1}</span>. If rounding makes <span class="math">t</span> no greater than <span class="math">v_i</span>, the code uses <span class="math">v_{i+1}</span>, so the left side is exactly the rows at or below <span class="math">v_i</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L91-L94" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 91–94" aria-label="Code on GitHub: web/js/treelab-core.js, lines 91 to 94">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L94-L96" target="_blank" rel="noopener" title="treelab/tree.py, lines 94–96" aria-label="Code on GitHub: treelab/tree.py, lines 94 to 96">15</a>. Within one feature, the first candidate within <span class="math">\varepsilon = 10^{-12}</span> of the largest gain wins. Across features, a later feature replaces the best so far only if its gain is larger by more than <span class="math">\varepsilon</span>. So a tie keeps the earlier feature and the smaller threshold<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L98-L108" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 98–108" aria-label="Code on GitHub: web/js/treelab-core.js, lines 98 to 108">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L97-L106" target="_blank" rel="noopener" title="treelab/tree.py, lines 97–106" aria-label="Code on GitHub: treelab/tree.py, lines 97 to 106">17</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L65-L112" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 65–112" aria-label="Code on GitHub: web/js/treelab-core.js, lines 65 to 112">18</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L63-L109" target="_blank" rel="noopener" title="treelab/tree.py, lines 63–109" aria-label="Code on GitHub: treelab/tree.py, lines 63 to 109">19</a></span>
+    <pre class="pseudo-simple">function BEST-SPLIT(rows, features):
+    parent ← IMPURITY(class counts of rows)
+    best ← none
+    for each feature f in features:
+        sort rows by their value on f
+        for each pair of neighbouring rows with different values:
+            t ← midpoint of the two values
+            gain ← parent − (n_L / n) · IMPURITY(left) − (n_R / n) · IMPURITY(right)
+            if both sides have at least min leaf rows, record (gain, t) for f
+        keep the threshold with the largest gain on f
+        if the gain beats best by more than ε:
+            best ← (f, t, gain)
+    return best</pre>
+    <pre class="pseudo-full" hidden>constants: ε = 1e−12, min leaf L (default 3)
+function BEST-SPLIT(rows, features):
+    m ← number of rows
+    total ← class counts of rows
+    parent ← IMPURITY(total)
+    best-feature ← −1
+    best-gain ← 0
+    best-threshold ← 0
+    for each f in features:
+        order ← indices of rows, sorted by their value on f    # stable: ties keep row order
+        candidates ← empty list
+        left ← zero count for each class
+        for pos from 0 to m − 2:
+            left[class of row order[pos]] ← left[class of row order[pos]] + 1
+            lo ← value of order[pos] on f
+            hi ← value of order[pos + 1] on f
+            if not lo &lt; hi:                                  # no boundary between equal values
+                continue
+            n_L ← pos + 1
+            n_R ← m − n_L
+            if n_L &lt; L or n_R &lt; L:
+                continue
+            right ← total − left
+            gain ← parent − (n_L / m) · IMPURITY(left) − (n_R / m) · IMPURITY(right)
+            t ← (lo + hi) / 2
+            if not lo &lt; t:
+                t ← hi
+            append (gain, t) to candidates
+        if candidates is empty:
+            continue
+        gmax ← largest gain in candidates
+        (g, t) ← first pair in candidates with g ≥ gmax − ε
+        if best-feature &lt; 0 and g &gt; ε:
+            best-feature, best-gain, best-threshold ← f, g, t
+        else if best-feature ≥ 0 and g &gt; best-gain + ε:
+            best-feature, best-gain, best-threshold ← f, g, t
+    if best-feature &lt; 0:
+        return none
+    return (best-feature, best-threshold, best-gain)</pre>
+  </div>
+  <p class="hiw-note">The **stable sort** keeps rows with equal values in the order they came in, so the result is the same for any sort that is stable. The check <span class="math">v_i &lt; v_{i+1}</span> skips pairs with equal values, since no threshold can separate them. The **EPS** test makes floating-point rounding count as a tie, so tiny differences in arithmetic do not change which split is chosen<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L74-L78" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 74–78" aria-label="Code on GitHub: web/js/treelab-core.js, lines 74 to 78">20</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L76-L77" target="_blank" rel="noopener" title="treelab/tree.py, lines 76–77" aria-label="Code on GitHub: treelab/tree.py, lines 76 to 77">21</a>.</p>
+
+  <h3 class="hiw-sub">Growing the tree</h3>
+  <p class="hiw-note">The **builder** is breadth-first. A first-in, first-out queue holds the **frontier**, the nodes not yet decided. Each step takes the node at the front of the queue. It either makes that node a leaf, or splits it and appends its two children to the back. Growing to the end gives the same tree as recursion, but one split at a time lets the lab animate the growth. A node becomes a leaf when it is pure, when it is at the maximum depth, when it has fewer than twice the minimum leaf size in rows, or when no split beats EPS<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L120-L182" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 120–182" aria-label="Code on GitHub: web/js/treelab-core.js, lines 120 to 182">22</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L146-L217" target="_blank" rel="noopener" title="treelab/tree.py, lines 146–217" aria-label="Code on GitHub: treelab/tree.py, lines 146 to 217">23</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L149-L176" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 149–176" aria-label="Code on GitHub: web/js/treelab-core.js, lines 149 to 176">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L190-L212" target="_blank" rel="noopener" title="treelab/tree.py, lines 190–212" aria-label="Code on GitHub: treelab/tree.py, lines 190 to 212">25</a></span>
+    <pre class="pseudo-simple">function GROW-TREE(rows, depth):
+    if rows are pure or depth = max depth or too few rows:
+        return a leaf with the majority class
+    split ← BEST-SPLIT(rows, all features)
+    if split is none:
+        return a leaf with the majority class
+    left ← rows with x[feature] &lt; threshold
+    right ← the other rows
+    return a node holding the split, with GROW-TREE(left, depth + 1)
+        and GROW-TREE(right, depth + 1) as children</pre>
+    <pre class="pseudo-full" hidden>constants: max depth D (default 5), min leaf L (default 3)
+function GROW-TREE(X, y):
+    root ← NODE(all rows, depth 0)              # counts and impurity; status pending
+    queue ← [root]                              # FIFO frontier
+    while queue is not empty:
+        node ← remove the front of queue
+        if impurity(node) ≤ 0 or depth(node) ≥ D or n(node) &lt; 2 · L:
+            status(node) ← leaf                 # pure, too deep, or too small to split
+            continue
+        candidates ← all features
+        if a feature limit m is set and m &lt; number of features:
+            for i from 0 to m − 1:              # random subset, partial Fisher-Yates
+                j ← i + RAND-INT(number of features − i)
+                swap candidates[i] and candidates[j]
+            candidates ← first m entries of candidates
+        best ← BEST-SPLIT(rows of node, candidates)
+        if best is none:
+            status(node) ← leaf
+            continue
+        feature(node), threshold(node), gain(node) ← best
+        status(node) ← split
+        left ← rows of node with x[feature] &lt; threshold
+        right ← the other rows of node
+        node.left ← NODE(left, depth(node) + 1)
+        node.right ← NODE(right, depth(node) + 1)
+        append node.left and node.right to queue
+    return root</pre>
+  </div>
+  <p class="hiw-note">The full version is the loop that <code>grow()</code> runs: each pass through the loop splits at most one node, and the loop ends when the queue is empty. The feature subset is drawn only when a limit is set, so a plain tree draws no random numbers. Each of the first <span class="math">m</span> positions is filled by a uniform random choice among the features not yet placed, so the subset is uniform<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L139-L147" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 139–147" aria-label="Code on GitHub: web/js/treelab-core.js, lines 139 to 147">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L179-L188" target="_blank" rel="noopener" title="treelab/tree.py, lines 179–188" aria-label="Code on GitHub: treelab/tree.py, lines 179 to 188">27</a>.</p>
+
+  <h3 class="hiw-sub">Accuracy against depth and overfitting</h3>
+  <p class="hiw-note">**Overfitting** means a model fits the noise in its training rows, so its accuracy on new rows falls below its accuracy on the training rows. The lab measures it with a **train/test split** (see Data). For each depth from 1 to 12, it grows a tree on the training rows with the current impurity and minimum leaf size, then records accuracy on both sets<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L358-L372" target="_blank" rel="noopener" title="web/js/treelab.js, lines 358–372" aria-label="Code on GitHub: web/js/treelab.js, lines 358 to 372">28</a>. Training accuracy cannot fall as depth grows, because a split can only keep or raise the number of training rows that a node gets right. Test accuracy rises, peaks, and then tends to fall. The readout reports overfitting when training accuracy beats test accuracy by more than 12 percentage points<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L1011-L1013" target="_blank" rel="noopener" title="web/js/treelab.js, lines 1011–1013" aria-label="Code on GitHub: web/js/treelab.js, lines 1011 to 1013">29</a>.</p>
+
+  <h3 class="hiw-sub">Cost-complexity pruning</h3>
+  <p class="hiw-note">**Cost-complexity pruning** removes splits that do not pay for themselves. The **risk** <span class="math">R(t)</span> of a node is the number of training rows its majority vote gets wrong, divided by the number of rows at the root<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L251-L262" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 251–262" aria-label="Code on GitHub: web/js/treelab-core.js, lines 251 to 262">30</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L298-L304" target="_blank" rel="noopener" title="treelab/tree.py, lines 298–304" aria-label="Code on GitHub: treelab/tree.py, lines 298 to 304">31</a>. A subtree <span class="math">T_t</span> has the risk of its leaves added together. The **link strength** of an internal node measures how much risk the subtree removes per extra leaf. Collapsing the subtree raises the risk by <span class="math">R(t) - R(T_t)</span>, and that rise is shared over the leaves it removes<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L291-L305" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 291–305" aria-label="Code on GitHub: web/js/treelab-core.js, lines 291 to 305">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L334-L344" target="_blank" rel="noopener" title="treelab/tree.py, lines 334–344" aria-label="Code on GitHub: treelab/tree.py, lines 334 to 344">33</a>.</p>
+  <!-- web/js/treelab-core.js:277-279, treelab/tree.py:321-323 -->
+  <div class="math-fig">
+    <div class="math math-block">g(t) = \frac{R(t) - R(T_t)}{\lvert \text{leaves}(T_t) \rvert - 1}, \qquad R(t) = \frac{n(t) - \max_k n_k(t)}{N}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L277-L279" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 277–279" aria-label="Code on GitHub: web/js/treelab-core.js, lines 277 to 279">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L321-L323" target="_blank" rel="noopener" title="treelab/tree.py, lines 321–323" aria-label="Code on GitHub: treelab/tree.py, lines 321 to 323">35</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">N</span> is the number of rows at the root, <span class="math">n(t)</span> the rows at node <span class="math">t</span>, and <span class="math">R(T_t)</span> the sum of the risks of the leaves of <span class="math">T_t</span>. The denominator counts the splits in the subtree. The **weakest link** is the internal node with the smallest <span class="math">g(t)</span>. When two nodes tie, the one earlier in pre-order wins<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L272-L281" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 272–281" aria-label="Code on GitHub: web/js/treelab-core.js, lines 272 to 281">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L318-L325" target="_blank" rel="noopener" title="treelab/tree.py, lines 318–325" aria-label="Code on GitHub: treelab/tree.py, lines 318 to 325">37</a>.</p>
+  <p class="hiw-note">The parameter <span class="math">\alpha</span> (PRUNE α) sets the price of a leaf. While the weakest link has <span class="math">g(t) \le \alpha</span>, its subtree is replaced by a leaf. Larger <span class="math">\alpha</span> removes more splits, so the number of leaves never rises as <span class="math">\alpha</span> rises. The diagram shows a pruned copy, and the full tree stays grown underneath<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L171" target="_blank" rel="noopener" title="web/js/treelab.js, line 171" aria-label="Code on GitHub: web/js/treelab.js, line 171">38</a>. SWEEP α animates <span class="math">\alpha</span> from 0 up to the larger of 0.005 and 1.05 times the largest link strength of the full tree, so the diagram shrinks step by step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L464-L471" target="_blank" rel="noopener" title="web/js/treelab.js, lines 464–471" aria-label="Code on GitHub: web/js/treelab.js, lines 464 to 471">39</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L265-L288" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 265–288" aria-label="Code on GitHub: web/js/treelab-core.js, lines 265 to 288">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L307-L331" target="_blank" rel="noopener" title="treelab/tree.py, lines 307–331" aria-label="Code on GitHub: treelab/tree.py, lines 307 to 331">41</a></span>
+    <pre class="pseudo-simple">function PRUNE(tree, α):
+    while true:
+        t ← the internal node with the smallest link strength g(t)
+        if there is no such node or g(t) &gt; α:
+            return tree
+        replace t by a leaf, dropping its subtree</pre>
+    <pre class="pseudo-full" hidden>function PRUNE(root, α):
+    t ← COPY(root)                               # the input is not changed
+    N ← n(t)                                     # rows at the root
+    while true:
+        weakest ← none
+        best ← none
+        for each internal node v of t, in pre-order:
+            R(v) ← (n(v) − max count of v) / N
+            R(T_v), leaves ← SUBTREE-RISK(v, N)
+            g ← (R(v) − R(T_v)) / (leaves − 1)
+            if best is none or g &lt; best:          # strict: the earlier node wins ties
+                weakest ← v
+                best ← g
+        if weakest is none or best &gt; α:
+            return t
+        remove the children of weakest
+        status(weakest) ← leaf
+        feature(weakest) ← −1
+
+function SUBTREE-RISK(v, N):
+    if v is a leaf:
+        return (n(v) − max count of v) / N, 1
+    r_left, k_left ← SUBTREE-RISK(left child of v, N)
+    r_right, k_right ← SUBTREE-RISK(right child of v, N)
+    return r_left + r_right, k_left + k_right</pre>
+  </div>
+  <p class="hiw-note">The input is copied first, so the tree that the page keeps growing is never changed. Each pass rescans the pruned copy, because collapsing one link changes the risks above it. The loop stops at the first pass where no link is weak enough<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L266" target="_blank" rel="noopener" title="web/js/treelab-core.js, line 266" aria-label="Code on GitHub: web/js/treelab-core.js, line 266">42</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py#L314-L316" target="_blank" rel="noopener" title="treelab/tree.py, lines 314–316" aria-label="Code on GitHub: treelab/tree.py, lines 314 to 316">43</a>.</p>
+
+  <h3 class="hiw-sub">Bagging and bootstrap samples</h3>
+  <p class="hiw-note">**Bagging** (bootstrap aggregating) trains each tree on a **bootstrap sample**: <span class="math">n</span> rows drawn with replacement from the <span class="math">n</span> training rows, so some rows appear twice and others not at all. The rows a tree never draws are its **out-of-bag** rows. Each tree gets its own seed from one master stream, and it draws its bootstrap rows before its first split<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L391-L400" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 391–400" aria-label="Code on GitHub: web/js/treelab-core.js, lines 391 to 400">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L45-L54" target="_blank" rel="noopener" title="treelab/forest.py, lines 45–54" aria-label="Code on GitHub: treelab/forest.py, lines 45 to 54">45</a>.</p>
+  <!-- web/js/treelab-core.js:396-399, treelab/forest.py:49-54 -->
+  <div class="math-fig">
+    <div class="math math-block">P(\text{row not drawn}) = \Bigl(1 - \frac{1}{n}\Bigr)^{n} \;\longrightarrow\; e^{-1} \approx 0.368</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L396-L399" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 396–399" aria-label="Code on GitHub: web/js/treelab-core.js, lines 396 to 399">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L49-L54" target="_blank" rel="noopener" title="treelab/forest.py, lines 49–54" aria-label="Code on GitHub: treelab/forest.py, lines 49 to 54">47</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the number of training rows. Each draw misses a given row with probability <span class="math">1 - 1/n</span>, and the <span class="math">n</span> draws are independent. So about 37% of rows are out of bag for each tree. Without bootstrap, every tree sees all rows, and the trees then differ only in their feature subsets.</p>
+
+  <h3 class="hiw-sub">Random forests and out-of-bag accuracy</h3>
+  <p class="hiw-note">A **random forest** adds a second source of variety: at each split, the tree may test only a random subset of <span class="math">m</span> features. The default is <span class="math">m = \max(1, \lfloor \sqrt{p} \rfloor)</span>, where <span class="math">p</span> is the number of features. With the extra features on, <span class="math">p = 4</span> and <span class="math">m = 2</span>. Without them, <span class="math">p = 2</span> and <span class="math">m = 1</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L390" target="_blank" rel="noopener" title="web/js/treelab-core.js, line 390" aria-label="Code on GitHub: web/js/treelab-core.js, line 390">48</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L44" target="_blank" rel="noopener" title="treelab/forest.py, line 44" aria-label="Code on GitHub: treelab/forest.py, line 44">49</a>.</p>
+  <p class="hiw-note">The forest predicts by averaging the leaf distributions of its <span class="math">T</span> trees, and it labels a point with the class of largest average. In the boundary drawing, the faint lines are single trees and the glowing region is the average<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L410-L417" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 410–417" aria-label="Code on GitHub: web/js/treelab-core.js, lines 410 to 417">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L63-L68" target="_blank" rel="noopener" title="treelab/forest.py, lines 63–68" aria-label="Code on GitHub: treelab/forest.py, lines 63 to 68">51</a>.</p>
+  <!-- web/js/treelab-core.js:410-417, treelab/forest.py:63-68 -->
+  <div class="math-fig">
+    <div class="math math-block">\bar p_k(x) = \frac{1}{T} \sum_{t=1}^{T} \hat p^{(t)}_k(x)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L410-L417" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 410–417" aria-label="Code on GitHub: web/js/treelab-core.js, lines 410 to 417">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L63-L68" target="_blank" rel="noopener" title="treelab/forest.py, lines 63–68" aria-label="Code on GitHub: treelab/forest.py, lines 63 to 68">51</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\hat p^{(t)}_k(x)</span> is the leaf distribution of tree <span class="math">t</span> for the point <span class="math">x</span>. The out-of-bag accuracy scores each row only with the trees that did not train on it. Let <span class="math">O_i</span> be the trees whose bootstrap sample left row <span class="math">i</span> out.</p>
+  <!-- web/js/treelab-core.js:425-447, treelab/forest.py:73-88 -->
+  <div class="math-fig">
+    <div class="math math-block">\hat y_i = \arg\max_k \frac{1}{\lvert O_i \rvert} \sum_{t \in O_i} \hat p^{(t)}_k(x_i), \qquad \text{OOB} = \frac{1}{\lvert \mathcal{S} \rvert} \sum_{i \in \mathcal{S}} \mathbf{1}[\hat y_i = y_i]</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L425-L447" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 425–447" aria-label="Code on GitHub: web/js/treelab-core.js, lines 425 to 447">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L73-L88" target="_blank" rel="noopener" title="treelab/forest.py, lines 73–88" aria-label="Code on GitHub: treelab/forest.py, lines 73 to 88">53</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\mathcal{S}</span> is the set of rows left out by at least one tree, and <span class="math">\mathbf{1}[\cdot]</span> is 1 when the statement is true and 0 otherwise. Rows that every tree drew are skipped. The out-of-bag accuracy is a free estimate of test accuracy, obtained without a separate test set.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L386-L407" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 386–407" aria-label="Code on GitHub: web/js/treelab-core.js, lines 386 to 407">54</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L38-L61" target="_blank" rel="noopener" title="treelab/forest.py, lines 38–61" aria-label="Code on GitHub: treelab/forest.py, lines 38 to 61">55</a></span>
+    <pre class="pseudo-simple">function FIT-FOREST(X, y, T, seed):
+    master ← a random stream seeded with seed
+    repeat T times:
+        tree-stream ← a random stream seeded from master
+        rows ← n indices drawn with replacement
+        tree ← GROW-TREE(rows, using m random features per split)
+        keep tree and which rows it drew
+    oob ← out-of-bag accuracy over the trees
+    importance ← mean feature importance over the trees
+    return the forest</pre>
+    <pre class="pseudo-full" hidden>constants: T trees (default 25), max depth D = 5, min leaf L = 3,
+#   m = max(1, floor(sqrt(p))) features per split, bootstrap on
+function FIT-FOREST(X, y, seed):
+    master ← MULBERRY32(seed)
+    for t from 1 to T:
+        tree-stream ← MULBERRY32(floor(NEXT(master) · 2³²))   # one seed per tree
+        rows ← empty list
+        repeat n times:
+            rows.append(RAND-INT(n, tree-stream))     # bootstrap: draw with replacement
+        in-bag[t][i] ← true for each i in rows, false otherwise
+        tree[t] ← GROW-TREE(X, y, rows, feature limit m, tree-stream)
+    for each row i:                                    # out-of-bag votes
+        votes ← zero for each class
+        seen ← 0
+        for each tree t with in-bag[t][i] false:
+            votes ← votes + leaf distribution of tree[t] at x[i]
+            seen ← seen + 1
+        if seen > 0:
+            ŷ[i] ← argmax of votes
+    oob ← (number of scored rows with ŷ[i] = y[i]) / (number of scored rows)
+    for each tree t:                                   # feature importance
+        imp[f] ← sum of n(v) · gain(v) over splits v on feature f
+        if the sum of imp is positive:
+            imp[f] ← imp[f] / sum of imp, for each f
+    importance[f] ← mean over t of imp[f]
+    return forest</pre>
+  </div>
+  <p class="hiw-note">The **in-bag** rows of a tree are the ones it drew, so the out-of-bag list is their complement. Each tree's stream is seeded from the master stream, so the forest is reproducible from one seed. One seed therefore reproduces the whole forest<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L394-L401" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 394–401" aria-label="Code on GitHub: web/js/treelab-core.js, lines 394 to 401">56</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L48-L58" target="_blank" rel="noopener" title="treelab/forest.py, lines 48–58" aria-label="Code on GitHub: treelab/forest.py, lines 48 to 58">57</a>.</p>
+
+  <h3 class="hiw-sub">Feature importance</h3>
+  <p class="hiw-note">The **feature importance** of a feature is the total impurity decrease that it buys over a tree's splits, each split weighted by the number of training rows that reached it. Each tree's values are normalised to sum to 1, and the forest reports their mean<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L449-L461" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 449–461" aria-label="Code on GitHub: web/js/treelab-core.js, lines 449 to 461">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L90-L99" target="_blank" rel="noopener" title="treelab/forest.py, lines 90–99" aria-label="Code on GitHub: treelab/forest.py, lines 90 to 99">59</a>.</p>
+  <!-- web/js/treelab-core.js:449-461, treelab/forest.py:90-99 -->
+  <div class="math-fig">
+    <div class="math math-block">I_t(f) = \sum_{v \,\in\, \text{splits on } f} n(v)\, \Delta(v), \qquad \text{importance}(f) = \frac{1}{T} \sum_{t=1}^{T} \frac{I_t(f)}{\sum_{g} I_t(g)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L449-L461" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 449–461" aria-label="Code on GitHub: web/js/treelab-core.js, lines 449 to 461">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py#L90-L99" target="_blank" rel="noopener" title="treelab/forest.py, lines 90–99" aria-label="Code on GitHub: treelab/forest.py, lines 90 to 99">59</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n(v)</span> is the number of training rows, bootstrap copies included, that reached node <span class="math">v</span>, and <span class="math">\Delta(v)</span> is its gain from the information gain formula above<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L464-L468" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 464–468" aria-label="Code on GitHub: web/js/treelab-core.js, lines 464 to 468">60</a>. If a tree has no splits, its total is zero and its raw values, all zero, are used as they are.</p>
+
+  <h3 class="hiw-sub">Data, presets and the train/test split</h3>
+  <p class="hiw-note">Every random draw, from the presets to the bootstrap samples, comes from **mulberry32**, a generator with a single 32-bit integer state. The Python and browser builds use the same constants<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L20-L34" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 20–34" aria-label="Code on GitHub: web/js/treelab-core.js, lines 20 to 34">61</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/rng.py#L12-L28" target="_blank" rel="noopener" title="treelab/rng.py, lines 12–28" aria-label="Code on GitHub: treelab/rng.py, lines 12 to 28">62</a>. Each preset is 240 points in the unit square, drawn from that generator. The label rules are as follows<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L321-L367" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 321–367" aria-label="Code on GitHub: web/js/treelab-core.js, lines 321 to 367">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L53-L95" target="_blank" rel="noopener" title="treelab/data.py, lines 53–95" aria-label="Code on GitHub: treelab/data.py, lines 53 to 95">64</a>.</p>
+  <p class="hiw-note"><b>XOR</b> labels a point 1 when x and y lie on different sides of 0.5, and 0 otherwise<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L332-L336" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 332–336" aria-label="Code on GitHub: web/js/treelab-core.js, lines 332 to 336">65</a>.</p>
+  <p class="hiw-note"><b>Checkerboard</b> cuts the plane into a 4 × 4 board and labels the squares alternately, by the parity of the square's column plus row index<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L337-L341" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 337–341" aria-label="Code on GitHub: web/js/treelab-core.js, lines 337 to 341">66</a>.</p>
+  <p class="hiw-note"><b>Noisy diagonal</b> labels 1 when x &gt; y, and then flips each label with probability 0.15<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L357-L364" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 357–364" aria-label="Code on GitHub: web/js/treelab-core.js, lines 357 to 364">67</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L24" target="_blank" rel="noopener" title="treelab/data.py, line 24" aria-label="Code on GitHub: treelab/data.py, line 24">68</a>.</p>
+  <p class="hiw-note"><b>Nested rings</b> label each point by its squared distance <span class="math">d^2 = (x - 0.5)^2 + (y - 0.5)^2</span> from the centre: class 0 if <span class="math">d^2 &lt; 0.04</span>, class 1 if <span class="math">d^2 &lt; 0.13</span>, and class 2 otherwise<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L351-L356" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 351–356" aria-label="Code on GitHub: web/js/treelab-core.js, lines 351 to 356">69</a>.</p>
+  <p class="hiw-note"><b>Blobs</b> draw each class from a disc of radius 0.16 around its centre, at (0.25, 0.3), (0.7, 0.35) and (0.5, 0.75). Points are chosen by rejection sampling, so no trigonometry is needed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L327-L331" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 327–331" aria-label="Code on GitHub: web/js/treelab-core.js, lines 327 to 331">70</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L12-L13" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 12–13" aria-label="Code on GitHub: web/js/treelab-core.js, lines 12 to 13">71</a>.</p>
+  <p class="hiw-note"><b>Spirals</b> place the two arms along a curve of parameter <span class="math">t</span> in [0, 1):</p>
+  <!-- web/js/treelab-core.js:342-350, treelab/data.py:74-82 -->
+  <div class="math-fig">
+    <div class="math math-block">\theta = 3.5\pi t + a\pi, \quad r = 0.04 + 0.4\,t, \quad (x, y) = \bigl(0.5 + r\cos\theta + j_x,\ 0.5 + r\sin\theta + j_y\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L342-L350" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 342–350" aria-label="Code on GitHub: web/js/treelab-core.js, lines 342 to 350">72</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L74-L82" target="_blank" rel="noopener" title="treelab/data.py, lines 74–82" aria-label="Code on GitHub: treelab/data.py, lines 74 to 82">73</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">a \in \{0, 1\}</span> is the arm, and <span class="math">j_x</span> and <span class="math">j_y</span> are independent jitters, each drawn uniformly from <span class="math">[-0.02, 0.02]</span>. The label is the arm.</p>
+  <p class="hiw-note">The **features** the trees split on are the plane's coordinates, optionally with two derived ones. When extra features are on, each point becomes <span class="math">\phi(x, y) = (x,\ y,\ xy,\ x^2 + y^2)</span>. The derived features let an axis-aligned split draw a curved boundary<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L308-L310" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 308–310" aria-label="Code on GitHub: web/js/treelab-core.js, lines 308 to 310">74</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L34-L41" target="_blank" rel="noopener" title="treelab/data.py, lines 34–41" aria-label="Code on GitHub: treelab/data.py, lines 34 to 41">75</a>.</p>
+  <p class="hiw-note">The **train/test split** holds out a share <span class="math">f</span> of the rows. A seeded Fisher-Yates shuffle orders the row indices, and the first <span class="math">n_{\text{test}} = \lfloor f\,n + 0.5 \rfloor</span> of them form the test set, with the rest used for training. The split always uses seed 1, so changing the preset seed does not change which rows are held out<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L370-L379" target="_blank" rel="noopener" title="web/js/treelab-core.js, lines 370–379" aria-label="Code on GitHub: web/js/treelab-core.js, lines 370 to 379">76</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L98-L107" target="_blank" rel="noopener" title="treelab/data.py, lines 98–107" aria-label="Code on GitHub: treelab/data.py, lines 98 to 107">77</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L104-L108" target="_blank" rel="noopener" title="web/js/treelab.js, lines 104–108" aria-label="Code on GitHub: web/js/treelab.js, lines 104 to 108">78</a>.</p>
 
   <h3 class="hiw-sub">Parameters, defaults and why</h3>
+  <p class="hiw-note">The defaults below are the page's starting values<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js#L37-L42" target="_blank" rel="noopener" title="web/js/treelab.js, lines 37–42" aria-label="Code on GitHub: web/js/treelab.js, lines 37 to 42">79</a>.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why</th></tr></thead><tbody>
-    <tr><td>Impurity</td><td>Gini</td><td>Same ranking as entropy in most cases, and no logarithm: cheaper for every candidate threshold. Switch to entropy to see the difference in the middle.</td></tr>
-    <tr><td>Max depth</td><td>5</td><td>Deep enough to show the structure of blobs and XOR, shallow enough that the diagram stays readable. The accuracy-vs-depth chart shows where going deeper stops helping.</td></tr>
-    <tr><td>Min samples per leaf</td><td>3</td><td>A leaf of one or two points is a single noisy row. Three keeps each region backed by a few neighbours without blocking the clean splits.</td></tr>
+    <tr><td>Impurity</td><td>Gini</td><td>In most cases ranks candidate splits much like entropy, and needs no logarithm for each threshold. Switch to entropy to see the difference.</td></tr>
+    <tr><td>Max depth</td><td>5</td><td>Deep enough to show the structure of blobs and XOR, and shallow enough that the diagram stays readable. The accuracy-vs-depth chart shows where going deeper stops helping.</td></tr>
+    <tr><td>Min samples per leaf</td><td>3</td><td>A leaf of one or two rows is a single noisy point. Three rows keep each region backed by several neighbours.</td></tr>
     <tr><td>Test share</td><td>0.3</td><td>A common split: enough held-out rows to see the train/test gap, while most of the data still trains the model.</td></tr>
-    <tr><td>Extra features</td><td>On</td><td>x·y and x²+y² let an axis-aligned tree draw curved boundaries. Without them, XOR and rings need many small steps. The forest tries √4 = 2 of the 4 features per split.</td></tr>
-    <tr><td>Prune α</td><td>0</td><td>No pruning until asked. Pruning is a view: the full tree stays grown underneath.</td></tr>
-    <tr><td>Trees</td><td>25</td><td>Enough votes that the averaged boundary is smooth and the out-of-bag estimate settles; the slider goes to 100 to compare.</td></tr>
-    <tr><td>Bootstrap rows</td><td>On</td><td>Bootstrapping gives each tree a different sample and supplies the out-of-bag estimate. Off means every tree sees the same rows, so the forest differs only by feature subsets.</td></tr>
+    <tr><td>Extra features</td><td>On</td><td>x·y and x²+y² let an axis-aligned tree draw curved boundaries. Without them, XOR and rings need many small steps.</td></tr>
+    <tr><td>Features tried per split</td><td>√p</td><td>With extra features on, that is 2 of the 4 features at each split.</td></tr>
+    <tr><td>Prune α</td><td>0</td><td>No pruning until asked. Pruning changes only the displayed tree; the full tree stays grown underneath.</td></tr>
+    <tr><td>Trees</td><td>25</td><td>Enough votes that the averaged boundary is smooth. The slider goes to 100 to compare.</td></tr>
+    <tr><td>Bootstrap rows</td><td>On</td><td>Each tree gets a different sample, and the out-of-bag rows give an accuracy estimate. Off means every tree sees the same rows.</td></tr>
   </tbody></table></div>
 
-  <p class="hiw-note"><b>Reading the numbers:</b> Train accuracy only goes up as the tree deepens. Test accuracy rises, peaks, and falls. The forest's out-of-bag accuracy is a free estimate of its test accuracy. Noisy diagonal labels are flipped 15% of the time, so no model can exceed about 85%; a single deep tree usually scores below a forest there because it fits the flipped rows.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/tree.py">treelab/tree.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/forest.py">treelab/forest.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py">treelab/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/rng.py">treelab/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/cli.py">treelab/cli.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js">web/js/treelab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab.js">web/js/treelab.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_treelab_parity.py">tests/test_treelab_parity.py</a></p>
+  <p class="hiw-note"><b>Reading the numbers:</b> Train accuracy only goes up as the tree deepens. Test accuracy rises, peaks, and falls. The forest's out-of-bag accuracy is a free estimate of its test accuracy, not an exact one. The noisy diagonal flips 15% of its labels, so the rule x &gt; y scores about 85% on new rows and no model can do much better. On that preset the forest is usually ahead of a single deep tree, though not on every seed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/treelab-core.js#L11" target="_blank" rel="noopener" title="web/js/treelab-core.js, line 11" aria-label="Code on GitHub: web/js/treelab-core.js, line 11">80</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/treelab/data.py#L24" target="_blank" rel="noopener" title="treelab/data.py, line 24" aria-label="Code on GitHub: treelab/data.py, line 24">68</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/treelab.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

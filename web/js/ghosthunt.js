@@ -481,9 +481,8 @@ function updateThink() {
 function updateChips() {
   $('chip-turn').textContent = String(game.t);
   $('chip-busted').textContent = `${game.busted}/${game.ghosts.length}`;
-  $('chip-filter').textContent = game.filt === 'exact' ? 'EXACT' : `PARTICLES ${game.particles}`;
-  $('chip-motion').textContent = MOTION_NAME[game.model];
-  $('chip-sigma').textContent = String(game.sigma.toFixed(1));
+  $('gh-matchup').textContent = `${game.filt === 'exact' ? 'Exact forward filter' : `Particle filter, ${game.particles} per ghost`}`
+    + ` · ${MOTION_NAME[game.model]} ghosts · sonar σ ${game.sigma.toFixed(1)}`;
   $('chip-status').textContent = game.done ? (game.busted === game.ghosts.length ? 'BUSTED' : 'TIMEOUT') : 'HUNTING';
 }
 

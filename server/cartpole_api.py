@@ -67,7 +67,7 @@ def rollout_json(agent_name: str, seed: int, steps: int) -> dict:
         "agent": agent_name,
         "seed": seed,
         "steps": n,
-        "fell": n < steps,
+        "fell": bool(states) and (abs(states[-1][0]) > X_LIMIT or abs(states[-1][2]) > THETA_LIMIT),
         "states": [list(s) for s in states],
         "actions": [t["action"] for t in traj],
     }

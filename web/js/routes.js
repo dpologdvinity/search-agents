@@ -336,7 +336,7 @@ function syncLabels() {
   $('sa-params').classList.toggle('hidden', alg !== 'simulated_annealing');
   $('ga-params').classList.toggle('hidden', alg !== 'genetic_algorithm');
   const info = state.meta?.algorithms.find((a) => a.name === alg);
-  $('alg-desc').textContent = info ? info.description : '';
+  $('algorithm').title = info ? info.description : '';
 }
 
 async function init() {

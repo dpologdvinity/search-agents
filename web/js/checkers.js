@@ -12,6 +12,15 @@ const DRAW_PLIES = 80; // 40 moves each without a capture or a man moving; check
 const AGENT_LABELS = {
   alphabeta: 'Alpha-beta', minimax: 'Minimax', mcts: 'MCTS', greedy: 'Greedy', random: 'Random', chance: 'Chance',
 };
+// Longer names for the OPPONENT and AI vs AI menus, so each option says what the agent does.
+const AGENT_OPTIONS = {
+  alphabeta: 'Alpha-beta search (iterative deepening)',
+  minimax: 'Minimax (fixed depth, no pruning)',
+  mcts: 'Monte Carlo tree search (UCT)',
+  greedy: 'Greedy (one move ahead)',
+  random: 'Random (uniform)',
+  chance: 'Chance (fixed odds, no search)',
+};
 
 const state = {
   meta: null,
@@ -30,9 +39,19 @@ const sqAt = (r, c) => ((r + c) % 2 === 1 ? r * (state.n / 2) + Math.floor(c / 2
 const count = (side) => state.board.filter((p) => p * side > 0).length;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const sizeInfo = () => state.meta.sizes.find((s) => s.size === state.n);
-const ruleText = () => (state.forced
-  ? 'Captures are forced: when one is available you must play a capture, and a capture chain is played to its end.'
-  : 'Captures are optional: a simple move is legal even when a capture exists. A capture you choose is still played to its end.');
+
+// ── Keyboard focus ───────────────────────────────────────────────────────
+// Rendering rebuilds the board and drops focus. A key press therefore records where focus should land, and
+// focusPending() puts it there after the next render. Mouse actions never set it, so mouse play is unchanged.
+let focusNext = null; // {sq, role: 'piece' | 'target'}
+
+function focusPending() {
+  if (!focusNext) return;
+  const { sq, role } = focusNext;
+  focusNext = null;
+  const cell = document.querySelector(`#ck [data-sq="${sq}"]`);
+  (role === 'piece' ? cell?.querySelector('.ck-piece') : cell)?.focus();
+}
 
 // ── Rendering ────────────────────────────────────────────────────────────
 
@@ -51,9 +70,18 @@ function render() {
       const cell = document.createElement('div');
       cell.className = 'ck-cell' + (sq < 0 ? ' light' : ' dark');
       if (sq >= 0) {
+        cell.dataset.sq = String(sq);
         if (state.last && state.last.path.includes(sq)) cell.classList.add('trail');
         if (state.hint && state.hint.path.includes(sq)) cell.classList.add('hint');
-        if (targets.has(sq)) { cell.classList.add('target'); cell.onclick = () => moveTo(sq); }
+        if (targets.has(sq)) {
+          cell.classList.add('target');
+          cell.onclick = () => moveTo(sq);
+          // Keyboard: a target square is a stop in the tab order, named by its board number.
+          cell.tabIndex = 0;
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('aria-label', `move to ${sq + 1}`);
+          cell.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); moveTo(sq, true); } };
+        }
         const p = state.board[sq];
         if (p) {
           const piece = document.createElement('div');
@@ -62,7 +90,9 @@ function render() {
             piece.classList.add('movable');
             piece.tabIndex = 0;
             piece.onclick = () => select(sq);
-            piece.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') select(sq); };
+            piece.setAttribute('role', 'button');
+            piece.setAttribute('aria-label', `piece on ${sq + 1}`);
+            piece.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(sq, true); } };
           }
           if (sq === state.selected) piece.classList.add('selected');
           cell.appendChild(piece);
@@ -72,22 +102,23 @@ function render() {
     }
   }
   $('chip-pieces').textContent = `${count(RED)} – ${count(WHITE)}`;
-  $('chip-size').textContent = `${state.n}×${state.n}`;
   $('chip-move').textContent = String(Math.floor(state.ply / 2) + 1);
   $('chip-you').textContent = state.mode === 'watch' ? 'WATCH' : state.human === RED ? 'RED' : 'WHITE';
   $('ck-hint').textContent = state.mode === 'watch'
     ? 'Two agents are playing. Pause to step through the game one move at a time.'
-    : `Click one of your pieces, then a glowing square. ${state.forced ? 'Captures are mandatory.' : 'Captures are optional.'}`;
+    : state.forced ? 'Captures are mandatory.' : 'Captures are optional.';
   $('btn-undo').disabled = state.busy || !state.history.length;
   $('btn-hint').disabled = state.busy || state.over || state.turn !== state.human;
   $('btn-pause').textContent = state.paused ? '▶ RESUME' : '❚❚ PAUSE';
   $('btn-step').disabled = !state.paused || state.busy || state.over;
+  focusPending();
 }
 
 function log(text, cls = 'log-info') {
   const line = document.createElement('div');
   line.className = cls;
   line.textContent = text;
+  if (cls === 'log-err') $('log-fold').open = true;  // errors are shown even when the log is folded
   $('log').appendChild(line);
   $('log').scrollTop = $('log').scrollHeight;
 }
@@ -113,7 +144,6 @@ async function updateMatchup() {
   try {
     const { text } = await getJSON('/api/checkers/describe', params);
     if (seq !== matchupSeq) return;
-    $('pg-algo').textContent = text;
     $('algo-line').textContent = text;
   } catch (err) {
     log(`✗ ${err.message}`, 'log-err');
@@ -171,7 +201,7 @@ function showAnalysis(res, who) {
   });
   const squares = `Squares are numbered 1–${(state.n * state.n) / 2} from the top.`;
   $('an-note').textContent = a.agent === 'mcts'
-    ? `Win rates: the share of simulated games the mover wins after each move (draws count half). ${squares}`
+    ? `Win rates: the mover's average rollout value after each move. A rollout cut off at 40 plies counts as the evaluation's chance of winning. ${squares}`
     : a.agent === 'random' ? `A random choice, so there are no scores. ${squares}`
     : a.agent === 'greedy' ? `Scores look one move ahead, from the mover's side. ${squares}`
     : `Scores are from the mover's side, assuming the best reply each time. ${squares}`;
@@ -179,9 +209,24 @@ function showAnalysis(res, who) {
 
 // ── Game flow ────────────────────────────────────────────────────────────
 
-function select(sq) {
+function select(sq, byKey = false) {
   state.selected = state.selected === sq ? null : sq;
   state.hint = null;
+  if (byKey) {
+    // Keyboard: focus moves to the first square the piece can reach, so Enter plays it. With no
+    // square to reach, or when the piece is deselected, focus stays on the piece.
+    const targets = state.selected === null ? [] : state.legal.filter((m) => m.path[0] === sq).map((m) => m.path[m.path.length - 1]);
+    focusNext = targets.length ? { sq: Math.min(...targets), role: 'target' } : { sq, role: 'piece' };
+  }
+  render();
+}
+
+// Escape: drop the selection and put focus back on its piece.
+function cancelSelection() {
+  const sq = state.selected;
+  state.selected = null;
+  state.hint = null;
+  focusNext = { sq, role: 'piece' };
   render();
 }
 
@@ -225,14 +270,14 @@ function checkDraw() {
   return false;
 }
 
-async function moveTo(sq) {
+async function moveTo(sq, byKey = false) {
   const move = state.legal.find((m) => m.path[0] === state.selected && m.path[m.path.length - 1] === sq);
   if (!move) return;
   apply(move, 'You');
-  if (!checkDraw()) await agentTurn();
+  if (!checkDraw()) await agentTurn(byKey);
 }
 
-async function agentTurn() {
+async function agentTurn(byKey = false) {
   const gid = state.gameId;
   state.busy = true;
   setStatus('THINKING');
@@ -248,7 +293,12 @@ async function agentTurn() {
     showAnalysis(res, 'The agent');
     state.legal = res.reply;
     if (!state.legal.length) finish('AI WINS', 'you have no legal moves left', '#ff3b3b');
-    else if (!checkDraw()) { setStatus('YOUR TURN'); render(); }
+    else if (!checkDraw()) {
+      setStatus('YOUR TURN');
+      // After a keyboard move, focus returns to a piece you can move, so the next move needs no mouse.
+      if (byKey) focusNext = { sq: state.legal[0].path[0], role: 'piece' };
+      render();
+    }
   } catch (err) {
     if (gid !== state.gameId) return;
     state.busy = false;
@@ -442,6 +492,7 @@ function setMode(mode) {
   const watch = mode === 'watch';
   $('human-panel').hidden = watch;
   $('watch-panel').hidden = !watch;
+  $('watch-pace').hidden = !watch;
   $('btn-undo').hidden = watch;
   $('btn-hint').hidden = watch;
   $('btn-pause').hidden = !watch;
@@ -451,13 +502,18 @@ function setMode(mode) {
   updateMatchup();
 }
 
-function updateRuleText() {
-  $('rule-desc').textContent = ruleText();
-}
+// One-line tooltip for the OPPONENT menu. The full method is in HOW IT WORKS.
+const AGENT_TIPS = {
+  alphabeta: 'Searches the game tree as deep as its time allows, skipping lines that cannot change the result.',
+  minimax: 'Searches every line to a fixed depth, with no pruning.',
+  mcts: 'Scores each move by random games played from it (UCT).',
+  greedy: 'Takes the move that looks best one move ahead.',
+  random: 'Picks a legal move at random.',
+  chance: 'Samples a move from fixed weights, with no search.',
+};
 
 function describeAgent() {
-  const a = state.meta.agents.find((x) => x.name === $('agent').value);
-  $('agent-desc').textContent = a ? a.description : '';
+  $('agent').title = AGENT_TIPS[$('agent').value] ?? '';
 }
 
 function fillAgentSelect(select, selected) {
@@ -465,7 +521,7 @@ function fillAgentSelect(select, selected) {
   for (const a of state.meta.agents) {
     const opt = document.createElement('option');
     opt.value = a.name;
-    opt.textContent = a.name === 'chance' ? 'Chance (fixed odds)' : AGENT_LABELS[a.name];
+    opt.textContent = AGENT_OPTIONS[a.name] ?? a.name;
     opt.selected = a.name === selected;
     select.appendChild(opt);
   }
@@ -473,6 +529,7 @@ function fillAgentSelect(select, selected) {
 
 async function init() {
   $('btn-new').onclick = newGame;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.selected !== null) cancelSelection(); });
   $('btn-undo').onclick = undo;
   $('btn-hint').onclick = hint;
   $('btn-pause').onclick = togglePause;
@@ -481,7 +538,7 @@ async function init() {
   $('mode').onchange = () => setMode($('mode').value);
   $('side').onchange = () => { newGame(); updateMatchup(); };
   $('size').onchange = () => { state.n = Number($('size').value); newGame(); updateMatchup(); };
-  $('forced').onchange = () => { state.forced = $('forced').checked; updateRuleText(); newGame(); updateMatchup(); };
+  $('forced').onchange = () => { state.forced = $('forced').checked; newGame(); updateMatchup(); };
   $('agent').onchange = () => { describeAgent(); updateMatchup(); };
   for (const id of ['level', 'red-agent', 'red-level', 'white-agent', 'white-level']) {
     $(id).onchange = updateMatchup;
@@ -497,7 +554,6 @@ async function init() {
   fillAgentSelect($('agent'), 'alphabeta');
   fillAgentSelect($('red-agent'), 'alphabeta');
   fillAgentSelect($('white-agent'), 'mcts');
-  updateRuleText();
   describeAgent();
   setMode($('mode').value);
 }

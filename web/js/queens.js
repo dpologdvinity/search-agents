@@ -600,7 +600,7 @@ async function watchRun() {
   watch.agent = agent;
   watch.n = n;
   watch.solvedShown = false;
-  $('watch-blurb').textContent = AGENTS[agent].blurb;
+  $('watch-agent').title = AGENTS[agent].tip;
   $('watch-count').textContent = 'running…';
   try {
     const res = await postJSON('/api/queens/solve', { agent, n, seed, frames: true });
@@ -613,7 +613,6 @@ async function watchRun() {
     $('watch-err').textContent = note ? note.trim() : '';
     watchShow(0);
     $('watch-count').textContent += ` · ${res.solved ? 'solved' : res.reason}`;
-    watchShow(0);
   } catch (e) {
     $('watch-err').textContent = e.message;
     $('watch-count').textContent = 'no run yet';
@@ -692,9 +691,9 @@ function init() {
   $('watch-prev').addEventListener('click', () => { stopWatch(); watchShow(watch.idx - 1); });
   $('watch-next').addEventListener('click', () => { stopWatch(); watchShow(watch.idx + 1); });
   $('watch-scrub').addEventListener('input', (e) => { stopWatch(); watchShow(+e.target.value); });
-  $('watch-agent').addEventListener('change', (e) => { $('watch-blurb').textContent = AGENTS[e.target.value].blurb; });
+  $('watch-agent').addEventListener('change', (e) => { e.target.title = AGENTS[e.target.value].tip; });
   $('watch-shuffle').addEventListener('click', () => { $('watch-seed').value = Math.floor(Math.random() * 1000); });
-  $('watch-blurb').textContent = AGENTS[$('watch-agent').value].blurb;
+  $('watch-agent').title = AGENTS[$('watch-agent').value].tip;
 
   $('race-run').addEventListener('click', raceRun);
 

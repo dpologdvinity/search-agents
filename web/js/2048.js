@@ -8,10 +8,19 @@ const DIRS = ['Up', 'Down', 'Left', 'Right'];
 const NAMES = { expectimax: 'Expectimax (tuned features)',
                 ntuple: 'N-tuple network (no search)', ntuple_search: 'N-tuple + expectimax' };
 
+// One-line tooltip for the AGENT menu. The full method is in HOW IT WORKS.
+const AGENT_TIPS = {
+  expectimax: 'Searches slides and random tile spawns, scoring boards with six hand-tuned features.',
+  ntuple: 'Plays the slide that its learned n-tuple network scores highest, with no search.',
+  ntuple_search: 'Expectimax search that scores boards with the learned n-tuple network instead of the hand-tuned evaluation.',
+};
+
 const state = { grid: [], score: 0, moves: 0, aiMoves: 0, playing: false, busy: false, meta: null, fresh: -1 };
 
 // ── Rules ────────────────────────────────────────────────────────────────
 
+// Slide one row toward index 0: non-empty tiles move to the front and each equal pair merges once, scanning
+// from the front (so 2 2 2 becomes 4 2). Returns the new row and the points the merges scored.
 function slideRow(row) {
   const tiles = row.filter((v) => v);
   const out = [];
@@ -27,6 +36,8 @@ function slideRow(row) {
   return [out, gained];
 }
 
+// Slide the whole grid. dir: 0 Up, 1 Down, 2 Left, 3 Right. Each line is read in the direction of travel, slid
+// with slideRow, and written back. Returns [newGrid, points] or null when no tile moved.
 function moveGrid(grid, dir) {
   const g = grid.map((r) => r.slice());
   let gained = 0;
@@ -49,6 +60,8 @@ function moveGrid(grid, dir) {
   return changed ? [g, gained] : null;
 }
 
+// Put a 2 (90%) or a 4 (10%) in a uniformly random empty cell, as game2048/board.py does. Returns the cell
+// index 4 * row + col so the render can highlight it, or -1 when the board is full.
 function spawn(grid) {
   const empty = [];
   grid.forEach((r, i) => r.forEach((v, j) => { if (!v) empty.push([i, j]); }));
@@ -93,6 +106,7 @@ function log(text, cls = 'log-info') {
   const line = document.createElement('div');
   line.className = cls;
   line.textContent = text;
+  if (cls === 'log-err') $('log-fold').open = true;  // errors are shown even when the log is folded
   el.appendChild(line);
   while (el.childElementCount > 200) el.firstChild.remove();
   el.scrollTop = el.scrollHeight;
@@ -155,6 +169,8 @@ function apply(dir, who) {
   return true;
 }
 
+// One agent move: ask the server for the chosen direction and the value of each direction, show those values,
+// then apply the move and the spawn on the page's own grid.
 async function aiStep() {
   if (state.busy || !canMove(state.grid)) return false;
   state.busy = true;
@@ -176,6 +192,8 @@ async function aiStep() {
   }
 }
 
+// AI PLAY toggles a loop of agent moves, each followed by the playback delay. A second press, a game over or a
+// failed request stops it.
 async function autoplay() {
   if (state.playing) {
     state.playing = false;
@@ -203,21 +221,49 @@ function newGame() {
   render();
 }
 
+// ── Swipe on the board ───────────────────────────────────────────────────
+
+// A touch or pen that starts on the board and travels at least SWIPE_MIN pixels slides the grid. The longer axis
+// of the movement picks the direction. The board has touch-action: none (web/2048.html), so the browser does not
+// scroll there, and a swipe that starts off the board still scrolls the page.
+const SWIPE_MIN = 30;
+
+function bindSwipe(el) {
+  let start = null; // { x, y, id } of the pointer that began the swipe
+  el.addEventListener('pointerdown', (e) => {
+    // Mouse drags are ignored, so clicking the board never moves tiles. AI PLAY owns the board while it runs.
+    if (e.pointerType === 'mouse' || state.playing) return;
+    start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    // Capture keeps the pointer events on the board when the finger leaves it before lifting.
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointerup', (e) => {
+    if (!start || e.pointerId !== start.id) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    start = null;
+    // Shorter than SWIPE_MIN on both axes: a tap, not a swipe.
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_MIN) return;
+    // Dominant axis: horizontal wins when it is longer. Directions: 0 Up, 1 Down, 2 Left, 3 Right.
+    const dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 2 : 3) : (dy < 0 ? 0 : 1);
+    if (apply(dir, 'you')) $('chip-status').textContent = 'YOU';
+  });
+  // The browser cancels the pointer when it takes over the gesture, so forget the start.
+  el.addEventListener('pointercancel', () => { start = null; });
+}
+
 async function init() {
   $('btn-new').onclick = newGame;
   $('btn-step').onclick = aiStep;
   $('btn-play').onclick = autoplay;
   $('delay').oninput = () => { $('delay-lbl').textContent = $('delay').value; };
-  $('agent').onchange = () => {
-    const a = state.meta.agents.find((x) => x.name === $('agent').value);
-    $('agent-desc').textContent = a ? a.description : '';
-  };
+  $('agent').onchange = () => { $('agent').title = AGENT_TIPS[$('agent').value] ?? ''; };
   const keys = { ArrowUp: 0, ArrowDown: 1, ArrowLeft: 2, ArrowRight: 3, w: 0, s: 1, a: 2, d: 3 };
   window.addEventListener('keydown', (e) => {
     if (!(e.key in keys) || state.playing || e.target.tagName === 'SELECT') return;
     e.preventDefault();
     if (apply(keys[e.key], 'you')) $('chip-status').textContent = 'YOU';
   });
+  bindSwipe($('g2048'));
   newGame();
   try {
     state.meta = await getJSON('/api/2048/meta');

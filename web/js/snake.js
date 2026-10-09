@@ -31,19 +31,6 @@ const SHORT = ['danger ahead', 'danger left', 'danger right', 'free ahead', 'fre
   'room ahead', 'room left', 'room right'];
 // Key -> absolute heading (w north, d east, s south, a west). Arrow keys are the same directions.
 const KEYS = { w: 0, d: 1, s: 2, a: 3, arrowup: 0, arrowright: 1, arrowdown: 2, arrowleft: 3 };
-// The three-step learning loop, as the page describes each learned agent.
-const LOOP = {
-  eval: [
-    ['1 · SAMPLE', 'Each candidate is a set of eight weights, drawn from a Gaussian around the elite mean. Every candidate plays the same seeded boards.'],
-    ['2 · KEEP THE ELITE', 'The best 12 of 48 candidates are kept, and the Gaussian is refit to them. Its spread is floored, so the search keeps exploring.'],
-    ['3 · REPEAT ON NEW BOARDS', 'Each generation draws fresh boards, so no candidate can memorise one fixed set. Starving counts as a death.'],
-  ],
-  net: [
-    ['1 · PLAY', 'Each genome plays the same seeded boards. Fitness is apples eaten, plus a small bonus for surviving, which only breaks ties.'],
-    ['2 · KEEP THE BEST', 'The top genomes are copied unchanged, so the best result never gets lost. Tournament selection picks parents from random groups of three.'],
-    ['3 · CROSS AND MUTATE', 'Uniform crossover takes each weight from one parent or the other. Then about one weight in ten moves by a small Gaussian nudge.'],
-  ],
-};
 
 const state = {
   net: null,            // { w1, b1, w2, b2 } from the champion JSON
@@ -573,11 +560,6 @@ function setAgentUI() {
   $('btn-agent-net').setAttribute('aria-pressed', String(!isEval));
   $('net-panel').hidden = isEval;
   $('think-section-title').textContent = isEval ? 'WHAT THE AGENT IS THINKING' : 'WHAT THE NET IS THINKING';
-  $('loop-section-title').textContent = isEval ? 'THE LEARNING LOOP: CROSS-ENTROPY' : 'THE LEARNING LOOP: GENETIC ALGORITHM';
-  LOOP[state.agent].forEach(([title, text], i) => {
-    $(`loop-t-${i + 1}`).textContent = title;
-    $(`loop-x-${i + 1}`).textContent = text;
-  });
   renderChampion();
   drawChart();
   setButtons();
@@ -629,7 +611,6 @@ function drawChart() {
 function renderChampion() {
   const meta = activeMeta() || {};
   const s = meta.settings || {};
-  $('chip-gen').textContent = meta.best_generation ?? '—';
   if (state.agent === 'eval') {
     const weights = state.evalW
       ? EVAL_FEATURES.map((name, i) => `<div class="sn-champ-row"><span>${name}</span><b>${state.evalW[i].toFixed(3)}</b></div>`).join('')
@@ -650,20 +631,6 @@ function renderChampion() {
     <div class="sn-champ-row"><span>population x games</span><b>${s.pop ?? '—'} x ${s.games ?? '—'}</b></div>
     <div class="sn-champ-row"><span>elites, mutation</span><b>${s.elites ?? '—'}, ${s.mutation_rate ?? '—'} at ${s.mutation_sigma ?? '—'}</b></div>
     <div class="field-hint">Trained on seeds 1000 and up. The benchmark uses seeds 50000 and up, so these boards are new to it.</div>`;
-}
-
-function renderPlayers(agents) {
-  const box = $('players');
-  box.innerHTML = '';
-  for (const [name, desc] of Object.entries(agents)) {
-    const card = document.createElement('div');
-    card.className = 'heuristic-card';
-    card.style.padding = '0.7rem';
-    card.innerHTML = `<div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem"></div><div class="field-hint"></div>`;
-    card.firstChild.textContent = name.toUpperCase();
-    card.lastChild.textContent = desc;
-    box.appendChild(card);
-  }
 }
 
 // ── Wiring ──────────────────────────────────────────────────────────────
@@ -743,7 +710,6 @@ async function load() {
     state.evalMeta = ev;
     state.evalHistory = ev.history;
     state.size = meta.board;
-    renderPlayers(meta.agents);
     setAgentUI();
     newRound();
     setStatus('READY', C.green);

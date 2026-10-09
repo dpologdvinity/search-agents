@@ -522,7 +522,7 @@ function renderLegend() {
   if (!state.race) return;
   for (const tr of state.race.tracks) {
     const item = document.createElement('span');
-    item.innerHTML = `<i class="ol-sw" style="background:${COLORS[tr.name]};color:${COLORS[tr.name]}"></i>${LABELS[tr.name]}`;
+    item.innerHTML = `<i class="ol-sw" style="background:${COLORS[tr.name]};color:${COLORS[tr.name]}"></i>${LETTER[tr.name]} ${LABELS[tr.name]}`;
     box.appendChild(item);
   }
 }
@@ -625,6 +625,8 @@ function updateBadges() {
       } else if (tr.stepsToTol !== null) {
         key = 'ok';
         text = `SETTLED ✓ @${tr.stepsToTol}`;
+      } else if (state.race.t === 0) {
+        text = 'READY';
       } else {
         key = 'run';
         text = BADGE_TEXT.run[0];
@@ -689,8 +691,7 @@ function setSurface(name) {
   state.surfaceName = name;
   state.surface = name === 'custom' ? customSurface(state.bumps) : getSurface(name);
   state.start = [...(name === 'custom' ? CUSTOM_START : state.surface.start)];
-  $('chip-surface').textContent = state.surface.label.toUpperCase();
-  $('ol-note').textContent = state.surface.note;
+  $('ol-surface').title = state.surface.note;
   $('ol-paint-row').hidden = name !== 'custom';
   $('ol-hint').textContent = name === 'custom'
     ? 'Pick HILL or VALLEY, then click the map to paint a bump. Click START to move the start point.'
@@ -741,7 +742,7 @@ function renderRows() {
   $('ol-opts').innerHTML = NAMES.map((n) => `
     <div class="ol-opt" data-name="${n}">
       <label class="ol-opt-name"><input type="checkbox" data-role="on" checked aria-label="race ${LABELS[n]}"><i class="ol-sw" style="background:${COLORS[n]};color:${COLORS[n]}"></i>${LABELS[n]}</label>
-      <span class="ol-badge" data-role="badge">OFF</span>
+      <span class="ol-badge" data-role="badge" title="RUNNING, SETTLED (gradient below 1e-3 at a minimum) or DIVERGED (blow-up or NaN)">OFF</span>
       <div class="ol-opt-lr">
         <input type="range" min="-4" max="0.7" step="0.01" value="${Math.log10(DEFAULT_LR[n]).toFixed(2)}" data-role="lr" aria-label="${LABELS[n]} learning rate">
         <span class="ol-lr-val" data-role="lrval">${fmtLr(DEFAULT_LR[n])}</span>
@@ -801,7 +802,7 @@ function bindControls() {
   slider('ol-rho', 'rho', 3, (v) => `ρ = ${v.toFixed(3)}`);
   const epsEl = $('ol-eps');
   epsEl.value = String(Math.round(Math.log10(state.hyper.eps)));
-  const showEps = () => { $('ol-eps-val').textContent = `ε = 1e${Math.round(Math.log10(state.hyper.eps))}`; };
+  const showEps = () => { $('ol-eps-val').textContent = `ε = ${state.hyper.eps.toExponential(1)}`; };
   epsEl.addEventListener('input', () => {
     state.hyper.eps = 10 ** Number(epsEl.value);
     showEps();

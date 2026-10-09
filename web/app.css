@@ -128,11 +128,21 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
   .c4-bar { width: 9px; }
 }
 
-/* Phones: a compact nav. The logo drops its subtitle, and the links wrap onto a second row when a page's active
-   item does not fit beside the GAMES and LABS menus, so the sound toggle is never pushed off screen. */
+/* Connect Four status chip: the full matchup from 790px up, the names only below (connect4.js setStatus). */
+.status-narrow { display: none; }
+@media (max-width: 789px) {
+  .status-wide { display: none; }
+  .status-narrow { display: inline; }
+}
+
+/* Phones: one compact bar. The logo drops its subtitle, and the links scroll sideways inside the bar, so a page's
+   active item can sit past the edge without wrapping above the logo. The sound toggle stays pinned (.sound-li). */
 @media (max-width: 600px) {
   .nav-logo span { display: none; }
-  .nav-links { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.2rem; }
+  .nav-links { flex: 1; min-width: 0; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-padding-right: 2.6rem; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links > li { flex-shrink: 0; }
+  .nav-links > li:first-child { margin-left: auto; }  /* groups the links at the right while they fit; 0 once they scroll */
   .nav-links a { padding-left: 0.6rem; padding-right: 0.6rem; font-size: 0.6rem; }
 }
 
@@ -226,10 +236,12 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
 .sound-toggle:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
 .sound-toggle .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* On phones the panel spans the bar under the nav instead of hanging from the GAMES item. */
+/* On phones the panel spans the bar under the nav instead of hanging from the GAMES item. The sound toggle keeps
+   the right edge of the bar while the links scroll under it (its background hides them). */
 @media (max-width: 600px) {
   .games-menu { position: static; }
   .games-panel { left: 0.75rem; right: 0.75rem; width: auto; }
+  .sound-li { position: sticky; right: 0; background: #010208; }
 }
 
 /* ── Game pages: maximalist layer ─────────────────────────────────────── */
@@ -382,6 +394,109 @@ body:not(.landing-page)::before { z-index: 0; }
 .hiw-note code, .hiw-card code, .hiw-table code { font-family: var(--mono); font-size: 0.8em; color: var(--green); }
 .hiw-src { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
 .hiw-src a { color: var(--cyan); }
+
+/* Explanation sections (shared by the game pages). The How to play block sits above the game. Formulas are typeset
+   by web/js/math.js with KaTeX from web/vendor/katex. Pseudocode boxes are built by web/js/pseudo.js. */
+.howto { position: relative; max-width: 85ch; margin: 0 0 1.6rem; padding: 1rem 1.2rem; border: 1px solid var(--border); border-left: 2px solid var(--green); background: rgba(0,255,136,0.04); }
+.howto-title { font-family: var(--orb); font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); margin: 0 0 0.5rem; }
+.howto p { font-family: var(--raj); font-size: 1rem; line-height: 1.55; color: var(--text); margin: 0; }
+
+/* Collapsible sections (web/js/fold.js wraps HOW TO PLAY and each HOW IT WORKS topic in <details>). The summary
+   keeps the heading's look; a triangle before it turns when the section opens. */
+.howto-fold > summary, .hiw-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; }
+.howto-fold > summary::-webkit-details-marker, .hiw-fold > summary::-webkit-details-marker { display: none; }
+.howto-fold > summary::before, .hiw-fold > summary::before { content: "▸"; font-size: 0.8rem; transition: transform 0.15s; }
+.howto-fold[open] > summary::before, .hiw-fold[open] > summary::before { transform: rotate(90deg); }
+.howto-fold > summary::before { color: var(--green); }
+.hiw-fold > summary::before { color: var(--yellow); }
+.howto-fold > summary .howto-title { margin: 0; }
+.howto-fold[open] > summary { margin-bottom: 0.5rem; }
+.hiw-fold { border-top: 1px solid var(--border); }
+.hiw-fold > summary { padding: 0.7rem 0; }
+.hiw-fold > summary .hiw-sub { margin: 0; }
+.hiw-fold[open] { padding-bottom: 0.8rem; }
+.howto-fold > summary:focus-visible, .hiw-fold > summary:focus-visible, .fold-all:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.howto-fold > summary:hover .howto-title, .hiw-fold > summary:hover .hiw-sub { text-shadow: 0 0 8px currentColor; }
+.fold-all { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em; color: var(--cyan); background: transparent; border: 1px solid var(--border); padding: 0.15rem 0.5rem; margin-left: 0.6rem; cursor: pointer; vertical-align: middle; text-transform: none; }
+.fold-all:hover { border-color: var(--cyan); }
+@media (prefers-reduced-motion: reduce) { .howto-fold > summary::before, .hiw-fold > summary::before { transition: none; } }
+/* Folded panels in the play area: secondary settings ("More settings") and long lists such as a move log. They use
+   native <details>, start closed, and look like the sidebar's small section labels. */
+.more-settings, .log-fold { margin-top: 0.8rem; border-top: 1px solid var(--border); padding-top: 0.5rem; }
+.more-settings > summary, .log-fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-family: var(--orb); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cyan); padding: 0.3rem 0; }
+.more-settings > summary::-webkit-details-marker, .log-fold > summary::-webkit-details-marker { display: none; }
+.more-settings > summary::before, .log-fold > summary::before { content: "▸"; font-size: 0.75rem; transition: transform 0.15s; }
+.more-settings[open] > summary::before, .log-fold[open] > summary::before { transform: rotate(90deg); }
+.more-settings > summary:focus-visible, .log-fold > summary:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.more-settings[open] > summary, .log-fold[open] > summary { margin-bottom: 0.5rem; }
+@media (prefers-reduced-motion: reduce) { .more-settings > summary::before, .log-fold > summary::before { transition: none; } }
+
+
+/* Formulas. KaTeX takes its colour from the surrounding text, so formulas stay light on the dark background. */
+.math { min-width: 0; }
+.katex { color: inherit; font-size: 1.05em; }
+.math-block { display: block; max-width: 100%; margin: 0.8rem 0; padding: 0.3rem 0; overflow-x: auto; overflow-y: hidden; min-width: 0; }
+.math-block .katex-display { margin: 0.2rem 0; }
+
+/* Pseudocode boxes. The box stays inside the column. Long lines scroll inside the <pre>, never the page. */
+.pseudo { position: relative; min-width: 0; max-width: 100%; margin: 0.8rem 0; border: 1px solid var(--border); background: rgba(0,0,0,0.45); }
+.pseudo pre { margin: 0; padding: 2.2rem 0.9rem 0.8rem; max-width: 100%; overflow-x: auto; white-space: pre; tab-size: 4; font-family: var(--mono); font-size: 0.8rem; line-height: 1.55; color: var(--text); }
+.pseudo pre[hidden] { display: none; }
+.pseudo pre:focus-visible { outline: 1px solid var(--cyan); outline-offset: -1px; }
+/* The toggle is a bare plus sign (a minus sign while the full version shows). The glyph is drawn in KaTeX_Main, the
+   same face as the pseudocode tokens, and the button is a 32px square so it is easy to hit. It has no box or text. */
+.pseudo-toggle { position: absolute; top: 0.15rem; right: 0.15rem; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; margin: 0; padding: 0; font-family: KaTeX_Main, var(--mono); font-size: 1.15rem; line-height: 1; color: var(--cyan); background: none; border: 0; cursor: pointer; }
+.pseudo-toggle:hover, .pseudo-toggle:focus-visible { text-shadow: 0 0 8px var(--cyan); }
+.pseudo-toggle:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; }
+
+/* Code references. Each small number links to the cited lines on GitHub. The button is raised with relative
+   positioning, so its line box stays the same height as the text beside it. Its ::before pseudo-element extends the
+   tap target to about 24px tall on touch, without changing the layout. */
+/* inline, not inline-block, so a button never wraps onto a line apart from the word before it */
+.ref { position: relative; display: inline; vertical-align: 0.45em; margin: 0 0.1em; padding: 0.1rem 0.3rem; font-family: var(--mono); font-size: 0.62rem; line-height: 1; letter-spacing: 0; text-decoration: none; color: var(--cyan); background: rgba(2,6,16,0.6); border: 1px solid var(--borderb); cursor: pointer; white-space: nowrap; }
+.ref::before { content: ""; position: absolute; inset: -0.3rem -0.2rem; }
+.ref:hover { color: #fff; border-color: var(--cyan); box-shadow: 0 0 6px rgba(0,245,255,0.55); text-shadow: 0 0 6px var(--cyan); }
+.ref:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+/* A formula's refs sit in a strip above the formula, at its top right. The formula gets the same strip, so they never overlap it. */
+.math-fig { position: relative; min-width: 0; max-width: 100%; }
+.math-refs { position: absolute; top: 0.2rem; right: 0.3rem; z-index: 1; display: flex; gap: 0.25rem; }
+.math-refs .ref { top: 0; }
+.math-fig:has(.math-refs) > .math-block { padding-top: 1.1rem; }
+/* A pseudocode box's refs sit beside its toggle, in the same top-right corner. */
+.pseudo-bar { position: absolute; top: 0.15rem; right: 0.15rem; z-index: 1; display: flex; align-items: center; gap: 0.2rem; min-height: 2rem; }
+.pseudo-bar .ref { top: 0; }
+.pseudo-bar .pseudo-toggle { position: static; }
+
+/* Syntax colours, Python-like, on the site's neon palette. Greek is a lighter tint of --purple so it stays legible
+   on the dark background. */
+.tk-kw { color: var(--pink); }
+.tk-proc { color: var(--cyan); }
+.tk-num { color: var(--yellow); }
+.tk-builtin { color: var(--green); }
+.tk-greek { color: #c77dff; }
+.tk-arrow { color: var(--pink); font-weight: 700; }
+.tk-com { color: var(--dim); font-style: italic; }
+/* JetBrains Mono draws its minus sign (U+2212) as a bar as short as its hyphen, so "−1" reads as "-1", and its arrow
+   is small. KaTeX_Main, from the vendored KaTeX stylesheet every pseudocode page loads, draws both at full size.
+   The minus and the arrow sit in a one-column box in the page's monospace face, so the columns stay put (ch is
+   measured in that box's own font, which is the monospace one). The glyph inside is KaTeX_Main. Its margin centres
+   it: the KaTeX minus is 0.78em wide and the arrow 1em, both wider than the 0.6em column, and the margin is half the
+   difference. The KaTeX arrow is also compressed to 70% width, so its ink does not run into the next character;
+   a transform changes only the painted ink, not the layout. */
+.tk-op, .tk-arrow { display: inline-block; width: 1ch; text-align: center; }
+.tk-glyph { font-family: KaTeX_Main, var(--mono); }
+/* The minus is squeezed about its centre until its ink (0.53em) fits the 0.6em column, still about 1.7 times the
+   hyphen's ink, so it never touches its neighbours. The arrow stays in the monospace face: its KaTeX_Main glyph is a
+   full em wide and crowds the characters beside it, so it only gets the bold pink. */
+.tk-op > .tk-glyph { display: inline-block; margin-left: -0.09em; transform: scaleX(0.85); }
+.tk-arrow { display: inline; width: auto; }
+.tk-arrow > .tk-glyph { font-family: var(--mono); }
+
+/* Lecture-notes cards hold formulas and boxes, so they get tighter margins. */
+.hiw .math-block { margin: 0.9rem 0 1rem; padding: 0.5rem 0.8rem; border-left: 2px solid var(--cyan); background: rgba(0,245,255,0.04); }
+.hiw .pseudo { margin: 0.9rem 0 1rem; }
+.hiw-card .math-block, .hiw-card .pseudo { margin: 0.4rem 0; }
+.hiw .pseudo pre { font-size: 0.76rem; }
 @media (max-width: 720px) {
   .hiw { padding: 1.6rem 1rem 2.4rem; }
   .hiw-table td:first-child { white-space: normal; }

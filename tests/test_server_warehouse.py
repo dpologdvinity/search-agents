@@ -45,6 +45,9 @@ def test_cbs_solves_swap_corridor_optimally(client):
     assert body["status"] == "solved"
     assert body["stats"]["sum_of_costs"] == 11
     assert body["conflicts"] == []
+    # The page marks the returned tree node by id; it must be a child in the trace with the plan's cost.
+    solved_child = [c for e in body["trace"] for c in e["children"] if c.get("id") == body["solution_id"]]
+    assert len(solved_child) == 1 and solved_child[0]["cost"] == 11
     # Paths are [x, y] pairs and start and end where the request said.
     assert body["paths"][0][0] == [0, 1] and body["paths"][0][-1] == [4, 1]
     assert body["paths"][1][0] == [4, 1] and body["paths"][1][-1] == [0, 1]

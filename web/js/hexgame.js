@@ -17,6 +17,14 @@ const DOWN = 1, ACROSS = 2, SWAP = -1;
 const AGENT_NAME = {
   rave: 'RAVE-MCTS', uct: 'UCT', shortest: 'SHORTEST', random: 'RANDOM', chance: 'Chance (fixed odds)',
 };
+// One sentence per agent, shown as the tooltip on its selector. HOW IT WORKS on the page has the full story.
+const AGENT_TIPS = {
+  rave: 'RAVE-MCTS: Monte Carlo tree search that shares each move\'s results across the tree (RAVE), with random playouts.',
+  uct: 'Plain UCT: Monte Carlo tree search with random playouts and no shared statistics.',
+  shortest: 'Shortest-path race: plays the cell that most lengthens the opponent\'s route and most shortens its own. One move deep.',
+  random: 'Random: a uniformly random empty cell, with no thought.',
+  chance: 'Chance (fixed odds): a random empty cell, drawn with weights that favour the centre. No search.',
+};
 const WATCH_MS = 450;     // default pause between moves when two agents play (the Normal speed)
 const GAME_PAUSE_MS = 1200; // minimum time the finished board stays on screen before the next game
 const K_RAVE = 300;       // the server's RAVE equivalence parameter, used only to explain beta on the page
@@ -45,7 +53,6 @@ const state = {
   heat: 'visits',
   sims: null,
   speed: null,
-  agents: {},          // agent name -> description, from /api/hexgame/meta
   ringWeights: null,   // the chance agent's weight per hex ring from the centre, from meta
 };
 
@@ -370,18 +377,18 @@ function statusText() {
 }
 
 // The score line: W and L are DOWN's results (the first agent's), and D is always 0 because Hex has no draws.
+// The matchup itself is named once, above the board.
 function scoreText() {
   const { w, d, l } = state.score;
   const games = w + d + l;
-  const a = agentLabel($('agent').value), b = agentLabel($('agent2').value);
-  if (!games) return `${a} (DOWN) vs ${b} (ACROSS): no games finished yet.`;
-  return `${a} (DOWN) vs ${b} (ACROSS): W ${w} · D ${d} · L ${l} over ${games} game${games === 1 ? '' : 's'}`;
+  if (!games) return 'DOWN\'s score: no games finished yet.';
+  return `DOWN's score: W ${w} · D ${d} · L ${l} over ${games} game${games === 1 ? '' : 's'}`;
 }
 
-// Put the agent descriptions from meta under each selector, so the page says what each side does.
-function updateDescriptions() {
-  $('desc-a').textContent = state.agents[$('agent').value] || '';
-  $('desc-b').textContent = state.agents[$('agent2').value] || '';
+// The agent's one-sentence description goes into the tooltip of its selector.
+function updateTips() {
+  $('agent').title = AGENT_TIPS[$('agent').value] ?? '';
+  $('agent2').title = AGENT_TIPS[$('agent2').value] ?? '';
 }
 
 function renderChrome() {
@@ -411,6 +418,7 @@ function renderChrome() {
   $('heat-visits').parentElement.style.display = chanceOdds() ? 'none' : '';
   // Watch controls: shown only in watch mode; pause is live while watching, and STEP only while paused.
   $('watch-bar').hidden = state.mode !== 'watch';
+  $('watch-opts').hidden = state.mode !== 'watch';
   $('btn-pause').disabled = !state.watching;
   $('btn-pause').querySelector('.btn-txt').textContent = state.paused ? '▶ RESUME' : '❚❚ PAUSE';
   $('btn-pause').setAttribute('aria-pressed', String(state.paused));
@@ -438,8 +446,8 @@ function noteText() {
       : `${agentLabel($('agent').value)} connected its edges. It wins.`;
   }
   if (state.mode === 'watch') {
-    if (!state.watching) return `${matchupLabel()}. Press START to watch them play.`;
-    return state.paused ? 'Paused. Press RESUME to go on, or STEP for one move.' : `${matchupLabel()}: playing.`;
+    if (!state.watching) return 'Press START to watch the two agents play.';
+    return state.paused ? 'Paused. Press RESUME to go on, or STEP for one move.' : 'The agents are playing.';
   }
   if (state.to_move === state.you) return 'Your move. Click a hexagon. Your goal is the coloured edges.';
   return `${agentLabel($('agent').value)} is thinking.`;
@@ -669,8 +677,8 @@ function init() {
     newGame();
   });
   // Changing either agent starts a new matchup, so the score (which is per matchup) starts again.
-  // The descriptions under the selectors follow the choice.
-  const onAgentChange = () => { updateDescriptions(); resetScore(); };
+  // The tooltips on the selectors follow the choice.
+  const onAgentChange = () => { updateTips(); resetScore(); };
   $('agent').addEventListener('change', onAgentChange);
   $('agent2').addEventListener('change', onAgentChange);
   $('you').addEventListener('change', () => { state.you = Number($('you').value); newGame(); });
@@ -711,15 +719,13 @@ function init() {
   });
   state.delay = Number($('watch-speed').value);
   state.autoRestart = $('auto-restart').checked;
-  // Agent descriptions and the chance table come from the server, so the page never repeats them by hand.
-  // If the request fails the selectors still work; only the descriptions stay blank.
+  // The chance table comes from the server, so the page never repeats the weights by hand.
+  // If the request fails the selectors still work; only the chance note loses its weights.
   getJSON('/api/hexgame/meta').then((meta) => {
-    state.agents = Object.fromEntries(meta.agents.map((a) => [a.name, a.description]));
     state.ringWeights = meta.chance ? meta.chance.ring_weights : null;
-    updateDescriptions();
     render();
   }).catch(() => {});
-  updateDescriptions();
+  updateTips();
   newGame();
 }
 

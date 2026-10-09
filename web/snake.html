@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="snake.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">09 // NEUROEVOLUTION · GENETIC ALGORITHM</div>
+      <div class="proj-pg-tag">09 // LEARNED AGENTS</div>
       <h1 class="proj-pg-title neon-green glitch" data-text="SNAKE">SNAKE</h1>
-      <div class="proj-pg-sub">No one wrote this snake's rules into its moves. The default agent scores each safe move with eight weights, tuned by the cross-entropy method over features of the position it leads to. The other is a 339-weight neural net bred by a genetic algorithm. Both are learned, and both are shown here.</div>
+      <div class="proj-pg-sub">Watch two learned agents steer a snake, or take the wheel yourself.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -41,10 +42,16 @@
         <span class="stat-chip green">APPLES <span class="val" id="chip-apples">0</span></span>
         <span class="stat-chip">STEPS <span class="val" id="chip-steps">0</span></span>
         <span class="stat-chip">LENGTH <span class="val" id="chip-length">3</span></span>
-        <span class="stat-chip">CHAMPION GEN <span class="val" id="chip-gen">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Steer the snake to eat apples, and it grows by one segment with each. The game ends when the snake hits a wall or its own body, or when it goes 288 steps without an apple.</p>
+    <p style="margin-top:0.5rem">Steer with W A S D or the arrow keys, with the steering pad on a phone, or by swiping on the board. The snake cannot reverse, so the opposite key is ignored.</p>
+    <p style="margin-top:0.5rem">Press WATCH THE AGENT to see the selected learned agent play, and ONE STEP to advance it one move at a time. PLANNER HINT draws the route the planner would take.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -55,20 +62,15 @@
         <div class="field-hint" id="sn-note">Watch the learned agent, or take the wheel with W A S D or the arrow keys.</div>
         <div class="sn-agent" role="group" aria-label="Learned agent">
           <span class="field-lbl">AGENT</span>
-          <button class="cyber-btn green" id="btn-agent-eval" type="button" aria-pressed="true"><span class="btn-txt">EVALUATION FUNCTION</span></button>
-          <button class="cyber-btn" id="btn-agent-net" type="button" aria-pressed="false"><span class="btn-txt">NEURAL NET</span></button>
+          <button class="cyber-btn green" id="btn-agent-eval" type="button" aria-pressed="true" title="The default: eight weights score each safe move, tuned by the cross-entropy method"><span class="btn-txt">EVALUATION FUNCTION</span></button>
+          <button class="cyber-btn" id="btn-agent-net" type="button" aria-pressed="false" title="A neural net of 339 weights, evolved by a genetic algorithm"><span class="btn-txt">NEURAL NET</span></button>
         </div>
         <div class="sn-controls">
-          <button class="cyber-btn green" id="btn-watch" type="button" aria-pressed="false"><span class="btn-txt">▶ WATCH THE AGENT</span></button>
-          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false"><span class="btn-txt">✎ PLAY YOURSELF</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">→ ONE STEP</span></button>
-          <button class="cyber-btn" id="btn-hint" type="button"><span class="btn-txt">✦ PLANNER HINT</span></button>
-          <button class="cyber-btn" id="btn-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
-        </div>
-        <div class="sn-speed">
-          <label class="field-lbl" for="speed">SPEED</label>
-          <input id="speed" type="range" min="40" max="400" step="10" value="120" aria-describedby="speed-val">
-          <span class="field-hint" id="speed-val">120 ms per step</span>
+          <button class="cyber-btn green" id="btn-watch" type="button" aria-pressed="false" title="Let the selected agent steer until you pause it"><span class="btn-txt">▶ WATCH THE AGENT</span></button>
+          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false" title="Steer with W A S D or the arrow keys"><span class="btn-txt">✎ PLAY YOURSELF</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Make one move with the selected agent"><span class="btn-txt">→ ONE STEP</span></button>
+          <button class="cyber-btn" id="btn-hint" type="button" title="Draw the route the breadth-first search planner would take"><span class="btn-txt">✦ PLANNER HINT</span></button>
+          <button class="cyber-btn" id="btn-new" type="button" title="Start a new game"><span class="btn-txt">↺ NEW GAME</span></button>
         </div>
         <div class="sn-dpad" role="group" aria-label="Steer">
           <span></span><button class="cyber-btn sn-key" type="button" data-dir="0" aria-label="north">▲</button><span></span>
@@ -77,6 +79,14 @@
           <button class="cyber-btn sn-key" type="button" data-dir="1" aria-label="east">▶</button>
           <span></span><button class="cyber-btn sn-key" type="button" data-dir="2" aria-label="south">▼</button><span></span>
         </div>
+        <details class="more-settings">
+          <summary>More settings</summary>
+          <div class="sn-speed">
+            <label class="field-lbl" for="speed">SPEED</label>
+            <input id="speed" type="range" min="40" max="400" step="10" value="120" aria-describedby="speed-val" title="Time between steps while the snake moves">
+            <span class="field-hint" id="speed-val">120 ms per step</span>
+          </div>
+        </details>
       </div>
 
       <div style="margin-top:1.6rem">
@@ -97,10 +107,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -116,85 +126,517 @@
         </div>
       </div>
       <div>
-        <div class="section-title pink-ttl" id="loop-section-title">THE LEARNING LOOP</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div id="loop-t-1" style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">1 · PLAY</div>
-            <div class="field-hint" id="loop-x-1"></div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div id="loop-t-2" style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">2 · KEEP THE BEST</div>
-            <div class="field-hint" id="loop-x-2"></div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div id="loop-t-3" style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">3 · CROSS AND MUTATE</div>
-            <div class="field-hint" id="loop-x-3"></div>
-          </div>
-        </div>
-      </div>
-      <div>
         <div class="section-title green-ttl">THE CHAMPION</div>
         <div class="viz-panel sn-champ" id="champ">
           <div class="field-hint">Loading the committed weights.</div>
         </div>
-      </div>
-      <div>
-        <div class="section-title pink-ttl">HOW THE EVALUATOR CHOOSES</div>
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div class="field-hint">The snake tries each safe move, and for the position it would reach it reads eight features: whether the move eats, how near the food is by walking distance, whether the food is reachable, how much of the board it can reach, whether that room can hold its body, whether it can still reach its tail, how many exits its head has, and how long it is. The move with the largest weighted sum wins. The rules, the features and the choice are hand-built. The eight weights are the only thing that was learned.</div>
-        </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">THE RESULTS</div>
-        <div class="viz-panel sn-champ">
-          <div class="field-hint" style="margin-bottom:0.5rem">200 held-out 12x12 games per agent, seeds 50,000 and up, the same boards for every agent.</div>
-          <table class="sn-results">
-            <thead><tr><th>agent</th><th>mean apples</th><th>median</th><th>max</th><th>deaths</th><th>starved</th></tr></thead>
-            <tbody>
-              <tr class="hl"><td>evaluation function</td><td>90.13</td><td>86</td><td>133</td><td>0.0%</td><td>200</td></tr>
-              <tr><td>planner (BFS)</td><td>56.13</td><td>49.5</td><td>137</td><td>0.0%</td><td>200</td></tr>
-              <tr><td>greedy</td><td>20.12</td><td>19</td><td>47</td><td>100.0%</td><td>0</td></tr>
-              <tr><td>neural net (v2)</td><td>13.69</td><td>13</td><td>26</td><td>38.5%</td><td>123</td></tr>
-              <tr><td>random</td><td>0.16</td><td>0</td><td>2</td><td>100.0%</td><td>0</td></tr>
-            </tbody>
-          </table>
-          <div class="field-hint" style="margin-top:0.5rem">Every game of the top two ends by starving, two laps without an apple: they never die, they stall. The full table is in <code>results/snake_benchmark.md</code>.</div>
-        </div>
-      </div>
-      <div>
-        <div class="section-title pink-ttl">THE PLAYERS</div>
-        <div class="stack" id="players"></div>
       </div>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Each turn the snake picks left, straight, or right with a small neural network of 339 weights. Nobody wrote those weights. A genetic algorithm bred them: play a generation of snakes on fresh boards, keep the best, mix and mutate them, and repeat. The evolved snake learned to eat, but it is still well behind a greedy rule and a BFS planner on the same held-out boards.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Evolving the weights</h3>
-      <p class="hiw-plain"><b>New to this?</b> Think of breeding dogs for herding. You keep the best of each litter, cross them, add small random changes, and repeat. Nobody explains herding to the dogs; the good ones just get to breed more.</p>
-      <p>Each generation, 60 genomes (lists of 339 numbers) play 8 games on the same fresh boards. A game scores apples eaten, plus a small bonus for surviving, minus a penalty for starving. Then: the 4 best are copied unchanged, and the other 56 are children. A parent is the best of 3 random genomes (tournament). Each weight comes from one parent or the other with equal chance (uniform crossover), and about one weight in ten is nudged by a small random amount.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The network and its 17 senses</h3>
-      <p class="hiw-plain"><b>New to this?</b> A network is a chain of weighted sums. Each input is multiplied by a weight, the results are added up, and a squashing function keeps them between −1 and 1. The output with the largest value wins, so the snake turns that way.</p>
-      <p>The snake senses the board in its own frame, so "ahead" means where it is facing: danger ahead, left, and right (is the next cell blocked?); free run in each direction; the food's offset ahead and to the right; the tail's offset; its heading; and the room it can reach in each direction, counted by a flood fill up to 30 cells. The 17 inputs feed 16 hidden units (tanh), which feed 3 outputs.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Baseline: greedy</h3>
-      <p class="hiw-plain"><b>New to this?</b> Greedy is the simplest sensible rule: look at the three possible moves, throw out the ones that crash, and take the one that ends closest to the food.</p>
-      <p>It needs no learning and no lookahead. It is the bar an evolved net should clear, and it wins on apples per game against the evolved net here.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Baseline: BFS planner with tail-chasing</h3>
-      <p class="hiw-plain"><b>New to this?</b> A breadth-first search (BFS) tries every route one step deeper at a time, so the first route it finds to the food is a shortest one. The snake must also not trap itself after eating.</p>
-      <p>The planner finds a shortest path to the food over empty cells. Before taking it, it checks that after eating, the head can still reach the tail. If not, it follows its own tail (which always moves away) until the food route is safe. It is the strongest classic baseline here, and it still starves on some boards.</p>
-    </article>
+  <p class="hiw-lede">A snake on a 12 × 12 board steers by choosing one of three actions each step. Its goal is to eat apples, and each apple adds a segment to its body. The game ends if it runs into a wall or its own body, or if it goes too long without food.</p>
+  <p class="hiw-lede">Two learned agents steer the snake, and both are shown here. The default is an <b>evaluation function</b>: it scores each safe move by a weighted sum of eight numbers computed from the position the move leads to, and its eight weights were tuned by the <b>cross-entropy method</b>. The other is a <b>neural net</b>, a function built from weighted sums, with 339 weights bred by a <b>genetic algorithm</b>. Two classic baselines, <b>greedy</b> and a <b>breadth-first search</b> planner, are measured on the same boards for comparison.</p>
+
+  <h3 class="hiw-sub">The game and its rules</h3>
+  <p>The board is a 12 × 12 grid of <b>cells</b>, each addressed by coordinates (x, y), where x is the column and y the row, growing downward. The snake is a list of <b>segments</b>. The first is its <b>head</b> and the last its <b>tail</b>. It starts in the middle of the board with three segments at (6, 6), (5, 6) and (4, 6), heading east. A <b>heading</b> is one of north, east, south or west, numbered 0 to 3 in clockwise order.</p>
+  <p>Each step the snake takes one <b>action</b>: left, straight or right, measured from its heading. The actions are relative, so the policy never needs compass directions. A left or right action turns the heading by a quarter turn, and straight leaves it alone. The snake cannot reverse, so these three actions are the only choices<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L28" target="_blank" rel="noopener" title="snake/board.py, line 28" aria-label="Code on GitHub: snake/board.py, line 28">1</a>.</p>
+  <!-- snake/board.py:28, 32, 36-38 -->
+  <div class="math-fig">
+    <div class="math math-block">h' = (h + \delta_a) \bmod 4, \qquad \delta_{\text{left}} = -1,\quad \delta_{\text{straight}} = 0,\quad \delta_{\text{right}} = +1</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L28" target="_blank" rel="noopener" title="snake/board.py, line 28" aria-label="Code on GitHub: snake/board.py, line 28">1</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L32" target="_blank" rel="noopener" title="snake/board.py, line 32" aria-label="Code on GitHub: snake/board.py, line 32">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L36-L38" target="_blank" rel="noopener" title="snake/board.py, lines 36–38" aria-label="Code on GitHub: snake/board.py, lines 36 to 38">3</a></span>
+  </div>
+  <p>Here <span class="math">h</span> is the heading before the step and <span class="math">h'</span> the heading after it, and <span class="math">\delta_a</span> is the quarter turn of action <span class="math">a</span>. Adding 1 turns clockwise, and the modulo keeps the result in 0 to 3<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L36-L38" target="_blank" rel="noopener" title="snake/board.py, lines 36–38" aria-label="Code on GitHub: snake/board.py, lines 36 to 38">3</a>. <i>Example.</i> In a new game the head is at (6, 6) heading east. Straight enters (7, 6), and left turns the head north and enters (6, 5).</p>
+  <p>The head then moves into the cell ahead. The move ends the game if that cell is outside the board (a <b>wall</b> death) or holds a body cell (a <b>body</b> death). The tail is treated with care. If the snake does not eat, the tail leaves its cell in the same step, so the tail's cell can be entered. If the snake eats, the tail stays in place and blocks its cell<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L109-L113" target="_blank" rel="noopener" title="snake/board.py, lines 109–113" aria-label="Code on GitHub: snake/board.py, lines 109 to 113">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L115-L129" target="_blank" rel="noopener" title="snake/board.py, lines 115–129" aria-label="Code on GitHub: snake/board.py, lines 115 to 129">5</a>.</p>
+  <p>Eating adds one apple to the score and one segment to the body, and the food moves to a <b>uniformly random</b> empty cell. Each empty cell is equally likely, so with <span class="math">|E|</span> empty cells each has probability <span class="math">1/|E|</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L86-L90" target="_blank" rel="noopener" title="snake/board.py, lines 86–90" aria-label="Code on GitHub: snake/board.py, lines 86 to 90">6</a>. An <b>idle</b> counter counts the steps since the last apple. The game ends as <b>starved</b> when the counter reaches the cap of two laps of the board, <span class="math">2N^2 = 288</span> steps. Filling the whole board ends the game as <b>full</b>, the only win<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L63" target="_blank" rel="noopener" title="snake/board.py, line 63" aria-label="Code on GitHub: snake/board.py, line 63">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L139-L142" target="_blank" rel="noopener" title="snake/board.py, lines 139–142" aria-label="Code on GitHub: snake/board.py, lines 139 to 142">8</a>.</p>
+  <!-- snake/board.py:63, 139-142 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{starved} \iff \text{idle} \ge 2N^2 = 2 \cdot 12^2 = 288</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L63" target="_blank" rel="noopener" title="snake/board.py, line 63" aria-label="Code on GitHub: snake/board.py, line 63">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L139-L142" target="_blank" rel="noopener" title="snake/board.py, lines 139–142" aria-label="Code on GitHub: snake/board.py, lines 139 to 142">8</a></span>
+  </div>
+  <p>Here <span class="math">N = 12</span> is the side of the board. The cap stops a looping snake from playing forever, and it is the same for every agent in the benchmark below.</p>
+
+  <h3 class="hiw-sub">The score of one game</h3>
+  <p>Both learned agents are trained on one number per game, the <b>game score</b>, which is also called <b>fitness</b> when it is used to rank candidates. A game that does not end by starvation scores its apples, plus a small <b>survival bonus</b> of at most 0.25 for lasting up to 300 steps. Beyond 300 steps each extra step costs 0.0002, so drifting for thousands of moves earns no bonus and pays a small cost. A starved game is penalised instead: it keeps its apples, loses 0.5, and gets no survival bonus, so looping is worse than dying cleanly<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L41-L45" target="_blank" rel="noopener" title="snake/evolve.py, lines 41–45" aria-label="Code on GitHub: snake/evolve.py, lines 41 to 45">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L89-L95" target="_blank" rel="noopener" title="snake/evolve.py, lines 89–95" aria-label="Code on GitHub: snake/evolve.py, lines 89 to 95">10</a>.</p>
+  <!-- snake/evolve.py:89-95 -->
+  <div class="math-fig">
+    <div class="math math-block">s(g) = \begin{cases} \text{apples} - 0.5 & \text{if starved} \\ \text{apples} + 0.25\,\dfrac{\min(\text{steps},\,300)}{300} - 0.0002\,\max(0,\ \text{steps} - 300) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L89-L95" target="_blank" rel="noopener" title="snake/evolve.py, lines 89–95" aria-label="Code on GitHub: snake/evolve.py, lines 89 to 95">10</a></span>
+  </div>
+  <p>Here <span class="math">s(g)</span> is the score of game <span class="math">g</span>. The constants are the survival cap of 300 steps, the survival bonus of 0.25, the step cost of 0.0002 and the starvation penalty of 0.5, all set in the code<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L42-L45" target="_blank" rel="noopener" title="snake/evolve.py, lines 42–45" aria-label="Code on GitHub: snake/evolve.py, lines 42 to 45">11</a>. A candidate's <b>fitness</b> is the mean of this score over the boards it played.</p>
+
+  <h3 class="hiw-sub">The default agent: an evaluation function</h3>
+  <p>The default agent is an <b>evaluation function</b>, a rule that gives each position a number. For each move that does not end the game, it imagines the resulting position, computes eight <b>features</b> (numbers between 0 and 1 read from that position), and takes the move whose <b>weighted sum</b> of features is largest. A <b>weight</b> is the number that multiplies one feature. The features and the rules are hand-built, and the eight weights are the only part that was learned<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L1-L21" target="_blank" rel="noopener" title="snake/evaluator.py, lines 1–21" aria-label="Code on GitHub: snake/evaluator.py, lines 1 to 21">12</a>.</p>
+  <p>A move is first applied in imagination. Let <span class="math">h'</span> be the new head, and <span class="math">B'</span> the new body: the new head followed by the old body, with the old tail removed unless the snake ate. The last cell of <span class="math">B'</span> is the new tail <span class="math">t'</span>. Every feature comes from one <b>breadth-first search</b> (BFS) that starts at <span class="math">h'</span>. A BFS visits cells in order of their distance in steps, so the first time it reaches a cell it has the shortest route there. This search runs over empty cells and gives three values at once: the distance <span class="math">d_f</span> in steps from the head to the food, the number <span class="math">R</span> of empty cells it reaches, and whether it reaches a cell next to the tail. The tail <span class="math">t'</span> is a goal the search may touch but not pass through, because it moves away on the next step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L43-L77" target="_blank" rel="noopener" title="snake/evaluator.py, lines 43–77" aria-label="Code on GitHub: snake/evaluator.py, lines 43 to 77">13</a>.</p>
+  <!-- snake/evaluator.py:43-102 (move_features), 117-127 (choose) -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+S(a) &= \sum_{k=1}^{8} w_k\, f_k(a) \\
+a^\ast &= \operatorname{argmax}_{a \in A_{\text{safe}}} S(a)
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L117-L127" target="_blank" rel="noopener" title="snake/evaluator.py, lines 117–127" aria-label="Code on GitHub: snake/evaluator.py, lines 117 to 127">14</a></span>
+  </div>
+  <p>Here <span class="math">f_k(a)</span> is feature <span class="math">k</span> of the position after move <span class="math">a</span>, <span class="math">w_k</span> its weight, and <span class="math">A_{\text{safe}}</span> the moves that do not end the game. If <span class="math">A_{\text{safe}}</span> is empty, the snake goes straight. Ties keep the earlier move in the order straight, left, right, because a later move must score strictly higher to replace it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L37-L38" target="_blank" rel="noopener" title="snake/evaluator.py, lines 37–38" aria-label="Code on GitHub: snake/evaluator.py, lines 37 to 38">15</a>.</p>
+  <!-- snake/evaluator.py:79-102 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+f_1 &= \mathbf{1}[\text{eats}] \\
+f_2 &= \begin{cases} 1 & \text{if eats} \\ \max\!\left(0,\ 1 - \dfrac{d_f}{2N}\right) & \text{if the food is reachable} \\ 0 & \text{otherwise} \end{cases} \\
+f_3 &= \begin{cases} 1 & \text{if eats or the food is reachable} \\ 0 & \text{otherwise} \end{cases} \\
+f_4 &= \begin{cases} R\,/\,(N^2 - |B'|) & \text{if } N^2 > |B'| \\ 0 & \text{otherwise} \end{cases} \\
+f_5 &= \min\!\left(1,\ R\,/\,|B'|\right) \\
+f_6 &= \mathbf{1}[\text{a reached cell is next to } t'] \\
+f_7 &= \tfrac{1}{4}\,\bigl|\{\text{neighbours of } h' \text{ on the board that are not in } B'\}\bigr| \\
+f_8 &= |B'|\,/\,N^2
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L61-L77" target="_blank" rel="noopener" title="snake/evaluator.py, lines 61–77" aria-label="Code on GitHub: snake/evaluator.py, lines 61 to 77">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L79-L85" target="_blank" rel="noopener" title="snake/evaluator.py, lines 79–85" aria-label="Code on GitHub: snake/evaluator.py, lines 79 to 85">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L93-L102" target="_blank" rel="noopener" title="snake/evaluator.py, lines 93–102" aria-label="Code on GitHub: snake/evaluator.py, lines 93 to 102">18</a></span>
+  </div>
+  <p>Here <span class="math">N = 12</span>, so <span class="math">2N = 24</span> and <span class="math">N^2 = 144</span>. The food features use <span class="math">d_f</span>, and <span class="math">R</span> is the number of empty cells the search reaches, not counting the head. The room feature <span class="math">f_5</span> divides by the body length <span class="math">|B'|</span>, and the area feature <span class="math">f_4</span> divides by the number of empty cells on the board after the move. <span class="math">f_7</span> counts the head's neighbours that are on the board and free, and the new tail counts as occupied<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L87-L91" target="_blank" rel="noopener" title="snake/evaluator.py, lines 87–91" aria-label="Code on GitHub: snake/evaluator.py, lines 87 to 91">19</a>.</p>
+  <p>The committed weights are in <code>snake/data/evaluator.json</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/data/evaluator.json" target="_blank" rel="noopener" title="snake/data/evaluator.json" aria-label="Code on GitHub: snake/data/evaluator.json">20</a>. They were learned by the cross-entropy method described below.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Feature</th><th>Weight</th><th>What it measures</th></tr></thead><tbody>
+    <tr><td>apple</td><td class="num">0.7266</td><td>1 if the move eats</td></tr>
+    <tr><td>food near</td><td class="num">0.8261</td><td>1 if it eats; else 1 − d_f / 24 when the food is reachable; else 0</td></tr>
+    <tr><td>food reachable</td><td class="num">−0.6941</td><td>1 if it eats or the food is reachable; else 0</td></tr>
+    <tr><td>area</td><td class="num">−0.2007</td><td>Empty cells reached, as a share of all empty cells</td></tr>
+    <tr><td>room for body</td><td class="num">0.3796</td><td>Empty cells reached over the body length, capped at 1</td></tr>
+    <tr><td>tail reachable</td><td class="num">1.5404</td><td>1 if a reached cell is next to the new tail</td></tr>
+    <tr><td>exits</td><td class="num">0.1065</td><td>Free neighbours of the new head, over 4</td></tr>
+    <tr><td>length</td><td class="num">0.7549</td><td>Body length over 144</td></tr>
+  </tbody></table></div>
+  <p>The tail-reachable weight is the largest. The two food terms together need a closer look. For food that is reachable and not eaten, they add <span class="math">0.8261\,(1 - d_f/24) - 0.6941 = 0.1320 - 0.0344\,d_f</span>. That is positive for food within 3 steps, and negative beyond it. Beyond 24 steps it is the full <span class="math">-0.6941</span>. So from the food terms alone, reachable food farther than about 3 steps scores below food that cannot be reached at all, which scores 0. The tuner found this combination; the page does not claim it as a design goal. The other features, and the apple term, shape the choice as well.</p>
+  <p><i>Example.</i> A move that eats has <span class="math">f_1 = f_2 = f_3 = 1</span>. Its apple and food terms add <span class="math">0.7266 + 0.8261 - 0.6941 = 0.8586</span> to its score, before the area, room, tail, exits and length terms are added.</p>
+  <!-- snake/evaluator.py:43-102 (move_features), 117-127 (choose), snake/board.py:102-113 (would_die) -->
+  <p>The simple version below shows only the choice. The full version adds the feature computation and the safety test.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L117-L127" target="_blank" rel="noopener" title="snake/evaluator.py, lines 117–127" aria-label="Code on GitHub: snake/evaluator.py, lines 117 to 127">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evaluator.py#L43-L102" target="_blank" rel="noopener" title="snake/evaluator.py, lines 43–102" aria-label="Code on GitHub: snake/evaluator.py, lines 43 to 102">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py#L102-L113" target="_blank" rel="noopener" title="snake/board.py, lines 102–113" aria-label="Code on GitHub: snake/board.py, lines 102 to 113">22</a></span>
+    <pre class="pseudo-simple">function CHOOSE(game, weights):
+    best ← none
+    for each action a in (straight, left, right):    # ties keep the earlier action
+        if DIES(game, a):
+            continue                                 # a move that ends the game is never chosen
+        score ← sum over k of weights[k] · FEATURES(game, a)[k]
+        if best is none or score &gt; best.score:
+            best ← (a, score)
+    if best is none:
+        return straight                              # every move ends the game
+    return best.action</pre>
+    <pre class="pseudo-full" hidden>function CHOOSE(game, weights):
+    best ← none
+    for each action a in (straight, left, right):    # ties keep the earlier action
+        if DIES(game, a):
+            continue                                 # a move that ends the game is never chosen
+        f ← FEATURES(game, a)
+        score ← weights[1]·f[1] + weights[2]·f[2] + ... + weights[8]·f[8]
+        if best is none or score &gt; best.score:
+            best ← (a, score)
+    if best is none:
+        return straight                              # every move ends the game
+    return best.action
+
+function DIES(game, a):
+    cell ← NEXT-CELL(game, a)                        # where the head would go
+    if cell is outside the board:
+        return true
+    if cell = game.food:                             # eating keeps the whole body in place
+        return cell is in game.body
+    return cell is in game.body without its last cell  # the tail leaves in the same step
+
+function FEATURES(game, a):
+    head ← NEXT-CELL(game, a)
+    eats ← head = game.food
+    if eats:
+        body ← [head] + game.body                    # the tail stays
+    else:
+        body ← [head] + game.body without its last cell
+    tail ← last cell of body
+    blocked ← body without its last cell             # the tail may be reached, not passed
+    n_empty ← 12 · 12 − |body|
+    dist ← {head: 0};  queue ← [head];  tail_ok ← false
+    while queue is not empty:                        # breadth-first search over empty cells
+        cell ← first cell of queue;  remove it from queue
+        for each neighbour c of cell, in order north, east, south, west:
+            if c is outside the board or c in dist:
+                continue
+            if c = tail:
+                tail_ok ← true
+                continue
+            if c in blocked:
+                continue
+            dist[c] ← dist[cell] + 1
+            append c to queue
+    reach ← |dist| − 1                               # reached empty cells, not the head
+    if eats:
+        food_near ← 1;  food_reach ← 1
+    else if game.food in dist:
+        food_near ← max(0, 1 − dist[game.food] / 24);  food_reach ← 1
+    else:
+        food_near ← 0;  food_reach ← 0
+    exits ← 0
+    for each neighbour c of head:
+        if c is inside the board and c not in body:
+            exits ← exits + 1
+    return [
+        1 if eats else 0,
+        food_near,
+        food_reach,
+        reach / n_empty if n_empty &gt; 0 else 0,
+        min(1, reach / |body|),
+        1 if tail_ok else 0,
+        exits / 4,
+        |body| / 144,
+    ]</pre>
+  </div>
+  <p>The search runs once and feeds five features: the food distance, the area, the room, the tail test and the food reachability. The tail is a goal, so the escape check can succeed at the tail without the search continuing through it. Distances are counted in whole steps and the food feature is scaled by <span class="math">2N = 24</span>, so food 24 steps away counts as 0 for <span class="math">f_2</span>, while food on a reachable path still counts for <span class="math">f_3</span>.</p>
+  <p>The order of the neighbours does not change any feature, since a BFS gives the same distances and reach in any order. The order matters only for the choice, through the tie rule.</p>
+
+  <h3 class="hiw-sub">Learning the weights: the cross-entropy method</h3>
+  <p>The <b>cross-entropy method</b> (CEM) learns parameters by sampling. It keeps a <b>Gaussian distribution</b>, a bell curve with a mean and a standard deviation, for each parameter. Each generation it draws a <b>population</b> of candidate parameter vectors from that distribution, scores each candidate, keeps the best few (the <b>elites</b>), and moves the distribution toward them. Here the vector has eight entries, one per weight, and each weight has its own Gaussian<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L1-L11" target="_blank" rel="noopener" title="snake/cem.py, lines 1–11" aria-label="Code on GitHub: snake/cem.py, lines 1 to 11">23</a>.</p>
+  <p>Each generation draws 48 candidates. Each candidate plays the same 6 boards, whose seeds are drawn anew each generation from 1000 up to 39,999, and its fitness is the mean game score over them. The 12 best are the elites. The Gaussian is then refit to them: its mean becomes the elites' mean, and its standard deviation becomes the elites' spread, floored at 0.05 so that the search never collapses to a single point<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L89-L98" target="_blank" rel="noopener" title="snake/cem.py, lines 89–98" aria-label="Code on GitHub: snake/cem.py, lines 89 to 98">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L116-L118" target="_blank" rel="noopener" title="snake/cem.py, lines 116–118" aria-label="Code on GitHub: snake/cem.py, lines 116 to 118">25</a>.</p>
+  <!-- snake/cem.py:81-82, 90-98, 116-118 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+\theta^{(i)} &= \mu + \sigma \odot \varepsilon^{(i)}, \qquad \varepsilon^{(i)} \sim \mathcal{N}(0, I) \\
+F(\theta) &= \frac{1}{G} \sum_{g=1}^{G} s_g(\theta) \\
+\mu' &= \frac{1}{K} \sum_{i \in E} \theta^{(i)} \\
+\sigma'_j &= \max\!\left(\sqrt{\frac{1}{K} \sum_{i \in E} \bigl(\theta^{(i)}_j - \mu'_j\bigr)^2},\ 0.05\right)
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L81-L82" target="_blank" rel="noopener" title="snake/cem.py, lines 81–82" aria-label="Code on GitHub: snake/cem.py, lines 81 to 82">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L90-L94" target="_blank" rel="noopener" title="snake/cem.py, lines 90–94" aria-label="Code on GitHub: snake/cem.py, lines 90 to 94">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L116-L118" target="_blank" rel="noopener" title="snake/cem.py, lines 116–118" aria-label="Code on GitHub: snake/cem.py, lines 116 to 118">25</a></span>
+  </div>
+  <p>Here <span class="math">\mu</span> and <span class="math">\sigma</span> are the mean and standard deviation vectors, <span class="math">\odot</span> multiplies each weight by its own standard deviation, and <span class="math">\varepsilon^{(i)}</span> is a standard normal draw. <span class="math">G = 6</span> is the number of boards, <span class="math">s_g(\theta)</span> the game score of board <span class="math">g</span>, and <span class="math">E</span> the set of <span class="math">K = 12</span> elites out of 48 candidates. The start is <span class="math">\mu = 0</span> and <span class="math">\sigma = 1.0</span> for every weight. The standard deviation divides by <span class="math">K</span>, which is numpy's default, not <span class="math">K - 1</span>.</p>
+  <p>The champion is chosen on fixed boards, not on the training fitness, since the training boards change each generation. The best candidate of any generation and the top five of the last generation are rounded to four decimals. Each is scored on 32 validation seeds, 40000 to 40031, which lie above the training range and below the benchmark's 50000, and the highest validation score is committed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L123-L128" target="_blank" rel="noopener" title="snake/cem.py, lines 123–128" aria-label="Code on GitHub: snake/cem.py, lines 123 to 128">28</a>. The committed run used 30 generations. Its champion came from generation 30, and scored a mean of 96.344 apples and 2,777 steps per game on those 32 boards<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/data/evaluator.json" target="_blank" rel="noopener" title="snake/data/evaluator.json" aria-label="Code on GitHub: snake/data/evaluator.json">20</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L73-L129" target="_blank" rel="noopener" title="snake/cem.py, lines 73–129" aria-label="Code on GitHub: snake/cem.py, lines 73 to 129">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L56-L70" target="_blank" rel="noopener" title="snake/cem.py, lines 56–70" aria-label="Code on GitHub: snake/cem.py, lines 56 to 70">30</a></span>
+    <pre class="pseudo-simple">function CROSS-ENTROPY(generations):
+    mean ← zeros(8);  sigma ← 1.0 for every weight
+    repeat generations times:
+        population ← 48 samples from Normal(mean, sigma)
+        score each sample by its mean game score on 6 new boards
+        elites ← the 12 best samples
+        mean ← average of the elites
+        sigma ← max(spread of the elites, 0.05)
+    return the candidate that scores best on the validation boards</pre>
+    <pre class="pseudo-full" hidden>function CROSS-ENTROPY(settings):
+    mean ← zeros(8)                                  # one mean per weight
+    sigma ← 1.0 for every weight                     # init_sigma
+    best ← none;  candidates ← empty
+    for gen ← 1 to 30:                               # the generation count
+        population ← mean + sigma · NORMAL(0, 1)     # 48 candidate vectors
+        seeds ← 6 integers drawn uniformly from 1000 to 39999
+        for each candidate θ in population:
+            score[θ] ← mean over seeds of GAME-SCORE(PLAY(θ, seed))
+        order ← candidates sorted by score, highest first (ties keep the earlier one)
+        if score[order[1]] &gt; best.score:
+            best ← (order[1], gen)
+        append the record of this generation to the history
+        if gen = 30:
+            candidates ← order[1..5] with generation gen
+            break
+        elites ← order[1..12]
+        mean ← average of elites, weight by weight
+        sigma ← max(population standard deviation of elites, 0.05), weight by weight
+    append best to candidates
+    for each (θ, gen) in candidates:
+        θ ← θ rounded to four decimals
+        validation[θ] ← mean over seeds 40000 to 40031 of GAME-SCORE(PLAY(θ, seed))
+    return the θ with the largest validation score, and its generation
+
+function PLAY(θ, seed):
+    game ← new game with food from seed
+    while game is alive:
+        step game with CHOOSE(game, θ)
+    return game</pre>
+  </div>
+  <p>The simple version shows the idea: sample, keep the best, refit. The full version adds the seeded boards, the candidate ordering and the validation step. Ties in the ordering keep the candidate with the lower index, so the run is repeatable. The worker count changes only the speed, since each candidate's score depends only on its weights and seeds<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/cem.py#L18-L19" target="_blank" rel="noopener" title="snake/cem.py, lines 18–19" aria-label="Code on GitHub: snake/cem.py, lines 18 to 19">31</a>.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead><tbody>
+    <tr><td>Candidates per generation</td><td>48</td><td>Samples from the Gaussian</td></tr>
+    <tr><td>Games per candidate</td><td>6</td><td>All candidates share the same 6 boards in a generation</td></tr>
+    <tr><td>Generations</td><td>30</td><td>The committed run took about 55 minutes on two cores</td></tr>
+    <tr><td>Elites</td><td>12</td><td>The Gaussian is refit to them</td></tr>
+    <tr><td>Initial sigma, minimum sigma</td><td>1.0, 0.05</td><td>Start wide, never narrower than 0.05 per weight</td></tr>
+    <tr><td>Random seed</td><td>1</td><td>Makes the run repeatable: <code>python -m snake cem</code></td></tr>
+  </tbody></table></div>
+
+  <h3 class="hiw-sub">The neural net and its 17 senses</h3>
+  <p>The <b>neural net</b> maps 17 numbers, its <b>senses</b>, to 3 numbers, one score per action. It is a function built from weighted sums. The snake takes the action with the largest score. The senses are read in the snake's own frame: <b>ahead</b> is the direction of the heading, and <b>left</b> and <b>right</b> are a quarter turn either side. One learned rule therefore works whichever way the snake faces<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L1-L19" target="_blank" rel="noopener" title="snake/net.py, lines 1–19" aria-label="Code on GitHub: snake/net.py, lines 1 to 19">32</a>.</p>
+  <p>Six of the senses come from a <b>run</b>, the three danger flags and the three free runs: the number of free cells walking from the head in one direction before the first obstacle, where an obstacle is a wall or any body cell, tail included. A <b>flood fill</b> is a breadth-first search over empty cells that counts how much room a direction opens up. The senses are the danger flag, the run, the room, the food and tail offsets, and a one-hot heading. A <b>one-hot</b> heading has a 1 for the current heading and 0 elsewhere<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L31-L38" target="_blank" rel="noopener" title="snake/net.py, lines 31–38" aria-label="Code on GitHub: snake/net.py, lines 31 to 38">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L74-L114" target="_blank" rel="noopener" title="snake/net.py, lines 74–114" aria-label="Code on GitHub: snake/net.py, lines 74 to 114">34</a>.</p>
+  <!-- snake/net.py:74-114 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+x_k &= \mathbf{1}[\text{run}_k = 0], \qquad x_{3+k} = \frac{\text{run}_k}{11}, \qquad x_{14+k} = \frac{R_k}{30}, \qquad k \in \{\text{ahead}, \text{left}, \text{right}\} \\
+x_{6} &= \operatorname{clip}\!\left(\frac{(f - h) \cdot a}{11}\right), \qquad x_{7} = \operatorname{clip}\!\left(\frac{(f - h) \cdot r}{11}\right) \\
+x_{8} &= \operatorname{clip}\!\left(\frac{(t - h) \cdot a}{11}\right), \qquad x_{9} = \operatorname{clip}\!\left(\frac{(t - h) \cdot r}{11}\right) \\
+x_{10+H} &= 1, \quad \text{all other heading inputs } 0 \\
+\operatorname{clip}(v) &= \max(-1,\ \min(1,\ v))
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L74-L114" target="_blank" rel="noopener" title="snake/net.py, lines 74–114" aria-label="Code on GitHub: snake/net.py, lines 74 to 114">34</a></span>
+  </div>
+  <p>Here <span class="math">\text{run}_k</span> is the run in direction <span class="math">k</span>, <span class="math">R_k</span> the flood-fill count from the cell next to the head in that direction, capped at 30, <span class="math">h</span> the head, <span class="math">f</span> the food, <span class="math">t</span> the tail, <span class="math">a</span> the unit vector of the heading and <span class="math">r</span> the unit vector a quarter turn to its right. The offsets are divided by <span class="math">N - 1 = 11</span>, the largest possible distance across the board, and clipped to <span class="math">[-1, 1]</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L84-L89" target="_blank" rel="noopener" title="snake/net.py, lines 84–89" aria-label="Code on GitHub: snake/net.py, lines 84 to 89">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L103-L108" target="_blank" rel="noopener" title="snake/net.py, lines 103–108" aria-label="Code on GitHub: snake/net.py, lines 103 to 108">36</a>. <i>Example.</i> The snake heads east at (6, 6) and the food is at (9, 6). Its forward offset is <span class="math">3/11 \approx 0.273</span> and its right offset is 0.</p>
+  <p>The net is one hidden layer of 16 <b>hidden units</b>, followed by 3 outputs. Each hidden unit takes a weighted sum of the 17 senses plus a <b>bias</b>, a constant offset, and passes it through <b>tanh</b>, a squashing function that maps any number into the range (−1, 1). Each output is a weighted sum of the hidden units plus its own bias. The outputs are in the order left, straight, right, and the largest one is the action. The net does not check for danger itself, so a poor output can send the snake into a wall. Avoiding that has to be learned from the game score<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L144-L152" target="_blank" rel="noopener" title="snake/net.py, lines 144–152" aria-label="Code on GitHub: snake/net.py, lines 144 to 152">37</a>.</p>
+  <!-- snake/net.py:144-147, 149-152 -->
+  <div class="math-fig">
+    <div class="math math-block">h = \tanh(x\,W_1 + b_1), \qquad z = h\,W_2 + b_2, \qquad \text{action} = \operatorname{argmax}_k\, z_k, \qquad 17 \cdot 16 + 16 + 16 \cdot 3 + 3 = 339</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L43" target="_blank" rel="noopener" title="snake/net.py, line 43" aria-label="Code on GitHub: snake/net.py, line 43">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L144-L152" target="_blank" rel="noopener" title="snake/net.py, lines 144–152" aria-label="Code on GitHub: snake/net.py, lines 144 to 152">37</a></span>
+  </div>
+  <p>Here <span class="math">W_1</span> is a <span class="math">17 \times 16</span> matrix of input weights, <span class="math">b_1</span> the 16 hidden biases, <span class="math">W_2</span> a <span class="math">16 \times 3</span> matrix of output weights and <span class="math">b_2</span> the 3 output biases. Ties in <span class="math">z</span> go to the lower index, which is the order left, straight, right. The 339 numbers are stored as one flat vector called a <b>genome</b>, and the genetic algorithm works on that vector<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L129-L142" target="_blank" rel="noopener" title="snake/net.py, lines 129–142" aria-label="Code on GitHub: snake/net.py, lines 129 to 142">39</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L149-L152" target="_blank" rel="noopener" title="snake/net.py, lines 149–152" aria-label="Code on GitHub: snake/net.py, lines 149 to 152">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L74-L114" target="_blank" rel="noopener" title="snake/net.py, lines 74–114" aria-label="Code on GitHub: snake/net.py, lines 74 to 114">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L50-L71" target="_blank" rel="noopener" title="snake/net.py, lines 50–71" aria-label="Code on GitHub: snake/net.py, lines 50 to 71">41</a></span>
+    <pre class="pseudo-simple">function ACT(game):
+    x ← SENSE(game)                                  # 17 inputs, in the snake's frame
+    h ← tanh(x · W1 + b1)                            # 16 hidden units
+    z ← h · W2 + b2                                  # left, straight, right
+    return the index of the largest z                # ties go to the lower index</pre>
+    <pre class="pseudo-full" hidden>function ACT(game):
+    x ← SENSE(game)                                  # 17 inputs
+    h ← tanh(x · W1 + b1)                            # 16 hidden units
+    z ← h · W2 + b2                                  # 3 outputs: left, straight, right
+    return the index of the largest z                # ties go to the lower index
+
+function SENSE(game):
+    occupied ← set of all body cells, tail included
+    head ← game.body[0];  heading ← game.heading
+    a ← DIRS[heading]                                # ahead
+    r ← DIRS[(heading + 1) mod 4]                    # right; left is −r
+    for each direction d in (a, −r, r), with index k = 0, 1, 2:
+        run ← 0;  cell ← head + d
+        while cell is inside the board and cell is not in occupied:
+            run ← run + 1
+            cell ← cell + d
+        x[k] ← 1 if run = 0 else 0                   # danger
+        x[3 + k] ← run / 11                          # free run
+        x[14 + k] ← ROOM(occupied, head + d) / 30    # room
+    x[6], x[7] ← OFFSET(food)
+    x[8], x[9] ← OFFSET(tail)
+    x[10 + heading] ← 1                              # heading one-hot
+    return x
+
+function OFFSET(cell):
+    o ← cell − head
+    forward ← clip((o · a) / 11)
+    right ← clip((o · r) / 11)
+    return (forward, right)
+
+function ROOM(occupied, start):
+    if start is outside the board or start is in occupied:
+        return 0
+    seen ← {start};  queue ← [start]
+    while queue is not empty and |seen| &lt; 30:      # the cap keeps the search cheap
+        cell ← first cell of queue;  remove it from queue
+        for each neighbour c of cell:
+            if c is outside the board or c is in occupied or c is in seen:
+                continue
+            add c to seen and to queue
+            if |seen| ≥ 30:
+                break
+    return |seen|</pre>
+  </div>
+  <p>The run counts only cells in a straight line, so it cannot show a pocket that the snake would enter by turning. The room counts every empty cell that a flood fill reaches from the adjacent cell, so it shows the size of the pocket. The cap of 30 keeps each flood fill cheap, since the net only needs to know whether a pocket is small<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py#L44-L45" target="_blank" rel="noopener" title="snake/net.py, lines 44–45" aria-label="Code on GitHub: snake/net.py, lines 44 to 45">42</a>.</p>
+  <p>The same arithmetic runs in the browser, in <code>web/js/snake-core.js</code>, so the page's network view matches the benchmark<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/snake-core.js#L1-L7" target="_blank" rel="noopener" title="web/js/snake-core.js, lines 1–7" aria-label="Code on GitHub: web/js/snake-core.js, lines 1 to 7">43</a>.</p>
+
+  <h3 class="hiw-sub">Learning the weights: the genetic algorithm</h3>
+  <p>A <b>genetic algorithm</b> (GA) improves a population of genomes by three operators. <b>Selection</b> picks parents, favouring the fitter genomes. <b>Crossover</b> mixes two parents into a child. <b>Mutation</b> adds small random changes. No gradients are computed. The best genomes are copied unchanged each generation, a practice called <b>elitism</b>, so the best result never gets lost<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L1-L12" target="_blank" rel="noopener" title="snake/evolve.py, lines 1–12" aria-label="Code on GitHub: snake/evolve.py, lines 1 to 12">44</a>.</p>
+  <p>The 60 starting genomes are random: each of their 339 weights is drawn from a normal distribution with mean 0 and standard deviation 0.5<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L140" target="_blank" rel="noopener" title="snake/evolve.py, line 140" aria-label="Code on GitHub: snake/evolve.py, line 140">45</a>. Each generation, 8 boards are drawn from seeds 1000 up to 39,999, and every genome plays the same 8 boards. Its fitness is the mean game score over them. The 4 best genomes are copied unchanged, and the other 56 are children<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L98-L111" target="_blank" rel="noopener" title="snake/evolve.py, lines 98–111" aria-label="Code on GitHub: snake/evolve.py, lines 98 to 111">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L148-L152" target="_blank" rel="noopener" title="snake/evolve.py, lines 148–152" aria-label="Code on GitHub: snake/evolve.py, lines 148 to 152">47</a>.</p>
+  <p>A parent is chosen by a <b>tournament</b> of size 3. Three genomes are drawn at random with replacement, and the fittest of the three is the parent. Two parents are chosen per child. <b>Uniform crossover</b> then takes each of the 339 weights from one parent or the other with probability ½. <b>Gaussian mutation</b> changes each weight with probability 0.1, by a random amount drawn from a normal distribution with standard deviation 0.15<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L114-L128" target="_blank" rel="noopener" title="snake/evolve.py, lines 114–128" aria-label="Code on GitHub: snake/evolve.py, lines 114 to 128">48</a>.</p>
+  <!-- snake/evolve.py:114-128 -->
+  <div class="math-fig">
+    <div class="math math-block">\begin{aligned}
+\text{parent} &= \operatorname{argmax}_{i \in C} F(g_i), \qquad C \text{: three indices drawn uniformly with replacement} \\
+c_j &= m_j\, a_j + (1 - m_j)\, b_j, \qquad m_j \sim \text{Bernoulli}(\tfrac{1}{2}) \\
+c_j &\leftarrow c_j + \varepsilon_j, \qquad \varepsilon_j \sim \mathcal{N}(0,\ 0.15^2) \text{ with probability } 0.1
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L114-L117" target="_blank" rel="noopener" title="snake/evolve.py, lines 114–117" aria-label="Code on GitHub: snake/evolve.py, lines 114 to 117">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L120-L127" target="_blank" rel="noopener" title="snake/evolve.py, lines 120–127" aria-label="Code on GitHub: snake/evolve.py, lines 120 to 127">50</a></span>
+  </div>
+  <p>Here <span class="math">a</span> and <span class="math">b</span> are the two parents, <span class="math">c</span> the child, <span class="math">m_j</span> the crossover bit of weight <span class="math">j</span>, and <span class="math">F</span> the fitness. <i>Example.</i> With 60 genomes and 4 elites, each generation makes 56 children, so the population size stays at 60<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L56-L59" target="_blank" rel="noopener" title="snake/evolve.py, lines 56–59" aria-label="Code on GitHub: snake/evolve.py, lines 56 to 59">51</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L131-L187" target="_blank" rel="noopener" title="snake/evolve.py, lines 131–187" aria-label="Code on GitHub: snake/evolve.py, lines 131 to 187">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L114-L128" target="_blank" rel="noopener" title="snake/evolve.py, lines 114–128" aria-label="Code on GitHub: snake/evolve.py, lines 114 to 128">48</a></span>
+    <pre class="pseudo-simple">function EVOLVE(generations):
+    population ← 60 genomes, each weight drawn from Normal(0, 0.5²)
+    repeat generations times:
+        fitness ← each genome's mean game score on 8 new boards
+        next ← the 4 fittest genomes, unchanged           # elitism
+        while |next| &lt; 60:
+            a ← TOURNAMENT(fitness, 3);  b ← TOURNAMENT(fitness, 3)
+            next ← next + [MUTATE(CROSSOVER(a, b))]
+        population ← next
+    return the best genome, chosen on the validation boards</pre>
+    <pre class="pseudo-full" hidden>function EVOLVE(settings):
+    population ← 60 genomes, each of 339 weights drawn from Normal(0, 0.5²)
+    best ← none;  candidates ← empty
+    for gen ← 1 to 80:                                # the generation count
+        seeds ← 8 integers drawn uniformly from 1000 to 39999
+        for each genome g in population:
+            fitness[g] ← mean over seeds of GAME-SCORE(PLAY(g, seed))
+        order ← genomes sorted by fitness, highest first (ties keep the earlier one)
+        if fitness[order[1]] &gt; best.fitness:
+            best ← (order[1], gen)
+        append the record of this generation to the history
+        if gen = 80:
+            candidates ← order[1..5] with generation gen
+            break
+        next ← copies of order[1..4]                  # elites, unchanged
+        while |next| &lt; 60:
+            a ← population[TOURNAMENT(fitness, 3)]
+            b ← population[TOURNAMENT(fitness, 3)]
+            for each weight j in 1..339:
+                m_j ← true with probability 0.5
+                child_j ← a_j if m_j else b_j          # uniform crossover
+            for each weight j in 1..339:
+                if a random draw is below 0.1:
+                    child_j ← child_j + NORMAL(0, 0.15²)   # Gaussian mutation
+            append child to next
+        population ← next
+    append best to candidates
+    for each genome g in candidates:
+        validation[g] ← mean over seeds 20000 to 20015 of GAME-SCORE(PLAY(g, seed))
+    return the genome with the largest validation score, and its generation
+
+function TOURNAMENT(fitness, k):
+    contenders ← k indices drawn uniformly with replacement
+    return the contender with the highest fitness</pre>
+  </div>
+  <p><b>Elitism</b> keeps the top four genomes unchanged, so crossover and mutation cannot destroy them. Because the boards change each generation, a genome's fitness is measured again on new boards, so the fitness of one generation is not comparable with another's. The champion is therefore picked on fixed boards, as in the cross-entropy method. The best genome ever seen and the top five of the last generation are scored on seeds 20000 to 20015<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L46-L49" target="_blank" rel="noopener" title="snake/evolve.py, lines 46–49" aria-label="Code on GitHub: snake/evolve.py, lines 46 to 49">53</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L181-L187" target="_blank" rel="noopener" title="snake/evolve.py, lines 181–187" aria-label="Code on GitHub: snake/evolve.py, lines 181 to 187">54</a>. Those seeds fall inside the training range, so this check is same-distribution, not held-out.</p>
+  <p>Each genome's fitness is one mean over the 8 boards, so the same boards decide between genomes in a generation. A genome cannot memorise a fixed set of boards, because the next generation draws new ones<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L5-L7" target="_blank" rel="noopener" title="snake/evolve.py, lines 5–7" aria-label="Code on GitHub: snake/evolve.py, lines 5 to 7">55</a>.</p>
+
+  <h3 class="hiw-sub">Baselines: random and greedy</h3>
+  <p>The <b>random</b> policy takes each action with the same probability. It uses its own seeded generator, so a game can be repeated exactly. It senses nothing, so it dies quickly<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L25-L32" target="_blank" rel="noopener" title="snake/agents.py, lines 25–32" aria-label="Code on GitHub: snake/agents.py, lines 25 to 32">56</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">P(\text{left}) = P(\text{straight}) = P(\text{right}) = \tfrac{1}{3}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L30" target="_blank" rel="noopener" title="snake/agents.py, line 30" aria-label="Code on GitHub: snake/agents.py, line 30">57</a></span>
+  </div>
+  <p>The <b>greedy</b> policy makes a one-step decision with no search. For each safe move it measures the <b>Manhattan distance</b>, the number of grid steps between two cells ignoring walls, from the new head to the food. It takes the move with the smallest distance. It has no learned part.</p>
+  <!-- snake/agents.py:35-47 -->
+  <div class="math-fig">
+    <div class="math math-block">d(a) = |x_a - x_f| + |y_a - y_f|, \qquad a^\ast = \operatorname{argmin}_{a \in A_{\text{safe}}} d(a)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L35-L47" target="_blank" rel="noopener" title="snake/agents.py, lines 35–47" aria-label="Code on GitHub: snake/agents.py, lines 35 to 47">58</a></span>
+  </div>
+  <p>Here <span class="math">(x_a, y_a)</span> is the head's cell after move <span class="math">a</span> and <span class="math">(x_f, y_f)</span> the food. Straight is tried first, so a tie keeps the snake going straight.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L35-L47" target="_blank" rel="noopener" title="snake/agents.py, lines 35–47" aria-label="Code on GitHub: snake/agents.py, lines 35 to 47">58</a></span>
+    <pre class="pseudo-simple">function GREEDY(game):
+    if game has no food:
+        return straight
+    best ← straight;  best_distance ← none
+    for each action a in (straight, left, right):   # straight first, so ties go straight
+        if DIES(game, a):
+            continue
+        cell ← the head's cell after a
+        distance ← |cell.x − food.x| + |cell.y − food.y|
+        if best_distance is none or distance &lt; best_distance:
+            best ← a;  best_distance ← distance
+    return best</pre>
   </div>
 
+  <h3 class="hiw-sub">Baseline: the breadth-first search planner</h3>
+  <p>The <b>planner</b> is the strongest classic baseline. It uses <b>breadth-first search</b> (BFS) for a shortest route to the food, then for a safety check, and, if needed, for a route to the tail. Its key idea is a <b>safety check</b>. After the snake eats, the tail stays in place, so the head must still be able to reach it. The planner takes the food route only if that holds<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L50-L76" target="_blank" rel="noopener" title="snake/agents.py, lines 50–76" aria-label="Code on GitHub: snake/agents.py, lines 50 to 76">59</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L94-L114" target="_blank" rel="noopener" title="snake/agents.py, lines 94–114" aria-label="Code on GitHub: snake/agents.py, lines 94 to 114">60</a>.</p>
+  <p>The check is a second BFS, from the food to the tail, through the cells the snake would occupy after eating: its body and the food route. If the check fails, the planner follows its tail instead. The tail moves away each step, so a route to it is always open, and this is called <b>tail-chasing</b>. The planner re-plans every step, so it switches to the food route as soon as the check passes. If the planned step is unsafe or no route exists, it picks the safe move that leaves the largest flood-fill region, and if no move is safe it goes straight<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L117-L133" target="_blank" rel="noopener" title="snake/agents.py, lines 117–133" aria-label="Code on GitHub: snake/agents.py, lines 117 to 133">61</a>.</p>
+  <p>The page's PLANNER HINT calls the same code on the server, and the route it returns is labelled as food, tail or none<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/snake_api.py#L70-L89" target="_blank" rel="noopener" title="server/snake_api.py, lines 70–89" aria-label="Code on GitHub: server/snake_api.py, lines 70 to 89">62</a>.</p>
+  <!-- snake/agents.py:50-76 (_bfs), 79-91 (_reachable), 94-114 (planner_path), 117-133 (planner) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L117-L133" target="_blank" rel="noopener" title="snake/agents.py, lines 117–133" aria-label="Code on GitHub: snake/agents.py, lines 117 to 133">61</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L94-L114" target="_blank" rel="noopener" title="snake/agents.py, lines 94–114" aria-label="Code on GitHub: snake/agents.py, lines 94 to 114">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L50-L76" target="_blank" rel="noopener" title="snake/agents.py, lines 50–76" aria-label="Code on GitHub: snake/agents.py, lines 50 to 76">59</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L79-L91" target="_blank" rel="noopener" title="snake/agents.py, lines 79–91" aria-label="Code on GitHub: snake/agents.py, lines 79 to 91">63</a></span>
+    <pre class="pseudo-simple">function PLANNER(game):
+    path ← PLAN-ROUTE(game)
+    if path is not empty and its first cell is a legal, safe step:
+        return the action that turns the head toward the first cell of path
+    # boxed in: take the safe move with the most room
+    return the safe action whose cell opens the largest flood-fill region, else straight
+
+function PLAN-ROUTE(game):
+    if the food route passes the tail-chasing check:
+        return the food route
+    return the route to the tail</pre>
+    <pre class="pseudo-full" hidden>function PLANNER(game):
+    path ← PLAN-ROUTE(game)
+    if path is not empty:
+        a ← action that turns the head toward the first cell of path   # relative to the heading; none if it is a reversal
+        if a is not none and not DIES(game, a):
+            return a
+    # boxed in: choose the safe move that leaves the largest empty region
+    best ← straight;  best_room ← −1
+    for each action a in (straight, left, right):
+        if DIES(game, a):
+            continue
+        room ← REACHABLE(the cell after a, blocked = body without its tail)
+        if room &gt; best_room:
+            best ← a;  best_room ← room
+    return best
+
+function PLAN-ROUTE(game):
+    body ← game.body;  head ← the first segment of body;  tail ← the last segment of body
+    blocked ← body without its last cell             # the tail will have moved away
+    if game.food exists:
+        path ← BFS(head, game.food, blocked)
+        if path exists:
+            new_blocked ← (body ∪ path) without tail
+            if BFS(game.food, tail, new_blocked) exists:   # the tail-chasing check
+                return path
+    return BFS(head, tail, blocked)
+
+function BFS(start, goal, blocked):
+    if start = goal:
+        return empty path
+    parent ← {start: none};  queue ← [start]
+    while queue is not empty:                        # cells in order of distance
+        cell ← first cell of queue;  remove it from queue
+        for each direction d in (north, east, south, west):
+            c ← cell + d
+            if c is outside the board or c is in parent:
+                continue
+            if c ≠ goal and c is in blocked:
+                continue                              # the goal may be entered even if blocked
+            parent[c] ← cell
+            if c = goal:
+                follow parent links from goal back to start
+                return the cells after start, in order
+            append c to queue
+    return none                                       # no route
+
+function REACHABLE(start, blocked):
+    seen ← {start};  queue ← [start]
+    while queue is not empty:
+        cell ← first cell of queue;  remove it from queue
+        for each neighbour c of cell:
+            if c is outside the board or c is in seen or c is in blocked:
+                continue
+            add c to seen and to queue
+    return |seen|</pre>
+  </div>
+  <p>The core of the planner is BFS, which finds a shortest route in steps because it reaches each cell first along a shortest path. The planned move is the first step of the route, and the room rule replaces it only when that step is unsafe or no route exists<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py#L136-L138" target="_blank" rel="noopener" title="snake/agents.py, lines 136–138" aria-label="Code on GitHub: snake/agents.py, lines 136 to 138">64</a>.</p>
+
+  <h3 class="hiw-sub">Results on held-out boards</h3>
+  <p>The table compares every agent on the same 200 seeded games, seeds 50000 to 50199 on the 12 × 12 board. These seeds are never used for training or for validation. The <b>median</b> is the middle value of the apples counts, and the <b>death rate</b> is the share of games that ended in a wall or body collision. A <b>starved</b> game is different: the snake is still alive, but it has looped for two laps without an apple<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py#L8-L13" target="_blank" rel="noopener" title="snake/benchmark.py, lines 8–13" aria-label="Code on GitHub: snake/benchmark.py, lines 8 to 13">65</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py#L26-L27" target="_blank" rel="noopener" title="snake/benchmark.py, lines 26–27" aria-label="Code on GitHub: snake/benchmark.py, lines 26 to 27">66</a>.</p>
+  <!-- snake/benchmark.py:43-57 (summarize) -->
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Mean apples</th><th class="num">Median</th><th class="num">Max</th><th class="num">Death rate</th><th class="num">Starved (of 200)</th></tr></thead><tbody>
+    <tr class="hl"><td>evaluation function</td><td class="num">90.13</td><td class="num">86</td><td class="num">133</td><td class="num">0.0%</td><td class="num">200</td></tr>
+    <tr><td>planner (BFS)</td><td class="num">56.13</td><td class="num">49.5</td><td class="num">137</td><td class="num">0.0%</td><td class="num">200</td></tr>
+    <tr><td>greedy</td><td class="num">20.12</td><td class="num">19</td><td class="num">47</td><td class="num">100.0%</td><td class="num">0</td></tr>
+    <tr><td>neural net (v2)</td><td class="num">13.69</td><td class="num">13</td><td class="num">26</td><td class="num">38.5%</td><td class="num">123</td></tr>
+    <tr><td>random</td><td class="num">0.16</td><td class="num">0</td><td class="num">2</td><td class="num">100.0%</td><td class="num">0</td></tr>
+  </tbody></table></div>
+  <!-- results/snake_benchmark.md -->
+  <p class="hiw-note">The table is measured on 200 games per agent, seeds 50000 to 50199, and is committed in <code>results/snake_benchmark.md</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_benchmark.md" target="_blank" rel="noopener" title="results/snake_benchmark.md" aria-label="Code on GitHub: results/snake_benchmark.md">67</a>. The evaluation function eats the most apples, and it never dies. But every one of its 200 games ends by starvation, so it stalls instead of losing. The planner is the same: it never dies, and it starves on all 200 boards, not on some of them.</p>
+  <p class="hiw-note">The evolved net (v2) eats 13.69 apples on average, which beats random by a wide margin and shows that it learned to eat. It does not beat greedy's 20.12, and it dies in 38.5% of games. Greedy dies in every game, but it eats more before it does. Treat the evolved net's row as a result, not a win.</p>
+
+  <h3 class="hiw-sub">Which way the net turns</h3>
+  <p>The mean score hides the turning pattern. Over the first 40 benchmark boards, seeds 50000 to 50039, the net made 19,829 moves: 17,033 straight (85.9%), 2,793 left (14.1%), and 3 right (0.02%). The net almost never turns right, and it turns left about one move in seven. The counts are committed in <code>results/snake_net_actions.json</code>, from <code>python -m snake actions --write</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_net_actions.json" target="_blank" rel="noopener" title="results/snake_net_actions.json" aria-label="Code on GitHub: results/snake_net_actions.json">68</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py#L106-L133" target="_blank" rel="noopener" title="snake/benchmark.py, lines 106–133" aria-label="Code on GitHub: snake/benchmark.py, lines 106 to 133">69</a>.</p>
+  <!-- snake/benchmark.py:106-133 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{share}_a = \frac{n_a}{\sum_{b} n_b}, \qquad \sum_b n_b = 19{,}829</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py#L121-L133" target="_blank" rel="noopener" title="snake/benchmark.py, lines 121–133" aria-label="Code on GitHub: snake/benchmark.py, lines 121 to 133">70</a></span>
+  </div>
+  <p>Here <span class="math">n_a</span> is the number of moves the net made with action <span class="math">a</span>. The shares are 85.9% straight, 14.1% left and 0.02% right, from the counts above.</p>
+
+  <h3 class="hiw-sub">Training history</h3>
+  <p>Each row is one version of the net. The first version was trained on three fixed boards. The live champion, v2, uses fresh boards each generation. The two longer runs were scratch runs that were not committed, so no file in <code>results/</code> backs their numbers.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Version</th><th>What changed</th><th class="num">Evolved mean apples</th><th class="num">Median</th><th class="num">Death rate</th><th class="num">Starved (of 200)</th></tr></thead><tbody>
+    <tr><td>v1</td><td>3 fixed training boards, 14 senses, 291 weights, 100 generations of 80 × 3 games</td><td class="num">2.05</td><td class="num">1</td><td class="num">5.0%</td><td class="num">190</td></tr>
+    <tr><td>v2 (live)</td><td>Fresh boards each generation, 8 games, starvation penalty 0.5, room senses, 339 weights, 80 generations of 60</td><td class="num">13.69</td><td class="num">13</td><td class="num">38.5%</td><td class="num">123</td></tr>
+    <tr><td>v3a</td><td>Starvation penalty 2.0, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">0.93</td><td class="num">1</td><td class="num">100.0%</td><td class="num">0</td></tr>
+    <tr><td>v3b</td><td>Starvation penalty 0.5, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">13.22</td><td class="num">13</td><td class="num">53.5%</td><td class="num">93</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The v2 run is logged in <code>results/snake_train_log.jsonl</code>. Its 80 generations took 583 seconds, about ten minutes on two cores, and its best generation was the 80th<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_train_log.jsonl" target="_blank" rel="noopener" title="results/snake_train_log.jsonl" aria-label="Code on GitHub: results/snake_train_log.jsonl">71</a>. The v1 log is <code>results/snake_train_log_v1.jsonl</code>, and the evaluation function's log is <code>results/snake_eval_train_log.jsonl</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_train_log_v1.jsonl" target="_blank" rel="noopener" title="results/snake_train_log_v1.jsonl" aria-label="Code on GitHub: results/snake_train_log_v1.jsonl">72</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_eval_train_log.jsonl" target="_blank" rel="noopener" title="results/snake_eval_train_log.jsonl" aria-label="Code on GitHub: results/snake_eval_train_log.jsonl">73</a>.</p>
+
   <h3 class="hiw-sub">Parameters and how they were chosen</h3>
+  <p>The genetic algorithm's settings are listed below. Its defaults are the committed run, and <code>python -m snake evolve --help</code> lists the flags<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py#L52-L67" target="_blank" rel="noopener" title="snake/evolve.py, lines 52–67" aria-label="Code on GitHub: snake/evolve.py, lines 52 to 67">74</a>.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Notes</th></tr></thead><tbody>
     <tr><td>Board</td><td>12 × 12</td><td>Fixed by the rules. The snake starts with 3 segments heading east.</td></tr>
     <tr><td>Starvation</td><td>2 laps (288 steps) without food</td><td>Ends the game. Same rule for every agent in the benchmark.</td></tr>
@@ -212,23 +654,14 @@
     <tr><td>Champion</td><td>Best of the best-ever genome and the last generation's top 5</td><td>Re-scored on 16 fixed validation seeds (20000 to 20015), not on the benchmark. These seeds fall inside the training range (1000 to 39999), so this check is same-distribution, not held-out.</td></tr>
     <tr><td>Random seed</td><td>1</td><td>Makes the run repeatable: <code>python -m snake evolve</code>.</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> by trial, not by a systematic sweep. The first version used three fixed training boards and learned to memorise them (6.0 apples on those boards, 2.05 on new ones). Fresh boards each generation fixed most of that. The starvation cap was first set to four laps, then cut to two to keep looping games cheap; the benchmark uses the same cap for every agent. The population and generation counts were set by the time budget. Two longer runs (v3a, v3b: 200 generations, population 100) did not beat v2. v3a's penalty of 2.0 collapsed into early death. v3b, with the penalty back at 0.5, reached 13.22 apples, within noise of v2's 13.69 and not better, so v2 stays the live champion. No parameter was tuned on the benchmark seeds.</p>
-
-  <h3 class="hiw-sub">Training history</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Version</th><th>What changed</th><th class="num">Evolved mean apples</th><th class="num">Median</th><th class="num">Death rate</th><th class="num">Starved (of 200)</th></tr></thead><tbody>
-    <tr><td>v1</td><td>3 fixed training boards, 14 senses, 291 weights, 100 generations of 80 × 3 games</td><td class="num">2.05</td><td class="num">1</td><td class="num">5.0%</td><td class="num">190</td></tr>
-    <tr><td>v2 (live)</td><td>Fresh boards each generation, 8 games, starvation penalty 0.5, room senses, 339 weights, 80 generations of 60</td><td class="num">13.69</td><td class="num">13</td><td class="num">38.5%</td><td class="num">123</td></tr>
-    <tr><td>v3a</td><td>Starvation penalty 2.0, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">0.93</td><td class="num">1</td><td class="num">100.0%</td><td class="num">0</td></tr>
-    <tr><td>v3b</td><td>Starvation penalty 0.5, population 100, 200 generations, 8 games. Scratch run, not committed: no file in <code>results/</code> backs these numbers.</td><td class="num">13.22</td><td class="num">13</td><td class="num">53.5%</td><td class="num">93</td></tr>
-  </tbody></table></div>
-  <p class="hiw-note"><b>Which way the net turns:</b> over the first 40 benchmark boards (seeds 50000 to 50039) the net made 19,829 moves: 17,033 straight (85.9%), 2,793 left (14.1%), and 3 right (0.02%). The mean score above hides this, so the turning pattern is nearly one-sided. The counts are committed in <code>results/snake_net_actions.json</code> (<code>python -m snake actions --write</code>).</p>
-  <p class="hiw-note"><b>Results on held-out boards:</b> 200 seeded games per agent on 12 × 12, seeds 50000 to 50199, the same boards for every agent. Random scores 0.16 apples, greedy 20.12, the BFS planner 56.13, and the evolved net (v2) 13.69. So the evolved snake clearly beats random and learned to eat, but it does not beat greedy, and it dies in 38.5% of games. Greedy dies in every game, but it eats more before it does. Treat the evolved row as a result, not a win.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/net.py">snake/net.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/evolve.py">snake/evolve.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/agents.py">snake/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/board.py">snake/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/benchmark.py">snake/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/snake/data/champion.json">snake/data/champion.json</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_benchmark.md">results/snake_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/snake_train_log.jsonl">results/snake_train_log.jsonl</a></p>
+  <p>The evaluation function's cross-entropy settings are in the table in its section above.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> by trial, not by a systematic sweep. The first version used three fixed training boards and learned to memorise them: its best generation scored 6.0 apples per game on those boards, against 2.05 on the benchmark boards. Fresh boards each generation fixed most of that. The starvation cap was first set to four laps, then cut to two to keep looping games cheap; the benchmark uses the same cap for every agent. The population and generation counts were set by the time budget. Two longer runs (v3a, v3b: 200 generations, population 100) did not beat v2. v3a's penalty of 2.0 collapsed into early death. v3b, with the penalty back at 0.5, reached 13.22 apples, within noise of v2's 13.69 and not better, so v2 stays the live champion. No parameter was tuned on the benchmark seeds.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/snake.js"></script>
 </body>

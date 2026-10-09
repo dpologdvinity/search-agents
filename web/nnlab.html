@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="nnlab.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -33,7 +34,7 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">LAB // NEURAL NETWORKS</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="NEURAL NET LAB">NEURAL NET LAB</h1>
-      <div class="proj-pg-sub">Drop pink and cyan points. A small multilayer perceptron learns, in your browser, where to draw the line between them, and you can watch every neuron and weight take part.</div>
+      <div class="proj-pg-sub">Drop pink and cyan points, then watch a small neural network learn where to draw the line between them.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -41,11 +42,16 @@
         <span class="stat-chip">EPOCH <span class="val" id="chip-epoch">0</span></span>
         <span class="stat-chip green">TRAIN ACC <span class="val" id="chip-train">—</span></span>
         <span class="stat-chip green">TEST ACC <span class="val" id="chip-test">—</span></span>
-        <span class="stat-chip">LOSS <span class="val" id="chip-loss">—</span></span>
-        <span class="stat-chip">POINTS <span class="val" id="chip-points">0</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to teach a small network to tell the pink points from the cyan ones. The plane shows where the network currently draws the boundary between them.</p>
+    <p style="margin-top:0.5rem">Click or drag on the plane to drop points of the chosen colour, or pick a preset. Training runs by itself; PAUSE and STEP control it.</p>
+    <p style="margin-top:0.5rem">Change the layers or neurons and press RESET WEIGHTS to train again from scratch. Hover a neuron in the network to see what it detects.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -56,7 +62,7 @@
           <div class="nl-board" id="board">
             <canvas id="plane" class="nl-canvas nl-plane" role="img" aria-label="Decision boundary: a heat map of the network's prediction over the plane, with the points. Click to add or erase points."></canvas>
           </div>
-          <div class="field-hint" id="plane-note">Click to drop a point of the chosen colour. Drag to paint. Erase mode removes the nearest point. Hover to read the network's answer at that spot.</div>
+          <div class="field-hint" id="plane-note">Points <span id="chip-points">0</span>. Hover the plane to read the network's answer at that spot.</div>
         </div>
 
         <div class="viz-panel nl-net-panel">
@@ -67,7 +73,7 @@
             <span><i class="nl-sw cyan"></i>negative weight</span>
             <span>thicker edge = larger weight</span>
           </div>
-          <div class="field-hint" id="net-caption">Neurons light up for the data point being shown (hover the plane to choose one). The bright bar sweeps through the layers on every epoch.</div>
+          <div class="field-hint" id="net-caption">Neurons light up for the point under the pointer on the plane. The bright bar sweeps the layers each epoch.</div>
         </div>
       </div>
 
@@ -84,7 +90,7 @@
       <div class="viz-panel nl-loss-panel">
         <div class="section-title green-ttl">LOSS CURVE</div>
         <canvas id="loss" class="nl-canvas nl-loss" role="img" aria-label="Training loss (pink, solid) and test loss (cyan, dashed) on a log scale against epochs"></canvas>
-        <div class="field-hint">Cross-entropy on a log scale. Pink solid: training points. Cyan dashed: held-out test points, which the network never trains on, so a gap between the two means overfitting.</div>
+        <div class="field-hint">Loss now <span id="chip-loss">—</span>. Pink solid: training points. Cyan dashed: held-out test points, never trained on, so a gap between them means overfitting.</div>
       </div>
     </div>
 
@@ -98,7 +104,7 @@
             <button class="cyber-btn nl-preset" type="button" data-preset="circles"><span class="btn-txt">CIRCLES</span></button>
             <button class="cyber-btn nl-preset" type="button" data-preset="spiral"><span class="btn-txt">SPIRALS</span></button>
             <button class="cyber-btn nl-preset" type="button" data-preset="moons"><span class="btn-txt">MOONS</span></button>
-            <button class="cyber-btn nl-preset" type="button" id="btn-clear"><span class="btn-txt">CLEAR</span></button>
+            <button class="cyber-btn nl-preset" type="button" id="btn-clear" title="Remove every point"><span class="btn-txt">CLEAR</span></button>
           </div>
           <div>
             <div class="field-lbl">BRUSH COLOUR</div>
@@ -110,55 +116,66 @@
           <div>
             <div class="field-lbl">BRUSH MODE</div>
             <div class="nl-seg" role="group" aria-label="Brush mode">
-              <button class="cyber-btn green" type="button" data-brush="add" aria-pressed="true"><span class="btn-txt">+ ADD POINTS</span></button>
-              <button class="cyber-btn" type="button" data-brush="erase" aria-pressed="false"><span class="btn-txt">× ERASE</span></button>
+              <button class="cyber-btn green" type="button" data-brush="add" aria-pressed="true" title="Click or drag on the plane to drop points of the brush colour."><span class="btn-txt">+ ADD POINTS</span></button>
+              <button class="cyber-btn" type="button" data-brush="erase" aria-pressed="false" title="Click or drag on the plane to remove the nearest points."><span class="btn-txt">× ERASE</span></button>
             </div>
           </div>
         </div>
       </div>
 
       <div>
-        <div class="section-title green-ttl">INPUT FEATURES</div>
-        <div class="field-hint">Choose the numbers the network sees. Curved features let a small network draw curved lines.</div>
-        <div class="nl-feats" id="feats" style="margin-top:0.5rem">
-          <button class="nl-chip" type="button" data-feature="x" aria-pressed="true">x</button>
-          <button class="nl-chip" type="button" data-feature="y" aria-pressed="true">y</button>
-          <button class="nl-chip" type="button" data-feature="x2" aria-pressed="false">x²</button>
-          <button class="nl-chip" type="button" data-feature="y2" aria-pressed="false">y²</button>
-          <button class="nl-chip" type="button" data-feature="xy" aria-pressed="false">xy</button>
-          <button class="nl-chip" type="button" data-feature="sinx" aria-pressed="false">sin πx</button>
-          <button class="nl-chip" type="button" data-feature="siny" aria-pressed="false">sin πy</button>
+        <div class="section-title green-ttl">ARCHITECTURE</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">HIDDEN LAYERS: <span id="layers-val">2</span></div>
+            <input class="nl-range" id="layers" type="range" min="0" max="4" value="2" aria-label="Hidden layers" title="How many hidden layers sit between the inputs and the output.">
+          </div>
+          <div>
+            <div class="field-lbl">NEURONS PER LAYER: <span id="neurons-val">6</span></div>
+            <input class="nl-range" id="neurons" type="range" min="1" max="8" value="6" aria-label="Neurons per hidden layer" title="How many neurons each hidden layer has.">
+          </div>
         </div>
       </div>
 
       <div>
-        <div class="section-title pink-ttl">ARCHITECTURE</div>
+        <div class="section-title pink-ttl">PLAYBACK</div>
+        <div class="stack">
+          <div class="nl-seg">
+            <button class="cyber-btn green" id="btn-play" type="button" aria-pressed="true" title="Pause or resume training. Space does the same."><span class="btn-txt">❚❚ PAUSE</span></button>
+            <button class="cyber-btn" id="btn-step" type="button" title="Train for one epoch while paused."><span class="btn-txt">▸ STEP</span></button>
+          </div>
+          <div class="nl-seg">
+            <button class="cyber-btn pink" id="btn-reset" type="button" title="Start again from new random weights with the same architecture and seed."><span class="btn-txt">↺ RESET WEIGHTS</span></button>
+          </div>
+        </div>
+      </div>
+
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
           <div>
-            <div class="field-lbl">HIDDEN LAYERS: <span id="layers-val">2</span></div>
-            <input class="nl-range" id="layers" type="range" min="0" max="4" value="2" aria-label="Hidden layers">
-          </div>
-          <div>
-            <div class="field-lbl">NEURONS PER LAYER: <span id="neurons-val">6</span></div>
-            <input class="nl-range" id="neurons" type="range" min="1" max="8" value="6" aria-label="Neurons per hidden layer">
+            <div class="section-title green-ttl">INPUT FEATURES</div>
+            <div class="nl-feats" id="feats" title="The numbers the network sees. Curved features let a small network draw curved lines.">
+              <button class="nl-chip" type="button" data-feature="x" aria-pressed="true">x</button>
+              <button class="nl-chip" type="button" data-feature="y" aria-pressed="true">y</button>
+              <button class="nl-chip" type="button" data-feature="x2" aria-pressed="false">x²</button>
+              <button class="nl-chip" type="button" data-feature="y2" aria-pressed="false">y²</button>
+              <button class="nl-chip" type="button" data-feature="xy" aria-pressed="false">xy</button>
+              <button class="nl-chip" type="button" data-feature="sinx" aria-pressed="false">sin πx</button>
+              <button class="nl-chip" type="button" data-feature="siny" aria-pressed="false">sin πy</button>
+            </div>
           </div>
           <div>
             <div class="field-lbl">ACTIVATION</div>
-            <select class="cyber-select" id="act" style="width:100%" aria-label="Activation function">
+            <select class="cyber-select" id="act" style="width:100%" aria-label="Activation function" title="The bend after each hidden neuron's weighted sum.">
               <option value="tanh" selected>tanh: smooth, centred on 0</option>
               <option value="relu">ReLU: max(0, z), sharp corners</option>
               <option value="sigmoid">sigmoid: squashes to 0 to 1</option>
             </select>
           </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">TRAINING</div>
-        <div class="stack">
           <div>
             <div class="field-lbl">LEARNING RATE</div>
-            <select class="cyber-select" id="lr" style="width:100%" aria-label="Learning rate">
+            <select class="cyber-select" id="lr" style="width:100%" aria-label="Learning rate" title="The size of each weight step.">
               <option value="0.001">0.001</option>
               <option value="0.003">0.003</option>
               <option value="0.01">0.01</option>
@@ -169,7 +186,7 @@
           </div>
           <div>
             <div class="field-lbl">BATCH SIZE</div>
-            <select class="cyber-select" id="batch" style="width:100%" aria-label="Mini-batch size">
+            <select class="cyber-select" id="batch" style="width:100%" aria-label="Mini-batch size" title="Points used for each weight step. Full batch uses every training point.">
               <option value="1">1 (stochastic)</option>
               <option value="4">4</option>
               <option value="8">8</option>
@@ -180,14 +197,14 @@
           </div>
           <div>
             <div class="field-lbl">OPTIMISER</div>
-            <select class="cyber-select" id="opt" style="width:100%" aria-label="Optimiser">
+            <select class="cyber-select" id="opt" style="width:100%" aria-label="Optimiser" title="Adam rescales each weight's step; plain gradient descent uses the same step for all.">
               <option value="adam" selected>Adam</option>
               <option value="sgd">Plain gradient descent</option>
             </select>
           </div>
           <div>
             <div class="field-lbl">L2 REGULARISATION (λ)</div>
-            <select class="cyber-select" id="l2" style="width:100%" aria-label="L2 regularisation">
+            <select class="cyber-select" id="l2" style="width:100%" aria-label="L2 regularisation" title="A penalty on large weights, to smooth the boundary.">
               <option value="0" selected>0 (off)</option>
               <option value="0.001">0.001</option>
               <option value="0.01">0.01</option>
@@ -196,7 +213,7 @@
           </div>
           <div>
             <div class="field-lbl">TEST SHARE (HELD OUT)</div>
-            <select class="cyber-select" id="split" style="width:100%" aria-label="Share of points held out for testing">
+            <select class="cyber-select" id="split" style="width:100%" aria-label="Share of points held out for testing" title="Points the network never trains on, used for the test curve.">
               <option value="0">none</option>
               <option value="0.2" selected>20%</option>
               <option value="0.35">35%</option>
@@ -205,97 +222,219 @@
           </div>
           <div>
             <div class="field-lbl">NOISE: <span id="noise-val">0.00</span></div>
-            <input class="nl-range" id="noise" type="range" min="0" max="0.3" step="0.01" value="0" aria-label="Noise">
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">PLAYBACK</div>
-        <div class="stack">
-          <div class="nl-seg">
-            <button class="cyber-btn green" id="btn-play" type="button" aria-pressed="true"><span class="btn-txt">❚❚ PAUSE</span></button>
-            <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">▸ STEP</span></button>
-          </div>
-          <div class="nl-seg">
-            <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ RESET WEIGHTS</span></button>
-            <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">⟲ NEW SEED</span></button>
+            <input class="nl-range" id="noise" type="range" min="0" max="0.3" step="0.01" value="0" aria-label="Noise" title="Jitter added to every point, so the classes overlap more.">
           </div>
           <div>
             <div class="field-lbl">EPOCHS PER SECOND: <span id="speed-val">20</span></div>
-            <input class="nl-range" id="speed" type="range" min="1" max="60" value="20" aria-label="Epochs per second">
+            <input class="nl-range" id="speed" type="range" min="1" max="60" value="20" aria-label="Epochs per second" title="How fast training runs while it is playing.">
           </div>
-          <div class="field-hint">Seed <span id="seed-val">0</span>. The seed fixes the points, the starting weights and the batch order, so a run can be replayed.</div>
+          <div>
+            <div class="field-lbl">SEED <span id="seed-val">0</span></div>
+            <button class="cyber-btn" id="btn-seed" type="button" title="Draw a new seed: new points, new starting weights and a new batch order."><span class="btn-txt">⟲ NEW SEED</span></button>
+          </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">A neural network is a stack of simple weighted sums, each followed by a bend. Training nudges every weight a little in the direction that makes the predictions less wrong, and repeats. Everything on this page runs in JavaScript (web/js/nnlab-core.js), a port of the NumPy package that gives the same numbers for the same seed.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>What a neural network is</h3>
-      <p class="hiw-plain"><b>New to this?</b> A neural network is a function with many adjustable knobs, called weights. You give it numbers (here, where a point sits on the plane), and it gives back a guess (pink or cyan). At the start the knobs are random, so the guesses are random. Training turns the knobs until the guesses match the colours.</p>
-      <p>Here the input is the point's position, optionally widened by the features you pick. The output is one number between 0 and 1: the network's probability that the point is pink. Everything in between is a stack of layers, each a row of neurons.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The forward pass</h3>
-      <p class="hiw-plain"><b>New to this?</b> A neuron multiplies each of its inputs by a weight, adds them up with a bias, and passes the total through a bend called an activation. A layer is a row of neurons that all read the same inputs. Chaining layers lets the network build shapes out of simple pieces.</p>
-      <p>For a layer with input a, the pre-activation is z = W a + b, and the output is f(z). The last layer uses a sigmoid, so its output p = sigmoid(z) is a probability. Hover a neuron and you see the shape it has learned: the region of the plane where it fires.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The loss</h3>
-      <p class="hiw-plain"><b>New to this?</b> The loss is one number that says how wrong the network is. It is small when the network is confident and right, and large when it is confident and wrong. Training is just trying to make this number smaller.</p>
-      <p>The loss is binary cross-entropy: L = mean of −[y log p + (1 − y) log(1 − p)], where y is 1 for pink and 0 for cyan. It punishes confident mistakes hard. The curve on the page is log10 of the loss, averaged over the training points. The test curve uses points the network never trains on.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Backpropagation</h3>
-      <p class="hiw-plain"><b>New to this?</b> To improve each knob, we need to know how much it affects the loss. Backpropagation works that out for every knob at once, by walking backwards from the output and passing blame down through the layers, the way a chain of cause and effect is traced.</p>
-      <p>The chain rule gives dL/dz for the output as (p − y) / batch, using the sigmoid and the cross-entropy together. Then dL/dW = (dL/dz) aᵀ, dL/db is the sum of dL/dz, and the blame moves to the layer below as dL/da = Wᵀ(dL/dz), multiplied by the activation's slope f′(z). The code in nnlab/mlp.py repeats these four steps layer by layer, and tests/test_nnlab.py checks them against finite differences.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Gradient descent and Adam</h3>
-      <p class="hiw-plain"><b>New to this?</b> Once we know which way each knob should move, we take a small step the other way. The learning rate sets the step size. Too large and the steps overshoot; too small and training crawls. A mini-batch is a random handful of points used for one step, which is noisy but fast.</p>
-      <p>Plain descent updates each parameter as p ← p − lr · g. Adam keeps a running average of the gradient and of its square, so each parameter gets a step of about lr whatever the gradient's scale, and it is the default here. Each epoch shuffles the points and takes one step per batch.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Activations</h3>
-      <p class="hiw-plain"><b>New to this?</b> Without a bend between layers, a stack of weighted sums is just one weighted sum, and it can only draw straight lines. The activation is that bend. It is what lets the network draw curves, and it decides how a neuron responds to its input.</p>
-      <p>tanh squashes to (−1, 1) and is centred on 0. Its slope, 1 − tanh², is 1 at 0 and falls toward 0 at the ends. ReLU is max(0, z): it is linear for positive input and off for negative, cheap to compute, and its slope is 0 or 1. Sigmoid squashes to (0, 1) but its slope is at most 0.25, so deep sigmoid stacks learn slowly. The output unit is always a sigmoid, because it gives a probability.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Overfitting and regularisation</h3>
-      <p class="hiw-plain"><b>New to this?</b> With enough knobs, a network can memorise the training points, wiggling around each one. It then does well on those points and badly on new ones. The held-out test points show this: if the training accuracy climbs while the test accuracy stalls, the network has memorised. Two remedies are on the page: a smaller network or an L2 penalty.</p>
-      <p>L2 regularisation adds (λ / 2) Σ W² to the loss, so large weights cost something, and the gradient gains λW. The biases are left out. The test share holds points back from training. Noise blurs the points, which makes memorising harder. The defaults (no L2, no noise) are chosen to show the boundary bending freely. Raise λ or the noise to see the boundary smooth out.</p>
-    </article>
+  <p class="hiw-lede">A <b>neural network</b> is a stack of weighted sums, each followed by a fixed bend. Training changes the weights a little at a time so that the predictions become less wrong. Everything on this page runs in JavaScript<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L1-L7" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 1–7" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 1 to 7">1</a>, a port of the NumPy package, and gives the same numbers as the Python code for the same seed.</p>
+
+  <h3 class="hiw-sub">Forward pass and activations</h3>
+  <p class="hiw-note">The network has input layer <span class="math">a^{(0)} = x</span>, hidden layers and one output unit. The input is the point's position, optionally widened by the chosen features. The <b>weights</b> <span class="math">W^{(l)}</span> and <b>biases</b> <span class="math">b^{(l)}</span> of layer <span class="math">l</span> give each neuron a <b>pre-activation</b>, and an <b>activation</b> <span class="math">f</span> bends it. The output is a sigmoid, so it is a probability.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L178-L204" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 178–204" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 178 to 204">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L89-L100" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 89–100" aria-label="Code on GitHub: nnlab/mlp.py, lines 89 to 100">3</a></p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L178-L204" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 178–204" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 178 to 204">2</a></span>
+    <div class="math math-block">z^{(l)} = W^{(l)} a^{(l-1)} + b^{(l)}, \qquad a^{(l)} = f\bigl(z^{(l)}\bigr) \ \text{for hidden } l, \qquad p = \sigma\bigl(z^{(L)}\bigr)</div>
   </div>
+  <p class="hiw-note">Here <span class="math">L</span> is the number of weight layers, <span class="math">W^{(l)}</span> has one row per output neuron and one column per input, and <span class="math">\sigma(z) = 1 / (1 + e^{-z})</span> is the sigmoid. <span class="math">p</span> is the probability that the point is pink, and <span class="math">z^{(L)}</span> is its <b>logit</b>, the output before the sigmoid. Without a bend, a stack of weighted sums is one weighted sum, so the activation is what lets the network draw curves.</p>
+  <p class="hiw-note">Three activations are offered. <b>tanh</b> squashes to (−1, 1) and is centred on 0. <b>ReLU</b> is <span class="math">\max(0, z)</span>: linear for positive input and off for negative. <b>Sigmoid</b> squashes to (0, 1). Each derivative is written in terms of the output <span class="math">a = f(z)</span>, because that value is already stored during the forward pass<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L163-L174" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 163–174" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 163 to 174">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L29-L53" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 29–53" aria-label="Code on GitHub: nnlab/mlp.py, lines 29 to 53">5</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L163-L174" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 163–174" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 163 to 174">4</a></span>
+    <div class="math math-block">f'(z) = \begin{cases} 1 - a^2 &amp; \text{tanh} \\ a(1 - a) &amp; \text{sigmoid} \\ [\,a > 0\,] &amp; \text{ReLU} \end{cases}</div>
+  </div>
+  <p class="hiw-note">The tanh slope is 1 at 0 and falls toward 0 at the ends. The sigmoid slope is at most 0.25, so deep sigmoid stacks learn slowly. The ReLU slope is 0 or 1. The output unit is always a sigmoid.</p>
 
-  <h3 class="hiw-sub">Parameters and their values</h3>
+  <h3 class="hiw-sub">Datasets and input features</h3>
+  <p class="hiw-note">The page draws <span class="math">200</span> points for each preset, with labels alternating between cyan (0) and pink (1), except XOR, whose label depends on the quadrant. Every point has a base position, a jitter pair <span class="math">(j_x, j_y)</span> of standard normal draws, and a split draw <span class="math">u</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L50-L109" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 50–109" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 50 to 109">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/data.py#L24-L74" target="_blank" rel="noopener" title="nnlab/data.py, lines 24–74" aria-label="Code on GitHub: nnlab/data.py, lines 24 to 74">7</a>. The base positions are these formulas, with <span class="math">\varepsilon</span> standing for a standard normal draw:</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L51-L90" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 51–90" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 51 to 90">8</a></span>
+    <div class="math math-block">\begin{aligned} \text{blobs:}\quad &amp; x = \pm 0.45 + 0.25\,\varepsilon_x, \quad y = \pm 0.45 + 0.25\,\varepsilon_y \\ \text{xor:}\quad &amp; (x, y) = (s_x,\ s_y) + 0.2\,\varepsilon, \quad s_x, s_y \in \{\pm 0.5\} \\ \text{circles:}\quad &amp; r = r_0 + 0.05\,\varepsilon, \quad \theta \sim U(0, 2\pi), \quad (x, y) = (r\cos\theta,\ r\sin\theta) \\ \text{spiral:}\quad &amp; t \sim U(0, 1), \quad \theta = 3.2\pi t + \text{label}\,\pi, \quad r = 0.1 + 0.8t, \quad (x, y) = (r\cos\theta,\ r\sin\theta) \\ \text{moons:}\quad &amp; t \sim U(0, \pi), \quad (x, y) = \begin{cases} (0.6\cos t - 0.3,\ 0.6\sin t - 0.15) &amp; \text{cyan} \\ (-0.6\cos t + 0.3,\ -0.6\sin t + 0.15) &amp; \text{pink} \end{cases} \end{aligned}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">r_0 = 0.4</span> for cyan points and <span class="math">r_0 = 0.85</span> for pink ones, so the circles preset is two concentric rings. The spiral adds <span class="math">0.03\,\varepsilon</span> to each coordinate, and the moons add <span class="math">0.06\,\varepsilon</span> to each coordinate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L74-L90" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 74–90" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 74 to 90">9</a>. Pink and cyan spiral arms are half a turn apart, because the label adds <span class="math">\pi</span>. The moons are two arcs, one per class. The features are chosen from a fixed list, and each one is computed from the point's effective position <span class="math">(x, y)</span>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L111-L119" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 111–119" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 111 to 119">10</a></span>
+    <div class="math math-block">\phi(x, y) = \bigl(x,\ y,\ x^2,\ y^2,\ xy,\ \sin \pi x,\ \sin \pi y\bigr)</div>
+  </div>
+  <p class="hiw-note">The page feeds the network the components of <span class="math">\phi</span> that are switched on. The default is <span class="math">(x, y)</span>. Curved features let a small network draw curved boundaries without more layers. The default needs none, because the circles are already curved in the plain coordinates.</p>
+
+  <p class="hiw-note"><b>The plane</b> colours each grid cell by the network's probability <span class="math">p</span>: cyan at 0, pink at 1, and a blend between. The brightness grows with confidence, and a bright band marks the boundary where <span class="math">p \approx 0.5</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L227-L243" target="_blank" rel="noopener" title="web/js/nnlab.js, lines 227–243" aria-label="Code on GitHub: web/js/nnlab.js, lines 227 to 243">11</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L227-L243" target="_blank" rel="noopener" title="web/js/nnlab.js, lines 227–243" aria-label="Code on GitHub: web/js/nnlab.js, lines 227 to 243">11</a></span>
+    <div class="math math-block">c_k(p) = \bigl((1 - p)\, C_k + p\, P_k\bigr)\bigl(0.14 + 0.5\,|2p - 1|\bigr) + 216.75\, e^{-((p - 0.5)/0.06)^2}, \qquad k \in \{R, G, B\}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">C = (0, 245, 255)</span> is cyan, <span class="math">P = (255, 0, 160)</span> is pink, and <span class="math">216.75 = 0.85 \cdot 255</span> is the strength of the boundary band. The alpha channel is always 255.</p>
+
+  <h3 class="hiw-sub">Loss and accuracy</h3>
+  <p class="hiw-note">The <b>loss</b> measures how wrong the network is. The lab uses <b>binary cross-entropy</b>, which is small when the network is confident and right, and large when it is confident and wrong. For a point with logit <span class="math">z</span> and label <span class="math">y \in \{0, 1\}</span>, the code uses the stable form below, which is the same as <span class="math">-[y \log p + (1 - y) \log(1 - p)]</span> with <span class="math">p = \sigma(z)</span>, but never takes the log of a number near 0<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L212-L231" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 212–231" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 212 to 231">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L107-L139" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 107–139" aria-label="Code on GitHub: nnlab/mlp.py, lines 107 to 139">13</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L212-L231" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 212–231" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 212 to 231">12</a></span>
+    <div class="math math-block">\ell(z, y) = \max(z, 0) - z\,y + \log\bigl(1 + e^{-|z|}\bigr), \qquad L = \frac{1}{n} \sum_{s=1}^{n} \ell(z_s, y_s) + \frac{\lambda}{2} \sum_{l} \lVert W^{(l)} \rVert_F^2</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the number of points in the batch, <span class="math">\lVert \cdot \rVert_F</span> is the Frobenius norm, and <span class="math">\lambda</span> is the L2 strength (0 by default). The penalty covers the weights only, not the biases. The curves on the page plot <span class="math">\log_{10}</span> of the mean loss over the training points and over the test points, with the loss floored at <span class="math">10^{-6}</span> before the log<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L508-L520" target="_blank" rel="noopener" title="web/js/nnlab.js, lines 508–520" aria-label="Code on GitHub: web/js/nnlab.js, lines 508 to 520">14</a>. The penalty is not part of the plotted curves, which show the data loss.</p>
+  <p class="hiw-note"><b>Accuracy</b> counts a point as correct when the network's probability is on the same side of 0.5 as its label. The code tests the logit instead, since <span class="math">z \ge 0</span> is the same as <span class="math">p \ge 0.5</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L268-L280" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 268–280" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 268 to 280">15</a>. The <b>train</b> and <b>test</b> accuracies in the header are the fraction of points correct in each set.</p>
+
+  <h3 class="hiw-sub">Backpropagation</h3>
+  <p class="hiw-note"><b>Backpropagation</b> computes the gradient of the loss with respect to every weight and bias. It runs the chain rule from the output back to the first layer, reusing the values stored during the forward pass. Write <span class="math">\delta^{(l)}</span> for the gradient of the loss with respect to layer <span class="math">l</span>'s pre-activations. The output gradient of binary cross-entropy with a sigmoid is simple, and the rest follows layer by layer<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L233-L264" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 233–264" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 233 to 264">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L107-L139" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 107–139" aria-label="Code on GitHub: nnlab/mlp.py, lines 107 to 139">13</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L233-L264" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 233–264" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 233 to 264">16</a></span>
+    <div class="math math-block">\delta^{(L)} = \frac{p - y}{n}, \qquad \frac{\partial L}{\partial W^{(l)}} = \bigl(\delta^{(l)}\bigr)^{\!\top} a^{(l-1)} + \lambda W^{(l)}, \qquad \frac{\partial L}{\partial b^{(l)}} = \sum_{s} \delta^{(l)}_s, \qquad \delta^{(l-1)} = \bigl(\delta^{(l)} W^{(l)}\bigr) \odot f'\bigl(z^{(l-1)}\bigr)</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">\delta^{(l)}_s</span> is the row for sample <span class="math">s</span>, the sums run over the batch, and <span class="math">\odot</span> is the element-wise product. The last formula is the blame passed down a layer: each unit's blame is the weighted sum of the blame of the units it feeds, times its own slope <span class="math">f'</span>. The code writes <span class="math">f'</span> in terms of the stored activation <span class="math">a^{(l-1)}</span>, which is the same number. The gradients are checked against finite differences in the test suite<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py#L23-L53" target="_blank" rel="noopener" title="tests/test_nnlab.py, lines 23–53" aria-label="Code on GitHub: tests/test_nnlab.py, lines 23 to 53">17</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L212-L266" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 212–266" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 212 to 266">18</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L107-L139" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 107–139" aria-label="Code on GitHub: nnlab/mlp.py, lines 107 to 139">13</a></span>
+    <pre class="pseudo-simple">function BACKPROP(network, X, y, λ):
+    forward pass: store each layer's input a and pre-activation z
+    loss ← mean cross-entropy of the outputs + (λ/2) · sum of squared weights
+    δ ← (p − y) / n                              # gradient at the output
+    for each layer l from the last to the first:
+        dW(l) ← δᵀ a(l−1) + λ W(l)               # weight gradient
+        db(l) ← sum of δ over the batch           # bias gradient
+        if l is not the first layer:
+            δ ← (δ W(l)) × f′(z(l−1))            # pass the blame down one layer
+    return loss, dW, db</pre>
+    <pre class="pseudo-full" hidden>constants: none
+
+function LOSS-AND-GRADS(net, X, y, n, λ):
+    A(0) ← X                                      # the inputs of the batch
+    for each weight layer l from 1 to L:          # forward pass
+        for each sample s and unit j:
+            z(l)[s, j] ← sum over i of W(l)[j, i] · A(l−1)[s, i] + b(l)[j]
+            A(l)[s, j] ← sigmoid(z(l)[s, j]) if l = L, else f(z(l)[s, j])
+    z ← z(L)                                      # the output logits
+    data ← 0
+    for each sample s:
+        data ← data + max(z[s], 0) − z[s] · y[s] + log(1 + exp(−|z[s]|))
+    data ← data / n
+    reg ← (λ / 2) · sum of W(l)[j, i]² over every weight layer    # biases not penalised
+    δ[s] ← (sigmoid(z[s]) − y[s]) / n for each sample s
+    for l ← L down to 1:
+        for each unit j in layer l:
+            db(l)[j] ← sum over s of δ[s, j]
+            for each input i:
+                dW(l)[j, i] ← sum over s of δ[s, j] · A(l−1)[s, i] + λ · W(l)[j, i]
+        if l > 1:
+            for each sample s and each input i of layer l:
+                da ← sum over j of δ[s, j] · W(l)[j, i]
+                δnew[s, i] ← da · f′(A(l−1)[s, i])        # slope from the stored activation
+            δ ← δnew
+    return data, reg, dW, db</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> The forward pass stores every layer's activation, so the backward pass never recomputes it. The data loss uses the logit form, so it is stable for large weights. The L2 penalty is computed separately (<code>reg</code>) for the reported loss, while its gradient is added to each weight (<span class="math">\lambda W</span>). The loss returned for plotting is the data loss only. The output gradient is divided by the batch size, so every gradient is a mean over the batch, and a batch of 16 and a batch of 160 give gradients of the same scale.</p>
+
+  <h3 class="hiw-sub">Gradient descent, Adam and mini-batches</h3>
+  <p class="hiw-note">A <b>mini-batch</b> is a random group of training points used for one weight update. Each <b>epoch</b> shuffles the training points with a Fisher-Yates shuffle, then takes one step per batch. The last batch may be smaller. A batch size of 0 or at least the number of training points means one step per epoch on all the points, which is <b>full batch</b><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L316-L348" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 316–348" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 316 to 348">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L188-L210" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 188–210" aria-label="Code on GitHub: nnlab/mlp.py, lines 188 to 210">20</a>.</p>
+  <p class="hiw-note"><b>Plain gradient descent</b> moves each parameter against its gradient by the learning rate <span class="math">\eta</span>. <b>Adam</b> keeps a running mean of the gradient and of its square, and divides by the root of the square, so every parameter steps by roughly <span class="math">\eta</span> whatever the scale of its gradient. Both are applied to every weight array and every bias array, one step per mini-batch<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L282-L314" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 282–314" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 282 to 314">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L152-L186" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 152–186" aria-label="Code on GitHub: nnlab/mlp.py, lines 152 to 186">22</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L299-L312" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 299–312" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 299 to 312">23</a></span>
+    <div class="math math-block">\begin{aligned} \text{SGD:}\quad &amp; \theta \leftarrow \theta - \eta\, g \\ \text{Adam:}\quad &amp; m \leftarrow \beta_1 m + (1 - \beta_1) g, \qquad v \leftarrow \beta_2 v + (1 - \beta_2) g^2 \\ &amp; \hat m = \frac{m}{1 - \beta_1^t}, \qquad \hat v = \frac{v}{1 - \beta_2^t}, \qquad \theta \leftarrow \theta - \eta\, \frac{\hat m}{\sqrt{\hat v} + \varepsilon} \end{aligned}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">\theta</span> is one parameter, <span class="math">g</span> its gradient on the batch, <span class="math">t</span> the number of steps taken so far, and <span class="math">\eta</span> the learning rate. The code uses <span class="math">\beta_1 = 0.9</span>, <span class="math">\beta_2 = 0.999</span> and <span class="math">\varepsilon = 10^{-8}</span>. The bias correction <span class="math">1 - \beta^t</span> matters for the first steps, when the running means have seen only a few gradients and are still close to their starting value of 0.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L291-L313" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 291–313" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 291 to 313">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L171-L186" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 171–186" aria-label="Code on GitHub: nnlab/mlp.py, lines 171 to 186">25</a></span>
+    <pre class="pseudo-simple">function ADAM-STEP(θ, g, m, v, t):
+    m ← β1 · m + (1 − β1) · g                    # running mean of the gradient
+    v ← β2 · v + (1 − β2) · g²                   # running mean of its square
+    m̂ ← m / (1 − β1^t)                           # bias correction for the first steps
+    v̂ ← v / (1 − β2^t)
+    θ ← θ − η · m̂ / (√v̂ + ε)</pre>
+    <pre class="pseudo-full" hidden>constants: β1 = 0.9, β2 = 0.999, ε = 1e−8
+
+function OPTIMISER-STEP(opt, net, gW, gb):
+    t ← t + 1                                     # once per mini-batch
+    for each weight layer l:
+        UPDATE(net.W(l), gW(l), mW(l), vW(l))
+        UPDATE(net.b(l), gb(l), mb(l), vb(l))
+
+function UPDATE(θ, g, m, v):
+    if the optimiser is plain gradient descent:
+        for each entry k of θ:
+            θ[k] ← θ[k] − η · g[k]
+        return
+    c1 ← 1 − β1^t;  c2 ← 1 − β2^t
+    for each entry k of θ:
+        m[k] ← β1 · m[k] + (1 − β1) · g[k]
+        v[k] ← β2 · v[k] + (1 − β2) · g[k]²
+        θ[k] ← θ[k] − η · (m[k] / c1) / (√(v[k] / c2) + ε)</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> The step counter <span class="math">t</span> is shared by every parameter and grows once per mini-batch, so the bias correction is the same for all weights. Each array keeps its own <span class="math">m</span> and <span class="math">v</span>, the same size as the array. Plain gradient descent does not update the running means, so it keeps no state.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L327-L348" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 327–348" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 327 to 348">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L197-L210" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 197–210" aria-label="Code on GitHub: nnlab/mlp.py, lines 197 to 210">27</a></span>
+    <pre class="pseudo-simple">function TRAIN-EPOCH(net, points, batch):
+    order ← the training points, shuffled
+    for each batch of consecutive points in order:      # the last batch may be smaller
+        gradients ← BACKPROP(net, the points of this batch)
+        apply one optimiser step with the gradients</pre>
+    <pre class="pseudo-full" hidden>function TRAIN-EPOCH(net, opt, X, y, n, rng, batch, λ):
+    if n = 0: return
+    B ← n if batch ≤ 0 or batch ≥ n, else batch
+    order ← [0, 1, …, n − 1]
+    for i from n − 1 down to 1:                  # Fisher-Yates shuffle
+        j ← floor(rng.random() · (i + 1))
+        swap order[i] and order[j]
+    for start ← 0 to n − 1 in steps of B:
+        idx ← order[start] … order[min(n, start + B) − 1]
+        Xb ← rows idx of X;  yb ← entries idx of y
+        data, reg, gW, gb ← LOSS-AND-GRADS(net, Xb, yb, length of idx, λ)
+        OPTIMISER-STEP(opt, net, gW, gb)</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> The shuffle is seeded, so the batch order is part of the seed. The last batch is taken as it is, so every training point is used once per epoch. The page runs up to 12 epochs in one frame and carries any fraction over to the next, so the speed setting holds on any frame rate.</p>
+
+  <h3 class="hiw-sub">Initialisation</h3>
+  <p class="hiw-note">Starting every weight at 0 would make all neurons in a layer compute the same thing, so the weights start small and random. The code draws each weight uniformly, with a width chosen so that the signal keeps about the same size from layer to layer. Biases start at 0<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L142-L161" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 142–161" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 142 to 161">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py#L68-L86" target="_blank" rel="noopener" title="nnlab/mlp.py, lines 68–86" aria-label="Code on GitHub: nnlab/mlp.py, lines 68 to 86">29</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L142-L161" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 142–161" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 142 to 161">28</a></span>
+    <div class="math math-block">W^{(l)}_{ji} \sim U(-c_l, c_l), \qquad c_l = \begin{cases} \sqrt{6 / (n_{\text{in}} + n_{\text{out}})} &amp; \text{Glorot, the default} \\ \sqrt{6 / n_{\text{in}}} &amp; \text{He, ReLU and layer } l \text{ not the output} \end{cases}</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">n_{\text{in}}</span> and <span class="math">n_{\text{out}}</span> are the layer's input and output widths. The Glorot scale is used for every layer except the ReLU hidden layers, which use the He scale. The page sets the seed of the initial weights to <span class="math">\text{seed} + 1</span> and the batch shuffle to <span class="math">\text{seed} + 2</span>, the same as the Python train command<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/train.py#L1-L8" target="_blank" rel="noopener" title="nnlab/train.py, lines 1–8" aria-label="Code on GitHub: nnlab/train.py, lines 1 to 8">30</a>.</p>
+
+  <h3 class="hiw-sub">Overfitting and regularisation</h3>
+  <p class="hiw-note"><b>Overfitting</b> means the network learns the training points, including their noise, and does badly on new points. The held-out test share shows it: if training accuracy keeps rising while test accuracy stalls, the network has memorised. The page holds back the test share at random, using each point's split draw <span class="math">u</span>: a point is a test point when <span class="math">u</span> is below the share<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L121-L138" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 121–138" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 121 to 138">31</a>.</p>
+  <p class="hiw-note">Two remedies are on the page. <b>L2 regularisation</b> adds a penalty on the weights, so large weights cost loss, and its gradient is <span class="math">\lambda W</span> (see the loss above). <b>Noise</b> moves every point by its own jitter, scaled by the noise level, which blurs the classes and makes memorising harder<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L121-L129" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 121–129" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 121 to 129">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L96-L97" target="_blank" rel="noopener" title="web/js/nnlab.js, lines 96–97" aria-label="Code on GitHub: web/js/nnlab.js, lines 96 to 97">33</a>. The defaults (no L2, no noise) show the boundary bending freely, and raising either one smooths it.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L121-L129" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 121–129" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 121 to 129">32</a></span>
+    <div class="math math-block">\tilde x = x + \sigma_{\text{noise}}\, j_x, \qquad \tilde y = y + \sigma_{\text{noise}}\, j_y, \qquad \text{test point} \iff u &lt; \tau</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">\sigma_{\text{noise}}</span> is the noise level, <span class="math">j_x, j_y</span> are the point's standard normal jitter draws, and <span class="math">\tau</span> is the test share. The jitter is stored per point, so changing the noise moves the points smoothly rather than redrawing them.</p>
+  <p class="hiw-note"><b>Milestone.</b> The first time a network reaches 95% accuracy on its test points (training points if there are none), after at least 20 epochs, the page shows BOUNDARY LOCKED once<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L138-L157" target="_blank" rel="noopener" title="web/js/nnlab.js, lines 138–157" aria-label="Code on GitHub: web/js/nnlab.js, lines 138 to 157">34</a>.</p>
+
+  <h3 class="hiw-sub">Parameters and defaults</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Why this value</th></tr></thead><tbody>
-    <tr><td>Dataset</td><td>circles, 200 points</td><td>A pink ring around a cyan disc cannot be split by a straight line, so the default shows what hidden layers add. 200 points keep each epoch cheap enough to run many per second.</td></tr>
-    <tr><td>Features</td><td>x, y</td><td>The plain coordinates are enough for the circles, so the default network needs no extra features. The curved features change the boundary's shape, at the cost of more inputs.</td></tr>
-    <tr><td>Hidden layers</td><td>2</td><td>Two hidden layers are enough to learn the ring in the Python check (full training accuracy within 300 epochs). More layers add knobs to fit on 200 points.</td></tr>
-    <tr><td>Neurons per layer</td><td>6</td><td>Each neuron contributes one bend, and the ring needs several. Six reaches full training accuracy on the default run and still fits the diagram.</td></tr>
-    <tr><td>Activation</td><td>tanh</td><td>Centred on 0 and smooth, so the early steps are well scaled, and its output in (−1, 1) maps directly onto the neuron colours.</td></tr>
-    <tr><td>Weight init</td><td>Glorot uniform; He for ReLU</td><td>The weight scale keeps the signal's size about the same from layer to layer, so no layer starts saturated (flat, with no slope to learn from).</td></tr>
-    <tr><td>Learning rate</td><td>0.03</td><td>With Adam, 0.03 is fast enough to see the boundary move within seconds, and low enough that it does not jump around the ring.</td></tr>
-    <tr><td>Batch size</td><td>16</td><td>About 10 steps per epoch on the roughly 160 training points. Small batches are cheap and add sampling noise to each step, which is why the page offers 1 to full batch.</td></tr>
-    <tr><td>Optimiser</td><td>Adam (β₁ 0.9, β₂ 0.999, ε 1e-8)</td><td>The standard defaults from Kingma and Ba (2015). Adam rescales each weight's step by its own gradient history, so one learning rate works across all the weights.</td></tr>
-    <tr><td>L2 λ</td><td>0 (off)</td><td>Off so the first run shows the unregularised boundary. Try 0.01 to see the shape tighten.</td></tr>
-    <tr><td>Test share</td><td>20%</td><td>A fifth of the points are held out, so the test accuracy is measured on points the network never trained on.</td></tr>
-    <tr><td>Noise</td><td>0</td><td>Clean data first. Noise moves each point by noise × a normal draw, so the classes overlap more.</td></tr>
-    <tr><td>Epochs per second</td><td>20</td><td>Fast enough that the boundary visibly moves, slow enough to follow each change.</td></tr>
-    <tr><td>Seed</td><td>0</td><td>The points, the starting weights and the batch order all come from the seed, so the same seed replays the same run. The browser and the Python package agree on it.</td></tr>
+    <tr><td>Dataset<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L12-L25" target="_blank" rel="noopener" title="nnlab/config.py, lines 12–25" aria-label="Code on GitHub: nnlab/config.py, lines 12 to 25">35</a></td><td>circles, 200 points</td><td>Two concentric rings cannot be split by a straight line, so the default shows what hidden layers add. 200 points keep each epoch cheap enough to run many per second.</td></tr>
+    <tr><td>Features<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L34" target="_blank" rel="noopener" title="web/js/nnlab.js, line 34" aria-label="Code on GitHub: web/js/nnlab.js, line 34">36</a></td><td>x, y</td><td>The plain coordinates are enough for the circles, so the default network needs no extra features. The curved features change the boundary's shape, at the cost of more inputs.</td></tr>
+    <tr><td>Hidden layers<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L19" target="_blank" rel="noopener" title="nnlab/config.py, line 19" aria-label="Code on GitHub: nnlab/config.py, line 19">37</a></td><td>2</td><td>Two hidden layers of six neurons are the default. The test suite requires at least 95% test accuracy on this configuration, which is the bar the default has to clear.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py#L73-L76" target="_blank" rel="noopener" title="tests/test_nnlab.py, lines 73–76" aria-label="Code on GitHub: tests/test_nnlab.py, lines 73 to 76">38</a></td></tr>
+    <tr><td>Neurons per layer</td><td>6</td><td>Each neuron contributes one bend, and the ring needs several. More neurons add knobs to fit on 200 points.</td></tr>
+    <tr><td>Activation<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L20" target="_blank" rel="noopener" title="nnlab/config.py, line 20" aria-label="Code on GitHub: nnlab/config.py, line 20">39</a></td><td>tanh</td><td>Centred on 0 and smooth, so the early steps are well scaled, and its output in (−1, 1) maps directly onto the neuron colours.</td></tr>
+    <tr><td>Weight init<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L142-L161" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 142–161" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 142 to 161">28</a></td><td>Glorot uniform; He for ReLU</td><td>The weight scale keeps the signal's size about the same from layer to layer, so no layer starts saturated (flat, with no slope to learn from).</td></tr>
+    <tr><td>Learning rate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L21" target="_blank" rel="noopener" title="nnlab/config.py, line 21" aria-label="Code on GitHub: nnlab/config.py, line 21">40</a></td><td>0.03</td><td>With Adam, 0.03 is fast enough to see the boundary move within seconds, and low enough that it does not jump around the ring.</td></tr>
+    <tr><td>Batch size<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L22" target="_blank" rel="noopener" title="nnlab/config.py, line 22" aria-label="Code on GitHub: nnlab/config.py, line 22">41</a></td><td>16</td><td>About 10 steps per epoch on the roughly 160 training points. Small batches are cheap and add sampling noise to each step, which is why the page offers 1 to full batch.</td></tr>
+    <tr><td>Optimiser<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js#L282-L290" target="_blank" rel="noopener" title="web/js/nnlab-core.js, lines 282–290" aria-label="Code on GitHub: web/js/nnlab-core.js, lines 282 to 290">42</a></td><td>Adam (β₁ 0.9, β₂ 0.999, ε 1e−8)</td><td>The standard defaults from Kingma and Ba (2015). Adam rescales each weight's step by its own gradient history, so one learning rate works across all the weights.</td></tr>
+    <tr><td>L2 λ<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L23" target="_blank" rel="noopener" title="nnlab/config.py, line 23" aria-label="Code on GitHub: nnlab/config.py, line 23">43</a></td><td>0 (off)</td><td>Off so the first run shows the unregularised boundary. Try 0.01 to see the shape tighten.</td></tr>
+    <tr><td>Test share<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L18" target="_blank" rel="noopener" title="nnlab/config.py, line 18" aria-label="Code on GitHub: nnlab/config.py, line 18">44</a></td><td>20%</td><td>A fifth of the points are held out, so the test accuracy is measured on points the network never trained on.</td></tr>
+    <tr><td>Noise<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L16" target="_blank" rel="noopener" title="nnlab/config.py, line 16" aria-label="Code on GitHub: nnlab/config.py, line 16">45</a></td><td>0</td><td>Clean data first. Noise moves each point by noise × a normal draw, so the classes overlap more.</td></tr>
+    <tr><td>Epochs per second<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab.js#L44" target="_blank" rel="noopener" title="web/js/nnlab.js, line 44" aria-label="Code on GitHub: web/js/nnlab.js, line 44">46</a></td><td>20</td><td>Fast enough that the boundary visibly moves, slow enough to follow each change. At most 12 epochs run in one frame.</td></tr>
+    <tr><td>Seed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py#L15" target="_blank" rel="noopener" title="nnlab/config.py, line 15" aria-label="Code on GitHub: nnlab/config.py, line 15">47</a></td><td>0</td><td>The points, the starting weights and the batch order all come from the seed, so the same seed replays the same run. The browser and the Python package agree on it.</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>Run it from the terminal:</b> <code>python -m nnlab train --data spiral --layers 8,8 --act tanh --epochs 500</code> trains the same network with the same seed and prints the loss and accuracy, then draws the boundary in text.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/mlp.py">nnlab/mlp.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/data.py">nnlab/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/rng.py">nnlab/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/train.py">nnlab/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/config.py">nnlab/config.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/cli.py">nnlab/cli.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/nnlab-core.js">web/js/nnlab-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py">tests/test_nnlab.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab_parity.py">tests/test_nnlab_parity.py</a></p>
+  <h3 class="hiw-sub">Checks in the test suite</h3>
+  <p class="hiw-note">The gradients match finite differences for every activation<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py#L23-L53" target="_blank" rel="noopener" title="tests/test_nnlab.py, lines 23–53" aria-label="Code on GitHub: tests/test_nnlab.py, lines 23 to 53">17</a>. XOR with one hidden layer of four neurons reaches at least 98% training accuracy in 400 epochs<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py#L67-L70" target="_blank" rel="noopener" title="tests/test_nnlab.py, lines 67–70" aria-label="Code on GitHub: tests/test_nnlab.py, lines 67 to 70">48</a>. The default configuration reaches at least 95% test accuracy, and its training loss falls<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab.py#L73-L76" target="_blank" rel="noopener" title="tests/test_nnlab.py, lines 73–76" aria-label="Code on GitHub: tests/test_nnlab.py, lines 73 to 76">38</a>. The browser core and the Python package agree to within 1e−9 on fixed scenarios<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_nnlab_parity.py#L126-L141" target="_blank" rel="noopener" title="tests/test_nnlab_parity.py, lines 126–141" aria-label="Code on GitHub: tests/test_nnlab_parity.py, lines 126 to 141">49</a>.</p>
+  <p class="hiw-note"><b>Run it from the terminal:</b> <code>python -m nnlab train --data spiral --layers 8,8 --act tanh --epochs 500</code> trains the same network with the same seed and prints the loss and accuracy, then draws the boundary in text<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nnlab/cli.py#L61-L78" target="_blank" rel="noopener" title="nnlab/cli.py, lines 61–78" aria-label="Code on GitHub: nnlab/cli.py, lines 61 to 78">50</a>.</p>
 </section>
   </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/nnlab.js"></script>
 </body>

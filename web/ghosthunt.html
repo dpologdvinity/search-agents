@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="ghosthunt.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,28 +32,33 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">HIDDEN MARKOV MODEL · FORWARD FILTER · PARTICLES · VITERBI</div>
+      <div class="proj-pg-tag">HIDDEN MARKOV MODELS</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="GHOST HUNT">GHOST HUNT</h1>
-      <div class="proj-pg-sub">The ghosts are invisible. Your sonar reports only how far away each one is, and every ping is noisy. Each turn the belief about every ghost is updated: move it through the ghost's motion model, then weigh it by the ping. Bust a ghost by firing at its cell.</div>
+      <div class="proj-pg-sub">The ghosts are invisible. The sonar reports only how far away each one is, and every ping is noisy. Bust a ghost by firing at the cell it is standing in.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
         <span class="stat-chip">TURN <span class="val" id="chip-turn">0</span></span>
         <span class="stat-chip green">BUSTED <span class="val" id="chip-busted">0/0</span></span>
-        <span class="stat-chip pink">FILTER <span class="val" id="chip-filter">EXACT</span></span>
-        <span class="stat-chip">MOTION <span class="val" id="chip-motion">RANDOM</span></span>
-        <span class="stat-chip">SONAR σ <span class="val" id="chip-sigma">1.0</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The ghosts hide somewhere in a maze, and you start in the top-left room. Each turn you move one cell or wait. Then the ghosts move, and the sonar pings you with each ghost's distance.</p>
+    <p style="margin-top:0.5rem">To bust a ghost, turn on BUST MODE and click a neighbouring cell or your own cell. A bust removes a ghost only if it is standing in that cell at that moment. The fog shows where each ghost probably is, and the game ends when every ghost is busted.</p>
+    <p style="margin-top:0.5rem">Press AUTOPILOT to let the hunter play. It follows the fog and busts when it is sure. After a bust, VITERBI REPLAY shows the most likely path the busted ghost took.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="gh-stage">
-        <canvas id="gh-map" class="gh-map" role="img" aria-label="Ghost Hunt maze: belief fog for each ghost, your position, sonar rings, busted ghosts"></canvas>
+        <canvas id="gh-map" class="gh-map" role="img" aria-label="Ghost Hunt maze: belief fog for each ghost, your position, sonar rings, busted ghosts" title="Brighter fog means more probability that the ghost is there."></canvas>
         <div class="gh-readout field-hint" id="gh-info" aria-live="polite">Hover or click a cell next to you to move or bust.</div>
       </div>
+      <div class="field-hint" id="gh-matchup" style="text-align:center"></div>
 
       <div class="gh-legend">
         <span><i class="gh-sw gh-sw-fog"></i>belief fog (one colour per ghost)</span>
@@ -76,10 +82,10 @@
       </div>
 
       <div class="gh-controls">
-        <button class="cyber-btn pink" id="btn-bust" type="button" aria-pressed="false"><span class="btn-txt">◉ BUST MODE: OFF</span></button>
-        <button class="cyber-btn green" id="btn-auto" type="button" aria-pressed="false"><span class="btn-txt">▶ AUTOPILOT</span></button>
+        <button class="cyber-btn pink" id="btn-bust" type="button" aria-pressed="false" title="While on, a click fires the trap at that neighbouring cell or your own cell."><span class="btn-txt">◉ BUST MODE: OFF</span></button>
+        <button class="cyber-btn green" id="btn-auto" type="button" aria-pressed="false" title="The autopilot fires at its most likely cell once that cell holds more than half of the ghost's probability and sits next to it. Otherwise it walks toward it."><span class="btn-txt">▶ AUTOPILOT</span></button>
         <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">STEP ›</span></button>
-        <button class="cyber-btn" id="btn-replay" type="button" disabled><span class="btn-txt">⟲ VITERBI REPLAY</span></button>
+        <button class="cyber-btn" id="btn-replay" type="button" disabled title="Replays the Viterbi path of each busted ghost, against its true path."><span class="btn-txt">⟲ VITERBI REPLAY</span></button>
         <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW HUNT</span></button>
       </div>
       <div class="field-hint gh-keys">Keys: arrows or WASD move, . waits, B toggles bust mode, G toggles the autopilot, N starts a new hunt.</div>
@@ -92,10 +98,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.2rem">
-        <div class="section-title green-ttl">EVENT LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Event log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(0,255,136,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -104,7 +110,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">MAZE</div>
-            <select class="cyber-select" id="size" style="width:100%">
+            <select class="cyber-select" id="size" style="width:100%" title="The side of the maze, in cells. Bigger mazes have more places for a ghost to hide.">
               <option value="11">11 x 11 (small)</option>
               <option value="15" selected>15 x 15</option>
               <option value="21">21 x 21 (big)</option>
@@ -118,13 +124,6 @@
               <option value="3">3</option>
             </select>
           </div>
-          <div>
-            <div class="field-lbl">SEED</div>
-            <div class="inline">
-              <input class="cyber-select" id="seed" type="number" min="0" max="4294967295" value="7" style="flex:1;min-width:0">
-              <button class="cyber-btn" id="btn-shuffle" type="button"><span class="btn-txt">⚄</span></button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -133,18 +132,10 @@
         <div class="stack">
           <div>
             <div class="field-lbl">MODEL</div>
-            <select class="cyber-select" id="motion" style="width:100%">
+            <select class="cyber-select" id="motion" style="width:100%" title="Random walk: wanders. Lurker: drifts toward you. Patrol: keeps going down corridors.">
               <option value="random" selected>random walk</option>
               <option value="lurker">lurker (drifts to you)</option>
               <option value="patrol">patrol (follows corridors)</option>
-            </select>
-          </div>
-          <div>
-            <div class="field-lbl">SONAR NOISE</div>
-            <select class="cyber-select" id="noise" style="width:100%">
-              <option value="low">low (σ 0.5)</option>
-              <option value="med" selected>medium (σ 1.0)</option>
-              <option value="high">high (σ 2.0)</option>
             </select>
           </div>
         </div>
@@ -155,45 +146,47 @@
         <div class="stack">
           <div>
             <div class="field-lbl">FILTER</div>
-            <select class="cyber-select" id="filter" style="width:100%">
+            <select class="cyber-select" id="filter" style="width:100%" title="Each turn the belief moves through the ghost's motion model, then each cell is multiplied by how well it explains the sonar ping, and the whole belief is normalised.">
               <option value="exact" selected>exact forward algorithm</option>
               <option value="particles">particle filter</option>
             </select>
           </div>
-          <div>
-            <div class="field-lbl">PARTICLES PER GHOST</div>
-            <select class="cyber-select" id="particles" style="width:100%" disabled>
-              <option value="10">10</option>
-              <option value="30">30</option>
-              <option value="100">100</option>
-              <option value="300" selected>300</option>
-              <option value="1000">1000</option>
-            </select>
-          </div>
-          <label class="gh-check"><input type="checkbox" id="show-particles"> show particles</label>
-          <label class="gh-check"><input type="checkbox" id="cheat"> cheat: show the true ghosts</label>
-          <div>
-            <div class="field-lbl">AUTOPILOT DELAY <span id="speed-val">350</span> ms</div>
-            <input id="speed" type="range" min="60" max="800" step="10" value="350" style="width:100%" aria-label="Milliseconds between autopilot turns">
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">HOW THE HUNTER THINKS</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">PREDICT, THEN WEIGH</div>
-            <div class="field-hint">Each turn the belief moves through the ghost's motion model. Then each cell is multiplied by how well it explains the sonar ping, and the whole belief is normalised.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">THE FOG IS THE BELIEF</div>
-            <div class="field-hint">Brighter fog means more probability. Cheat mode marks the real ghost cells so you can judge the belief yourself.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">BUST WHEN SURE</div>
-            <div class="field-hint">The autopilot fires at its most likely cell once that cell holds more than half of the ghost's probability and sits next to it. Otherwise it walks toward it.</div>
-          </div>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <div class="stack">
+              <div>
+                <div class="field-lbl">SEED</div>
+                <div class="inline">
+                  <input class="cyber-select" id="seed" type="number" min="0" max="4294967295" value="7" style="flex:1;min-width:0" title="The number that draws the maze and the ghosts.">
+                  <button class="cyber-btn" id="btn-shuffle" type="button" title="Draw a new maze from a random seed."><span class="btn-txt">⚄</span></button>
+                </div>
+              </div>
+              <div>
+                <div class="field-lbl">SONAR NOISE</div>
+                <select class="cyber-select" id="noise" style="width:100%" title="The standard deviation of the sonar reading, in cells: 0.5, 1.0 or 2.0.">
+                  <option value="low">low (σ 0.5)</option>
+                  <option value="med" selected>medium (σ 1.0)</option>
+                  <option value="high">high (σ 2.0)</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-lbl">PARTICLES PER GHOST</div>
+                <select class="cyber-select" id="particles" style="width:100%" disabled title="Fewer particles approximate the exact belief less well.">
+                  <option value="10">10</option>
+                  <option value="30">30</option>
+                  <option value="100">100</option>
+                  <option value="300" selected>300</option>
+                  <option value="1000">1000</option>
+                </select>
+              </div>
+              <label class="gh-check"><input type="checkbox" id="show-particles"> show particles</label>
+              <label class="gh-check" title="Marks the real ghost cells so you can judge the belief yourself."><input type="checkbox" id="cheat"> cheat: show the true ghosts</label>
+              <div>
+                <div class="field-lbl">AUTOPILOT DELAY <span id="speed-val">350</span> ms</div>
+                <input id="speed" type="range" min="60" max="800" step="10" value="350" style="width:100%" aria-label="Milliseconds between autopilot turns">
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -201,32 +194,284 @@
 
   <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
     <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-    <p class="hiw-lede">A ghost is a hidden Markov model: the true state (its cell and heading) changes by a known motion rule, and the sonar shows a noisy function of that state. The filter keeps the belief about the state at every turn. This page runs the exact forward recursion, or a particle filter with a chosen number of samples, in the browser. Viterbi then recovers the most likely path after a bust.</p>
-    <div class="hiw-grid">
-      <article class="hiw-card">
-        <h3>1. A hidden Markov model</h3>
-        <p class="hiw-plain"><b>New to this?</b> You cannot see the ghost, but you know the rules it follows. A hidden Markov model is that picture: a hidden state that changes step by step with known probabilities, and an observation (here the sonar reading) that depends on the state with known noise. The filter's job is to infer the hidden state from the observations so far.</p>
-        <p>The hidden state is the ghost's open cell and its heading, so the corridor-following patrol model can work. Three motion models are offered: a random walk, a lurker that drifts toward you, and a patrol that keeps going down corridors and turns at junctions.</p>
-        <p>Each ghost gets its own filter. Every ping names the ghost it measures, so the joint belief over the ghosts factorises and the per-ghost beliefs are exact without a joint filter. Correlations between ghosts would only appear if the sonar could not tell them apart.
-      </article>
-      <article class="hiw-card">
-        <h3>2. The forward algorithm</h3>
-        <p class="hiw-plain"><b>New to this?</b> The forward algorithm keeps a probability for every possible hidden state. Each turn it does two things: predict, which pushes every probability through the motion model, and update, which multiplies each probability by how likely the ping was if the ghost were there, then rescales so they sum to 1.</p>
-        <p>This is exact, not a guess. The board has a few hundred hidden states, so every one is kept, and a turn costs a few hundred multiplications per ghost.</p>
-      </article>
-      <article class="hiw-card">
-        <h3>3. Particle filtering</h3>
-        <p class="hiw-plain"><b>New to this?</b> Instead of tracking a probability for every state, a particle filter tracks a fixed number of guesses, particles. Each particle moves by sampling the motion model, gets a weight from the ping, and the crowd is resampled when the weights become lopsided. The fog becomes a cloud of dots.</p>
-        <p>With few particles the belief is noisy and can lose a ghost. The table below shows how quickly it approaches the exact belief as the count grows.</p>
-      </article>
-      <article class="hiw-card">
-        <h3>4. Viterbi: the most likely path</h3>
-        <p class="hiw-plain"><b>New to this?</b> The belief answers "where is the ghost now". Viterbi answers "which whole path explains all the pings best", using the readings from before and after each turn. After a bust, the page replays that path in cyan next to the path the ghost really took in pink.</p>
-        <p>It is the same recursion as the forward pass, with a maximum in place of the sum, plus back-pointers to recover the path.</p>
-      </article>
-    </div>
+    <p class="hiw-lede">A ghost is a <b>hidden Markov model</b> (HMM): its true state, its cell and heading, changes by a known motion rule, and the sonar shows a noisy function of that state. The state is hidden, so the hunter keeps a <b>belief</b>, a probability for each state, and updates it every turn. This page runs the exact forward recursion, or a particle filter with a chosen number of samples, in the browser. Viterbi then recovers the most likely path after a bust.</p>
 
-    <h3 class="hiw-sub">Parameters and where they came from</h3>
+    <h3 class="hiw-sub">The maze, the ghosts and the turn</h3>
+    <p>The maze is a <b>perfect maze</b>: an odd grid of rooms and passages in which there is exactly one route between any two open cells. It is carved by a seeded backtracker, which walks from room to room, knocks down the wall between the current room and a random unvisited room two steps away, and backtracks when it is stuck. Every room is reached once, so the result is a tree.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/maze.py#L27-L56" target="_blank" rel="noopener" title="ghosthunt/maze.py, lines 27–56" aria-label="Code on GitHub: ghosthunt/maze.py, lines 27 to 56">1</a> The player starts in the top-left room. Because the route is unique, the sonar distance is the length of the corridor path, not a straight-line guess.</p>
+    <p>The open cells are numbered 0 to K−1, and each one has up to four neighbours, in the order north, east, south, west. The <b>distance</b> dist(a, b) is the number of steps along the corridors between two open cells, found by a breadth-first search from every cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/maze.py#L59-L103" target="_blank" rel="noopener" title="ghosthunt/maze.py, lines 59–103" aria-label="Code on GitHub: ghosthunt/maze.py, lines 59 to 103">2</a></p>
+    <p>A <b>hidden state</b> is s = 4k + h, where k is the open cell and h is the heading of the ghost's last move, 0 to 3 for north, east, south and west. The heading is in the state so that the patrol model can follow a corridor. There are 4K states. A 15 by 15 maze has 97 open cells, so 388 states.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L1-L16" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 1–16" aria-label="Code on GitHub: ghosthunt/motion.py, lines 1 to 16">3</a></p>
+    <p>Each ghost starts in a random state chosen from the <b>eligible</b> states, those whose cell is at least 4 steps from the player. The prior, the belief before any ping, is uniform over the eligible states and zero elsewhere. Every filter starts from this same prior.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L84-L97" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 84–97" aria-label="Code on GitHub: ghosthunt/game.py, lines 84 to 97">4</a></p>
+    <!-- ghosthunt/game.py:84-90 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L84-L90" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 84–90" aria-label="Code on GitHub: ghosthunt/game.py, lines 84 to 90">5</a></span>
+      <div class="math math-block">\pi(s) = \begin{cases} 1 / |E| & \text{if } s \in E \\ 0 & \text{otherwise} \end{cases}, \qquad E = \{\, 4k + h : \mathrm{dist}(k, \mathrm{start}) \ge 4 \,\}</div>
+    </div>
+    <p>A <b>turn</b> has a fixed order. The player acts first: it moves, waits or fires a bust. A bust resolves against the ghosts' current cells, before they move, and it does not move the player. Then each live ghost takes one motion step with the player's new cell, and the sonar pings the distance from that cell to the ghost. A ghost busted this turn gives no ping. The filters follow the same order.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L125-L163" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 125–163" aria-label="Code on GitHub: ghosthunt/game.py, lines 125 to 163">6</a></p>
+    <p>Each live ghost draws two random numbers per turn, one for its move and one for its ping, from its own stream. Two runs with the same seed therefore see the same ghost walks and pings even when the player plays differently. The benchmark uses this common-random-numbers design, so the filters are compared on the same ghosts.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L1-L20" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 1–20" aria-label="Code on GitHub: ghosthunt/game.py, lines 1 to 20">7</a></p>
+
+    <p>Every ping is labelled with the ghost it measures, and the ghosts move independently. The joint belief over all the ghosts therefore factorises, so each ghost gets its own filter, and the per-ghost beliefs are exact without a joint filter. Correlations between ghosts would appear only if the sonar could not tell them apart.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L165-L175" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 165–175" aria-label="Code on GitHub: ghosthunt/game.py, lines 165 to 175">8</a></p>
+
+    <h3 class="hiw-sub">The three ghost motions</h3>
+    <p>A motion model is the <b>transition</b> probability P(s' | s, p): the chance that a ghost in state s moves to s' when the player stands in cell p. The three models are the random walk, the lurker and the patrol. The hunter knows every probability, because the models are known.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L1-L16" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 1–16" aria-label="Code on GitHub: ghosthunt/motion.py, lines 1 to 16">3</a></p>
+    <p>The <b>random walk</b> stays put with probability 0.1. Otherwise it moves to one of its m open neighbours, chosen uniformly.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L28-L36" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 28–36" aria-label="Code on GitHub: ghosthunt/motion.py, lines 28 to 36">9</a></p>
+    <!-- ghosthunt/motion.py:28-36 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L28-L36" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 28–36" aria-label="Code on GitHub: ghosthunt/motion.py, lines 28 to 36">9</a></span>
+      <div class="math math-block">P(s' \mid s) = \begin{cases} 0.1 & \text{if } s' = s \text{ (stay)} \\ 0.9 / m & \text{for each open neighbour of the cell} \end{cases}</div>
+    </div>
+    <p>The <b>lurker</b> drifts toward the player. Staying and each open neighbour are weighted by exp(−β · distance to the player), with β = 1, and the weights are normalised. A cell nearer the player gets more weight, but no move is certain.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L39-L48" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 39–48" aria-label="Code on GitHub: ghosthunt/motion.py, lines 39 to 48">10</a></p>
+    <!-- ghosthunt/motion.py:39-48 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L39-L48" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 39–48" aria-label="Code on GitHub: ghosthunt/motion.py, lines 39 to 48">10</a></span>
+      <div class="math math-block">P(s' \mid s, p) = \dfrac{\exp\big(-\beta\,\mathrm{dist}(k', p)\big)}{\sum_{s''} \exp\big(-\beta\,\mathrm{dist}(k'', p)\big)}, \qquad \beta = 1</div>
+    </div>
+    <p>Here <span class="math">k'</span> is the cell of s', and the sum runs over staying and each open neighbour of the current cell. The player's cell p is known, so the transition is known too, and the forward algorithm can use it.</p>
+    <p>The <b>patrol</b> keeps its heading when the corridor continues. The code's rule has three cases. At a junction with a side opening, it goes straight with probability 0.8, and the side openings share the other 0.2. In a straight corridor with no side opening, it goes on with 0.8 or turns back with 0.2. At a dead end it turns back. It never waits.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L51-L77" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 51–77" aria-label="Code on GitHub: ghosthunt/motion.py, lines 51 to 77">11</a></p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L51-L77" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 51–77" aria-label="Code on GitHub: ghosthunt/motion.py, lines 51 to 77">11</a></span>
+      <pre class="pseudo-simple">function PATROL-MOVES(cell, heading):
+    if the way ahead is open:
+        if there is a side opening:
+            ahead with probability 0.8; each side opening shares 0.2
+        else:
+            ahead with probability 0.8; back with probability 0.2
+    else if there is a side opening:
+        each side opening with equal probability
+    else:
+        turn back                              # dead end</pre>
+      <pre class="pseudo-full" hidden>function PATROL-MOVES(cell, heading):
+    open ← the open directions of cell
+    back ← (heading + 2) mod 4
+    fwd-ok ← heading is in open
+    turns ← open directions other than heading and back
+    back-ok ← back is in open
+    out ← empty list
+    if fwd-ok:
+        if turns is not empty:                 # junction
+            add (ahead, 0.8)
+            for each d in turns:
+                add (side d, 0.2 / |turns|)
+        else if back-ok:                       # straight corridor
+            add (ahead, 0.8)
+            add (back, 0.2)
+        else:
+            add (ahead, 1.0)
+    else if turns is not empty:                # only if the start heading faces a wall
+        for each d in turns:
+            add (side d, 1 / |turns|)
+    else if back-ok:                           # dead end: turn around
+        add (back, 1.0)
+    else:
+        add (stay, 1.0)                        # isolated cell: cannot happen in a perfect maze
+    return out</pre>
+    </div>
+    <p>The full version follows the code. The "ahead" move keeps the heading, and a side move sets the heading to the side it takes. The branch where the way ahead is a wall can only occur with an arbitrary starting heading, since the heading after any move points into an open cell. Every branch returns probabilities that sum to one.</p>
+
+    <h3 class="hiw-sub">The sonar</h3>
+    <p>The ping reports a whole number of cells, from 0 to R, where R is the largest distance in the maze, the <b>diameter</b>. The reading is drawn from a <b>discrete Gaussian</b> centred on the true distance and normalised over the readings the sonar can show. Its standard deviation σ is 0.5, 1.0 or 2.0 cells, and 1.0 by default.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py#L1-L21" target="_blank" rel="noopener" title="ghosthunt/sonar.py, lines 1–21" aria-label="Code on GitHub: ghosthunt/sonar.py, lines 1 to 21">12</a></p>
+    <!-- ghosthunt/sonar.py:24-33 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py#L24-L33" target="_blank" rel="noopener" title="ghosthunt/sonar.py, lines 24–33" aria-label="Code on GitHub: ghosthunt/sonar.py, lines 24 to 33">13</a></span>
+      <div class="math math-block">P(r \mid d) = \max\!\Big(\dfrac{\exp\!\big(-\tfrac{(r-d)^2}{2\sigma^2}\big)}{Z(d)},\ 10^{-300}\Big), \qquad Z(d) = \sum_{r'=0}^{R} \exp\!\Big(-\dfrac{(r'-d)^2}{2\sigma^2}\Big)</div>
+    </div>
+    <p>Here <span class="math">d</span> is the true maze distance from the player to the ghost, <span class="math">r</span> is the reading, and <span class="math">Z(d)</span> makes each row a distribution. The floor at <span class="math">10^{-300}</span> keeps a far reading from underflowing to exactly zero, since a zero would make the logarithm in Viterbi undefined. The table has one row per distance and is built once per game. The emission <span class="math">P(r \mid d)</span> is the only place the sensor enters the filters.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py#L24-L33" target="_blank" rel="noopener" title="ghosthunt/sonar.py, lines 24–33" aria-label="Code on GitHub: ghosthunt/sonar.py, lines 24 to 33">13</a></p>
+    <p>To draw a reading, the game inverts the row's cumulative distribution at a uniform random number u. It returns the first reading whose running total passes u.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py#L36-L43" target="_blank" rel="noopener" title="ghosthunt/sonar.py, lines 36–43" aria-label="Code on GitHub: ghosthunt/sonar.py, lines 36 to 43">14</a></p>
+
+    <h3 class="hiw-sub">The forward algorithm: exact filtering</h3>
+    <p><b>Filtering</b> means computing the belief over the hidden state at the current turn, given every reading so far. The <b>forward algorithm</b> does this exactly for a hidden Markov model. At each turn it runs two steps. The <b>predict</b> step pushes every state's probability through the transition model. The <b>update</b> step multiplies each state by the likelihood of the reading if the ghost were there, then normalises.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L1-L22" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 1–22" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 1 to 22">15</a></p>
+    <!-- ghosthunt/hmm.py:36-59 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L36-L59" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 36–59" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 36 to 59">16</a></span>
+      <div class="math math-block">b'(s') = \sum_{s} b(s)\, P(s' \mid s, p_t), \qquad b(s') \leftarrow \dfrac{b'(s')\, P(r_t \mid \mathrm{dist}(k(s'), p_t))}{\sum_{s''} b'(s'')\, P(r_t \mid \mathrm{dist}(k(s''), p_t))}</div>
+    </div>
+    <p>Here <span class="math">b_t(s)</span> is the belief that the ghost is in state s at turn t, <span class="math">p_t</span> is the player's cell, and <span class="math">r_t</span> is the reading. At turn 0 there is no predict, since the prior already describes time 0, so only the update runs. The belief summed over headings gives the probability of each cell, and the hunter uses that marginal.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L61-L66" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 61–66" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 61 to 66">17</a></p>
+    <p><i>Example.</i> The state space is small enough to keep. A 15 by 15 maze has 388 states, and each state has at most five successors (stay and four moves), so one predict costs at most 5 × 388 multiplications per ghost.</p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L36-L59" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 36–59" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 36 to 59">16</a></span>
+      <pre class="pseudo-simple">function FORWARD-STEP(belief, player, reading):
+    belief ← PREDICT(belief, player)            # push the belief through the motion model
+    for each state s:
+        belief[s] ← belief[s] × SONAR(reading, distance of s from player)
+    return belief / sum(belief)</pre>
+      <pre class="pseudo-full" hidden>function FORWARD-STEP(belief, player, reading, first-turn):
+    if not first-turn:
+        trans ← MOTION-TABLE(model, player)     # successors and probabilities of every state
+        new ← zeros over all states
+        for each state s with belief[s] > 0:
+            for each (s2, q) in trans[s]:
+                new[s2] ← new[s2] + belief[s] × q
+        belief ← new
+    total ← 0
+    for each state s:
+        belief[s] ← belief[s] × emis[dist(cell(s), player)][reading]
+        total ← total + belief[s]
+    if total > 0:
+        belief ← belief / total
+    else:                                       # numerical guard: every state underflowed
+        for each state s:
+            belief[s] ← emis[dist(cell(s), player)][reading]
+        belief ← belief / sum(belief)
+    return belief</pre>
+    </div>
+    <p>The full version differs from the simple one in two ways. The first turn skips the predict step, since the prior already describes time 0. The guard handles the rare case where every state underflows to zero, and then the belief is set from the sonar alone.</p>
+
+    <h3 class="hiw-sub">Particle filtering: a sample of the belief</h3>
+    <p>When the state space is too large to keep, a <b>particle filter</b> keeps N <b>particles</b>, each one a sampled state, and the weighted histogram of the particles stands in for the belief. The page uses it when the particle filter is chosen, with 10 to 1000 particles per ghost, 300 by default.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L1-L23" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 1–23" aria-label="Code on GitHub: ghosthunt/particles.py, lines 1 to 23">18</a></p>
+    <p>The particles start as draws from the prior. Each draw inverts the cumulative prior at a fresh uniform number. Each turn, every particle moves by one sample of the motion model. A particle whose motion has only one option moves without drawing a random number.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L34-L60" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 34–60" aria-label="Code on GitHub: ghosthunt/particles.py, lines 34 to 60">19</a></p>
+    <p>The update multiplies each particle's weight by the sonar likelihood of its distance, then normalises. The <b>effective sample size</b> (ESS) is 1 / Σw², which equals N when the weights are equal and falls toward 1 when one particle holds almost all the weight. When ESS falls below N/2, the particles are resampled.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L62-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 62–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 62 to 76">20</a></p>
+    <!-- ghosthunt/particles.py:62-76 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L62-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 62–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 62 to 76">20</a></span>
+      <div class="math math-block">w_i \leftarrow \dfrac{w_i\, P(r_t \mid \mathrm{dist}(k_i, p_t))}{\sum_j w_j\, P(r_t \mid \mathrm{dist}(k_j, p_t))}, \qquad \mathrm{ESS} = \dfrac{1}{\sum_i w_i^2}, \qquad \text{resample when } \mathrm{ESS} < N/2</div>
+    </div>
+    <p>Here <span class="math">k_i</span> is the cell of particle <span class="math">i</span>. The resampling is systematic. It draws one uniform offset, then places N evenly spaced pointers over the cumulative weights, so each particle is copied about N times its weight. The copies are spread as evenly as the weights allow.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L78-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 78–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 78 to 91">21</a></p>
+    <!-- ghosthunt/particles.py:78-91 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L78-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 78–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 78 to 91">21</a></span>
+      <div class="math math-block">u_0 = \dfrac{U}{N}, \qquad p_i = u_0 + \dfrac{i}{N}, \qquad j_i = \text{the first } j \text{ with } C_j > p_i, \qquad C_j = \sum_{k \le j} w_k</div>
+    </div>
+    <p>Here <span class="math">U</span> is one uniform draw on [0, 1), and the search returns the last index if rounding leaves no cumulative value above the pointer. The filter's belief is the histogram of the particles' cells, weighted by their weights.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L93-L110" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 93–110" aria-label="Code on GitHub: ghosthunt/particles.py, lines 93 to 110">22</a></p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L44-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 44–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 44 to 91">23</a></span>
+      <pre class="pseudo-simple">function PARTICLE-STEP(particles, weights, player, reading):
+    for each particle: move it by one sample of the motion model from player
+    for each particle: weights ← weights × SONAR(reading, distance of particle from player)
+    normalise weights
+    if ESS(weights) < N / 2:
+        particles, weights ← SYSTEMATIC-RESAMPLE(particles, weights)</pre>
+      <pre class="pseudo-full" hidden>function PARTICLE-STEP(particles, weights, player, reading):
+    trans ← MOTION-TABLE(model, player)
+    for each particle i in state s:
+        options ← trans[s]
+        if options has one entry:
+            particle i ← that entry's state     # a forced move draws nothing
+            continue
+        u ← UNIFORM()
+        acc ← 0
+        chosen ← last state in options          # rounding fallback
+        for each (s2, q) in options:
+            acc ← acc + q
+            if u < acc:
+                chosen ← s2
+                stop
+        particle i ← chosen
+    for each particle i:
+        w[i] ← w[i] × emis[dist(cell(particle i), player)][reading]
+    total ← sum(w)
+    if total > 0:
+        w ← w / total
+    else:                                       # every particle underflowed
+        w[i] ← 1 / N for each i
+    ESS ← 1 / sum of w[i]²
+    if ESS < N / 2:
+        SYSTEMATIC-RESAMPLE(particles, w)       # copies, then every weight is 1 / N</pre>
+    </div>
+    <p>The simple version shows the cycle of move, weigh and resample. The full version adds the details that matter for matching the code: the forced-move shortcut draws no number, the choice of successor is the first option whose running total exceeds the uniform number, and the all-zero guard resets the weights.</p>
+
+    <h3 class="hiw-sub">Viterbi: the most likely path</h3>
+    <p>The belief answers "where is the ghost now", using the readings so far. <b>Viterbi</b> answers a different question: which whole sequence of states explains all the readings best, including readings after a turn. It is the same recursion as the forward algorithm with a maximum in place of the sum, plus <b>back-pointers</b> that record which predecessor won each step, so the path can be read off afterwards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L85-L125" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 85–125" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 85 to 125">24</a></p>
+    <p>The recursion works in log space, so products of small numbers become sums. Let δ<sub>t</sub>(s) be the best log-probability of any state sequence that ends in s at turn t.</p>
+    <!-- ghosthunt/hmm.py:97-117 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L97-L117" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 97–117" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 97 to 117">25</a></span>
+      <div class="math math-block">\delta_0(s) = \log \pi(s) + \log L_0(s), \qquad \delta_t(s') = \max_{s}\big[\delta_{t-1}(s) + \log P(s' \mid s, p_t)\big] + \log L_t(s'), \qquad \psi_t(s') = \arg\max_{s}\big[\delta_{t-1}(s) + \log P(s' \mid s, p_t)\big]</div>
+    </div>
+    <p>Here <span class="math">L_t(s) = P(r_t \mid \mathrm{dist}(k(s), p_t))</span> is the sonar likelihood. The code keeps the lowest-index predecessor when two candidates tie, so the path is the same on every run. States that cannot occur, and states with zero prior, are minus infinity and never win.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L93-L113" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 93–113" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 93 to 113">26</a></p>
+    <!-- ghosthunt/hmm.py:119-124 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L119-L124" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 119–124" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 119 to 124">27</a></span>
+      <div class="math math-block">s_T^{*} = \arg\max_s \delta_T(s), \qquad s_{t-1}^{*} = \psi_t(s_t^{*})</div>
+    </div>
+    <p>The path is read backwards from the best final state, following the back-pointers. A busted ghost's whole path is observed, so the page can replay it against the true path.</p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L85-L125" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 85–125" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 85 to 125">24</a></span>
+      <pre class="pseudo-simple">function VITERBI(prior, players, readings):
+    delta[s] ← log(prior[s]) + log(SONAR(readings[0], s, players[0])) for each state
+    for t in 1 to T − 1:
+        for each state s2:
+            delta'[s2] ← max over s of (delta[s] + log P(s2 | s, players[t]))
+            back[t][s2] ← the s that gave the maximum
+            delta'[s2] ← delta'[s2] + log SONAR(readings[t], s2, players[t])
+        delta ← delta'
+    path ← the state with the largest delta, then follow back from the last turn</pre>
+      <pre class="pseudo-full" hidden>function VITERBI(prior, players, readings):
+    NEG ← −infinity
+    for each state s:
+        if prior[s] > 0:
+            delta[s] ← log(prior[s]) + log(emis[dist(cell(s), players[0])][readings[0]])
+        else:
+            delta[s] ← NEG
+    for t in 1 to T − 1:
+        trans ← MOTION-TABLE(model, players[t])
+        new[s2] ← NEG and ptr[s2] ← −1 for every state s2
+        for each state s with delta[s] > NEG:
+            for each (s2, q) in trans[s]:
+                cand ← delta[s] + log(q)
+                if cand > new[s2]:              # strict: the lowest-index predecessor wins a tie
+                    new[s2] ← cand
+                    ptr[s2] ← s
+        for each state s2 with new[s2] > NEG:
+            new[s2] ← new[s2] + log(emis[dist(cell(s2), players[t])][readings[t]])
+        delta ← new
+        back[t] ← ptr
+    last ← the state with the largest delta (lowest index on ties)
+    path ← [last]
+    for t from T − 1 down to 1:
+        last ← back[t][last]
+        path ← [last] followed by path
+    return path</pre>
+    </div>
+    <p>The simple version has the same shape as the full one: score every path, keep the best predecessor at each turn, then read the path back. The full version sets zero-prior states to minus infinity, and it applies the strict comparison that breaks ties toward the lowest index.</p>
+    <p>On the page, a busted ghost's Viterbi path is drawn in cyan next to its true path in pink. The benchmark compares the Viterbi cell at each turn with the filtered MAP cell, which is the most likely cell from the readings so far only.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L91-L113" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 91–113" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 91 to 113">28</a></p>
+
+    <h3 class="hiw-sub">The autopilot: busting when sure</h3>
+    <p>The <b>autopilot</b> is a simple policy that reads only the beliefs, so it works with either filter. Each turn it takes the most probable cell over all live ghosts, the most confident <b>peak</b>. If that peak holds more than half of the ghost's probability and is the player's cell or a neighbour, it fires there. Otherwise it walks one step along a shortest corridor path toward the peak. If the player already stands on the peak, it walks toward the second-best cell, because sonar from another corridor sharpens the belief.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L1-L20" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 1–20" aria-label="Code on GitHub: ghosthunt/agent.py, lines 1 to 20">29</a></p>
+    <!-- ghosthunt/agent.py:44-69 -->
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L44-L69" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 44–69" aria-label="Code on GitHub: ghosthunt/agent.py, lines 44 to 69">30</a></span>
+      <pre class="pseudo-simple">function AUTOPILOT(game):
+    peak ← the most probable cell over all live ghosts, with its probability
+    if the peak probability > 0.5 and the peak is the player's cell or a neighbour:
+        fire at the peak
+    else:
+        step toward the peak along a shortest corridor path
+        (if standing on the peak, step toward the second-best cell)</pre>
+      <pre class="pseudo-full" hidden>function AUTOPILOT(game):
+    best ← none
+    for each live ghost g:
+        marg ← the belief over cells for g
+        k ← ARGMAX(marg)                         # lowest index on ties
+        if best is none or marg[k] > best.conf:
+            best ← (marg[k], k, marg)
+    if best is none:
+        return wait
+    conf, k, marg ← best
+    if conf > 0.5:
+        if k = player cell:
+            return bust here                     # "b."
+        d ← FIRST-STEP(player cell, k)
+        if d ≥ 0 and the neighbour in direction d is k:
+            return bust d                        # "bN", "bE", "bS" or "bW"
+    if k = player cell:
+        k ← ARGMAX(marg, skip = player cell)     # the second peak
+    d ← FIRST-STEP(player cell, k)
+    if d < 0:
+        return wait
+    return move d
+function FIRST-STEP(p, target):
+    for each direction d in N, E, S, W:
+        q ← the neighbour of p in direction d
+        if q is open and dist(q, target) = dist(p, target) − 1:
+            return d
+    return −1</pre>
+    </div>
+    <p>The threshold is the constant BUST_THRESHOLD, 0.5. The autopilot is a simple rule, not an optimal hunter, so its turn counts measure the belief and this policy together.</p>
+    <p>The simple version gives the rule. The full version adds the second-peak fallback and the first-step function, which breaks ties by the fixed order north, east, south, west.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L22-L41" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 22–41" aria-label="Code on GitHub: ghosthunt/agent.py, lines 22 to 41">31</a></p>
+
+    <h3 class="hiw-sub">Results and parameters</h3>
+    <p class="hiw-note">These come from the seeded benchmark (<code>python -m ghosthunt benchmark</code>), one core in Python. Games are 12 per row, so differences of a few turns are noise. Ghost-cell mass for the particle filter is lower than the exact filter at 10 to 50 particles: the likely reason is that a small crowd collapses onto one corridor and loses the other, which is consistent with those rows busting fewer games. The autopilot is a simple rule, not an optimal hunter, so the turn counts measure the belief plus this policy together. Pings give only distances, so every cell at the same distance from the player looks the same to one ping, and the belief sharpens only as the player moves and listens from other corridors.</p>
+    <p class="hiw-note">The page runs the same rules in JavaScript, in web/js/ghosthunt-core.js<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/ghosthunt-core.js" target="_blank" rel="noopener" title="web/js/ghosthunt-core.js" aria-label="Code on GitHub: web/js/ghosthunt-core.js">32</a>, and the parity tests check that the two agree. The full table is in results/ghosthunt_benchmark.md<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/ghosthunt_benchmark.md" target="_blank" rel="noopener" title="results/ghosthunt_benchmark.md" aria-label="Code on GitHub: results/ghosthunt_benchmark.md">33</a>. The benchmark has three experiments. The play runs full autopilot games with the exact filter and with particle filters, and the Viterbi block scores the exact-filter games' busted ghosts. The convergence block replays the recorded pings through the particle filters of growing N.</p>
+
     <div class="hiw-scroll">
       <table class="hiw-table">
         <thead><tr><th>parameter</th><th>value</th><th>notes</th></tr></thead>
@@ -234,15 +479,16 @@
           <tr><td>maze</td><td>11, 15 or 21 on a side</td><td>A perfect maze (one route between any two cells), carved by a seeded backtracker. Player starts in the top-left room.</td></tr>
           <tr><td>ghosts</td><td>1 to 3 (default 2)</td><td>Each ghost starts at least 4 steps from the player, uniformly at random, with a random heading.</td></tr>
           <tr><td>random walk</td><td>stay 0.1, else uniform neighbour</td><td>A conventional choice: most of the mass goes to moving, a little to waiting.</td></tr>
-          <tr><td>lurker</td><td>weight exp(-1 x distance to you)</td><td>Staying and each neighbour are weighted by distance to the player. The weight 1 sets a clear but not deterministic pull.</td></tr>
-          <tr><td>patrol</td><td>straight 0.8, turns share 0.2</td><td>Keeps its heading; at a junction takes a side opening; reverses only at a dead end. Never waits.</td></tr>
+          <tr><td>lurker</td><td>weight exp(-1 x distance to the player)</td><td>Staying and each neighbour are weighted by distance to the player. The weight 1 sets a clear but not deterministic pull.</td></tr>
+          <tr><td>patrol</td><td>straight 0.8, turns share 0.2</td><td>Keeps its heading. At a junction it takes a side opening; in a straight corridor it turns back with probability 0.2; at a dead end it turns back. Never waits.</td></tr>
           <tr><td>sonar</td><td>sigma 0.5, 1.0, 2.0 (default 1.0)</td><td>Reading is a whole number, a discrete Gaussian around the true maze distance, normalised over the readings the sonar can show.</td></tr>
           <tr><td>particles</td><td>10 to 1000 (page default 300, CLI default 200)</td><td>Resampled systematically whenever the effective sample size falls below half the count.</td></tr>
-          <tr><td>bust rule</td><td>peak above 0.5, next to you</td><td>The autopilot's threshold. Below it, the autopilot walks toward the peak, or to the second peak if it is already standing on it.</td></tr>
-          <tr><td>PRNG</td><td>mulberry32</td><td>Same bits in Python and JavaScript, so the maze, the ghost walks and the pings reproduce from a seed on the page and in the CLI.</td></tr>
+          <tr><td>bust rule</td><td>peak above 0.5, next to the player</td><td>The autopilot's threshold. Below it, the autopilot walks toward the peak, or to the second peak if it is already standing on it.</td></tr>
+          <tr><td>PRNG</td><td>mulberry32</td><td>Same bits in Python and JavaScript, so the maze, the ghost walks and the pings reproduce from a seed on the page and in the CLI.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_ghosthunt_parity.py" target="_blank" rel="noopener" title="tests/test_ghosthunt_parity.py" aria-label="Code on GitHub: tests/test_ghosthunt_parity.py">34</a></td></tr>
         </tbody>
       </table>
     </div>
+
     <h3 class="hiw-sub">Results on fixed seeds</h3>
     <div class="hiw-scroll">
       <table class="hiw-table">
@@ -260,22 +506,13 @@
         </tbody>
       </table>
     </div>
-    <p class="hiw-note">These come from the seeded benchmark (<code>python -m ghosthunt benchmark</code>), one core in Python. Games are 12 per row, so differences of a few turns are noise. Ghost-cell mass for the particle filter is lower than the exact filter at 10 to 50 particles: a small crowd collapses onto one corridor and loses the other, which is why those rows bust fewer games. The autopilot is a simple rule, not an optimal hunter, so the turn counts measure the belief plus this policy together. Pings give only distances, so every cell at the same distance from you looks the same; that is why the exact-cell Viterbi accuracy stays well below 1 at medium and high noise.</p>
-
-    <div class="hiw-src">
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py">ghosthunt/hmm.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py">ghosthunt/particles.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py">ghosthunt/motion.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py">ghosthunt/sonar.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py">ghosthunt/game.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/ghosthunt-core.js">web/js/ghosthunt-core.js</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/ghosthunt.js">web/js/ghosthunt.js</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/ghosthunt_api.py">server/ghosthunt_api.py</a>
-    </div>
+    <p class="hiw-note"><b>KL</b> here is the Kullback–Leibler divergence, KL(exact ‖ particles) = Σ over cells of p<sub>exact</sub> log(p<sub>exact</sub> / max(p<sub>particles</sub>, 10<sup>−6</sup>)). It is measured in nats, the natural-log unit, and the floor keeps an empty particle cell from costing an infinite amount.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L37-L64" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 37–64" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 37 to 64">35</a></p>
   </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/ghosthunt.js"></script>
 </body>

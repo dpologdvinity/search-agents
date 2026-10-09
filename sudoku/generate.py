@@ -21,7 +21,7 @@ PUZZLES = Path(__file__).parent / "puzzles.txt"
 
 
 def random_solution(rng: random.Random) -> list[int]:
-    """A uniformly shuffled variant of a valid base grid."""
+    """A randomly shuffled variant of a valid base grid."""
     def shuffled_groups():
         groups = [0, 1, 2]
         rng.shuffle(groups)

@@ -311,24 +311,51 @@ def test_agent_labels_name_the_algorithm_and_budget():
     from checkers.agents import agent_label, matchup_text
 
     assert agent_label("mcts", 2, 8) == "MCTS (1,000 playouts)"
-    assert agent_label("alphabeta", 2) == "alpha-beta search, iterative deepening, 0.8 s"
-    assert agent_label("alphabeta", 1, by_nodes=True) == "alpha-beta search, iterative deepening, 3,000 nodes"
-    assert agent_label("minimax", 2, 8) == "minimax, depth 4"
-    assert agent_label("chance", 1) == "chance (fixed odds)"
+    assert agent_label("alphabeta", 2) == "alpha-beta search (iterative deepening, 0.8 s)"
+    assert agent_label("alphabeta", 1, by_nodes=True) == "alpha-beta search (iterative deepening, 3,000 nodes)"
+    assert agent_label("minimax", 2, 8) == "minimax (depth 4)"
+    assert agent_label("chance", 1) == "Chance (fixed odds)"
     assert matchup_text({RED: "mcts", WHITE: "alphabeta"}, {RED: 2, WHITE: 2}) == (
-        "Red: MCTS (1,000 playouts) vs White: alpha-beta search, iterative deepening, 0.8 s")
-    assert matchup_text({RED: "human", WHITE: "minimax"}, {RED: 2, WHITE: 2}) == "White: minimax, depth 4"
+        "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.8 s)")
+    assert matchup_text({RED: "human", WHITE: "minimax"}, {RED: 2, WHITE: 2}) == "White: minimax (depth 4)"
 
 
 def test_cli_prints_the_matchup_line_at_the_start_of_a_game(capsys):
     from checkers.__main__ import play
 
     play({RED: "human", WHITE: "minimax"}, 1, read=lambda prompt="": "q")
-    assert "White: minimax, depth 2" in capsys.readouterr().out
+    assert "White: minimax (depth 2)" in capsys.readouterr().out
 
 
 def test_match_runs_alphabeta_against_chance(capsys):
     assert main(["match", "alphabeta", "chance", "--games", "2", "--level", "1"]) == 0
     out = capsys.readouterr().out
-    assert "Red: alpha-beta search, iterative deepening, 3,000 nodes vs White: chance (fixed odds)" in out
+    assert "Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: Chance (fixed odds)" in out
     assert "chance" in out.split("Agent")[1]
+
+
+def _lone_capture_board():
+    """Red man on (5, 2) with one white man on (4, 3): red's only move captures white's last piece."""
+    from checkers.board import index
+    b = [0] * 32
+    b[index(5, 2)] = 1
+    b[index(4, 3)] = -1
+    return tuple(b)
+
+
+def test_mcts_rollout_counts_an_opponent_with_no_moves_as_a_win():
+    """After red captures white's last man, white cannot move, so the rollout is a win for red (1.0)."""
+    from checkers.mcts import MCTS
+    assert MCTS(seed=0, rollout_plies=2)._rollout(_lone_capture_board(), 1) == 1.0
+
+
+def test_mcts_rollout_scores_a_cut_off_from_the_starting_sides_view():
+    """An odd-length rollout ends with the opponent to move; the score must still be the starting side's."""
+    from checkers.board import index
+    from checkers.mcts import MCTS
+    b = [0] * 32
+    for r, c in ((5, 0), (5, 2), (6, 1)):  # three red men
+        b[index(r, c)] = 1
+    b[index(0, 7)] = -1  # one white man far away
+    value = MCTS(seed=0, rollout_plies=1)._rollout(tuple(b), 1)
+    assert value > 0.5

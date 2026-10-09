@@ -8,6 +8,8 @@
 .pm-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; }
 .pm-frame {
   position: relative;
+  /* The canvas's pixel size would otherwise stretch the frame across the whole column. */
+  width: min(100%, 620px);
   padding: 10px;
   max-width: 100%;
   border: 1px solid var(--cyan);
@@ -31,9 +33,22 @@
   aspect-ratio: 15 / 11;
 }
 .pm-controls .cyber-btn { min-width: 9.5rem; }
+.pm-stage .field-hint { padding: 0 0.6rem; text-align: center; }
+
+/* On-screen arrows for touch play: a cross of four buttons, shown only in You play mode. */
+.pm-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 3rem);
+  grid-template-rows: repeat(3, 3rem);
+  gap: 0.35rem;
+}
+.pm-dpad .cyber-btn { min-width: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
+#dpad-n { grid-column: 2; grid-row: 1; }
+#dpad-w { grid-column: 1; grid-row: 2; }
+#dpad-e { grid-column: 3; grid-row: 2; }
+#dpad-s { grid-column: 2; grid-row: 3; }
 
 /* Brain panel: one bar per legal move, then the feature table for the chosen move. */
-.pm-card { margin-top: 0.5rem; padding: 0.6rem; }
 .pm-brain .viz-title { font-size: 0.95rem; }
 .pm-qlist {
   list-style: none;

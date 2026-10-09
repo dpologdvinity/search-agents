@@ -498,10 +498,21 @@ export class ParticleFilter {
     this.ess = n;
     this.pInject = 0;
     this.injected = 0;
+    this.replaced = new Int32Array(0);
     this.resampled = false;
     this.ls = null;
     this.lf = null;
     this.steps = 0;
+  }
+  // k indices chosen uniformly at random without replacement: a partial Fisher-Yates shuffle over the stream.
+  chooseReplaced(k) {
+    const n = this.n;
+    const perm = Array.from({ length: n }, (_, i) => i);
+    for (let i = 0; i < k; i++) {
+      const j = i + Math.min(n - 1 - i, Math.floor(this.rng.uniform() * (n - i)));
+      const t = perm[i]; perm[i] = perm[j]; perm[j] = t;
+    }
+    return perm.slice(0, k);
   }
   sampleCells(m, idx) {
     for (let k = 0; k < m; k++) {
@@ -563,11 +574,11 @@ export class ParticleFilter {
     this.ess = 1.0 / sq;
     this.resampled = this.ess < n / 2.0;
     if (this.resampled) this.systematicResample();
-    // 4. Recovery: the lowest-weight particles are replaced by uniform draws (stable sort, so ties are deterministic).
+    // 4. Recovery: a random subset of the particles is replaced by uniform draws (chooseReplaced, as particles.py).
     this.injected = roundHalfEven(p * n);
     if (this.injected > 0) {
-      const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => (this.w[a] - this.w[b]) || (a - b));
-      const idx = order.slice(0, this.injected);
+      const idx = this.chooseReplaced(this.injected);
+      this.replaced = idx;
       this.sampleCells(this.injected, idx);
       for (const i of idx) this.w[i] = 1.0 / n;
       let t2 = 0;

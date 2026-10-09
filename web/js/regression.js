@@ -146,10 +146,12 @@ function gdStep(X, y, logistic, deg) {
       ? logisticGD(X, y, S.lr, k, S.ridge, S.gd.w)
       : gradientDescent(X, y, S.lr, k, S.ridge, S.gd.w);
     S.gd.w = r.w;
-    // Each call returns the loss before every step plus the final one; that final one starts the next call.
-    for (let i = 0; i < r.losses.length - 1; i++) S.gd.losses.push(r.losses[i]);
-    S.gd.losses.push(r.losses[r.losses.length - 1]);
-    S.gd.total += k;
+    // Each call returns the loss before every step plus the final one. Its first entry is the loss the previous
+    // call already ended on, so it is not pushed again: one entry per step, and entry t is step t.
+    const fresh = S.gd.losses.length ? r.losses.slice(1) : r.losses;
+    for (const v of fresh) S.gd.losses.push(v);
+    // A diverged call stops early, so count the steps it actually took.
+    S.gd.total += r.losses.length - 1;
     if (S.gd.losses.length > 1500) S.gd.losses.splice(0, S.gd.losses.length - 1500);
     if (r.diverged) {
       S.gd.diverged = true;
@@ -400,8 +402,12 @@ const log10 = (v) => Math.log10(Math.max(v, 1e-12));
 
 /** Log10 of the objective over the descent's steps (last 400), with the exact optimum as a dashed line. */
 function drawLossChart(fit) {
+  setText('loss-title', S.mode === 'reg'
+    ? 'Log10 of the objective per descent step. Dashed: exact optimum (linear models).'
+    : 'Log10 of the log-loss per descent step.');
   const losses = S.gd.losses.slice(-400);
-  const start = S.gd.total - losses.length;
+  // The last entry is the loss at step S.gd.total, so the first one is that many entries back.
+  const start = S.gd.total - losses.length + 1;
   const pts = losses.map((v, i) => [start + i, log10(v)]);
   const ref = S.mode === 'reg' && fit.exactJ !== null && fit.exactJ !== undefined ? log10(fit.exactJ) : null;
   const ys = pts.map((p) => p[1]).concat(ref === null ? [] : [ref]).filter(Number.isFinite);
@@ -451,19 +457,17 @@ function updateHud(fit) {
       const rs = S.pts.map((p, i) => ({ r: p.y - pr[i], t: isTest(p) })).filter((o) => o.t === test);
       return rs.length ? (rs.reduce((s, o) => s + o.r * o.r, 0) / rs.length).toFixed(4) : '—';
     };
-    setText('chip-mode', 'POLY REGRESSION');
-    setText('chip-deg', String(S.reg.degree));
     setText('chip-n', String(S.pts.length));
     setText('chip-loss', fit.sse !== null && fit.sse !== undefined ? fit.sse.toFixed(3) : '—');
+    setText('chip-test-lbl', 'ERROR');
     setText('chip-test', `${mseOf(false)} / ${mseOf(true)}`);
     setText('chip-status', fit.w ? (S.gd.diverged ? 'DIVERGED' : 'FITTED') : fit.status);
   } else {
-    setText('chip-mode', 'LOGISTIC');
-    setText('chip-deg', String(S.log.degree));
     setText('chip-n', String(S.pts.length));
     const ll = fit.X ? logLoss(fit.X, fit.labels, fit.w, 0) : NaN;
     setText('chip-loss', Number.isFinite(ll) ? ll.toFixed(4) : '—');
-    setText('chip-test', fit.acc !== null && fit.acc !== undefined ? `${(fit.acc * 100).toFixed(1)}%` : '—');
+    setText('chip-test-lbl', 'ACCURACY');
+    setText('chip-test',fit.acc !== null && fit.acc !== undefined ? `${(fit.acc * 100).toFixed(1)}%` : '—');
     setText('chip-status', S.gd.diverged ? 'DIVERGED' : (S.running ? 'DESCENDING' : 'PAUSED'));
   }
   const last = S.gd.losses.length ? S.gd.losses[S.gd.losses.length - 1] : null;

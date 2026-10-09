@@ -1,7 +1,8 @@
 """PUCT tree search guided by a policy-value evaluator (the AlphaZero search).
 
 Each simulation descends by maximizing Q(s,a) + U(s,a), where
-    U(s,a) = c_puct * P(s,a) * sqrt(N(s)) / (1 + N(s,a)),
+    U(s,a) = c_puct * P(s,a) * sqrt(N(s) + 1) / (1 + N(s,a)),
+(the + 1 gives the first simulation from a node a nonzero exploration bonus),
 P is the network's prior, and Q the mean backed-up value. At a new leaf the
 network supplies priors for its children and a value estimate, which
 replaces the random rollout of plain MCTS. Terminal positions use the true

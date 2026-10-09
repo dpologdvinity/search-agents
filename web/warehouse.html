@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="warehouse.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,21 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">MULTI-AGENT PATHFINDING · CONFLICT-BASED SEARCH</div>
+      <div class="proj-pg-tag">MULTI-AGENT PATHFINDING</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="WAREHOUSE">WAREHOUSE</h1>
-      <div class="proj-pg-sub">Robots drive from their starts to their goals without ever sharing a cell or swapping places. Routing each one alone is easy; making them agree is the hard part.</div>
+      <div class="proj-pg-sub">Robots drive from their starts to their goals without sharing a cell or swapping places.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip">ROBOTS <span class="val" id="chip-robots">0</span></span>
         <span class="stat-chip green">SUM OF COSTS <span class="val" id="chip-sum">—</span></span>
-        <span class="stat-chip">MAKESPAN <span class="val" id="chip-span">—</span></span>
         <span class="stat-chip pink">COLLISIONS <span class="val" id="chip-conf">—</span></span>
         <span class="stat-chip">STATUS <span class="val" id="chip-status">PLACE ROBOTS</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Robots drive from their starts to their goals across a warehouse map. The goal is to route every robot so that no two robots share a cell or swap places.</p>
+    <p style="margin-top:0.5rem">Press RANDOMIZE for a solvable set of robots, then SOLVE to run the selected planner, or RACE ALL THREE to run all three on the same robots. PLAY replays the plan, and the STEP buttons move one time step at a time.</p>
+    <p style="margin-top:0.5rem">Red markers show each collision in the plan. For CBS, the constraint tree grows as the search branches, and the node it returns is marked green.</p>
+  </section>
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="banner" id="banner" role="status" hidden></div>
@@ -62,6 +68,12 @@
           <select class="cyber-select" id="speed" aria-label="Playback speed">
             <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
           </select>
+        </div>
+        <div class="wh-key field-hint" aria-label="Map key">
+          <span><i class="legend-dot" style="background:rgba(255,0,160,0.6);box-shadow:0 0 8px var(--pink)"></i>Shelf</span>
+          <span><i class="legend-dot" style="border:2px dashed var(--cyan);border-radius:50%;background:transparent"></i>Goal ring, in the robot's colour</span>
+          <span><i class="legend-dot" style="background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan)"></i>Robot and its trail</span>
+          <span><i class="legend-dot" style="background:var(--red);box-shadow:0 0 8px var(--red)"></i>Collision</span>
         </div>
       </div>
 
@@ -81,7 +93,11 @@
             <button class="cyber-btn pink" id="tree-skip" type="button" hidden><span class="btn-txt">SKIP ▶▶</span></button>
           </div>
           <div class="wh-tree-wrap" id="tree-wrap"><svg id="tree" class="wh-tree" xmlns="http://www.w3.org/2000/svg" aria-label="Constraint tree"></svg></div>
-          <div class="wh-detail field-hint" id="tree-detail">Each box is a high-level node: a set of collision constraints and the plan they produce. Click a node to read it.</div>
+          <div class="wh-key field-hint" aria-label="Tree key">
+            <span><i class="legend-dot" style="border:1px solid var(--green);background:transparent"></i>Returned plan</span>
+            <span><i class="legend-dot" style="border:1px dashed var(--dim);background:transparent"></i>Dead end: no route</span>
+          </div>
+          <div class="wh-detail field-hint" id="tree-detail">Click a node to read its constraints and cost.</div>
           <div class="prune-meter" id="cbs-stats" hidden>
             <div class="prune-row"><span>High-level nodes</span><b id="cs-high">0</b></div>
             <div class="prune-row"><span>Nodes expanded</span><b id="cs-exp">0</b></div>
@@ -113,137 +129,389 @@
         <div class="stack">
           <div>
             <div class="field-lbl">LAYOUT</div>
-            <select class="cyber-select" id="layout" style="width:100%"></select>
+            <select class="cyber-select" id="layout" style="width:100%" title="The warehouse map. Choosing one draws a new set of robots."></select>
           </div>
           <div>
             <div class="field-lbl">ROBOTS: <span id="robots-lbl" style="color:var(--cyan)">4</span></div>
-            <input type="range" class="cyber-range" id="robots" min="1" max="8" value="4">
+            <input type="range" class="cyber-range" id="robots" min="1" max="8" value="4" aria-label="Robots to place" title="How many robots RANDOMIZE places (1 to 8)">
           </div>
-          <div class="inline">
-            <div class="field-lbl" style="margin:0">SEED</div>
-            <input type="number" class="cyber-select" id="seed" value="1" min="0" max="99999" style="width:6.5rem">
-            <button class="cyber-btn green grow" id="btn-random" type="button"><span class="btn-txt">⚄ RANDOMIZE</span></button>
-          </div>
-          <div class="field-hint">Random robots are always solvable: the generator only keeps starts and goals that CBS can route.</div>
-          <button class="cyber-btn grow" id="btn-reset" type="button"><span class="btn-txt">↺ RESET LAYOUT</span></button>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">EDIT</div>
-        <div class="stack">
-          <div class="inline" style="gap:0.4rem">
-            <button class="cyber-btn wh-mode" data-mode="shelves" type="button" aria-pressed="false"><span class="btn-txt">▦ SHELVES</span></button>
-            <button class="cyber-btn wh-mode" data-mode="start" type="button" aria-pressed="false"><span class="btn-txt">◉ ROBOTS</span></button>
-            <button class="cyber-btn wh-mode" data-mode="goal" type="button" aria-pressed="false"><span class="btn-txt">◎ GOALS</span></button>
-          </div>
-          <div class="field-hint" id="mode-hint"></div>
-          <button class="cyber-btn pink grow" id="btn-clear" type="button"><span class="btn-txt">CLEAR ROBOTS</span></button>
+          <button class="cyber-btn green grow" id="btn-random" type="button" title="Draw random starts and goals that CBS can route, using the seed in More settings"><span class="btn-txt">⚄ RANDOMIZE</span></button>
         </div>
       </div>
 
       <div>
         <div class="section-title green-ttl">PLANNER</div>
         <div class="stack">
-          <select class="cyber-select" id="planner" style="width:100%">
+          <select class="cyber-select" id="planner" style="width:100%" aria-label="Planner" title="Plans the robots when you press SOLVE">
             <option value="cbs">Conflict-Based Search</option>
             <option value="prioritized">Prioritized planning</option>
             <option value="independent">Independent A*</option>
           </select>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="planner-desc"></div></div>
-          <div class="inline">
-            <button class="cyber-btn green grow" id="btn-solve" type="button"><span class="btn-txt">▶ SOLVE</span></button>
-            <button class="cyber-btn pink grow" id="btn-race" type="button"><span class="btn-txt">⇶ RACE ALL THREE</span></button>
+          <div class="stack">
+            <button class="cyber-btn green grow" id="btn-solve" type="button" title="Plan the robots with the selected planner"><span class="btn-txt">▶ SOLVE</span></button>
+            <button class="cyber-btn pink grow" id="btn-race" type="button" title="Run all three planners on the same robots and crown the cheapest valid plan"><span class="btn-txt">⇶ RACE ALL THREE</span></button>
           </div>
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">KEY</div>
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div class="field-hint" style="display:flex;flex-direction:column;gap:0.35rem">
-            <span><i class="legend-dot" style="background:rgba(255,0,160,0.6);box-shadow:0 0 8px var(--pink)"></i>Shelf, a blocked cell</span>
-            <span><i class="legend-dot" style="border:2px dashed var(--cyan);border-radius:50%;background:transparent"></i>Goal ring, in the robot's colour</span>
-            <span><i class="legend-dot" style="background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan)"></i>Robot and its glowing trail</span>
-            <span><i class="legend-dot" style="background:var(--red);box-shadow:0 0 8px var(--red)"></i>Collision, flashing on the step it happens</span>
-            <span><i class="legend-dot" style="border:1px solid var(--green);background:transparent"></i>Solution node in the constraint tree</span>
-            <span><i class="legend-dot" style="border:1px dashed var(--dim);background:transparent"></i>Dead end: the child has no route</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title purple-ttl">HOW THEY PLAN</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">CONFLICT-BASED SEARCH</div>
-            <div class="field-hint">Plan every robot alone. When two collide, split: one branch forbids the first robot from that cell at that moment, the other forbids the second. Replan only the robot that was constrained. The cheapest tree node with no collisions is the optimal plan.</div>
+          <div class="inline">
+            <div class="field-lbl" style="margin:0">SEED</div>
+            <input type="number" class="cyber-select" id="seed" value="1" min="0" max="99999" style="width:6.5rem" aria-label="Seed for RANDOMIZE" title="Seed for RANDOMIZE. After a draw, the seed that produced the robots is shown here.">
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">PRIORITIZED</div>
-            <div class="field-hint">Plan robots one at a time. Each later robot treats the earlier paths as moving obstacles. Always collision-free, but a robot can be boxed in, and early greedy routes make the total longer.</div>
+          <button class="cyber-btn grow" id="btn-reset" type="button" title="Restore the chosen map and clear the robots"><span class="btn-txt">↺ RESET LAYOUT</span></button>
+          <div class="section-title pink-ttl">EDIT</div>
+          <div class="inline" style="gap:0.4rem">
+            <button class="cyber-btn wh-mode" data-mode="shelves" type="button" aria-pressed="false" title="Click a cell to add or remove a shelf"><span class="btn-txt">▦ SHELVES</span></button>
+            <button class="cyber-btn wh-mode" data-mode="start" type="button" aria-pressed="false" title="Click a floor cell to add a robot, or a robot start to remove it"><span class="btn-txt">◉ ROBOTS</span></button>
+            <button class="cyber-btn wh-mode" data-mode="goal" type="button" aria-pressed="false" title="Click a floor cell to set the goal of the selected robot, or of the first robot without one"><span class="btn-txt">◎ GOALS</span></button>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--red);margin-bottom:0.3rem">INDEPENDENT A*</div>
-            <div class="field-hint">Each robot takes its own shortest path and ignores the others. Instant, and the red flashes show every place that breaks the rules.</div>
-          </div>
+          <button class="cyber-btn pink grow" id="btn-clear" type="button" title="Remove every robot with its start and goal"><span class="btn-txt">CLEAR ROBOTS</span></button>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Robots move one cell or wait each time step, and may never share a cell or swap places. The page compares three planners on one instance: Conflict-Based Search (optimal), prioritized planning, and independent A*. CBS plans every robot alone, finds the first collision, and adds a rule only for the robots involved.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Conflict-Based Search (CBS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Picture delivery drivers who each know their fastest route, but two of those routes cross at the same corner at the same moment. At the first crash, split into two plans: in one, the first driver is barred from that corner at that moment; in the other, the second driver is. Always work on the cheapest open plan until one has no crashes.</p>
-      <p>The high level is a constraint tree. The root plans every robot alone, so its total cost is a lower bound on every later node. The earliest collision between robots i and j creates two children, each adding one constraint to one of the two robots. Only that robot is replanned. Nodes are expanded cheapest first by sum of costs, so the first collision-free node is optimal: every collision must be resolved by one of its two children.</p>
-      <ul>
-        <li>Vertex conflict: two robots on one cell at one step. Edge conflict: two robots swap cells in one step.</li>
-        <li>Budget: 2,000 nodes and 2.0 s on the page. If either runs out, the page reports the status and shows no plan.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Space-time A* (the planner inside CBS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A* is a route-finding method. It always expands the option with the lowest score: distance travelled so far plus a guess of what remains, the same idea as a road map app. Here time is part of the map too, because a robot can wait, so a cell at time 3 is a different state from the same cell at time 4.</p>
-      <p>Each state is a (cell, time) pair. Moves go to a free neighbour or stay put. Forbidden states come from a reservation table: a vertex block keeps a robot off a cell at a time, and an edge block stops a swap. The guess is the shortest walking distance to the goal, ignoring other robots. It never overestimates, so the first valid goal state popped arrives earliest. A goal state is valid only if the robot can stay there afterwards.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Prioritized planning</h3>
-      <p class="hiw-plain"><b>New to this?</b> Think of people leaving a building through one hallway. The first person picks a path, and each later person walks around the people already committed. It is quick, but the last person can find every route blocked.</p>
-      <p>Robots are planned in index order, robot 0 first. After each one, its whole path, including the cell it parks on, goes into the reservation table, and the next robot plans against it. Every returned plan is collision-free by construction. If a robot has no route, the status is <code>failed</code> and no plan is shown.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Independent A* (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Every driver takes the shortest route on the map and ignores everyone else. It is the fastest answer, but nothing stops two drivers reaching the same cell at the same moment.</p>
-      <p>Each robot runs space-time A* with an empty reservation table. The paths are then checked for collisions. The page reports the status as collisions, not a plan, and flashes each collision on the step it happens. Its sum of costs looks lowest only because the plan it describes is invalid.</p>
-    </article>
-  </div>
+  <p class="hiw-lede">Each robot moves to a neighbouring cell or waits in each time step, and no two robots may share a cell or swap places. The page runs three <b>planners</b>, which are algorithms that turn starts and goals into paths: <b>Conflict-Based Search</b> (CBS), which returns the plan with the lowest total travel time; <b>prioritized planning</b>, which plans one robot at a time; and <b>independent A*</b>, which plans every robot alone and ignores the rest. The topics below cover the rules, the single-robot search, each planner, the random instances, the measured results, and the budgets.</p>
 
-  <h3 class="hiw-sub">Rules and parameters</h3>
+  <h3 class="hiw-sub">The map and the rules</h3>
+  <p>The map is a rectangle of <b>cells</b>. Each cell is either a <b>shelf</b>, which blocks movement, or <b>floor</b>, which a robot can enter. Two floor cells are <b>neighbours</b> when they share an edge. Cells are numbered row by row, so the cell in column <span class="math">x</span> and row <span class="math">y</span> has the number <span class="math">c = yW + x</span>, where <span class="math">W</span> is the width of the map.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/grid.py#L3-L5" target="_blank" rel="noopener" title="warehouse/grid.py, lines 3–5" aria-label="Code on GitHub: warehouse/grid.py, lines 3 to 5">1</a></p>
+  <p>A <b>robot</b> has a <b>start</b> and a <b>goal</b>, both on floor cells. Time moves in discrete <b>steps</b>. In each step a robot moves to a free neighbour or <b>waits</b> in its cell, so it chooses one of five actions: up, down, left, right, or wait.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/grid.py#L7-L9" target="_blank" rel="noopener" title="warehouse/grid.py, lines 7–9" aria-label="Code on GitHub: warehouse/grid.py, lines 7 to 9">2</a> A <b>path</b> is the list of cells that a robot occupies at steps 0, 1, 2, and so on. A robot that reaches its goal stays there. The position at any step is therefore read by clamping the step to the last index of the path.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L37-L39" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 37–39" aria-label="Code on GitHub: warehouse/conflicts.py, lines 37 to 39">3</a></p>
+  <!-- warehouse/conflicts.py:37-39 -->
+  <div class="math-fig">
+    <div class="math math-block">\pi_i(t) = \pi_i\bigl[\min(t,\ T_i)\bigr]</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L37-L39" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 37–39" aria-label="Code on GitHub: warehouse/conflicts.py, lines 37 to 39">3</a></span>
+  </div>
+  <p>Here <span class="math">\pi_i[t]</span> is the cell that robot <span class="math">i</span> occupies at step <span class="math">t</span>, and <span class="math">T_i = |\pi_i| - 1</span> is the index of its last cell. That index is the robot's <b>arrival time</b>: the step at which it reaches its goal and stays there.</p>
+  <p>Two robots <b>collide</b> in one of two ways. A <b>vertex conflict</b> puts two robots on the same cell at the same step. An <b>edge conflict</b>, also called a <b>swap</b>, has two robots exchange their cells in one step. Both rules are needed. In a swap the two robots never share a cell at any step, so a check for shared cells alone would miss it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L8-L10" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 8–10" aria-label="Code on GitHub: warehouse/conflicts.py, lines 8 to 10">4</a></p>
+  <!-- warehouse/conflicts.py:66-90 -->
+  <div class="math-fig">
+    <div class="math math-block">\pi_i(t) = \pi_j(t) \quad\text{or}\quad \bigl(\pi_i(t{-}1) \neq \pi_i(t)\ \text{and}\ \pi_i(t{-}1) = \pi_j(t)\ \text{and}\ \pi_j(t{-}1) = \pi_i(t)\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L66-L75" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 66–75" aria-label="Code on GitHub: warehouse/conflicts.py, lines 66 to 75">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L76-L90" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 76–90" aria-label="Code on GitHub: warehouse/conflicts.py, lines 76 to 90">6</a></span>
+  </div>
+  <p>Here the first clause is the vertex conflict between robots <span class="math">i</span> and <span class="math">j</span> at step <span class="math">t</span>, and the second is the swap between them in the step from <span class="math">t-1</span> to <span class="math">t</span>. The check runs at every step from 0 to the makespan. A robot that has arrived is a stationary obstacle, so a collision with it is still found.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L52-L58" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 52–58" aria-label="Code on GitHub: warehouse/conflicts.py, lines 52 to 58">7</a> The code reports one vertex conflict for each robot that enters a cell already taken at that step, paired with the first robot there. Three robots on one cell therefore give two conflicts, not three. Each swapping pair is reported once.</p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L52-L92" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 52–92" aria-label="Code on GitHub: warehouse/conflicts.py, lines 52 to 92">8</a></span>
+  <pre class="pseudo-simple">function FIND-CONFLICTS(paths):
+    conflicts ← []
+    if paths is empty:
+        return conflicts
+    horizon ← makespan(paths)
+    prev ← the cell of each robot at step 0
+    for t in 0 to horizon:                          # every step, up to the last arrival
+        now ← the cell of each robot at step t      # a robot waits at its goal after arriving
+        occupant ← {}                               # cell → first robot standing on it
+        for each robot i with cell c = now[i]:
+            if c is in occupant:
+                append a vertex conflict at t between occupant[c] and i
+            else:
+                occupant[c] ← i
+        if t > 0:
+            before ← {cell → the robots standing on it at step t − 1}
+            for each robot i with prev[i] ≠ now[i]:  # a real move from a to b
+                a ← prev[i];  b ← now[i]
+                for each robot j in before[b], with j > i:
+                    if now[j] = a:                  # j moved b → a: a swap
+                        append a swap conflict at t between i and j
+        prev ← now
+    return conflicts</pre>
+</div>
+
+  <p>The <b>makespan</b> is the largest arrival time, the step at which the last robot arrives. The <b>sum of costs</b> (SOC) adds the arrival times of all robots. A plan with no conflicts is <b>collision-free</b>. CBS minimises the sum of costs, and the page shows both numbers.</p>
+  <!-- warehouse/conflicts.py:42-49 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{SOC} = \sum_{i} T_i \qquad\qquad \mathrm{makespan} = \max_{i} T_i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/conflicts.py#L42-L49" target="_blank" rel="noopener" title="warehouse/conflicts.py, lines 42–49" aria-label="Code on GitHub: warehouse/conflicts.py, lines 42 to 49">9</a></span>
+  </div>
+  <p>Here the sum and the maximum run over all robots <span class="math">i</span>, and <span class="math">T_i</span> is the arrival time defined above. In the swap-corridor example below, planned alone, both robots arrive at step 4, so the sum of costs is 8.</p>
+
+  <h3 class="hiw-sub">Space-time A*: the single-robot search</h3>
+  <p><b>A*</b> is a best-first search. It always expands the state with the smallest priority <span class="math">f = g + h</span>, where <span class="math">g</span> is the cost so far and <span class="math">h</span> is a <b>heuristic</b>, an estimate of the cost that remains. In <b>space-time</b> A*, a state is a pair of a cell and a step. A robot on the same cell at steps 3 and 4 is in two different states, and waiting is an ordinary move between them, one step long.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L107-L112" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 107–112" aria-label="Code on GitHub: warehouse/space_time.py, lines 107 to 112">10</a></p>
+  <p>The heuristic is the <b>walking distance</b>: the number of moves on the shortest route from a cell to the goal, through floor cells, ignoring every other robot. A breadth-first search from the goal computes it once per goal, and the result is cached.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/grid.py#L100-L118" target="_blank" rel="noopener" title="warehouse/grid.py, lines 100–118" aria-label="Code on GitHub: warehouse/grid.py, lines 100 to 118">11</a> Because it ignores the other robots, it never overestimates the remaining time, which makes it <b>admissible</b>. It also changes by at most one per step, so a successor's priority is never lower than its parent's, which makes it <b>consistent</b>.</p>
+  <!-- warehouse/space_time.py:123-127, warehouse/space_time.py:150 -->
+  <div class="math-fig">
+    <div class="math math-block">f(c, t) = t + h(c), \qquad h(c) = \text{walking distance from } c \text{ to the goal}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L123-L127" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 123–127" aria-label="Code on GitHub: warehouse/space_time.py, lines 123 to 127">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L150" target="_blank" rel="noopener" title="warehouse/space_time.py, line 150" aria-label="Code on GitHub: warehouse/space_time.py, line 150">13</a></span>
+  </div>
+  <p>Here <span class="math">c</span> is a cell, <span class="math">t</span> is the step at which the robot is on it, and <span class="math">f</span> is the value the queue sorts on. The code pushes <span class="math">f = t + 1 + h</span> for each successor, since a successor is one step later.</p>
+  <p>A <b>reservation table</b> holds what the search must respect. A <b>vertex block</b> <span class="math">(c, t)</span> keeps the robot off cell <span class="math">c</span> at step <span class="math">t</span>. An <b>edge block</b> <span class="math">(a, b, t)</span> forbids the move from <span class="math">a</span> to <span class="math">b</span> that arrives at step <span class="math">t</span>, which is how a swap is stopped. A <b>parked</b> cell is the goal of a robot that has already arrived, and it stays blocked from that step onward.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L8-L11" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 8–11" aria-label="Code on GitHub: warehouse/space_time.py, lines 8 to 11">14</a> A robot may stop at its goal only if the goal is not parked and no vertex block on it comes at or after the step.</p>
+  <!-- warehouse/space_time.py:98-100 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{stay}(g, t) \iff g \notin \text{parked} \ \text{and}\ \mathrm{last}(g) < t</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L98-L100" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 98–100" aria-label="Code on GitHub: warehouse/space_time.py, lines 98 to 100">15</a></span>
+  </div>
+  <p>Here <span class="math">\mathrm{last}(g)</span> is the latest step at which <span class="math">g</span> has a vertex block, or <span class="math">-1</span> if it has none. The search returns the first state it pops that is a goal state with <span class="math">\mathrm{stay}(g, t)</span> true. Since the heuristic is zero at the goal, that state has the smallest arrival time among valid goal states: every state with a smaller priority was popped before it. A goal state that fails the stay test is not a solution, so the search continues past it.</p>
+  <p><i>Example.</i> On a one-row corridor of six floor cells, a vertex block on cell 2 at step 2 forces the robot to wait once on cell 1. Its path is 0, 1, 1, 2, 3, 4, 5, so it arrives at step 6.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_warehouse.py#L54-L59" target="_blank" rel="noopener" title="tests/test_warehouse.py, lines 54–59" aria-label="Code on GitHub: tests/test_warehouse.py, lines 54 to 59">16</a></p>
+  <p>The search looks ahead only to a horizon <span class="math">H</span>, the largest reserved step plus the number of cells plus one. The number of cells is the width times the height, shelves included, so the bound is loose. After the largest reserved step, only parked cells can still block, and a robot that is still moving then can walk to its goal in fewer steps than there are cells.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L126-L127" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 126–127" aria-label="Code on GitHub: warehouse/space_time.py, lines 126 to 127">17</a></p>
+  <!-- warehouse/space_time.py:126-127 -->
+  <div class="math-fig">
+    <div class="math math-block">H = t_{\max} + |V| + 1</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L126-L127" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 126–127" aria-label="Code on GitHub: warehouse/space_time.py, lines 126 to 127">17</a></span>
+  </div>
+  <p>Here <span class="math">t_{\max}</span> is the largest step with a reservation (<code>max_time()</code>), and <span class="math">|V|</span> is the number of cells in the map (<code>grid.size</code>).</p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L107-L151" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 107–151" aria-label="Code on GitHub: warehouse/space_time.py, lines 107 to 151">18</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L154-L162" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 154–162" aria-label="Code on GitHub: warehouse/space_time.py, lines 154 to 162">19</a></span>
+  <pre class="pseudo-simple">function SPACE-TIME-ASTAR(grid, start, goal, res):
+    h ← walking distance from each cell to goal        # ignores the other robots
+    queue ← [(start, step 0)], ordered by f = step + h
+    while queue is not empty:
+        (cell, t) ← the state in queue with the smallest f
+        if cell = goal and res allows the robot to stay at goal from step t:
+            return the cells from start to (cell, t)
+        for each nxt in cell and the neighbours of cell:    # wait, or move
+            if (nxt, t + 1) is not blocked and was not seen before:
+                add (nxt, t + 1) to queue
+    return none                                          # no path within the horizon</pre>
+  <pre class="pseudo-full" hidden>function SPACE-TIME-ASTAR(grid, start, goal, res, horizon):
+    dist ← DISTANCES-TO(grid, goal)                     # BFS walking distance, −1 if unreachable
+    if dist[start] < 0:
+        return none, 0
+    if horizon is none:
+        horizon ← res.MAX-TIME() + grid.size + 1        # the largest reserved step plus cells plus one
+    heap ← [(dist[start], 0, start, 0)]                  # entries (f, −t, cell, t)
+    parent ← {(start, 0): none}                          # the state each state was reached from
+    expanded ← 0
+    while heap is not empty:
+        (f, −t, cell, t) ← POP-MIN(heap)
+        expanded ← expanded + 1
+        if cell = goal and res.CAN-STAY-FROM(goal, t):
+            return WALK-BACK(parent, cell, t), expanded
+        nt ← t + 1
+        if nt > horizon:
+            continue
+        for nxt in (cell, then each neighbour of cell):  # waiting is the first candidate
+            if dist[nxt] < 0 or (nxt, nt) is in parent:
+                continue
+            if res.BLOCKED-VERTEX(nxt, nt):
+                continue
+            if nxt ≠ cell and res.BLOCKED-EDGE(cell, nxt, nt):
+                continue
+            parent[(nxt, nt)] ← (cell, t)
+            PUSH(heap, (nt + dist[nxt], −nt, nxt, nt))
+    return none, expanded
+
+function WALK-BACK(parent, cell, t):
+    cells ← [cell]
+    state ← (cell, t)
+    while parent[state] is not none:
+        state ← parent[state]
+        append the cell of state to cells
+    return cells in reverse order</pre>
+</div>
+
+  <p><b>The parent table.</b> <code>parent</code> does two jobs. It records each state once, so no state is pushed twice, and it stores the state each one was reached from, so the path can be rebuilt by walking back from the goal.</p>
+  <p><b>Ties.</b> Entries are ordered by <span class="math">(f, -t)</span>. Among states with the same <span class="math">f</span>, the one with the larger step has the smaller key, so the deeper state is popped first and reaches the goal with fewer expansions.</p>
+  <p><b>Blocked moves are dropped when generated.</b> A successor that is blocked, unreachable, or already present is never pushed, so the queue holds only states that could be part of a plan.</p>
+
+  <h3 class="hiw-sub">Conflict-Based Search</h3>
+  <p><b>Conflict-Based Search</b> (CBS; Sharon et al., 2012) splits the problem into two levels.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L1" target="_blank" rel="noopener" title="warehouse/cbs.py, line 1" aria-label="Code on GitHub: warehouse/cbs.py, line 1">20</a> The <b>low level</b> plans a single robot with space-time A*, under only the constraints that name that robot. The <b>high level</b> searches a <b>constraint tree</b>. Each <b>node</b> holds a set of <b>constraints</b>, one path for every robot, and the cost of those paths. The root has no constraints, so every robot takes its own fastest path.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L94-L103" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 94–103" aria-label="Code on GitHub: warehouse/cbs.py, lines 94 to 103">21</a></p>
+  <p>The cost of a node is its sum of costs. Because a constraint can only keep a robot away from a cell or a move, a replanned robot never arrives earlier than before. So the cost never falls from parent to child, and the root cost is a <b>lower bound</b> on every node.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L12-L13" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 12–13" aria-label="Code on GitHub: warehouse/cbs.py, lines 12 to 13">22</a></p>
+  <!-- warehouse/cbs.py:102, warehouse/cbs.py:130-131 -->
+  <div class="math-fig">
+    <div class="math math-block">C(N) = \sum_i T_i(N), \qquad C(\text{child of } N) \ge C(N)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L102" target="_blank" rel="noopener" title="warehouse/cbs.py, line 102" aria-label="Code on GitHub: warehouse/cbs.py, line 102">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L130-L131" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 130–131" aria-label="Code on GitHub: warehouse/cbs.py, lines 130 to 131">24</a></span>
+  </div>
+  <p>Here <span class="math">C(N)</span> is the sum of costs of the paths held by node <span class="math">N</span>, and <span class="math">T_i(N)</span> is the arrival time of robot <span class="math">i</span> in that node.</p>
+  <p>A constraint is one of two kinds. A <b>vertex constraint</b> <span class="math">(i, c, t)</span> says that robot <span class="math">i</span> may not be on cell <span class="math">c</span> at step <span class="math">t</span>. An <b>edge constraint</b> <span class="math">(i, a, b, t)</span> says that robot <span class="math">i</span> may not move from <span class="math">a</span> to <span class="math">b</span> so as to arrive at step <span class="math">t</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L57-L70" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 57–70" aria-label="Code on GitHub: warehouse/cbs.py, lines 57 to 70">25</a></p>
+  <!-- warehouse/cbs.py:57-70 -->
+  <div class="math-fig">
+    <div class="math math-block">(i, c, t):\ \pi_i(t) \neq c \qquad\qquad (i, a, b, t):\ \neg\bigl(\pi_i(t{-}1) = a \ \text{and}\ \pi_i(t) = b\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L57-L70" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 57–70" aria-label="Code on GitHub: warehouse/cbs.py, lines 57 to 70">25</a></span>
+  </div>
+  <p>To expand a node, the high level takes its <b>first collision</b>: the earliest step at which two robots collide, with a vertex conflict before a swap at the same step. The node then gets two children. For a vertex conflict at cell <span class="math">c</span> and step <span class="math">t</span> between robots <span class="math">i</span> and <span class="math">j</span>, one child adds <span class="math">(i, c, t)</span> and the other adds <span class="math">(j, c, t)</span>. For a swap in which <span class="math">i</span> moves from <span class="math">a</span> to <span class="math">b</span> while <span class="math">j</span> moves from <span class="math">b</span> to <span class="math">a</span> at step <span class="math">t</span>, one child adds <span class="math">(i, a, b, t)</span> and the other adds <span class="math">(j, b, a, t)</span>. Each child replans only the robot it constrains, and its cost is the new sum of costs. A child with no path within the horizon is a <b>dead end</b> and is not added to the tree.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L119-L136" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 119–136" aria-label="Code on GitHub: warehouse/cbs.py, lines 119 to 136">26</a></p>
+  <p>Open nodes wait in a priority queue ordered by cost, with ties broken by creation order, so the cheapest node is expanded first. A node with no collisions is a plan, and the search returns it when it is popped. This is optimal because the root cost bounds every node, and each collision must be resolved by at least one of its two children. The first collision-free node expanded is therefore the cheapest possible plan.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L12-L13" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 12–13" aria-label="Code on GitHub: warehouse/cbs.py, lines 12 to 13">22</a></p>
+  <p><i>Example.</i> On the swap corridor, a row of five floor cells with one pocket above the middle cell, the two robots exchange ends. Planned alone, each takes four steps, so the root has cost 8. The first collision is a vertex conflict on the middle cell at step 2. Each of its two children costs 9. The plan the search returns has cost 11: robot 0 waits once, and robot 1 steps into the pocket to let it pass, so the arrival times are 5 and 6.</p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L81-L146" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 81–146" aria-label="Code on GitHub: warehouse/cbs.py, lines 81 to 146">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L153-L169" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 153–169" aria-label="Code on GitHub: warehouse/cbs.py, lines 153 to 169">28</a></span>
+  <pre class="pseudo-simple">function CBS(problem):
+    root ← every robot planned alone by SPACE-TIME-ASTAR
+    open ← [root], ordered by cost (the sum of arrival times)
+    while open is not empty:
+        node ← the cheapest node in open
+        conflict ← the earliest collision in node.paths
+        if there is no conflict:
+            return node.paths                  # collision-free, and cheapest
+        for each (robot, constraint) in BRANCH(conflict):
+            child ← node plus constraint, with only that robot replanned
+            add child to open
+    return no plan</pre>
+  <pre class="pseudo-full" hidden>function CBS(problem, max_nodes, max_seconds):
+    started ← now
+    root_paths ← []
+    for each robot r:                                  # root: every robot alone
+        path, states ← SPACE-TIME-ASTAR(problem.grid, start_r, goal_r, no reservations)
+        low_states ← low_states + states
+        if path is none:
+            return RESULT("no_solution")
+        append path to root_paths
+    root ← NODE(id 0, parent none, constraints [], paths root_paths, cost SOC(root_paths))
+    generated ← 1
+    open ← priority queue keyed by (cost, id), holding root
+    while open is not empty:
+        if expanded ≥ max_nodes:
+            return RESULT("node_limit")
+        if seconds since started > max_seconds:
+            return RESULT("time_limit")
+        node ← POP-MIN(open)
+        conflict ← FIRST-CONFLICT(node.paths)          # earliest step; a vertex conflict before a swap
+        if conflict is none:
+            return RESULT("solved", node)              # collision-free, and cheapest
+        expanded ← expanded + 1
+        children ← []
+        for each (robot, constraint) in BRANCH(conflict):
+            cons ← node.constraints plus constraint
+            path, states ← PLAN-ONE(robot, cons)        # space-time A*, only this robot's constraints
+            low_states ← low_states + states
+            if path is none:
+                infeasible ← infeasible + 1             # dead end: no path within the horizon
+                record the child with cost none
+            else:
+                paths ← node.paths with paths[robot] replaced by path
+                child ← NODE(generated, node.id, cons, paths, SOC(paths), constraint)
+                generated ← generated + 1
+                PUSH(open, child)
+                record the child with its id and cost
+            append the record to children
+        if the trace has room:                         # at most trace_limit expansions
+            record node.id, node.parent, node.cost, node.added, conflict, children in trace
+    return RESULT("no_solution")</pre>
+</div>
+
+  <p><b>Stored nodes.</b> A node keeps its whole constraint set and its whole set of paths. A child copies its parent's constraints and replaces the one path it constrains, so no other robot is replanned.</p>
+  <p><b>Budgets.</b> The search stops with a status instead of an error: <code>node_limit</code> after the expansion budget, <code>time_limit</code> after the time budget, and <code>no_solution</code> when the queue empties. Infeasible instances usually end on a budget, because a constraint only limits when a robot may be somewhere, so the tree can keep branching. The page uses 2,000 nodes and 2.0 s. The core defaults are 2,000 nodes and 5.0 s. The node budget counts expansions, while the panel also shows the number of nodes created.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L84-L87" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 84–87" aria-label="Code on GitHub: warehouse/cbs.py, lines 84 to 87">29</a></p>
+  <p><b>The trace.</b> The first <code>trace_limit</code> expansions are recorded with each child's id and cost, which is what the constraint-tree panel draws. The returned plan is identified by the id of its node, so the panel can mark it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py#L137-L145" target="_blank" rel="noopener" title="warehouse/cbs.py, lines 137–145" aria-label="Code on GitHub: warehouse/cbs.py, lines 137 to 145">30</a></p>
+
+  <h3 class="hiw-sub">Prioritized planning</h3>
+  <p><b>Prioritized planning</b> plans the robots one at a time, in index order by default. Robot 0 is planned first, with nothing to avoid. Each later robot is planned against a reservation table that holds every earlier path: their cells, their moves, and their goals, where they park. Each new path is searched to avoid everything already reserved, so every returned plan is collision-free by construction.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py#L70-L105" target="_blank" rel="noopener" title="warehouse/planners.py, lines 70–105" aria-label="Code on GitHub: warehouse/planners.py, lines 70 to 105">31</a></p>
+  <p>Two costs follow from planning greedily. A robot can have no route at all once the robots before it block the way, and the result is then the status <code>failed</code> with no plan. The early robots also take their fastest routes without regard to the later ones, so the total cost can be higher than the optimum. No robot is replanned in a different order.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L77-L87" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 77–87" aria-label="Code on GitHub: warehouse/space_time.py, lines 77 to 87">32</a></p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py#L70-L105" target="_blank" rel="noopener" title="warehouse/planners.py, lines 70–105" aria-label="Code on GitHub: warehouse/planners.py, lines 70 to 105">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py#L77-L87" target="_blank" rel="noopener" title="warehouse/space_time.py, lines 77–87" aria-label="Code on GitHub: warehouse/space_time.py, lines 77 to 87">32</a></span>
+  <pre class="pseudo-simple">function PRIORITIZED(problem):
+    reserved ← empty reservation table
+    for each robot r in order:                        # index order by default
+        path ← SPACE-TIME-ASTAR(start_r, goal_r, reserved)
+        if path is none:
+            return status "failed"
+        reserved ← reserved plus the cells, moves and parked goal of path
+    return the paths, one for each robot</pre>
+  <pre class="pseudo-full" hidden>function PRIORITIZED(problem, order):
+    started ← now
+    res ← empty reservation table
+    paths ← {}
+    low_states ← 0
+    for each robot r in order:
+        path, states ← SPACE-TIME-ASTAR(problem.grid, start_r, goal_r, res)
+        low_states ← low_states + states
+        if path is none:
+            return RESULT("failed", no paths)
+        paths[r] ← path
+        res.ADD-PATH(path)
+    ordered ← the paths in robot order
+    return RESULT("solved", ordered, SOC(ordered), MAKESPAN(ordered))
+
+function ADD-PATH(path):                              # called on the reservation table
+    for t in 0 to the last index of path:
+        add the vertex block (path[t], t)
+        if t > 0 and path[t − 1] ≠ path[t]:
+            add the edge block (path[t], path[t − 1], t)   # the reverse move would be a swap
+    parked[path[last]] ← last index</pre>
+</div>
+
+  <p><b>One table for all robots.</b> The table is shared, so the last robot is planned against every earlier path at once. A path also reserves its own goal from its arrival step onward, so a later robot cannot pass through a robot that has already parked.</p>
+
+  <h3 class="hiw-sub">Independent A* (baseline)</h3>
+  <p><b>Independent A*</b> runs the single-robot search for every robot with an empty reservation table, so each robot ignores the others. It is the fastest of the three, but its paths can collide. Its status is <code>collisions</code>, and the page draws the paths and flashes each collision in red on the step where it happens.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py#L48-L67" target="_blank" rel="noopener" title="warehouse/planners.py, lines 48–67" aria-label="Code on GitHub: warehouse/planners.py, lines 48 to 67">33</a> Its sum of costs looks lowest in the benchmark below only because its plans are invalid.</p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py#L48-L67" target="_blank" rel="noopener" title="warehouse/planners.py, lines 48–67" aria-label="Code on GitHub: warehouse/planners.py, lines 48 to 67">33</a></span>
+  <pre class="pseudo-simple">function INDEPENDENT(problem):
+    for each robot r:
+        paths[r] ← SPACE-TIME-ASTAR(start_r, goal_r, empty reservation table)
+    conflicts ← FIND-CONFLICTS(paths)
+    if conflicts is empty:
+        return status "solved", with the paths
+    return status "collisions", with the paths and the conflicts</pre>
+</div>
+
+  <h3 class="hiw-sub">Random instances (RANDOMIZE)</h3>
+  <p><b>RANDOMIZE</b> draws starts and goals from the largest connected floor region, so that every robot can reach every cell. Some draws are infeasible, because robots can block one another into a dead end. Each candidate is therefore checked with CBS under a node budget, and only candidates that CBS solves are kept. The seed fixes the draw. The check is deterministic unless CBS runs out of time, since the time budget depends on the machine.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/instances.py#L19-L37" target="_blank" rel="noopener" title="warehouse/instances.py, lines 19–37" aria-label="Code on GitHub: warehouse/instances.py, lines 19 to 37">34</a> The server tries 10 candidates at 800 nodes and 0.4 s each, and the page tries up to three seeds.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/warehouse_api.py#L50-L53" target="_blank" rel="noopener" title="server/warehouse_api.py, lines 50–53" aria-label="Code on GitHub: server/warehouse_api.py, lines 50 to 53">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/warehouse.js#L902-L910" target="_blank" rel="noopener" title="web/js/warehouse.js, lines 902–910" aria-label="Code on GitHub: web/js/warehouse.js, lines 902 to 910">36</a></p>
+
+<div class="pseudo">
+  <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/instances.py#L19-L37" target="_blank" rel="noopener" title="warehouse/instances.py, lines 19–37" aria-label="Code on GitHub: warehouse/instances.py, lines 19 to 37">34</a></span>
+  <pre class="pseudo-simple">function RANDOM-INSTANCE(grid, robots, seed):
+    floor ← the cells of the largest connected floor region
+    rng ← random generator with the given seed
+    repeat attempts times:
+        cells ← 2 × robots distinct cells drawn from floor
+        problem ← the first half of cells as starts, the second half as goals
+        if CBS(problem) is solved within its budget:
+            return problem
+    raise an error: no solvable instance</pre>
+  <pre class="pseudo-full" hidden>function RANDOM-INSTANCE(grid, robots, seed, attempts, max_nodes, max_seconds):
+    floor ← grid.LARGEST-COMPONENT()
+    if the number of floor cells is less than 2 × robots:
+        raise an error: too few floor cells
+    rng ← random generator with the given seed
+    repeat attempts times:
+        cells ← 2 × robots distinct cells drawn from floor
+        problem ← starts from cells[0 : robots], goals from cells[robots : 2 × robots]
+        result ← CBS(problem, max_nodes, max_seconds, trace_limit 0)     # nothing traced
+        if result.status is "solved":
+            return problem
+    raise an error: no solvable instance</pre>
+</div>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p>Both tables come from committed benchmark runs. Each run uses random instances from consecutive seeds, and every planner runs on the same instance. The means are plain averages over the instances, and the timings are left out because they depend on the machine.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/__main__.py#L159-L164" target="_blank" rel="noopener" title="warehouse/__main__.py, lines 159–164" aria-label="Code on GitHub: warehouse/__main__.py, lines 159 to 164">37</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/warehouse_benchmark_bottleneck.md" target="_blank" rel="noopener" title="results/warehouse_benchmark_bottleneck.md" aria-label="Code on GitHub: results/warehouse_benchmark_bottleneck.md">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/warehouse_benchmark_aisles.md" target="_blank" rel="noopener" title="results/warehouse_benchmark_aisles.md" aria-label="Code on GitHub: results/warehouse_benchmark_aisles.md">39</a> A rerun of both commands on 2026-10-09 gave the same costs, collision counts, and solved counts.</p>
+  <!-- warehouse/__main__.py:204-208 -->
+  <div class="math-fig">
+    <div class="math math-block">\overline{x} = \frac{1}{n}\sum_{s=1}^{n} x_s</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/__main__.py#L204-L208" target="_blank" rel="noopener" title="warehouse/__main__.py, lines 204–208" aria-label="Code on GitHub: warehouse/__main__.py, lines 204 to 208">40</a></span>
+  </div>
+  <p>Here <span class="math">n</span> is the number of instances and <span class="math">x_s</span> is the value on instance <span class="math">s</span>. For the sum of costs, the average uses only the instances in which the planner returned a plan. Collisions are averaged over all instances.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Bottleneck, 6 robots, 10 instances</th><th>Solved</th><th class="num">Mean SOC</th><th class="num">Makespan</th><th class="num">Collisions</th><th class="num">CBS nodes</th></tr></thead><tbody>
+    <tr><td>Conflict-Based Search</td><td>10/10</td><td class="num">52.9</td><td class="num">15.5</td><td class="num">0.00</td><td class="num">693.6</td></tr>
+    <tr><td>Prioritized planning</td><td>10/10</td><td class="num">55.9</td><td class="num">15.7</td><td class="num">0.00</td><td class="num">-</td></tr>
+    <tr><td>Independent A*</td><td>0/10</td><td class="num">47.7</td><td class="num">14.3</td><td class="num">3.80</td><td class="num">-</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Prioritized planning was suboptimal on 5 of the 10 instances where both it and CBS solved, by 3.00 on average.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/__main__.py#L214-L220" target="_blank" rel="noopener" title="warehouse/__main__.py, lines 214–220" aria-label="Code on GitHub: warehouse/__main__.py, lines 214 to 220">41</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Shelf aisles, 8 robots, 10 instances</th><th>Solved</th><th class="num">Mean SOC</th><th class="num">Makespan</th><th class="num">Collisions</th><th class="num">CBS nodes</th></tr></thead><tbody>
+    <tr><td>Conflict-Based Search</td><td>10/10</td><td class="num">75.7</td><td class="num">17.4</td><td class="num">0.00</td><td class="num">135.0</td></tr>
+    <tr><td>Prioritized planning</td><td>10/10</td><td class="num">79.5</td><td class="num">17.1</td><td class="num">0.00</td><td class="num">-</td></tr>
+    <tr><td>Independent A*</td><td>0/10</td><td class="num">72.9</td><td class="num">17.0</td><td class="num">3.50</td><td class="num">-</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Prioritized planning was suboptimal on 9 of the 10 instances where both it and CBS solved, by 3.80 on average. "CBS nodes" is the mean number of tree nodes created, the root included.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/__main__.py#L206-L212" target="_blank" rel="noopener" title="warehouse/__main__.py, lines 206–212" aria-label="Code on GitHub: warehouse/__main__.py, lines 206 to 212">42</a></p>
+
+  <h3 class="hiw-sub">Rules and budgets</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Rule or budget</th><th>What it controls</th><th>Value</th></tr></thead><tbody>
     <tr><td>Moves per step</td><td>Options for each robot in each time step</td><td>Up, down, left, right, or wait</td></tr>
     <tr><td>Conflicts</td><td>What the planners forbid</td><td>Two robots on one cell; two robots swapping cells</td></tr>
     <tr><td>A* heuristic</td><td>Distance guess to the goal</td><td>Shortest walking distance on the map, ignoring other robots (breadth-first search)</td></tr>
-    <tr><td>A* horizon</td><td>Latest time a search may reach</td><td>Last blocked time + number of cells + 1</td></tr>
-    <tr><td>Page SOLVE budget (CBS)</td><td>Nodes and seconds per solve</td><td class="num">2000 nodes, 2.0 s</td></tr>
-    <tr><td>Server defaults and caps</td><td>Limits the web API accepts</td><td>Default 1500 nodes, 2.0 s; cap 3000 nodes, 3.0 s</td></tr>
-    <tr><td>Core CBS defaults</td><td>CLI and benchmark solves</td><td>2000 nodes, 5.0 s; trace keeps up to 200 nodes (the page gets 120)</td></tr>
-    <tr><td>RANDOMIZE check</td><td>CBS run on each candidate start/goal set</td><td>10 candidates at 800 nodes and 0.4 s each; the page tries up to 3 seeds</td></tr>
-    <tr><td>Benchmark generation</td><td>CBS check on each random instance</td><td>Up to 30 attempts; the benchmark passes 2000 nodes and 5.0 s</td></tr>
+    <tr><td>A* horizon</td><td>Latest step a search may reach</td><td>Largest reserved step + number of cells + 1</td></tr>
+    <tr><td>Page SOLVE budget (CBS)</td><td>Nodes and seconds per solve</td><td class="num">2,000 nodes, 2.0 s</td></tr>
+    <tr><td>Server defaults and caps</td><td>Limits the web API accepts</td><td>Default 1,500 nodes, 2.0 s; cap 3,000 nodes, 3.0 s</td></tr>
+    <tr><td>Core CBS defaults</td><td>CLI and benchmark solves</td><td>2,000 nodes, 5.0 s; trace keeps up to 200 nodes (the page gets 120)</td></tr>
+    <tr><td>RANDOMIZE check</td><td>CBS run on each candidate start and goal set</td><td>10 candidates at 800 nodes and 0.4 s each; the page tries up to 3 seeds</td></tr>
+    <tr><td>Benchmark generation</td><td>CBS check on each random instance</td><td>Up to 30 attempts; the benchmark passes 2,000 nodes and 5.0 s</td></tr>
     <tr><td>Robot and map caps</td><td>Web API limits</td><td>1 to 8 robots; maps 3 to 24 wide and 2 to 16 high</td></tr>
     <tr><td>Built-in maps</td><td>Layouts on the page</td><td>Shelf aisles 16 × 10; crossroads 11 × 9; bottleneck 13 × 7</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> Nothing here is learned, and nothing is tuned: the repo has no tuning or sweep code for these values. The heuristic is the exact shortest-walk distance, so there was no value to pick. The budgets are constants set by hand. The server comments give the reasoning: a RANDOMIZE draw costs at most 10 × 0.4 s, about 4 s, and the page's solve budget is 2 s. The map and robot caps exist because the planners bound time but not size.</p>
-  <p class="hiw-note"><b>Benchmark (README):</b> bottleneck map, 6 robots, 10 instances: CBS averages a sum of costs of 52.9 with no collisions. Prioritized averages 55.9 and is suboptimal on 5 of 10. Independent A* averages 47.7 but leaves 3.80 collisions per instance. On shelf aisles with 8 robots: CBS 75.7, prioritized 79.5, independent 72.9 with 3.50 collisions. Rerunning both benchmarks matched these costs, collision counts, and solved counts.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/cbs.py">warehouse/cbs.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/space_time.py">warehouse/space_time.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/planners.py">warehouse/planners.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/grid.py">warehouse/grid.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/warehouse/instances.py">warehouse/instances.py</a>, <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/warehouse_api.py">server/warehouse_api.py</a></p>
+  <p class="hiw-note"><b>How these were chosen:</b> Nothing here is learned or tuned, and the repository has no tuning code for these values. The heuristic is the exact shortest walking distance, so there was no value to pick. The budgets are constants set by hand. The server gives the reasoning: a RANDOMIZE draw costs at most 10 × 0.4 s, about 4 s, and the map and robot caps exist because the planners bound time but not size.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/warehouse_api.py#L11-L13" target="_blank" rel="noopener" title="server/warehouse_api.py, lines 11–13" aria-label="Code on GitHub: server/warehouse_api.py, lines 11 to 13">43</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/warehouse_api.py#L47-L49" target="_blank" rel="noopener" title="server/warehouse_api.py, lines 47–49" aria-label="Code on GitHub: server/warehouse_api.py, lines 47 to 49">44</a></p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/warehouse.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

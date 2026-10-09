@@ -29,7 +29,7 @@ import math
 import random
 from dataclasses import dataclass, field
 
-MAX_FRAMES = 150  # snapshots kept per run, enough for a smooth animation
+MAX_FRAMES = 150  # snapshots kept per run (about this many), enough for a smooth animation
 
 
 @dataclass
@@ -82,7 +82,10 @@ def reverse_segment(tour: list[int], i: int, j: int) -> None:
 
 
 class _Recorder:
-    """Keeps at most MAX_FRAMES evenly spaced snapshots of a run."""
+    """Keeps about MAX_FRAMES evenly spaced snapshots of a run.
+
+    It stores every (total_steps // MAX_FRAMES)-th step, so a small budget keeps a few more than MAX_FRAMES.
+    """
 
     def __init__(self, total_steps: int):
         self.every = max(1, total_steps // MAX_FRAMES)
@@ -99,8 +102,8 @@ class _Recorder:
 def nearest_neighbor(dist, start: int = 0) -> list[int]:
     """Greedy tour: from the current city, always go to the closest unvisited one.
 
-    Quick and usually within about 25% of optimal, but it tends to leave a
-    few long edges at the end when the remaining cities are far apart.
+    Quick, but it tends to leave a few long edges at the end when the
+    remaining cities are far apart.
     """
     n = len(dist)
     tour, unvisited = [start], set(range(n)) - {start}
@@ -160,12 +163,13 @@ def nearest_neighbor_2opt(cities, max_passes: int = 50) -> Result:
 
 
 def initial_temperature(tour, dist, rng: random.Random, samples: int = 200, accept: float = 0.8) -> float:
-    """Pick a starting temperature that accepts about 80% of uphill moves.
+    """Pick a starting temperature so a move as costly as the average uphill move is accepted with probability `accept`.
 
     A worse move with cost increase `delta` is accepted with probability
     exp(-delta / T). Solving exp(-avg_delta / T) = accept for T, using the
     average uphill delta of some random moves, gives a starting point that
-    adapts to the map's scale instead of a magic constant.
+    adapts to the map's scale instead of a magic constant. Because exp is
+    convex (Jensen's inequality), the average acceptance over the sampled uphill moves is at least `accept`.
     """
     n = len(tour)
     uphill = []
@@ -194,6 +198,10 @@ def simulated_annealing(cities, iterations: int = 60_000, cooling: float | None 
     `cooling` defaults to a rate that takes T from its start to about 0.1%
     of it over the run.
     """
+    if iterations < 1:
+        raise ValueError("simulated_annealing needs at least one iteration")
+    if cooling is not None and not 0 < cooling <= 1:
+        raise ValueError("cooling must be above 0 and at most 1, so the temperature only shrinks")
     rng = random.Random(seed)
     dist = distance_matrix(cities)
     n = len(cities)
@@ -261,7 +269,7 @@ def order_crossover(parent_a: list[int], parent_b: list[int], rng: random.Random
 
 
 def inversion_mutation(tour: list[int], rng: random.Random) -> None:
-    """Reverse a random segment in place (the same move 2-opt uses)."""
+    """Reverse a random segment in place (the reversal 2-opt uses, but the segment may start at the first city)."""
     i, j = sorted(rng.sample(range(len(tour)), 2))
     reverse_segment(tour, i, j)
 
@@ -289,6 +297,10 @@ def genetic_algorithm(cities, population_size: int = 120, generations: int = 300
     Crossover passes on good sub-routes from both parents; mutation adds the
     variety needed to discover new ones.
     """
+    if population_size < 1 or generations < 1:
+        raise ValueError("genetic_algorithm needs at least one tour and one generation")
+    if population_size <= elite:
+        raise ValueError(f"genetic_algorithm needs more tours than the {elite} elite, so children can breed")
     rng = random.Random(seed)
     dist = distance_matrix(cities)
     n = len(cities)

@@ -14,9 +14,9 @@ Hidden and known information
   the prior and the player's own path are known. Every filter uses only what the player knows.
 
 Randomness: each ghost has its own mulberry32 stream for its start, its motion and its pings, and each filter has
-another. Ghosts draw exactly one uniform per turn while they are live, so two runs with the same seed see the same
-ghost movement and the same pings, even when the player plays differently (common random numbers). This is
-what lets the benchmark compare filters fairly.
+another. A live ghost draws two uniforms per turn, one for its move and one for its ping, so two runs with the
+same seed see the same ghost movement and the same pings, even when the player plays differently (common random
+numbers). This is what lets the benchmark compare filters fairly.
 """
 
 from __future__ import annotations

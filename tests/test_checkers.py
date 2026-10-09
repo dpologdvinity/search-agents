@@ -3,7 +3,7 @@ import random
 import pytest
 
 from checkers.board import RED, START, WHITE, index, legal_moves, notation, perft
-from checkers.search import WIN, AlphaBeta, Minimax, evaluate
+from checkers.search import WIN, AlphaBeta, Minimax, evaluate, from_table, to_table
 
 
 def board_with(pieces):
@@ -74,3 +74,36 @@ def test_finds_a_winning_capture():
     info = AlphaBeta(max_seconds=5).search(b, RED)
     assert info.move.captured == (index(4, 3),)
     assert info.score > WIN - 100
+
+
+def test_table_stores_wins_and_losses_by_distance_from_the_node():
+    """A loss 3 plies below a node stored at ply 2 reads back as the same loss distance at ply 5."""
+    loss_at_ply_5 = -WIN + 5
+    stored = to_table(loss_at_ply_5, 2)
+    assert stored == -WIN + 3
+    assert from_table(stored, 5) == -WIN + 8
+    assert from_table(to_table(123, 4), 9) == 123  # ordinary evaluations pass through unchanged
+
+
+def _random_endgame(seed):
+    """Play seeded random moves from the start until a sparse position, as in the endgame agreement test."""
+    rng = random.Random(seed)
+    b, side = START, RED
+    for _ in range(rng.randint(30, 70)):
+        b = rng.choice(legal_moves(b, side)).result
+        side = -side
+    return b, side
+
+
+# Endgames where depth-5 minimax finds a forced win or loss and the side to move has a choice of moves.
+MATE_SEEDS = (71, 111, 156, 223, 307, 343, 380)
+
+
+@pytest.mark.parametrize("seed", MATE_SEEDS)
+def test_alpha_beta_matches_minimax_on_forced_wins_and_losses(seed):
+    """Win and loss scores (-WIN + ply) must survive the transposition table: alpha-beta agrees with minimax."""
+    b, side = _random_endgame(seed)
+    mm = Minimax(depth=5).search(b, side)
+    ab = AlphaBeta(max_depth=5, max_seconds=60).search(b, side)
+    assert abs(mm.score) > WIN - 1000
+    assert ab.score == mm.score

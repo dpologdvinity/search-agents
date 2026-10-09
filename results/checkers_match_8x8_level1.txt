@@ -4,6 +4,7 @@ Command per pair: python -m checkers match FIRST SECOND --games 10 --level 1
 Alpha-beta runs on a node budget (not seconds), so the file replays exactly.
 
 Match: alphabeta vs minimax, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: minimax (depth 2)
 Game  Red         White       Result
    1  alphabeta   minimax     alphabeta wins (red)
    2  minimax     alphabeta   draw
@@ -21,23 +22,25 @@ alphabeta        7      3       0
 minimax          0      3       7
 
 Match: alphabeta vs mcts, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: MCTS (300 playouts)
 Game  Red         White       Result
-   1  alphabeta   mcts        alphabeta wins (red)
+   1  alphabeta   mcts        draw
    2  mcts        alphabeta   alphabeta wins (white)
    3  alphabeta   mcts        alphabeta wins (red)
-   4  mcts        alphabeta   alphabeta wins (white)
+   4  mcts        alphabeta   draw
    5  alphabeta   mcts        alphabeta wins (red)
    6  mcts        alphabeta   alphabeta wins (white)
    7  alphabeta   mcts        draw
    8  mcts        alphabeta   alphabeta wins (white)
-   9  alphabeta   mcts        alphabeta wins (red)
-  10  mcts        alphabeta   alphabeta wins (white)
+   9  alphabeta   mcts        draw
+  10  mcts        alphabeta   draw
 
 Agent         Wins  Draws  Losses
-alphabeta        9      1       0
-mcts             0      1       9
+alphabeta        5      5       0
+mcts             0      5       5
 
 Match: alphabeta vs greedy, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: greedy (one ply)
 Game  Red         White       Result
    1  alphabeta   greedy      alphabeta wins (red)
    2  greedy      alphabeta   alphabeta wins (white)
@@ -55,6 +58,7 @@ alphabeta       10      0       0
 greedy           0      0      10
 
 Match: alphabeta vs random, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: random
 Game  Red         White       Result
    1  alphabeta   random      alphabeta wins (red)
    2  random      alphabeta   alphabeta wins (white)
@@ -72,23 +76,25 @@ alphabeta       10      0       0
 random           0      0      10
 
 Match: minimax vs mcts, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: minimax (depth 2) vs White: MCTS (300 playouts)
 Game  Red         White       Result
-   1  minimax     mcts        minimax wins (red)
-   2  mcts        minimax     draw
-   3  minimax     mcts        minimax wins (red)
-   4  mcts        minimax     draw
+   1  minimax     mcts        draw
+   2  mcts        minimax     mcts wins (red)
+   3  minimax     mcts        draw
+   4  mcts        minimax     mcts wins (red)
    5  minimax     mcts        draw
-   6  mcts        minimax     minimax wins (white)
+   6  mcts        minimax     draw
    7  minimax     mcts        draw
-   8  mcts        minimax     minimax wins (white)
+   8  mcts        minimax     draw
    9  minimax     mcts        minimax wins (red)
-  10  mcts        minimax     minimax wins (white)
+  10  mcts        minimax     mcts wins (red)
 
 Agent         Wins  Draws  Losses
-minimax          6      4       0
-mcts             0      4       6
+minimax          1      6       3
+mcts             3      6       1
 
 Match: minimax vs greedy, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: minimax (depth 2) vs White: greedy (one ply)
 Game  Red         White       Result
    1  minimax     greedy      minimax wins (red)
    2  greedy      minimax     minimax wins (white)
@@ -106,6 +112,7 @@ minimax         10      0       0
 greedy           0      0      10
 
 Match: minimax vs random, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: minimax (depth 2) vs White: random
 Game  Red         White       Result
    1  minimax     random      minimax wins (red)
    2  random      minimax     minimax wins (white)
@@ -123,40 +130,43 @@ minimax         10      0       0
 random           0      0      10
 
 Match: mcts vs greedy, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: MCTS (300 playouts) vs White: greedy (one ply)
 Game  Red         White       Result
    1  mcts        greedy      mcts wins (red)
    2  greedy      mcts        mcts wins (white)
    3  mcts        greedy      mcts wins (red)
    4  greedy      mcts        mcts wins (white)
    5  mcts        greedy      mcts wins (red)
-   6  greedy      mcts        greedy wins (red)
+   6  greedy      mcts        mcts wins (white)
    7  mcts        greedy      mcts wins (red)
    8  greedy      mcts        draw
-   9  mcts        greedy      greedy wins (white)
-  10  greedy      mcts        draw
+   9  mcts        greedy      mcts wins (red)
+  10  greedy      mcts        mcts wins (white)
 
 Agent         Wins  Draws  Losses
-mcts             6      2       2
-greedy           2      2       6
+mcts             9      1       0
+greedy           0      1       9
 
 Match: mcts vs random, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: MCTS (300 playouts) vs White: random
 Game  Red         White       Result
-   1  mcts        random      draw
+   1  mcts        random      mcts wins (red)
    2  random      mcts        mcts wins (white)
-   3  mcts        random      draw
+   3  mcts        random      mcts wins (red)
    4  random      mcts        mcts wins (white)
-   5  mcts        random      draw
+   5  mcts        random      mcts wins (red)
    6  random      mcts        mcts wins (white)
    7  mcts        random      mcts wins (red)
    8  random      mcts        mcts wins (white)
    9  mcts        random      mcts wins (red)
-  10  random      mcts        draw
+  10  random      mcts        mcts wins (white)
 
 Agent         Wins  Draws  Losses
-mcts             6      4       0
-random           0      4       6
+mcts            10      0       0
+random           0      0      10
 
 Match: greedy vs random, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
+Red: greedy (one ply) vs White: random
 Game  Red         White       Result
    1  greedy      random      draw
    2  random      greedy      greedy wins (white)

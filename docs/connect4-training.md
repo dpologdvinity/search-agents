@@ -10,7 +10,7 @@ The served weights (`connect4/data/az_connect4.npz`) are the export from **itera
 
 - **Network**: a residual policy-value network, 4 residual blocks of 32 channels (`connect4/train_az.py`). The policy head scores the 7 columns and the value head predicts the result from the side to move.
 - **Self-play**: each iteration plays `--games` games at once, and each move is chosen by PUCT search with `--simulations` simulations. Every game's leaf position goes to the network in one batch per simulation round. Positions are stored with their left-right mirror images in a replay buffer.
-- **Training**: `--steps` training steps per iteration on minibatches of 256 from the buffer. The loss is value mean squared error plus policy cross-entropy against the search's visit counts.
+- **Training**: `--steps` training steps per iteration on minibatches drawn from the buffer (256 positions by default, `--batch`; the Kaggle run used 512). The loss is value mean squared error plus policy cross-entropy against the search's visit counts.
 - **Serving**: batch norm is folded into the convolutions and the weights are exported to NumPy (`connect4/net.py`), so the website runs the network without PyTorch.
 - **Evaluation**: `python -m connect4.evaluate` plays the exported network (200 simulations per move) against alpha-beta minimax at fixed depths. Colours alternate and each game opens with two random moves so games differ.
 

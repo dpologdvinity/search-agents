@@ -213,7 +213,6 @@ function paint() {
   $('ms').classList.toggle('solved', state.won);
   $('ms').classList.toggle('flagging', state.flagMode);
   $('chip-status').textContent = statusText();
-  $('chip-mines').textContent = String(state.mines);
   $('chip-proven').textContent = String(state.proven.size);
   $('chip-revealed').textContent = `${state.values.filter((v) => v !== COVERED).length}/${state.rows * state.cols - state.mines}`;
   $('chip-guesses').textContent = String(state.guesses);
@@ -272,12 +271,12 @@ function renderComponents() {
   const a = state.analysis;
   list.innerHTML = '';
   if (!a || !$('comps').checked) {
-    $('comp-title').textContent = a ? 'Overlay is off. Turn on CONSTRAINT COMPONENTS to outline the groups.' : 'Turn on the overlay, or press AI STEP, to see the groups.';
+    $('comp-title').textContent = a ? 'Turn on COMPONENTS to outline the groups.' : 'Press AI STEP, or turn on an overlay, to see the groups.';
     return;
   }
   $('comp-title').textContent = a.components.length
-    ? `${a.components.length} independent component(s). Each is enumerated alone, then combined with the mine count.`
-    : 'No component: every covered cell is either proven or touches no number.';
+    ? 'Each group is counted on its own, then combined with the mine count.'
+    : 'No group: every covered cell is either proven or touches no number.';
   a.components.forEach((comp, k) => {
     const row = document.createElement('div');
     row.className = `ms-comp comp-${k % COMP_COUNT}`;
@@ -398,6 +397,7 @@ async function aiStep() {
     state.guessCell = c;
     const kind = a.exact ? 'the lowest odds on the board' : 'the lowest estimated odds (over the work budget)';
     log(`? guess: ${labelOf(c)} at ${(p * 100).toFixed(1)}%, ${kind}.`, 'log-adv');
+    state.flags.delete(c); // a player flag on the guess would make revealCell do nothing, and AI PLAY would repeat it
     const opened = revealCell(c);
     state.flashCell = c;
     state.flashKind = 'guess';

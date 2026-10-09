@@ -145,7 +145,8 @@ class LeducState:
     def infoset(self, seat: int) -> str:
         """What the seat knows, as a key: its card, the public card once it is shown, and the betting.
 
-        Examples: "K|-|kb" (king, round 1 check-bet) and "Q|K|kb/c" (queen, public king, round 2 check).
+        Examples: "K|-|kb" (king, round 1 check, then a bet) and "Q|K|kk/k" (queen, public king, round 2, after two
+        round 1 checks and a round 2 check by seat 0).
         The public card is left out during round 1 because nobody has seen it yet, so a player's
         round 1 information sets do not depend on which public card will come.
         """

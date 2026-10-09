@@ -118,12 +118,11 @@
 .eg-alt.draw .eg-alt-d { color: var(--yellow); }
 .eg-alt.loss .eg-alt-d { color: var(--pink); }
 
-/* Histogram canvas and the "how it is built" cards. */
+/* Histogram canvas. */
 canvas.eg-hist {
   display: block; width: 100%; height: auto; max-width: 420px; border: 1px solid var(--border);
   background: rgba(0,0,0,0.35);
 }
-.eg-how-n { font-family: var(--orb); font-size: 0.65rem; color: var(--cyan); margin-bottom: 0.3rem; }
 
 @media (max-width: 600px) {
   .eg-board { --sq: min(48px, calc((100vw - 3rem) / 8)); }

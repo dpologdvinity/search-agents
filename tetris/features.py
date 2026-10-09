@@ -1,13 +1,13 @@
 """The board features the evaluation sums, each computed from row bitmasks.
 
 A placement is scored as score = sum(weight_i * feature_i) over these nine features, measured on the
-board after the piece locks and full rows clear. The first five come from Dellacherie's set (landing
-height, eroded piece cells, row and column transitions, holes, cumulative wells); the last four are
+board after the piece locks and full rows clear. The first six come from Dellacherie's set (landing
+height, eroded piece cells, row and column transitions, holes, cumulative wells); the last three are
 extra board-shape terms (aggregate height, bumpiness, and completed lines on their own).
 
     landing_height     height of the piece's centre when it lands (bigger = higher up the board)
     eroded_cells       lines cleared times this piece's cells in those lines
-    row_transitions    filled/empty changes along each occupied row, counting the walls as filled
+    row_transitions    filled/empty changes along each row up to the top of the stack, counting the walls as filled
     column_transitions filled/empty changes up each column, counting the floor as filled
     holes              empty cells with a filled cell somewhere above them
     wells              cumulative well depth: a well of depth d adds 1 + 2 + ... + d
@@ -15,7 +15,7 @@ extra board-shape terms (aggregate height, bumpiness, and completed lines on the
     bumpiness          sum of |height difference| between neighbouring columns
     lines              full rows cleared by this placement
 
-Weights are signed. The GA learns them, and HAND_WEIGHTS is a fixed baseline for comparison.
+Weights are signed. The CEM and the GA both learn them, and HAND_WEIGHTS is a fixed baseline for comparison.
 """
 
 from __future__ import annotations
@@ -34,9 +34,9 @@ FEATURES = (
     "lines",
 )
 
-# Hand-picked baseline: Dellacherie-style signs and sizes on the six classic features, zero on the
-# other three. These are the values from the Dellacherie feature set as commonly reported
-# (e.g. Thiery & Scherrer 2009); they were not tuned here.
+# Hand-picked baseline: Dellacherie-style signs on the six classic features, with rounded sizes, and zero on
+# the other three. The sizes were chosen by hand. They are not the published Dellacherie weights, which are
+# different numbers in community implementations, and they were not tuned here.
 HAND_WEIGHTS = (-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0, 0.0)
 
 WEIGHT_LIMIT = 10.0  # GA genes are kept in [-WEIGHT_LIMIT, WEIGHT_LIMIT]

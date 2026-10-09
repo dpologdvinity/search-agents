@@ -439,7 +439,8 @@ function narrate(s, action, info, agent) {
     const p = action ? info.pr : info.pl;
     t += `The policy puts ${(p * 100).toFixed(0)}% on ${action ? 'right' : 'left'}, so it pushes ${action ? 'right' : 'left'}. `;
   } else {
-    t += `${agent.name === 'pd' ? 'The PD rule' : 'The search'} says push ${action ? 'right' : 'left'}. `;
+    const who = agent.name === 'pd' ? 'The PD rule' : agent.name === 'random' ? 'The coin flip' : 'The search';
+    t += `${who} says push ${action ? 'right' : 'left'}. `;
   }
   if (Math.abs(s.x) > 1.8) t += 'The cart is near the edge of the track, so the pole has to lean back toward the middle.';
   return t;

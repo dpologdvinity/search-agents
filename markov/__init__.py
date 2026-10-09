@@ -5,6 +5,7 @@ See markov/model.py for the model and markov/__main__.py for the command line.
 
 from .corpus import CORPORA, Corpus, load_corpus
 from .model import (
+    COPY_RUN,
     MAX_RUN,
     CopyReport,
     Generation,
@@ -20,6 +21,6 @@ from .model import (
 )
 
 __all__ = [
-    "CORPORA", "Corpus", "load_corpus", "MAX_RUN", "CopyReport", "Generation", "NGramModel", "Pick",
+    "CORPORA", "Corpus", "load_corpus", "COPY_RUN", "MAX_RUN", "CopyReport", "Generation", "NGramModel", "Pick",
     "copy_report", "detokenize", "generate", "ngram_sets", "perplexity", "split_index", "tokenize",
 ]

@@ -6,8 +6,8 @@ construction, so a conflict is a pair of queens that share a column or a diagona
 
 Three count arrays make every question O(1):
   col[c]             queens in column c
-  d1[r + c]          queens on the down-right diagonal through (r, c), indexed 0 .. 2n-2
-  d2[r - c + n - 1]  queens on the down-left diagonal through (r, c), indexed 0 .. 2n-2
+  d1[r + c]          queens on the down-left diagonal through (r, c), indexed 0 .. 2n-2
+  d2[r - c + n - 1]  queens on the down-right diagonal through (r, c), indexed 0 .. 2n-2
 
 A line that holds k queens contains C(k, 2) conflicting pairs. So adding a queen to a line that
 already holds k queens adds exactly k conflicts, and removing one subtracts the k left behind.

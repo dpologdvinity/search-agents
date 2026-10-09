@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="endgame.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,25 +32,31 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">KQK · KRK // RETROGRADE ANALYSIS</div>
+      <div class="proj-pg-tag">KQK // KRK // RETROGRADE ANALYSIS</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="ENDGAME">ENDGAME</h1>
-      <div class="proj-pg-sub">A king and a queen (or rook) against a lone king: every position is solved. The tablebase was built backwards from checkmate, so each move's distance to mate is exact. The opponent is either the Tablebase (exact) or a Chance (fixed odds) player that draws moves from fixed odds, with no search.</div>
+      <div class="proj-pg-sub">A king and a queen or rook against a lone king, solved exactly.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
         <span class="stat-chip">TO MOVE <span class="val" id="chip-turn">—</span></span>
         <span class="stat-chip green">MATE IN <span class="val" id="chip-mate">—</span></span>
-        <span class="stat-chip">POSITIONS <span class="val" id="chip-pos">—</span></span>
         <span class="stat-chip">MOVES <span class="val" id="chip-moves">0</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The side with the piece tries to checkmate, and the lone king tries to survive. Choose the piece in PIECE, then your side in YOU ARE.</p>
+    <p style="margin-top:0.5rem">Click or drag one of your pieces, then a highlighted square. Each tag is that move's distance to mate: M3 is mate in three, = is a draw, and L9 is mated in nine at most.</p>
+    <p style="margin-top:0.5rem">To watch the tablebase play the chance opponent, choose Watch in MODE. PAUSE and STEP then go through the game one move at a time.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="eg-stage">
-        <div class="eg-countdown" id="eg-countdown" aria-live="polite">
+        <div class="eg-countdown" id="eg-countdown" aria-live="polite" title="Moves left for the side with the piece, with best play from both sides.">
           <span class="eg-cd-num" id="eg-cd-num">—</span>
           <span class="eg-cd-txt" id="eg-cd-txt">loading the tablebase</span>
         </div>
@@ -60,14 +67,14 @@
         <div class="field-hint" id="eg-note">Click or drag one of your pieces, then a highlighted square. Tags show each move's distance to mate.</div>
         <div class="eg-sides" id="eg-sides" aria-live="polite"></div>
         <div class="inline eg-controls eg-watch" id="eg-watch-controls" hidden>
-          <button class="cyber-btn green" id="btn-pause" type="button"><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">▶ STEP</span></button>
+          <button class="cyber-btn green" id="btn-pause" type="button" title="Pause after the current move. Press again to resume."><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Play one move while the watched game is paused."><span class="btn-txt">▶ STEP</span></button>
         </div>
         <div class="inline eg-controls">
-          <button class="cyber-btn pink" id="btn-random" type="button"><span class="btn-txt">↺ RANDOM</span></button>
-          <button class="cyber-btn" id="btn-undo" type="button"><span class="btn-txt">⟲ UNDO</span></button>
-          <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
-          <button class="cyber-btn" id="btn-heat" type="button" aria-pressed="false"><span class="btn-txt">▦ HEAT MAP</span></button>
+          <button class="cyber-btn pink" id="btn-random" type="button" title="Start a new random winning position. In watch mode, start the next game."><span class="btn-txt">↺ RANDOM</span></button>
+          <button class="cyber-btn" id="btn-undo" type="button" title="Take back your last move."><span class="btn-txt">⟲ UNDO</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" title="List every legal move with its distance to mate, and outline the best one."><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-heat" type="button" aria-pressed="false" title="Shade each square the lone king could stand on by its distance to mate."><span class="btn-txt">▦ HEAT MAP</span></button>
         </div>
         <div class="eg-legend field-hint">
           <span class="eg-tag tag-win">M3</span> mate in 3 for the mover
@@ -85,10 +92,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -97,55 +104,63 @@
         <div class="stack">
           <div>
             <div class="field-lbl">MODE</div>
-            <select class="cyber-select" id="eg-mode" style="width:100%">
+            <select class="cyber-select" id="eg-mode" style="width:100%" title="You play the agent, or watch the tablebase play the chance opponent.">
               <option value="play" selected>You play the agent</option>
               <option value="watch">Watch: tablebase vs chance</option>
             </select>
           </div>
           <div>
             <div class="field-lbl">PIECE</div>
-            <select class="cyber-select" id="eg-piece" style="width:100%">
+            <select class="cyber-select" id="eg-piece" style="width:100%" title="The piece paired with the king: a queen (KQK) or a rook (KRK).">
               <option value="Q" selected>King and queen (KQK)</option>
               <option value="R">King and rook (KRK)</option>
             </select>
           </div>
           <div id="eg-side-wrap">
             <div class="field-lbl">YOU ARE</div>
-            <select class="cyber-select" id="eg-side" style="width:100%">
+            <select class="cyber-select" id="eg-side" style="width:100%" title="The king and piece mate as fast as they can, or the lone king survives as long as it can.">
               <option value="0">The king and piece: mate fast</option>
               <option value="1" selected>The lone king: survive</option>
             </select>
           </div>
           <div id="eg-opp-wrap">
             <div class="field-lbl">AGENT IS</div>
-            <select class="cyber-select" id="eg-opponent" style="width:100%">
+            <select class="cyber-select" id="eg-opponent" style="width:100%" title="Tablebase plays the exact best move. Chance draws each move from fixed odds (see HOW IT WORKS).">
               <option value="tablebase" selected>Tablebase (exact)</option>
               <option value="chance">Chance (fixed odds)</option>
             </select>
           </div>
           <div id="eg-watch-wrap" hidden>
             <div class="field-lbl">TABLEBASE PLAYS</div>
-            <select class="cyber-select" id="eg-watch-seat" style="width:100%">
+            <select class="cyber-select" id="eg-watch-seat" style="width:100%" title="The side the exact tablebase takes. The other side is the chance opponent.">
               <option value="0" selected>The king and piece: mate fast</option>
               <option value="1">The lone king: survive</option>
             </select>
-            <div class="field-lbl" style="margin-top:0.6rem">SPEED</div>
-            <select class="cyber-select" id="eg-speed" style="width:100%">
+          </div>
+        </div>
+      </div>
+
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <div id="eg-watch-pace" hidden>
+            <div class="field-lbl">SPEED</div>
+            <select class="cyber-select" id="eg-speed" style="width:100%" title="Pause between moves in a watched game.">
               <option value="1200">Slow: 1.2 s a move</option>
               <option value="600" selected>Normal: 0.6 s a move</option>
             </select>
-            <label class="field-hint eg-auto"><input type="checkbox" id="eg-auto" checked> Start the next game when one ends</label>
+            <label class="field-hint eg-auto" title="Start the next game when one ends."><input type="checkbox" id="eg-auto" checked> Start the next game when one ends</label>
           </div>
           <div>
             <div class="field-lbl">SET UP (FEN)</div>
             <div class="inline" style="flex-wrap:nowrap">
-              <input class="cyber-input" id="eg-fen" type="text" spellcheck="false" placeholder="8/8/8/5k2/8/8/1Q6/K7 w - - 0 1" style="flex:1;min-width:0">
-              <button class="cyber-btn" id="btn-fen" type="button"><span class="btn-txt">SET</span></button>
+              <input class="cyber-input" id="eg-fen" type="text" spellcheck="false" placeholder="8/8/8/5k2/8/8/1Q6/K7 w - - 0 1" title="Any legal position with one white king, one white queen or rook, and a black king." style="flex:1;min-width:0">
+              <button class="cyber-btn" id="btn-fen" type="button" title="Set up the position typed in the box."><span class="btn-txt">SET</span></button>
             </div>
             <div class="field-err" id="eg-fen-err"></div>
           </div>
         </div>
-      </div>
+      </details>
 
       <div id="eg-score-box" hidden>
         <div class="section-title green-ttl">WATCH SCORE</div>
@@ -160,90 +175,303 @@
         <div class="section-title green-ttl">EVERY DISTANCE</div>
         <div class="viz-panel">
           <div class="viz-title" id="hist-title">Positions by moves to mate.</div>
-          <canvas id="eg-hist" class="eg-hist" width="360" height="200" aria-label="Histogram of moves to mate across every position"></canvas>
+          <canvas id="eg-hist" class="eg-hist" width="360" height="200" title="Each position counted by its moves to mate: green for the side to move winning, pink for it being mated." aria-label="Histogram of moves to mate across every position"></canvas>
           <div class="field-hint" id="hist-note"></div>
         </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">HOW THE TABLE IS BUILT</div>
-        <div class="stack" id="how"></div>
       </div>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The tablebase never searches. Every legal move is looked up in a complete table of king and queen (or rook) against a lone king, which was solved offline by retrograde analysis: working backwards from checkmate, each position gets its exact distance to mate, or is marked a draw. The tablebase plays the fastest win when it is winning and the longest defence when it is losing. The chance opponent does not look at the table at all: it draws each legal move from fixed odds.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Retrograde analysis</h3>
-      <p class="hiw-plain"><b>New to this?</b> Most search starts where you are and asks what follows. Retrograde analysis starts at the end and asks what leads to it. Mark the exit of a maze, then every square one step from the exit, then every square one step from those. The whole maze is labelled in one pass, without walking any route through it.</p>
-      <p>The solver in <code>endgame/retro.py</code> seeds every checkmate with distance 0 and queues it. It pops positions in order of distance and visits each one's predecessors, the positions one quiet move earlier. If the popped position is a loss for the side to move, its predecessor is a win one ply deeper. If it is a win, the move into it is bad for the predecessor, so that position's count of legal moves drops by one. When the count reaches zero, every move loses, and the predecessor is a loss one ply deeper than the last reply decided.</p>
-      <ul>
-        <li>Positions that are never decided are draws.</li>
-        <li>A capture never decrements a count: taking the piece leaves king against king, which is a draw.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Distance to mate</h3>
-      <p class="hiw-plain"><b>New to this?</b> Distance to mate is the number of moves left before checkmate if both sides play perfectly. Picture a countdown to a finish line. The side that is winning wants the number small. The side that is losing wants it large, because that is how long it can hold out.</p>
-      <p>The table counts plies (half-moves). An odd code means the side to move wins in that many plies. An even code means it is being mated, and 0 means already checkmated.</p>
-      <ul>
-        <li>65534 marks a draw and 65535 an illegal tuple.</li>
-        <li>65533 appears only while the solver runs, and every one is replaced by a draw before the table is saved.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Table lookup</h3>
-      <p class="hiw-plain"><b>New to this?</b> The agent does not work the answer out. It reads it from an answer key. For each legal move it reads the stored result of the position that move creates, from its own side's point of view, and picks the best entry.</p>
-      <p><code>best_move</code> in <code>endgame/tablebase.py</code> ranks each move with a key. A win beats a draw, and a draw beats a loss. Among wins the fewest plies is best. Among losses the most plies is best. The lone king and the side with the piece use the same key, so one rule gives the fast mate and the longest defence. Ties go to the move generated first.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Some opponents do not think at all. They roll dice, the way a 2048 tile is a 2 nine times in ten and a 4 the other time. This opponent is the same: the odds depend only on what kind of move each legal move is.</p>
-      <p>Each legal move gets one category: captures (the lone king takes the piece), checks, king steps toward the centre, or any other move. The weights are captures 4, checks 2, king steps toward the centre 2, other moves 1. A move's chance is its weight over the total weight of the legal moves, and the move is drawn with a seeded generator, so a game can be repeated. Table and rule: <code>endgame/chance.py</code>, with the same numbers in <code>web/js/endgame-core.js</code>.</p>
-      <ul>
-        <li>It only plays legal moves, and it never looks ahead or reads the tablebase.</li>
-        <li>An offline match of 100 positions per seat is in <code>results/endgame_chance_match.md</code>.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Checking the table</h3>
-      <p class="hiw-plain"><b>New to this?</b> A proofreader checks each entry against the rules without trusting whoever wrote it. A winning entry needs a move into a loss one ply shallower, and no faster win. A losing entry needs only winning replies, and the slowest of them must be exactly one ply shorter.</p>
-      <p><code>check_positions</code> in <code>endgame/retro.py</code> applies that definition to every legal position, without calling the solver. <code>python -m endgame build</code> runs it after every rebuild.</p>
-      <ul>
-        <li>KQK: 0 problems in 368,452 entries. KRK: 0 problems in 399,112 entries.</li>
-        <li>As a test of the checker, 20 corrupted entries in a copy of the table produced 51 reported problems.</li>
-      </ul>
-    </article>
-  </div>
+  <p class="hiw-lede">The tablebase does not search. It is a complete table of every position in these endgames, built offline by <b>retrograde analysis</b>: a method that starts from the finished positions and works backwards. Each position gets its exact <b>distance to mate</b>, the number of moves to checkmate with best play on both sides, or is marked as a draw. Playing is then a lookup. The <b>chance opponent</b> does not read the table at all: it draws each legal move from fixed odds.</p>
 
-  <h3 class="hiw-sub">Rules and parameters</h3>
+  <h3 class="hiw-sub">Endgames and the table</h3>
+  <p class="hiw-note">The two endings are <b>KQK</b>, a white king and queen against a lone black king, and <b>KRK</b>, a white king and rook against a lone black king. The pieces move as in chess, with no pawns, so there is no promotion and no castling. The black king is alone, so its only capture is taking the white piece. That leaves king against king, which is a <b>draw</b>, a position where neither side can force mate.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py#L9-L10" target="_blank" rel="noopener" title="endgame/rules.py, lines 9–10" aria-label="Code on GitHub: endgame/rules.py, lines 9 to 10">1</a> The 50-move rule is not applied, so every distance is pure distance to mate.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md" target="_blank" rel="noopener" title="results/endgame_stats.md" aria-label="Code on GitHub: results/endgame_stats.md">2</a></p>
+  <p class="hiw-note">A <b>position</b> is a tuple: the white king's square, the white piece's square, the black king's square, and the side to move. Squares are numbered 0 to 63 with a1 = 0, b1 = 1 and h8 = 63. The square number is 8 × rank + file, both counted from 0.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py#L4-L7" target="_blank" rel="noopener" title="endgame/rules.py, lines 4–7" aria-label="Code on GitHub: endgame/rules.py, lines 4 to 7">3</a> The table has one entry for each tuple, so it holds 2 · 64³ = 524,288 entries, or 1 MiB as uint16 values. Only some tuples are legal positions: 368,452 for KQK (70%) and 399,112 for KRK (76%). The others repeat a square, put the two kings next to each other, or leave the side not to move in check.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py#L128-L137" target="_blank" rel="noopener" title="endgame/rules.py, lines 128–137" aria-label="Code on GitHub: endgame/rules.py, lines 128 to 137">4</a> Each tuple has a fixed place in the table, given by this index:</p>
+  <div class="math-fig">
+    <div class="math math-block">\text{index}(w_k, w_p, b_k, s) = 2\bigl(64\,(64\,w_k + w_p) + b_k\bigr) + s</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L42-L45" target="_blank" rel="noopener" title="endgame/retro.py, lines 42–45" aria-label="Code on GitHub: endgame/retro.py, lines 42 to 45">5</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">w_k</span> is the white king's square, <span class="math">w_p</span> the white piece's square, <span class="math">b_k</span> the black king's square, and <span class="math">s</span> the side to move, 0 for White and 1 for Black. The index is a row number, so a lookup is one array access.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>What it means</th><th class="num">Value</th></tr></thead><tbody>
     <tr><td>Squares</td><td>Numbered a1 = 0, b1 = 1, through h8 = 63</td><td class="num">64</td></tr>
-    <tr><td>Table index</td><td>(white king × 64 + piece) × 64 + black king, then × 2 + side to move</td><td class="num">524,288 entries, 1 MiB as uint16</td></tr>
+    <tr><td>Table entries</td><td>Every tuple, both sides to move, with the index above</td><td class="num">524,288, 1 MiB as uint16</td></tr>
     <tr><td>Legal positions</td><td>Tuples that can occur in a game</td><td class="num">KQK 368,452 (70%) · KRK 399,112 (76%)</td></tr>
     <tr><td>Longest win</td><td>Mate for the side to move, in plies</td><td class="num">KQK 19 (10 moves) · KRK 31 (16 moves)</td></tr>
     <tr><td>Longest defence</td><td>Mated for the lone king, in plies</td><td class="num">KQK 20 (10 moves) · KRK 32 (16 moves)</td></tr>
     <tr><td>Stored file</td><td>Compressed table committed to the repo</td><td class="num">kqk.npz 145 KB · krk.npz 153 KB</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">Rules: the pieces move as in chess (king, queen, rook), with no pawns, so no promotion or castling. A black king that takes the piece ends in king against king, a draw. The 50-move rule is not applied, so every distance is pure distance to mate.</p>
 
-  <h3 class="hiw-sub">Outcome counts</h3>
+  <h3 class="hiw-sub">Retrograde analysis</h3>
+  <p class="hiw-note"><b>Retrograde analysis</b> solves a game from its end. Forward search asks what follows from a position, and needs the whole game tree. Retrograde analysis asks the reverse question: which positions lead to a decided one. The solver<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L1-L17" target="_blank" rel="noopener" title="endgame/retro.py, lines 1–17" aria-label="Code on GitHub: endgame/retro.py, lines 1 to 17">6</a> works in three passes over the table. Its inputs are the legal positions, and its outputs are one code per entry.</p>
+  <p class="hiw-note"><b>Pass 1</b> finds every legal position.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L63-L90" target="_blank" rel="noopener" title="endgame/retro.py, lines 63–90" aria-label="Code on GitHub: endgame/retro.py, lines 63 to 90">7</a> A position with a legal move starts as UNKNOWN, with a counter equal to its number of legal moves, captures included. A <b>checkmate</b> (no legal move, and the side to move in check) is decided at once with value 0 and joins the queue. A <b>stalemate</b> (no legal move, not in check) is a draw.</p>
+  <p class="hiw-note"><b>Pass 2</b> takes decided positions from a first-in, first-out queue.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L92-L108" target="_blank" rel="noopener" title="endgame/retro.py, lines 92–108" aria-label="Code on GitHub: endgame/retro.py, lines 92 to 108">8</a> Each new entry is one ply deeper than the entry that produced it, so the queue stays in order of distance to mate. For each popped position, the solver visits its <b>predecessors</b>: the legal positions from which one non-capturing move reaches it. If the popped position is lost for its side to move, every undecided predecessor is a win one ply deeper. If it is won for its side to move, the move into it is bad for the predecessor, so the predecessor's counter drops by one. When a counter reaches zero, every move from that predecessor loses, and the predecessor is a loss one ply deeper than the last winning reply, which is the deepest one.</p>
+  <p class="hiw-note"><b>Pass 3</b> marks every position still undecided as a draw, because no sequence of moves forces mate from it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L110-L112" target="_blank" rel="noopener" title="endgame/retro.py, lines 110–112" aria-label="Code on GitHub: endgame/retro.py, lines 110 to 112">9</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L57-L112" target="_blank" rel="noopener" title="endgame/retro.py, lines 57–112" aria-label="Code on GitHub: endgame/retro.py, lines 57 to 112">10</a></span>
+    <pre class="pseudo-simple">function RETROGRADE-SOLVE(piece):
+    for each legal position P:
+        if P has a legal move:
+            value[P] ← UNKNOWN;  count[P] ← number of legal moves of P
+        else if P is checkmate:
+            value[P] ← 0;  add P to the queue
+        else:
+            value[P] ← DRAW                        # stalemate
+    while the queue is not empty:
+        S ← remove the front of the queue
+        for each predecessor P of S:
+            if value[P] is UNKNOWN:
+                if value[S] is even:               # S is lost for its side to move
+                    value[P] ← value[S] + 1;  add P to the queue
+                else:                              # S is won, so one move of P is bad
+                    count[P] ← count[P] − 1
+                    if count[P] = 0:               # every move of P loses now
+                        value[P] ← value[S] + 1;  add P to the queue
+    for each position P with value[P] = UNKNOWN:
+        value[P] ← DRAW
+    </pre>
+    <pre class="pseudo-full" hidden>constants: UNKNOWN = 65533, DRAW = 65534, ILLEGAL = 65535
+
+function RETROGRADE-SOLVE(piece):
+    value ← ILLEGAL for every entry;  count ← 0 for every entry;  queue ← empty
+    for wk in 0 to 63:                                   # pass 1, in index order
+        for wp in 0 to 63:
+            if wp = wk: continue
+            for bk in 0 to 63:
+                if bk = wk or bk = wp: continue
+                for stm in (WHITE, BLACK):
+                    P ← (wk, wp, bk, stm)
+                    if not IS-LEGAL(piece, P): continue
+                    moves ← LEGAL-MOVES(piece, P)
+                    if moves is not empty:
+                        value[P] ← UNKNOWN;  count[P] ← number of moves      # captures included
+                    else if IN-CHECK(piece, P):
+                        value[P] ← 0;  add P to queue                         # checkmate
+                    else:
+                        value[P] ← DRAW                                       # stalemate
+    while queue is not empty:                            # pass 2
+        S ← remove the front of queue
+        d ← value[S]
+        for each P in PREDECESSORS(piece, S):
+            if value[P] ≠ UNKNOWN: continue              # decided already, or a draw
+            if d mod 2 = 0:                              # S is lost for its side to move
+                value[P] ← d + 1;  add P to queue
+            else:                                        # S is won for its side to move
+                count[P] ← count[P] − 1
+                if count[P] = 0:                         # every move of P loses now
+                    value[P] ← d + 1;  add P to queue
+    for each entry with value UNKNOWN:                   # pass 3
+        value ← DRAW
+    return value</pre>
+  </div>
+  <p class="hiw-note"><b>The counter.</b> The counter of a position is the number of its legal moves that have not yet been shown to be bad. A capture is one of those moves, but it never decrements the counter. It ends in king against king, a draw, so it can never make the position lost for the side that captures, and the counter keeps that position from being declared lost by mistake.</p>
+  <p class="hiw-note"><b>Why the queue gives the right number.</b> The first lost successor found for a position is the one with the smallest distance, since the queue is in order, so it gives the fastest win. The last winning successor to bring the counter to zero is the one with the largest distance, so it gives the longest defence.</p>
+  <p class="hiw-note"><b>Predecessors.</b> The solver walks backwards, so it needs the positions one quiet move earlier. These are generated by reversing the move rules. A king steps back to a neighbouring square. A piece slides back along the lines it could have travelled, with the same blockers, so it can stand on any square from which it reaches the current one. Each candidate is kept only when it is a legal position.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py#L192-L215" target="_blank" rel="noopener" title="endgame/rules.py, lines 192–215" aria-label="Code on GitHub: endgame/rules.py, lines 192 to 215">11</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py#L192-L215" target="_blank" rel="noopener" title="endgame/rules.py, lines 192–215" aria-label="Code on GitHub: endgame/rules.py, lines 192 to 215">11</a></span>
+    <pre class="pseudo-simple">function PREDECESSORS(piece, S):
+    if Black is to move in S:                # White just moved
+        candidates ← the squares next to the white king, and the squares the piece slides to
+    else:                                    # Black just moved
+        candidates ← the squares next to the black king
+    return the candidates that are legal positions</pre>
+    <pre class="pseudo-full" hidden>function PREDECESSORS(piece, S):           # S = (wk, wp, bk, stm)
+    out ← empty list
+    if stm = BLACK:                          # White just moved
+        for each neighbour a of wk:          # the white king stepped from a
+            if a ≠ wp and a ≠ bk: add (a, wp, bk, WHITE) to out
+        for each square a the piece can slide to from wp, stopped by wk and bk:
+            add (wk, a, bk, WHITE) to out    # the piece stepped from a
+    else:                                    # Black just moved
+        for each neighbour a of bk:          # the black king stepped from a
+            if a ≠ wk and a ≠ wp: add (wk, wp, a, BLACK) to out
+    return the candidates in out for which IS-LEGAL(piece, candidate) holds</pre>
+  </div>
+  <p class="hiw-note"><b>The rule for a decided position.</b> Pass 2 applies one rule to each predecessor <span class="math">P</span> of a decided position <span class="math">S</span>. Let <span class="math">d(X)</span> be the value of <span class="math">X</span> in plies, and let <span class="math">N(P)</span> be the set of positions reached from <span class="math">P</span> by one legal move that is not a capture. The value of <span class="math">P</span> is:</p>
+  <div class="math-fig">
+    <div class="math math-block">d(P) = \begin{cases} 1 + \min\{\, d(S) : S \in N(P),\ d(S) \text{ even} \,\} &amp; \text{if some } S \in N(P) \text{ has } d(S) \text{ even} \\ 1 + \max\{\, d(S) : S \in N(P) \,\} &amp; \text{if every legal move of } P \text{ leads to an odd } d(S) \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L96-L108" target="_blank" rel="noopener" title="endgame/retro.py, lines 96–108" aria-label="Code on GitHub: endgame/retro.py, lines 96 to 108">12</a></span>
+  </div>
+  <p class="hiw-note">Here an even <span class="math">d(S)</span> means the side to move in <span class="math">S</span> is mated, and an odd one means it wins. The first case is a win for <span class="math">P</span>: the move into the lost position <span class="math">S</span> with the fewest plies gives the fastest mate. The second case is a loss for <span class="math">P</span>: every move leads to a win for the opponent, and the slowest of those wins sets the defence. A capture or a move into a draw blocks the second case, since neither has an odd distance. A drawn successor has no distance at all, so it is neither even nor odd, and the first case ignores it. A position that neither case decides stays a draw. Each value in the table is the number of plies, and the checkmate is <span class="math">d = 0</span>.</p>
+
+  <h3 class="hiw-sub">Distance to mate and the codes</h3>
+  <p class="hiw-note">Each entry is a <b>code</b> stored as a uint16. A real code is a distance to mate in <b>plies</b>, which are half-moves, and real codes are below 100 plies.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L35-L36" target="_blank" rel="noopener" title="endgame/retro.py, lines 35–36" aria-label="Code on GitHub: endgame/retro.py, lines 35 to 36">13</a> An odd code means the side to move wins in that many plies. An even code means the side to move is lost, and 0 means it is already checkmated. Three codes sit above the real range, so no distance can collide with them. 65533 (UNKNOWN) appears only while the solver runs, and every one is replaced by a draw before the table is saved. 65534 (DRAW) marks a drawn position, and 65535 (ILLEGAL) marks a tuple that cannot occur.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L37-L38" target="_blank" rel="noopener" title="endgame/retro.py, lines 37–38" aria-label="Code on GitHub: endgame/retro.py, lines 37 to 38">14</a></p>
+  <p class="hiw-note">People count moves, not plies. A win in <span class="math">d</span> plies is a mate in the number of moves below for the side to move, and the same formula gives the moves a lost side lasts:</p>
+  <div class="math-fig">
+    <div class="math math-block">\text{moves}(d) = \left\lfloor \dfrac{d + 1}{2} \right\rfloor</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L57" target="_blank" rel="noopener" title="endgame/tablebase.py, line 57" aria-label="Code on GitHub: endgame/tablebase.py, line 57">15</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">d</span> is the code in plies, and the floor division keeps whole moves. A win in 19 plies is mate in 10 moves, and the longest defence in KQK is 20 plies, which is also 10 moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md" target="_blank" rel="noopener" title="results/endgame_stats.md" aria-label="Code on GitHub: results/endgame_stats.md">2</a></p>
+
+  <h3 class="hiw-sub">Table lookup and the tablebase's choice</h3>
+  <p class="hiw-note">The tablebase does not search. To choose a move, it asks what the position after each legal move is worth. The stored code describes the side to move in that position, which is the opponent of the mover, so the result is flipped. An even code (the opponent is mated) is a win for the mover, and an odd code is a loss. A code of 0 means the move gives checkmate, which the page marks with #. A capture of the piece, or a move into a drawn position, gives a draw.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L99-L122" target="_blank" rel="noopener" title="endgame/tablebase.py, lines 99–122" aria-label="Code on GitHub: endgame/tablebase.py, lines 99 to 122">16</a> The distance of a move, <span class="math">d(m)</span>, counts from the mover's own move, so it is the code plus one.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L107-L116" target="_blank" rel="noopener" title="endgame/tablebase.py, lines 107–116" aria-label="Code on GitHub: endgame/tablebase.py, lines 107 to 116">17</a></p>
+  <p class="hiw-note">The tablebase then plays the move with the largest key. The key ranks a move for the mover. A win beats a draw, and a draw beats a loss. Among wins the fewest plies is best, and among losses the most plies is best:</p>
+  <div class="math-fig">
+    <div class="math math-block">K(m) = \begin{cases} (2,\ -d(m)) &amp; \text{if } m \text{ wins} \\ (1,\ 0) &amp; \text{if } m \text{ draws} \\ (0,\ d(m)) &amp; \text{if } m \text{ loses} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L69-L75" target="_blank" rel="noopener" title="endgame/tablebase.py, lines 69–75" aria-label="Code on GitHub: endgame/tablebase.py, lines 69 to 75">18</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">d(m)</span> is the distance to mate after move <span class="math">m</span>, counted in plies from the mover's move. Keys are compared as pairs: the first number is the outcome class, and the second breaks ties inside it. Because one key serves both sides, the same rule gives the fastest mate when the tablebase is winning, the longest defence when it is lost, and a drawing move when one exists. The best move is the maximum key.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L124-L127" target="_blank" rel="noopener" title="endgame/tablebase.py, lines 124–127" aria-label="Code on GitHub: endgame/tablebase.py, lines 124 to 127">19</a> On a tie, <code>max</code> keeps the move that was generated first.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py#L124-L127" target="_blank" rel="noopener" title="endgame/tablebase.py, lines 124–127, 99–122, 69–75" aria-label="Code on GitHub: endgame/tablebase.py, lines 124 to 127, 99 to 122, 69 to 75">19</a></span>
+    <pre class="pseudo-simple">function BEST-MOVE(position):
+    for each legal move m:
+        outcome, plies ← the result of m, seen by the mover
+    return the move with the largest key (win beats draw beats loss,
+           then fewest plies for a win and most plies for a loss)</pre>
+    <pre class="pseudo-full" hidden>function BEST-MOVE(position):
+    best ← none;  best-key ← none
+    for each move m in LEGAL-MOVES(position):             # generation order
+        if m takes the white piece:                       # king against king
+            outcome ← draw;  plies ← none
+        else:
+            code ← TABLE[RESULT(position, m)]             # the opponent's view
+            if code = DRAW:
+                outcome ← draw;  plies ← none
+            else:
+                plies ← code + 1
+                if code is even: outcome ← win            # the opponent is mated
+                else:            outcome ← loss           # the opponent wins
+        if outcome is win:    key ← (2, −plies)
+        else if outcome is draw: key ← (1, 0)
+        else:                 key ← (0, plies)
+        if best is none or key > best-key:                # strict: ties keep the first
+            best ← m;  best-key ← key
+    return best</pre>
+  </div>
+  <p class="hiw-note"><b>Example.</b> Suppose the table gives two winning moves in a KQK position: one with <span class="math">d = 3</span>, a mate in two, and one with <span class="math">d = 19</span>, a mate in ten. Their keys are <span class="math">(2, -3)</span> and <span class="math">(2, -19)</span>. The first is larger, so the tablebase plays the mate in two.</p>
+
+  <h3 class="hiw-sub">Chance (fixed odds)</h3>
+  <p class="hiw-note">The <b>chance opponent</b> plays with fixed odds and no search, no evaluation and no table lookup. The odds depend only on what kind of move each legal move is. A move gets one category, and the first category that fits is used, in this order: <b>capture</b> (the lone king takes the piece), <b>check</b> (the move gives check), <b>king step toward the centre</b> (a king move that brings the king closer to the middle of the board), and <b>other</b> (every remaining move).<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L62-L71" target="_blank" rel="noopener" title="endgame/chance.py, lines 62–71" aria-label="Code on GitHub: endgame/chance.py, lines 62 to 71">20</a> The weights are 4 for a capture, 2 for a check, 2 for a king step toward the centre and 1 for any other move.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L36-L41" target="_blank" rel="noopener" title="endgame/chance.py, lines 36–41" aria-label="Code on GitHub: endgame/chance.py, lines 36 to 41">21</a> They are a fixed bias. Nothing reads the position beyond the category.</p>
+  <p class="hiw-note">The king step test uses a distance to the centre, <span class="math">C(q)</span>, computed for a square <span class="math">q</span>:</p>
+  <div class="math-fig">
+    <div class="math math-block">C(q) = \max\bigl(\,|2f - 7|,\ |2r - 7|\,\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L51-L59" target="_blank" rel="noopener" title="endgame/chance.py, lines 51–59" aria-label="Code on GitHub: endgame/chance.py, lines 51 to 59">22</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">f</span> and <span class="math">r</span> are the file and rank of <span class="math">q</span>, both counted from 0. <span class="math">C</span> is the <b>Chebyshev distance</b> from the centre, the number of king steps needed to reach it, doubled so it stays an integer. The four central squares d4, e4, d5 and e5 give 1, and the edges give 7. A king step is toward the centre when it lowers <span class="math">C</span>.</p>
+  <p class="hiw-note">A legal move <span class="math">m</span> in a position with legal moves <span class="math">M</span> is drawn with this chance, where <span class="math">w(m)</span> is the weight of its category:</p>
+  <div class="math-fig">
+    <div class="math math-block">P(m) = \dfrac{w(m)}{\sum_{m' \in M} w(m')}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L74-L83" target="_blank" rel="noopener" title="endgame/chance.py, lines 74–83" aria-label="Code on GitHub: endgame/chance.py, lines 74 to 83">23</a></span>
+  </div>
+  <p class="hiw-note">The sum is over the legal moves only, so the table is renormalised for each position and the chances sum to 1. The table is never used directly, only its shares. For example, with one legal move in each category, the weights 4, 2, 2 and 1 give chances of 4/9, 2/9, 2/9 and 1/9.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L30-L31" target="_blank" rel="noopener" title="endgame/chance.py, lines 30–31" aria-label="Code on GitHub: endgame/chance.py, lines 30 to 31">24</a></p>
+  <p class="hiw-note">The draw uses a uniform number <span class="math">u</span> in [0, 1) and the cumulative weights. With <span class="math">W = \sum_{m' \in M} w(m')</span>, the move <span class="math">m_i</span> is chosen when:</p>
+  <div class="math-fig">
+    <div class="math math-block">\sum_{j &lt; i} w(m_j) \le u\,W &lt; \sum_{j \le i} w(m_j)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L86-L101" target="_blank" rel="noopener" title="endgame/chance.py, lines 86–101" aria-label="Code on GitHub: endgame/chance.py, lines 86 to 101">25</a></span>
+  </div>
+  <p class="hiw-note">Each move owns a slice of the interval from 0 to <span class="math">W</span> whose length is its weight, and <span class="math">u</span> picks the slice. The same rule is in the page's <code>endgame-core.js</code>, a line-for-line port,<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame-core.js#L13-L53" target="_blank" rel="noopener" title="web/js/endgame-core.js, lines 13–53" aria-label="Code on GitHub: web/js/endgame-core.js, lines 13 to 53">26</a> and <code>tests/test_endgame_parity.py</code> checks that both choose the same move for the same numbers.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_endgame_parity.py" target="_blank" rel="noopener" title="tests/test_endgame_parity.py" aria-label="Code on GitHub: tests/test_endgame_parity.py">27</a> The page draws <span class="math">u</span> from a seeded mulberry32 generator,<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame-core.js#L55-L66" target="_blank" rel="noopener" title="web/js/endgame-core.js, lines 55–66" aria-label="Code on GitHub: web/js/endgame-core.js, lines 55 to 66">28</a> and each new game takes the next seed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L714-L715" target="_blank" rel="noopener" title="web/js/endgame.js, lines 714–715" aria-label="Code on GitHub: web/js/endgame.js, lines 714 to 715">29</a> The offline match uses Python's generator, seeded per position.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/match.py#L61-L63" target="_blank" rel="noopener" title="endgame/match.py, lines 61–63" aria-label="Code on GitHub: endgame/match.py, lines 61 to 63">30</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L86-L101" target="_blank" rel="noopener" title="endgame/chance.py, lines 86–101, 62–71, 36–41, 51–59" aria-label="Code on GitHub: endgame/chance.py, lines 86 to 101, 62 to 71, 36 to 41, 51 to 59">25</a></span>
+    <pre class="pseudo-simple">function CHANCE-MOVE(position, u):           # u is uniform in [0, 1)
+    moves ← LEGAL-MOVES(position)
+    total ← sum of WEIGHT(m) over moves
+    threshold ← u × total
+    acc ← 0
+    for each move m in moves:
+        acc ← acc + WEIGHT(m)
+        if threshold &lt; acc: return m
+    return the last move                        # reached only through rounding</pre>
+    <pre class="pseudo-full" hidden>constants: CAPTURE = 4, CHECK = 2, KING-CENTRE = 2, OTHER = 1
+
+function CATEGORY(position, m):                 # the first category that fits wins
+    if m is the black king taking the white piece: return "capture"
+    if m leaves the other side in check:           return "check"
+    if m is a king move and CENTRE(to of m) &lt; CENTRE(from of m):
+                                                   return "king_centre"
+    return "other"
+
+function CENTRE(sq):
+    f ← file of sq;  r ← rank of sq             # both counted from 0
+    return max(|2 × f − 7|, |2 × r − 7|)
+
+function CHANCE-MOVE(position, u):              # u is uniform in [0, 1)
+    moves ← LEGAL-MOVES(position)
+    for each move m in moves:
+        weight[m] ← the weight of CATEGORY(position, m)   # 4, 2, 2 or 1
+    total ← sum of weight[m] over moves
+    threshold ← u × total
+    acc ← 0
+    for each move m in moves:                   # in generation order
+        acc ← acc + weight[m]
+        if threshold &lt; acc: return m
+    return the last move                        # reached only through rounding</pre>
+  </div>
+  <p class="hiw-note"><b>Category order.</b> The first category that fits is used, so a king move that also gives check is counted as a check. The code's comment gives the reason for the largest weight: a capture ends the game as a draw for the lone king, so it is the most tempting move, and it gets the most weight.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L30-L35" target="_blank" rel="noopener" title="endgame/chance.py, lines 30–35" aria-label="Code on GitHub: endgame/chance.py, lines 30 to 35">31</a></p>
+  <p class="hiw-note"><b>The walk.</b> <code>pick_at</code> keeps a running sum of the weights and returns the first move whose running sum passes <span class="math">u \times W</span>. That is the same as the slice rule above, and it needs only one pass over the moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/chance.py#L94-L100" target="_blank" rel="noopener" title="endgame/chance.py, lines 94–100" aria-label="Code on GitHub: endgame/chance.py, lines 94 to 100">32</a> The final return is a guard for floating-point rounding, when <span class="math">u</span> is very close to 1.</p>
+
+  <h3 class="hiw-sub">Watch mode and the match</h3>
+  <p class="hiw-note"><b>Watch mode</b> plays a game with no moves from you. Each game starts from a random winning position for the side with the piece, and TABLEBASE PLAYS chooses the side the tablebase takes. The chance opponent takes the other side. A game ends by checkmate, by a draw (a capture of the piece or a stalemate), or after 300 plies. A game that reaches 300 plies is counted as unfinished, since the chance side can hold out in an endless line.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L26" target="_blank" rel="noopener" title="web/js/endgame.js, line 26" aria-label="Code on GitHub: web/js/endgame.js, line 26">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L569-L572" target="_blank" rel="noopener" title="web/js/endgame.js, lines 569–572" aria-label="Code on GitHub: web/js/endgame.js, lines 569 to 572">34</a> The score counts the tablebase's wins, draws, losses and unfinished games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L513-L516" target="_blank" rel="noopener" title="web/js/endgame.js, lines 513–516" aria-label="Code on GitHub: web/js/endgame.js, lines 513 to 516">35</a> With AUTO-RESTART on, the next game starts 1.8 s after the end.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L27" target="_blank" rel="noopener" title="web/js/endgame.js, line 27" aria-label="Code on GitHub: web/js/endgame.js, line 27">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L527-L529" target="_blank" rel="noopener" title="web/js/endgame.js, lines 527–529" aria-label="Code on GitHub: web/js/endgame.js, lines 527 to 529">37</a> PAUSE stops after the current move, and STEP plays one move while the game is paused.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L782-L786" target="_blank" rel="noopener" title="web/js/endgame.js, lines 782–786" aria-label="Code on GitHub: web/js/endgame.js, lines 782 to 786">38</a> The heat map is off in watch mode, since it would double the requests for each move.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/endgame.js#L839-L840" target="_blank" rel="noopener" title="web/js/endgame.js, lines 839–840" aria-label="Code on GitHub: web/js/endgame.js, lines 839 to 840">39</a></p>
+  <p class="hiw-note"><b>The offline match.</b> The match in <code>endgame/match.py</code> plays 200 random winning positions in each seat, with seed 0 and no prompts.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/match.py#L58-L98" target="_blank" rel="noopener" title="endgame/match.py, lines 58–98" aria-label="Code on GitHub: endgame/match.py, lines 58 to 98">40</a> Each position is played twice: once with the tablebase as White, with the piece, and once with the tablebase as the lone black king. The tablebase plays its best move, and the chance opponent plays by the odds above. The match uses the same 300-ply cap.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/match.py#L21-L24" target="_blank" rel="noopener" title="endgame/match.py, lines 21–24" aria-label="Code on GitHub: endgame/match.py, lines 21 to 24">41</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Piece</th><th>Tablebase seat</th><th>Chance seat</th><th class="num">Tablebase won</th><th class="num">Drawn</th><th class="num">Lost</th><th class="num">Mean length of wins</th></tr></thead><tbody>
+    <tr><td>KQK</td><td>White (strong)</td><td>Black</td><td class="num">200 / 200</td><td class="num">0</td><td class="num">0</td><td class="num">4.95 moves</td></tr>
+    <tr><td>KQK</td><td>Black (weak)</td><td>White</td><td class="num">0 / 200</td><td class="num">199</td><td class="num">1</td><td class="num">(none)</td></tr>
+    <tr><td>KRK</td><td>White (strong)</td><td>Black</td><td class="num">200 / 200</td><td class="num">0</td><td class="num">0</td><td class="num">6.66 moves</td></tr>
+    <tr><td>KRK</td><td>Black (weak)</td><td>White</td><td class="num">0 / 200</td><td class="num">200</td><td class="num">0</td><td class="num">(none)</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">With the piece, the tablebase won every game, and its wins average 4.95 moves in KQK and 6.66 in KRK. The longest forced mates are 10 and 16 moves, so the average sits well below the longest. As the lone king, the tablebase drew 199 of 200 KQK games and all 200 KRK games. The one KQK loss lasted one move. The report does not count draws by reason, so it does not show how each draw ended.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_chance_match.md" target="_blank" rel="noopener" title="results/endgame_chance_match.md" aria-label="Code on GitHub: results/endgame_chance_match.md">42</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_chance_match.json" target="_blank" rel="noopener" title="results/endgame_chance_match.json" aria-label="Code on GitHub: results/endgame_chance_match.json">43</a></p>
+
+  <h3 class="hiw-sub">Checking the table</h3>
+  <p class="hiw-note">A <b>checker</b> verifies each entry against the definition of distance to mate, without calling the solver. It looks at every legal position P with stored value v, and lists the outcome of each legal move from the mover's side, with <span class="math">d(m)</span> the plies to mate after the move. Let <span class="math">W</span> be the set of <span class="math">d(m)</span> for winning moves, <span class="math">L</span> the set for losing moves, and <span class="math">D</span> the number of drawing moves. The entry is valid when:</p>
+  <div class="math-fig">
+    <div class="math math-block">\begin{cases} v = \text{DRAW} &amp; \Rightarrow\ W = \varnothing \text{ and } D \ge 1 \\ v \text{ odd} &amp; \Rightarrow\ W \ne \varnothing \text{ and } \min W = v \\ v \text{ even} &amp; \Rightarrow\ D = 0,\ W = \varnothing,\ L \ne \varnothing \text{ and } \max L = v \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L130-L139" target="_blank" rel="noopener" title="endgame/retro.py, lines 130–139" aria-label="Code on GitHub: endgame/retro.py, lines 130 to 139">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L142-L176" target="_blank" rel="noopener" title="endgame/retro.py, lines 142–176" aria-label="Code on GitHub: endgame/retro.py, lines 142 to 176">45</a></span>
+  </div>
+  <p class="hiw-note">The first line says a draw has at least one drawing move and no winning move. The second says a win is exact: its fastest winning move must be exactly <span class="math">v</span>. The third says a loss is exact: no move draws or wins, and the slowest reply must be exactly <span class="math">v</span>. A checkmate must store 0, and a stalemate must store DRAW.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L146-L150" target="_blank" rel="noopener" title="endgame/retro.py, lines 146–150" aria-label="Code on GitHub: endgame/retro.py, lines 146 to 150">46</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py#L130-L177" target="_blank" rel="noopener" title="endgame/retro.py, lines 130–177" aria-label="Code on GitHub: endgame/retro.py, lines 130 to 177">47</a></span>
+    <pre class="pseudo-simple">function CHECK-TABLE(piece, table, positions):
+    problems ← empty list
+    for each position P:
+        v ← table[P];  W, L, D ← the winning, losing and drawing moves of P
+        if P has no legal move:              # checkmate or stalemate
+            expected ← 0 if P is checkmate else DRAW
+            if v ≠ expected: add a problem
+        else if the rule for v fails (see the formula above):
+            add a problem
+    return problems</pre>
+    <pre class="pseudo-full" hidden>function CHECK-TABLE(piece, table, positions):
+    problems ← empty list
+    for each position P in positions:
+        v ← table[P]
+        moves ← LEGAL-MOVES(piece, P)
+        if moves is empty:                              # terminal position
+            expected ← 0 if IN-CHECK(piece, P) else DRAW
+            if v ≠ expected: add a "terminal" problem
+            continue
+        results ← empty list
+        for each move m in moves:
+            S ← RESULT(P, m)
+            if S is none: add draw to results            # capture: king against king
+            else if table[S] = DRAW: add draw to results
+            else if table[S] is even: add (win, table[S] + 1) to results
+            else: add (loss, table[S] + 1) to results
+        wins ← plies of the win entries;  losses ← plies of the loss entries
+        draws ← number of draw entries
+        if v = DRAW:
+            if wins is not empty or draws = 0: add a "draw" problem
+        else if v is odd:
+            if wins is empty or min(wins) ≠ v: add a "win" problem
+        else:
+            if draws > 0 or wins is not empty or losses is empty or max(losses) ≠ v:
+                add a "loss" problem
+    return problems</pre>
+  </div>
+  <p class="hiw-note"><b>Why check.</b> The checker shares only the rules with the solver, not its code. A table that the solver got wrong would fail the definition, so a clean report is evidence that the table satisfies the rules at every entry. <code>python -m endgame build</code> runs it after every rebuild.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/__main__.py#L342-L355" target="_blank" rel="noopener" title="endgame/__main__.py, lines 342–355" aria-label="Code on GitHub: endgame/__main__.py, lines 342 to 355">48</a> It reports 0 problems in 368,452 KQK entries and 0 problems in 399,112 KRK entries.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md" target="_blank" rel="noopener" title="results/endgame_stats.md" aria-label="Code on GitHub: results/endgame_stats.md">2</a> As a test of the checker itself, 20 corrupted entries in a copy of the table gave 51 reported problems.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md" target="_blank" rel="noopener" title="results/endgame_stats.md" aria-label="Code on GitHub: results/endgame_stats.md">2</a> The predecessor generator was checked as the exact inverse of the move generator, with 4,869,496 quiet edges in each direction for KQK and no mismatches.</p>
+
+  <h3 class="hiw-sub">Outcome counts and build times</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Positions</th><th class="num">KQK</th><th class="num">KRK</th></tr></thead><tbody>
     <tr><td>White to move, won</td><td class="num">144,508</td><td class="num">175,168</td></tr>
     <tr><td>Black to move, lost</td><td class="num">200,896</td><td class="num">201,700</td></tr>
     <tr><td>Black to move, drawn</td><td class="num">23,048</td><td class="num">22,244</td></tr>
   </tbody></table></div>
-
-  <p class="hiw-note"><b>How these were chosen:</b> nothing is tuned or learned. The moves are the chess rules for these pieces, and the sentinel codes sit at the top of the uint16 range so no real distance can collide with them. The solver is exact, so there is no training. Solve times were 4.9 s (KQK) and 4.4 s (KRK) on a quiet laptop, and 25.0 s and 34.3 s on a shared one. The solver was the same in both runs.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/retro.py">endgame/retro.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/tablebase.py">endgame/tablebase.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/endgame/rules.py">endgame/rules.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md">results/endgame_stats.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.json">results/endgame_stats.json</a></p>
+  <p class="hiw-note"><b>How these were chosen:</b> nothing is tuned or learned. The moves are the chess rules for these pieces, and the codes sit at the top of the uint16 range so no real distance can collide with them. The solver is exact, so there is no training. Solve times were 4.9 s (KQK) and 4.4 s (KRK) on a quiet laptop, and 25.0 s and 34.3 s on a shared one. The solver was the same in both runs.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/endgame_stats.md" target="_blank" rel="noopener" title="results/endgame_stats.md" aria-label="Code on GitHub: results/endgame_stats.md">2</a></p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/endgame.js"></script>
 </body>

@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from bandits.rng import Rng
-from markov import NGramModel, copy_report, generate, load_corpus, ngram_sets, tokenize
+from markov import COPY_RUN, NGramModel, copy_report, generate, load_corpus, ngram_sets, tokenize
 
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "web" / "js" / "markov-core.js"
@@ -52,11 +52,11 @@ const out = cases.map(([name, level, order, temperature, seed, count]) => {
   const model = core.buildModel(tokens, order);
   const rng = new core.Rng(seed);
   const gen = core.generate(model, rng, count, temperature);
-  const rep = core.copyReport(gen, core.ngramSets(tokens), order);
+  const rep = core.copyReport(gen, core.ngramSets(tokens), core.COPY_RUN[level]);
   return {
     tokens: gen.tokens, prompt_len: gen.promptLen, restarts: gen.restarts,
     picks: gen.picks.map((p) => [p.index, p.token, p.prob]),
-    copied_pct: rep.copiedPct, longest: rep.longestRun,
+    copied: rep.copied, copied_pct: rep.copiedPct, longest: rep.longestRun,
     vocab: model.vocabSize, contexts: model.contextCount, ngrams: model.ngramCount,
   };
 });
@@ -68,12 +68,13 @@ def py_case(body, name, level, order, temperature, seed, count):
     tokens = tokenize(body, level)
     model = NGramModel(tokens, order)
     gen = generate(model, Rng(seed), count, temperature)
-    rep = copy_report(gen, ngram_sets(tokens), order)
+    rep = copy_report(gen, ngram_sets(tokens), COPY_RUN[level])
     return {
         "tokens": gen.tokens,
         "prompt_len": gen.prompt_len,
         "restarts": gen.restarts,
         "picks": [[p.index, p.token, p.prob] for p in gen.picks],
+        "copied": rep.copied,
         "copied_pct": rep.copied_pct,
         "longest": rep.longest_run,
         "vocab": model.vocab_size,
@@ -109,6 +110,7 @@ def test_js_generation_matches_python_token_for_token():
         assert [p[:2] for p in got["picks"]] == [p[:2] for p in ref["picks"]], label
         for gp, rp in zip(got["picks"], ref["picks"]):
             assert gp[2] == pytest.approx(rp[2], rel=1e-12, abs=0), label
+        assert got["copied"] == ref["copied"], label
         assert got["copied_pct"] == pytest.approx(ref["copied_pct"]), label
         assert got["longest"] == ref["longest"], label
         assert (got["vocab"], got["contexts"], got["ngrams"]) == (ref["vocab"], ref["contexts"], ref["ngrams"]), label

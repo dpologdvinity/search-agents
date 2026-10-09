@@ -39,7 +39,7 @@ def evaluate(board, side) -> int:
     the terms scale with the board. Centre squares come from the board's geometry.
     """
     geo = geometry(board)
-    far = geo.n - 1  # the row a red man crowns on; a white man's home row
+    far = geo.n - 1  # red's home row and the row a white man crowns on (red crowns on row 0)
     score = 0
     for sq, p in enumerate(board):
         if not p:
@@ -90,6 +90,31 @@ class _Timeout(Exception):
 
 EXACT, LOWER, UPPER = 0, 1, 2
 
+# Scores beyond this are wins or losses found by the search (WIN minus the ply they happen at), not evaluations.
+MATE_BOUND = WIN - 1000
+
+
+def to_table(score: int, ply: int) -> int:
+    """Store a win or loss as its distance from this node, so the entry is valid at any ply.
+
+    A loss found at ply q scores -WIN + q from the root. Reached again at a different ply, the same position is
+    the same number of moves from that loss, so the table keeps -WIN + (q - ply) and from_table adds the new ply back.
+    """
+    if score > MATE_BOUND:
+        return score + ply
+    if score < -MATE_BOUND:
+        return score - ply
+    return score
+
+
+def from_table(score: int, ply: int) -> int:
+    """Undo to_table: turn a stored distance-from-node win or loss back into a score from the root."""
+    if score > MATE_BOUND:
+        return score - ply
+    if score < -MATE_BOUND:
+        return score + ply
+    return score
+
 
 class AlphaBeta:
     """Iterative-deepening alpha-beta, stopped by a time or node budget.
@@ -129,6 +154,7 @@ class AlphaBeta:
         best_path = None
         if entry is not None:
             d, flag, value, best_path = entry
+            value = from_table(value, ply)
             usable = flag == EXACT or (flag == LOWER and value >= beta) or (flag == UPPER and value <= alpha)
             if d >= depth and usable:
                 return value
@@ -150,7 +176,7 @@ class AlphaBeta:
                 self.cutoffs += 1
                 break
         flag = UPPER if best <= alpha0 else LOWER if best >= beta else EXACT
-        self.table[key] = (depth, flag, best, best_path)
+        self.table[key] = (depth, flag, to_table(best, ply), best_path)
         return best
 
     def search(self, board, side) -> SearchInfo:

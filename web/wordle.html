@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="wordle.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,35 +32,41 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">INFORMATION THEORY · EXPECTED BITS OF FEEDBACK</div>
+      <div class="proj-pg-tag">INFORMATION THEORY</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="WORDLE">WORDLE</h1>
-      <div class="proj-pg-sub">Every guess returns five colours. The solver picks the guess whose colours are the most surprising on average, which splits the remaining words most evenly.</div>
+      <div class="proj-pg-sub">Guess the hidden five-letter word. The solver picks the guess that tells it the most.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
-        <span class="stat-chip">GUESS <span class="val" id="chip-guess">0 / 6</span></span>
-        <span class="stat-chip green">LEFT <span class="val" id="chip-left">—</span></span>
-        <span class="stat-chip">LAST <span class="val" id="chip-last">—</span></span>
-        <span class="stat-chip">STRATEGY <span class="val" id="chip-strategy">—</span></span>
+        <span class="stat-chip" title="Guesses used out of six">GUESS <span class="val" id="chip-guess">0 / 6</span></span>
+        <span class="stat-chip green" title="Answers still possible">LEFT <span class="val" id="chip-left">—</span></span>
+        <span class="stat-chip" title="Bits the last guess gave, and the bits the solver expected from it">LAST <span class="val" id="chip-last">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Guess the hidden five-letter word in six tries. Type a word and press Enter, or click the on-screen keys. Each tile then shows green for a right letter in the right place, yellow for a right letter in the wrong place, and gray for a letter that is not in the word or whose copies are already used up.</p>
+    <p style="margin-top:0.5rem">Choose YOU PLAY to guess yourself, or AI PLAYS to let the solver choose. AI MOVE plays one guess, and AI AUTO keeps playing until the game ends or you press STOP.</p>
+    <p style="margin-top:0.5rem">The panel under the board lists the solver's best guesses with their expected bits, and the words still possible. NEW WORD starts a new game.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="wd-stage">
         <div class="wd-modes" role="group" aria-label="Who plays">
-          <button class="cyber-btn pink act" id="mode-you" type="button" aria-pressed="true"><span class="btn-txt">YOU PLAY</span></button>
-          <button class="cyber-btn" id="mode-ai" type="button" aria-pressed="false"><span class="btn-txt">AI PLAYS</span></button>
+          <button class="cyber-btn pink act" id="mode-you" type="button" aria-pressed="true" title="You type the guesses"><span class="btn-txt">YOU PLAY</span></button>
+          <button class="cyber-btn" id="mode-ai" type="button" aria-pressed="false" title="The solver chooses the guesses"><span class="btn-txt">AI PLAYS</span></button>
         </div>
         <div id="wd-board" class="wd-board" role="group" aria-label="Wordle board"></div>
         <div class="wd-msg field-hint" id="wd-msg" role="status" aria-live="polite">Type a five-letter word, or press a key on the screen keyboard.</div>
         <div id="wd-keys" class="wd-keys" aria-label="Keyboard"></div>
         <div class="inline" style="justify-content:center;flex-wrap:wrap">
-          <button class="cyber-btn green" id="btn-ai-step" type="button"><span class="btn-txt">▶ AI MOVE</span></button>
-          <button class="cyber-btn" id="btn-ai-auto" type="button" aria-pressed="false"><span class="btn-txt">▶▶ AI AUTO</span></button>
-          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW WORD</span></button>
+          <button class="cyber-btn green" id="btn-ai-step" type="button" title="Let the solver play one guess"><span class="btn-txt">▶ AI MOVE</span></button>
+          <button class="cyber-btn" id="btn-ai-auto" type="button" aria-pressed="false" title="Let the solver play until the game ends; press again to stop"><span class="btn-txt">▶▶ AI AUTO</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new game with a new hidden word"><span class="btn-txt">↺ NEW WORD</span></button>
         </div>
       </div>
 
@@ -69,7 +76,7 @@
           <div class="viz-title" id="think-title">Loading the word list. The first guess is the same for every game, so it is cached.</div>
           <div class="field-hint" id="think-text"></div>
           <div class="wd-bars" id="wd-bars" aria-label="Best guesses by expected bits"></div>
-          <div class="field-hint" id="think-key">Bar length = expected bits: how much the feedback tells us on average. Bits = entropy of the feedback distribution over the candidates.</div>
+          <div class="field-hint" id="think-key" title="Expected bits: how much the feedback tells us on average. The bars are scaled to the largest of the eight shown.">Bar length: expected bits, as a share of the largest shown.</div>
         </div>
       </div>
 
@@ -81,10 +88,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -93,92 +100,277 @@
         <div class="stack">
           <div>
             <div class="field-lbl">STRATEGY</div>
-            <select class="cyber-select" id="strategy" style="width:100%">
+            <select class="cyber-select" id="strategy" style="width:100%" title="How the solver ranks guesses: max expected information (entropy), minimax (smallest worst case), or a random word the clues still allow (baseline)">
               <option value="entropy" selected>Max expected information (entropy)</option>
               <option value="minimax">Minimax (smallest worst case)</option>
               <option value="random">Random consistent word (baseline)</option>
             </select>
           </div>
-          <div>
-            <div class="field-lbl">AI SPEED</div>
-            <select class="cyber-select" id="speed" style="width:100%">
-              <option value="900">Slow</option>
-              <option value="450" selected>Normal</option>
-              <option value="150">Fast</option>
-            </select>
-          </div>
         </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">HOW IT THINKS</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">A FEEDBACK IS A PATTERN</div>
-            <div class="field-hint">Five tiles, three colours: 3^5 = 243 possible patterns. Each candidate answer would produce one of them for a given guess.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">BITS ARE SURPRISE</div>
-            <div class="field-hint">H = -Σ p log₂ p over the pattern buckets. A guess that splits 2,000 words into many even buckets might give 5.5 bits; one that splits them into two buckets gives 1.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">MINIMAX PLAYS SAFE</div>
-            <div class="field-hint">It picks the guess whose largest bucket is smallest, so the worst case is as good as possible. It can waste bits on an average turn.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">THE BASELINE IS BLIND</div>
-            <div class="field-hint">Random consistent: any word the feedback so far allows. It uses every clue but never looks ahead, so it needs more guesses.</div>
-          </div>
-        </div>
+        <details class="more-settings">
+          <summary>More settings</summary>
+          <div class="field-lbl">AI SPEED</div>
+          <select class="cyber-select" id="speed" style="width:100%" title="Pause between the solver's moves in AI AUTO">
+            <option value="900">Slow</option>
+            <option value="450" selected>Normal</option>
+            <option value="150">Fast</option>
+          </select>
+        </details>
       </div>
     </div>
   </div>
+
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The solver keeps every answer that fits the clues so far. For each allowed guess it asks how the remaining answers would split across the 243 possible feedback patterns, then plays the guess that tells it the most. Each guess is scored from a precomputed table, so a turn is one lookup and one count per guess.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Entropy (default)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Imagine finding a hidden number with yes-or-no questions. A question that is nearly always "no" tells you little, while one that splits the possibilities evenly tells you a lot. Entropy measures the average information a guess gives, in bits.</p>
-      <p>Each candidate answer would produce one of 243 feedback patterns for a guess. If a pattern's bucket holds a share P of the candidates, the guess is worth H = -sum P log2 P bits. The solver plays the guess with the largest H.</p>
-      <ul>
-        <li>Mean 3.627 guesses over all 3,568 answers, with no game lost in six guesses.</li>
-        <li>Best opener when every answer is possible: TARES, 6.230 bits.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Minimax</h3>
-      <p class="hiw-plain"><b>New to this?</b> A cautious player plans for the worst case, like picking the route whose longest possible delay is shortest. Minimax picks the guess that leaves the largest group of remaining words as small as it can.</p>
-      <p>It ranks guesses by the size of the largest bucket, the worst case after the guess. Ties go to the smaller expected bucket. It optimises a different target from entropy, not a blend of the two.</p>
-      <ul>
-        <li>Mean 3.739 guesses, no failures. On average it takes a little longer than entropy.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Random consistent word</h3>
-      <p class="hiw-plain"><b>New to this?</b> Guess any word the clues still allow, chosen at random. It uses every clue, but it never asks which guess would teach the most. It is the yardstick the other two are measured against.</p>
-      <p>The pick is drawn from the answers still possible, not from the full guess list.</p>
-      <ul>
-        <li>Mean 4.412 guesses. 246 of 3,568 games (6.89%) ran past six guesses.</li>
-      </ul>
-    </article>
+  <p class="hiw-lede">The solver keeps the <b>candidates</b>, the answers that agree with every feedback so far. For each allowed guess it works out how the candidates would split across the feedback patterns, then plays the guess that splits them best under its rule. The splits are read from a precomputed table, so each turn reads the table for every guess and counts the buckets, rather than recomputing any feedback.</p>
+
+  <h3 class="hiw-sub">Feedback: the scoring rule</h3>
+  <p>The game scores each guess with a <b>feedback pattern</b>: five <b>tiles</b>, one per letter. A tile is <b>green</b> for the right letter in the right place, <b>yellow</b> for a letter that is in the answer in another place, and <b>gray</b> for a letter that is absent, or whose copies in the answer are all used up. Gray, yellow and green are the tile values 0, 1 and 2.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L14-L15" target="_blank" rel="noopener" title="wordle/feedback.py, lines 14–15" aria-label="Code on GitHub: wordle/feedback.py, lines 14 to 15">1</a></p>
+  <p>Duplicate letters need care. Greens are settled first, and each green uses up one answer letter. Yellows are then handed out from left to right, and each one uses an unused answer letter of the same kind. So a guess with two E's against an answer with one E marks only the first E yellow, and the second stays gray.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L22-L38" target="_blank" rel="noopener" title="wordle/feedback.py, lines 22–38" aria-label="Code on GitHub: wordle/feedback.py, lines 22 to 38">2</a></p>
+  <p><b>Example.</b> Against the answer CRANE, the guess TARES gives <code>.yyy.</code>: T is absent, A, R and E are in CRANE in other places, and S is absent. Against the answer ABIDE, SPEED gives <code>..y.y</code>. The first E is yellow because ABIDE has one E, the second E is gray, and the D is yellow.</p>
+  <p>A pattern is also a number. The five tiles are read as base-3 digits, with the first tile as the least significant digit. There are 3<sup>5</sup> = 243 patterns, from all gray (0) to all green (242). The all-green pattern is the win.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L16-L17" target="_blank" rel="noopener" title="wordle/feedback.py, lines 16–17" aria-label="Code on GitHub: wordle/feedback.py, lines 16 to 17">3</a></p>
+  <!-- wordle/feedback.py:41-46 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L41-L46" target="_blank" rel="noopener" title="wordle/feedback.py, lines 41–46" aria-label="Code on GitHub: wordle/feedback.py, lines 41 to 46">4</a></span>
+    <div class="math math-block">p = \sum_{i=0}^{4} t_i \, 3^{\,i}</div>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Expected information</td><td>Bits of feedback information, averaged over the candidates</td><td class="num">-sum P log2 P; entropy maximises it</td></tr>
-    <tr><td>Worst bucket</td><td>Largest group of candidates left after the guess</td><td class="num">Integer count; minimax minimises it</td></tr>
-    <tr><td>Expected left</td><td>Average size of the bucket a random answer falls into, sum(bucket^2) / candidates</td><td class="num">Minimax's tie-break</td></tr>
-    <tr><td>Tile values</td><td>Gray, yellow and green for each of five letters</td><td class="num">0, 1, 2 in base 3: 243 patterns</td></tr>
-    <tr><td>Candidate preference</td><td>A guess that could be the answer, so it can win this turn</td><td class="num">Wins ties</td></tr>
-    <tr><td>List order</td><td>Position in the alphabetical guess list</td><td class="num">Final tie-break</td></tr>
+  <p>Here <span class="math">p</span> is the pattern id and <span class="math">t_i</span> is the value of tile <span class="math">i</span>: 0 for gray, 1 for yellow, 2 for green. Tiles are numbered from 0 at the left. The code computes the same sum by Horner's rule, which multiplies the running value by 3 and adds the next tile, starting from the last tile.</p>
+  <p>The rule itself is short. The simple version of the pseudocode below shows the core idea, and the full version follows the code step by step.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L22-L38" target="_blank" rel="noopener" title="wordle/feedback.py, lines 22–38" aria-label="Code on GitHub: wordle/feedback.py, lines 22 to 38">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py#L41-L46" target="_blank" rel="noopener" title="wordle/feedback.py, lines 41–46" aria-label="Code on GitHub: wordle/feedback.py, lines 41 to 46">4</a></span>
+    <pre class="pseudo-simple">function FEEDBACK(guess, answer):
+    tiles ← greens where guess and answer agree, gray elsewhere
+    for each position i that is not green, left to right:
+        if an answer letter equal to guess[i] is still unused:
+            tiles[i] ← yellow                      # and that answer letter is now used
+    return the base-3 number of tiles              # first tile least significant</pre>
+    <pre class="pseudo-full" hidden>function FEEDBACK(guess, answer):
+    tiles ← five gray tiles (value 0)
+    left ← empty map from letter to count
+    for i ← 0 to 4:
+        if guess[i] = answer[i]:
+            tiles[i] ← 2                           # green
+        else:
+            left[answer[i]] ← left.get(answer[i], 0) + 1   # answer letters no green used up
+    for i ← 0 to 4:
+        if tiles[i] = 2:
+            continue                               # greens are already settled
+        if left.get(guess[i], 0) > 0:
+            tiles[i] ← 1                           # yellow
+            left[guess[i]] ← left[guess[i]] − 1    # one unused answer letter is used
+    p ← 0
+    for i ← 4 down to 0:                           # Horner's rule: p = p · 3 + tile
+        p ← p · 3 + tiles[i]
+    return p</pre>
+  </div>
+  <p>The full version counts the answer letters that no green used up, in a map called <code>left</code>. The yellow pass then reads that map, so a green is never given a yellow and a letter cannot be used twice. The Horner loop runs from the last tile to the first, which gives the same number as the sum above.</p>
+
+  <h3 class="hiw-sub">The feedback table</h3>
+  <p>A game scores every allowed guess against every candidate, so the same feedbacks are needed again and again. The <b>feedback table</b> is therefore computed once for the <b>lexicon</b>, the two word lists together with this table. It has one row per allowed guess and one column per answer. Each entry is the pattern id for that pair, stored as one byte with values 0 to 242. A lookup is then a single array read.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L3-L6" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 3–6" aria-label="Code on GitHub: wordle/lexicon.py, lines 3 to 6">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L60-L65" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 60–65" aria-label="Code on GitHub: wordle/lexicon.py, lines 60 to 65">6</a></p>
+  <p>The table is built one guess row at a time. For each guess, PATTERN-ROW works on all answers together. This is <b>vectorised</b> code: one <b>NumPy</b> array operation, where NumPy is the array library the solver uses, covers every answer at once.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L39-L57" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 39–57" aria-label="Code on GitHub: wordle/lexicon.py, lines 39 to 57">7</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L39-L57" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 39–57" aria-label="Code on GitHub: wordle/lexicon.py, lines 39 to 57">7</a></span>
+    <pre class="pseudo-simple">function PATTERN-ROW(guess, answers):              # one guess against every answer
+    green ← positions where the answer letter equals the guess letter
+    tiles ← 2 at green positions, 0 elsewhere
+    for each guess position i that is not green, left to right:
+        if an unused answer letter at some position equals guess[i]:
+            tiles[i] ← 1                           # yellow, and that answer letter is used
+    return the base-3 pattern id of tiles, for each answer</pre>
+    <pre class="pseudo-full" hidden>function PATTERN-ROW(guess, answers):             # answers: one row of 5 letter codes per answer
+    green ← (answers = guess) elementwise          # A × 5 booleans
+    rem ← answers, with every green position set to −1   # −1: green, or an answer letter already used
+    tiles ← 2 where green, else 0                  # A × 5
+    for i ← 0 to 4:                                # yellows, left to right over the guess
+        match ← (rem = guess[i])                   # unused answer positions holding this letter
+        yellow ← (not green[:, i]) and (match has a true in its row)
+        tiles[:, i] ← tiles[:, i] + yellow
+        for each answer row r where yellow[r]:
+            j ← the first position where match[r, j] is true
+            rem[r, j] ← −1                         # that answer letter is now used
+    return tiles · (1, 3, 9, 27, 81) for each answer   # base-3 pattern ids</pre>
+  </div>
+  <p>The full version checks the greens on every answer at once. A used answer letter is replaced by −1, which no letter code has, so it can never match again. The yellow loop then runs over the five guess positions, and each yellow uses the first unused matching position in its own row. Only the counts of letters matter for the score, so which matching position is used does not change the result.</p>
+  <p>The vectorised table is checked against the plain rule on 3,000 random guess and answer pairs, not on every entry.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_wordle.py#L59-L66" target="_blank" rel="noopener" title="tests/test_wordle.py, lines 59–66" aria-label="Code on GitHub: tests/test_wordle.py, lines 59 to 66">8</a> The table holds 6,748 guesses by 3,568 answers, which is about 24.1 million entries. Every answer is also one of the guesses, so each answer can be played and win.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L8-L11" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 8–11" aria-label="Code on GitHub: wordle/lexicon.py, lines 8 to 11">9</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py#L83-L97" target="_blank" rel="noopener" title="wordle/lexicon.py, lines 83–97" aria-label="Code on GitHub: wordle/lexicon.py, lines 83 to 97">10</a></p>
+
+  <h3 class="hiw-sub">Scoring a guess</h3>
+  <p>For a guess <span class="math">g</span> and the candidates <span class="math">C</span>, each feedback pattern <span class="math">p</span> forms a <b>bucket</b>: the candidates that would give <span class="math">p</span> if they were the answer. Let <span class="math">n_p</span> be the size of bucket <span class="math">p</span>. The buckets split the candidates, so their sizes add up to <span class="math">|C|</span>, the number of candidates.</p>
+  <p>The answer is unknown, so every candidate is treated as equally likely. This is the <b>uniform prior</b>. Bucket <span class="math">p</span> then has the probability <span class="math">P(p) = n_p / |C|</span>, and the feedback is a random variable with that distribution. The code never forms <span class="math">P</span> itself. It works with the counts <span class="math">n_p</span>, and the formulas below are written in those counts.</p>
+  <p>The <b>expected information</b> of a guess, in <b>bits</b>, is the <b>entropy</b> of that random feedback. Entropy is the average surprise: pattern <span class="math">p</span> is worth <span class="math">\log_2(1/P(p))</span> bits of surprise, and the entropy is the average of that over the patterns. One bit is the answer to one yes-or-no question.</p>
+  <!-- wordle/solver.py:60, 72 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L60" target="_blank" rel="noopener" title="wordle/solver.py, lines 60, 72" aria-label="Code on GitHub: wordle/solver.py, lines 60, 72">11</a></span>
+    <div class="math math-block">H(g) = \log_2 |C| \;-\; \frac{1}{|C|} \sum_{p} n_p \log_2 \max(n_p, 1)</div>
+  </div>
+  <p>Here <span class="math">n_p</span> is the size of bucket <span class="math">p</span>, and the sum runs over all 243 patterns. The code writes entropy in this form because it needs one count and one sum. The two forms agree: <span class="math">-\sum_p (n_p/|C|) \log_2 (n_p/|C|) = \log_2 |C| - (1/|C|) \sum_p n_p \log_2 n_p</span>. An empty bucket adds nothing. The code takes <span class="math">\log_2 \max(n_p, 1)</span>, which is 0 when <span class="math">n_p = 0</span>.</p>
+  <p>Two more numbers are computed from the same counts. The <b>worst bucket</b> <span class="math">W(g)</span> is the largest bucket, the most candidates that can remain after the guess whatever the feedback.</p>
+  <!-- wordle/solver.py:73 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L73" target="_blank" rel="noopener" title="wordle/solver.py, line 73" aria-label="Code on GitHub: wordle/solver.py, line 73">12</a></span>
+    <div class="math math-block">W(g) = \max_{p} \, n_p</div>
+  </div>
+  <p>The <b>expected bucket size</b> <span class="math">E(g)</span> is the average size of the bucket that a random candidate falls into. A candidate falls into bucket <span class="math">p</span> with probability <span class="math">n_p/|C|</span>, so the average is the sum of <span class="math">(n_p/|C|) \cdot n_p</span>.</p>
+  <!-- wordle/solver.py:74 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L74" target="_blank" rel="noopener" title="wordle/solver.py, line 74" aria-label="Code on GitHub: wordle/solver.py, line 74">13</a></span>
+    <div class="math math-block">E(g) = \frac{1}{|C|} \sum_{p} n_p^{\,2}</div>
+  </div>
+  <p><b>Example.</b> Identifying one of the 3,568 answers takes <span class="math">\log_2 3568 = 11.80</span> bits. The opener TARES has an expected information of 6.230 bits, a little over half of that, when all answers are candidates. Its largest bucket holds 251 answers, and a random answer falls into a bucket of 78.7 answers on average.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md" target="_blank" rel="noopener" title="results/wordle_benchmark.md" aria-label="Code on GitHub: results/wordle_benchmark.md">14</a></p>
+  <p>The scores for every guess come from one scoring pass. The pseudocode below shows it. The candidates are passed in as answer indices, and the result has one number of each kind per allowed guess.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L50-L77" target="_blank" rel="noopener" title="wordle/solver.py, lines 50–77" aria-label="Code on GitHub: wordle/solver.py, lines 50 to 77">15</a></span>
+    <pre class="pseudo-simple">function SCORE-GUESSES(candidates):
+    for each allowed guess g:
+        n[p] ← number of candidates a with pattern(g, a) = p, for each pattern p
+        bits[g] ← log2 |candidates| − (1 / |candidates|) · sum over p of n[p] · log2 n[p]
+        worst[g] ← the largest n[p]
+        expected[g] ← (1 / |candidates|) · sum over p of n[p]²
+    return bits, worst, expected</pre>
+    <pre class="pseudo-full" hidden>function SCORE-GUESSES(candidates):              # C = |candidates|
+    if C = 0:
+        raise ERROR("no candidates are left")
+    log_c ← log2 C
+    for each block of up to 1024 guesses, rows lo to hi − 1:   # the block bounds the temporary array
+        pats ← table[lo to hi − 1, candidates], as 32-bit integers   # pats[r, j]: guess lo + r vs candidate j
+        flat ← pats + 243 · r, for each row r         # shift row r into its own 243 bins
+        counts ← COUNT(flat, 243 · rows bins), shaped rows × 243   # counts[r, p] = n[p] for guess lo + r
+        bits[lo to hi − 1] ← log_c − (1 / C) · sum over p of counts · log2 max(counts, 1)
+        worst[lo to hi − 1] ← the largest counts in each row
+        expected[lo to hi − 1] ← (1 / C) · sum over p of counts²
+    is-candidate ← false for every guess
+    is-candidate[guess index of each candidate] ← true
+    return bits, worst, expected, is-candidate</pre>
+  </div>
+  <p>The full version works in blocks of 1,024 guesses, which bounds the size of the temporary array. Each row's patterns are shifted by 243 times the row number, so one <b>COUNT</b>, which is NumPy's <code>bincount</code> (it counts how often each integer occurs), counts the buckets of every guess in the block at once. The last step marks which guesses are candidates, so the strategies can prefer a guess that could win now.</p>
+
+  <h3 class="hiw-sub">Entropy: the default strategy</h3>
+  <p>The <b>entropy strategy</b> plays the guess with the largest <span class="math">H(g)</span>. A large entropy means many buckets of similar size, so the candidates shrink quickly whichever pattern comes back. The strategy sorts the guesses by the key below and plays the first one.</p>
+  <!-- wordle/solver.py:105-107 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L105-L107" target="_blank" rel="noopener" title="wordle/solver.py, lines 105–107" aria-label="Code on GitHub: wordle/solver.py, lines 105 to 107">16</a></span>
+    <div class="math math-block">\text{key}(g) = \bigl(-\operatorname{round}(H(g), 9),\ \mathbf{1}[g \notin C],\ \text{index}(g)\bigr)</div>
+  </div>
+  <p>Here <span class="math">\operatorname{round}(\cdot, 9)</span> rounds to nine decimal places, so floating-point noise cannot reorder guesses whose entropies are equal. The indicator <span class="math">\mathbf{1}[g \notin C]</span> is 0 for a candidate and 1 otherwise, so among equal guesses a candidate comes first and can win this turn. The last entry is the guess's position in the sorted word list, which makes every tie resolve the same way on every run.</p>
+  <p>Over all 3,568 answers, the entropy strategy needs a mean of 3.627 guesses, and no game goes past six.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md" target="_blank" rel="noopener" title="results/wordle_benchmark.md" aria-label="Code on GitHub: results/wordle_benchmark.md">14</a> Its best opener, when every answer is still possible, is TARES, at 6.230 bits. TARES is not an answer. The best opener that could itself be the answer is TALES, at 6.138 bits.</p>
+
+  <h3 class="hiw-sub">Minimax</h3>
+  <p><b>Minimax</b> plans for the worst case. It plays the guess whose largest bucket is smallest, so that after the next feedback the fewest candidates can remain, whatever that feedback is. Ties go to the guess with the smaller expected bucket. It optimises a different target from entropy, not a blend of the two.</p>
+  <!-- wordle/solver.py:108-109 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L108-L109" target="_blank" rel="noopener" title="wordle/solver.py, lines 108–109" aria-label="Code on GitHub: wordle/solver.py, lines 108 to 109">17</a></span>
+    <div class="math math-block">\text{key}(g) = \bigl(W(g),\ \operatorname{round}(E(g), 9),\ \mathbf{1}[g \notin C],\ \text{index}(g)\bigr)</div>
+  </div>
+  <p>The key is read in the same way as the entropy key. The first entry, the worst bucket, is the primary rule. The second entry breaks ties with the expected bucket size, and the last two are the candidate preference and the list position.</p>
+  <p>Minimax needs a mean of 3.739 guesses, with no failures. On average it takes a little longer than entropy.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md" target="_blank" rel="noopener" title="results/wordle_benchmark.md" aria-label="Code on GitHub: results/wordle_benchmark.md">14</a></p>
+
+  <h3 class="hiw-sub">Random consistent word (baseline)</h3>
+  <p>The <b>random consistent</b> strategy picks one candidate at random. Every candidate fits all the feedback so far, so it uses every clue. It never compares guesses, which makes it the baseline the other two are measured against. The pick is drawn from the answers still possible, not from the full guess list.</p>
+  <!-- wordle/solver.py:148-150 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L148-L150" target="_blank" rel="noopener" title="wordle/solver.py, lines 148–150" aria-label="Code on GitHub: wordle/solver.py, lines 148 to 150">18</a></span>
+    <div class="math math-block">g \sim \operatorname{Uniform}(C), \qquad P(g) = \frac{1}{|C|}</div>
+  </div>
+  <p>Here <span class="math">\operatorname{Uniform}(C)</span> gives each candidate the same probability, <span class="math">1/|C|</span>. The code draws the guess with a random number generator, <code>rng.choice</code>, over the candidate list.</p>
+  <p>The random baseline needs a mean of 4.412 guesses. 246 of the 3,568 games, or 6.89%, run past six guesses.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md" target="_blank" rel="noopener" title="results/wordle_benchmark.md" aria-label="Code on GitHub: results/wordle_benchmark.md">14</a></p>
+
+  <h3 class="hiw-sub">One solver turn</h3>
+  <p>A turn has three steps. The strategy picks the guess, the game scores it against the hidden answer, and the candidates are narrowed to those that would have given the same feedback. The narrowing is the whole update. It needs nothing beyond the candidate set.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L87-L90" target="_blank" rel="noopener" title="wordle/solver.py, lines 87–90" aria-label="Code on GitHub: wordle/solver.py, lines 87 to 90">19</a></p>
+  <!-- wordle/solver.py:90 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L90" target="_blank" rel="noopener" title="wordle/solver.py, line 90" aria-label="Code on GitHub: wordle/solver.py, line 90">20</a></span>
+    <div class="math math-block">C' = \{\, a \in C : \text{table}[g, a] = p \,\}</div>
+  </div>
+  <p>Here <span class="math">g</span> is the guess, <span class="math">p</span> the feedback it received, and <span class="math">\text{table}[g, a]</span> the pattern of guess <span class="math">g</span> against answer <span class="math">a</span>. The candidates after the turn, <span class="math">C'</span>, are the candidates whose pattern against <span class="math">g</span> is <span class="math">p</span>.</p>
+  <p>The server and the terminal report the <b>bits gained</b> by a guess as the real split of the candidates: the log base 2 of the candidates before the guess over the candidates after it. That figure is shown next to the bits the scoring pass expected.</p>
+  <!-- wordle/api: wordle_api.py:134 and __main__.py:51 -->
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/wordle_api.py#L134" target="_blank" rel="noopener" title="server/wordle_api.py, line 134" aria-label="Code on GitHub: server/wordle_api.py, line 134">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/__main__.py#L51" target="_blank" rel="noopener" title="wordle/__main__.py, line 51" aria-label="Code on GitHub: wordle/__main__.py, line 51">22</a></span>
+    <div class="math math-block">\text{bits gained} = \log_2 \frac{|C|}{|C'|}</div>
+  </div>
+  <p>The page's panel under the board lists eight guesses: the top eight in the order the strategy uses, or, for the random baseline, eight candidates in random order. Each bar's length is that guess's expected bits, as a share of the largest of those eight.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/wordle.js#L291" target="_blank" rel="noopener" title="web/js/wordle.js, lines 291, 298" aria-label="Code on GitHub: web/js/wordle.js, lines 291, 298">23</a></p>
+  <p>The whole choice is made by CHOOSE. The simple version shows the idea, and the full version adds the single-candidate rule, the random branch and the opening cache.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L142-L151" target="_blank" rel="noopener" title="wordle/solver.py, lines 142–151" aria-label="Code on GitHub: wordle/solver.py, lines 142 to 151">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L101-L110" target="_blank" rel="noopener" title="wordle/solver.py, lines 101–110" aria-label="Code on GitHub: wordle/solver.py, lines 101 to 110">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L123-L139" target="_blank" rel="noopener" title="wordle/solver.py, lines 123–139" aria-label="Code on GitHub: wordle/solver.py, lines 123 to 139">26</a></span>
+    <pre class="pseudo-simple">function CHOOSE(candidates, strategy):
+    if there is one candidate:
+        return that candidate as the guess
+    if strategy is random:
+        return a candidate picked uniformly at random
+    bits, worst, expected, is-candidate ← SCORE-GUESSES(candidates)
+    return the guess that comes first in the strategy's order</pre>
+    <pre class="pseudo-full" hidden>function CHOOSE(candidates, strategy, rng):
+    if strategy is not entropy, minimax or random:
+        raise ERROR("strategy must be one of entropy, minimax, random")
+    if |candidates| = 1:                           # one candidate left: guess it
+        return the guess index of that candidate
+    if strategy = random:
+        if rng is missing: rng ← a new unseeded generator
+        return the guess index of rng.choice(candidates)   # uniform over the candidates
+    opening ← (|candidates| = number of answers)   # no feedback yet
+    if opening and the cache holds the scores:
+        take the cached scores
+    else:
+        bits, worst, expected, is-candidate ← SCORE-GUESSES(candidates)
+        if opening: store the scores in the cache
+    if opening and the cache holds the order for this strategy:
+        take the cached order
+    else:
+        order ← guess indices, sorted by
+            entropy:  (−round(bits, 9), not is-candidate, index)
+            minimax:  (worst, round(expected, 9), not is-candidate, index)
+        if opening: store the order in the cache
+    return order[0]</pre>
+  </div>
+  <p>The full version caches the scores and the order on the lexicon when all answers are still candidates. That is the first turn of every game, and it is the same every time, so the work is done once. In CHOOSE, a single remaining candidate and the random strategy skip the scoring pass.</p>
+
+  <h3 class="hiw-sub">Ties and repeatability</h3>
+  <p>None of the three rules is tuned or learned. Each score is the objective its strategy names, and the feedback rule is fixed by the game. Exact ties go first to a candidate, which can win this turn, and then to the earlier word in the sorted list, so results repeat exactly.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L18-L19" target="_blank" rel="noopener" title="wordle/solver.py, lines 18–19" aria-label="Code on GitHub: wordle/solver.py, lines 18 to 19">27</a> Bits are rounded to nine decimal places before comparison, so floating-point noise cannot reorder near-equal guesses.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py#L105-L109" target="_blank" rel="noopener" title="wordle/solver.py, lines 105–109" aria-label="Code on GitHub: wordle/solver.py, lines 105 to 109">28</a></p>
+  <p>The random strategy draws from a generator seeded per answer, so its benchmark numbers repeat as well. The seed is the benchmark seed times 100,003 plus the answer's index.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L7-L8" target="_blank" rel="noopener" title="wordle/bench.py, lines 7–8" aria-label="Code on GitHub: wordle/bench.py, lines 7 to 8">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L34" target="_blank" rel="noopener" title="wordle/bench.py, line 34" aria-label="Code on GitHub: wordle/bench.py, line 34">30</a></p>
+
+  <h3 class="hiw-sub">The word lists</h3>
+  <p>The answers are 3,568 common five-letter words from the small tier of SCOWL, the Spell Checker Oriented Word Lists by Kevin Atkinson. The guesses add the rest of SCOWL's five-letter words from the large tier, for 6,748 allowed guesses. Only lowercase a–z words of exactly five letters are kept, so names, abbreviations, possessives and accented words are dropped.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/build_lists.py#L6-L11" target="_blank" rel="noopener" title="wordle/build_lists.py, lines 6–11" aria-label="Code on GitHub: wordle/build_lists.py, lines 6 to 11">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/build_lists.py#L13-L16" target="_blank" rel="noopener" title="wordle/build_lists.py, lines 13–16" aria-label="Code on GitHub: wordle/build_lists.py, lines 13 to 16">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/build_lists.py#L33-L35" target="_blank" rel="noopener" title="wordle/build_lists.py, lines 33–35" aria-label="Code on GitHub: wordle/build_lists.py, lines 33 to 35">33</a></p>
+  <p>The bundled answer and guess lists are plain text files with one word per line.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/data/answers.txt" target="_blank" rel="noopener" title="wordle/data/answers.txt" aria-label="Code on GitHub: wordle/data/answers.txt">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/data/guesses.txt" target="_blank" rel="noopener" title="wordle/data/guesses.txt" aria-label="Code on GitHub: wordle/data/guesses.txt">35</a> The official Wordle lists are not used, so the numbers on this page are not directly comparable with published Wordle results. SCOWL's notice grants permission to use and distribute the lists for any purpose without fee, and the full notice ships with the data files.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/data/SCOWL-COPYRIGHT.txt" target="_blank" rel="noopener" title="wordle/data/SCOWL-COPYRIGHT.txt" aria-label="Code on GitHub: wordle/data/SCOWL-COPYRIGHT.txt">36</a></p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p>The benchmark plays every answer with each strategy, starting from all answers, and counts the guesses. The count includes the winning guess. A game that is not solved within six guesses is a failure, recorded as 7.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L1-L5" target="_blank" rel="noopener" title="wordle/bench.py, lines 1–5" aria-label="Code on GitHub: wordle/bench.py, lines 1 to 5">37</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L27-L28" target="_blank" rel="noopener" title="wordle/bench.py, lines 27–28" aria-label="Code on GitHub: wordle/bench.py, lines 27 to 28">38</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L32-L44" target="_blank" rel="noopener" title="wordle/bench.py, lines 32–44" aria-label="Code on GitHub: wordle/bench.py, lines 32 to 44">39</a></span>
+    <pre class="pseudo-simple">function PLAY(answer, strategy):
+    candidates ← all answers
+    for turn ← 1 to 6:
+        g ← CHOOSE(candidates, strategy)
+        if g is the guess for this answer:
+            return turn
+        candidates ← the candidates that give the same feedback as the answer
+    return 7                                       # failed: not solved in six guesses</pre>
+    <pre class="pseudo-full" hidden>function PLAY(answer, strategy, seed):
+    rng ← a generator seeded with seed · 100003 + answer index
+    candidates ← all answers
+    target ← the guess index of the answer
+    words ← empty list
+    for turn ← 1 to 6:
+        g ← CHOOSE(candidates, strategy, rng)
+        append word g to words
+        if g = target:
+            return turn, words                     # solved on this guess
+        candidates ← NARROW(candidates, g, table[g, answer])
+    return 7, words                                # failed: the answer was not reached</pre>
+  </div>
+  <p>The full version passes the same random generator into every CHOOSE call, so a seeded run repeats exactly. The table entry <code>table[g, answer]</code> is the feedback the answer would give, and NARROW keeps the candidates that would give the same feedback.</p>
+  <p>The benchmark is run with <code>python -m wordle benchmark</code>, which writes the files that the table below is taken from.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/bench.py#L10-L11" target="_blank" rel="noopener" title="wordle/bench.py, lines 10–11" aria-label="Code on GitHub: wordle/bench.py, lines 10 to 11">40</a> The table shows the committed run: guess counts from 1 to 6, the failures, and the time that run took, which depends on the machine. A fresh run of the same command reproduces every count.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md" target="_blank" rel="noopener" title="results/wordle_benchmark.md" aria-label="Code on GitHub: results/wordle_benchmark.md">14</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Strategy</th><th class="num">Mean</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th><th class="num">Failed</th><th class="num">Seconds</th></tr></thead><tbody>
+    <tr><td>Entropy</td><td class="num">3.627</td><td class="num">0</td><td class="num">59</td><td class="num">1,513</td><td class="num">1,710</td><td class="num">272</td><td class="num">14</td><td class="num">0</td><td class="num">241.8</td></tr>
+    <tr><td>Minimax</td><td class="num">3.739</td><td class="num">0</td><td class="num">50</td><td class="num">1,223</td><td class="num">1,927</td><td class="num">344</td><td class="num">24</td><td class="num">0</td><td class="num">332.6</td></tr>
+    <tr><td>Random</td><td class="num">4.412</td><td class="num">1</td><td class="num">94</td><td class="num">699</td><td class="num">1,274</td><td class="num">886</td><td class="num">368</td><td class="num">246</td><td class="num">0.8</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> none is tuned or learned. Each score is the objective its strategy names, and the feedback rule is fixed by the game. The tie-break order was picked so that results repeat exactly and so a guess that can win now is preferred. Bits are rounded to nine decimal places before comparing, so floating-point noise cannot reorder ties. The word lists come from the SCOWL word lists: 3,568 common answers (the small tier) and 6,748 allowed guesses. The official Wordle lists are not used, so these numbers are not directly comparable with published Wordle results.</p>
-  <p class="hiw-note"><b>Results:</b> entropy and minimax lose no game in six guesses, and random loses 6.89%. The best opener that could itself be the answer is TALES (6.138 bits). TARES, the top opener, is not in the answer list.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/solver.py">wordle/solver.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/feedback.py">wordle/feedback.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/lexicon.py">wordle/lexicon.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/wordle/build_lists.py">wordle/build_lists.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/wordle_benchmark.md">results/wordle_benchmark.md</a></p>
+  <p>The entropy and minimax strategies lose no game in six guesses. The random baseline loses 6.89%.</p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/wordle.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

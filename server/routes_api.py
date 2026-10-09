@@ -4,8 +4,8 @@ POST /api/routes/solve
   {"cities": [[x, y], ...], "algorithm": "simulated_annealing", "params": {...}}
   -> {"tour": [...], "length": ..., "frames": [...], "optimal": ... or null, ...}
 
-Coordinates are expected in [0, 1]. Parameters are optional and clamped to
-limits that keep one request around a second of server time.
+Coordinates are expected in [0, 1]. Parameters are optional, but a value outside
+its limit is rejected with 422 so that one request stays around a second of server time.
 """
 
 from __future__ import annotations

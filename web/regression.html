@@ -12,6 +12,7 @@
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="regression.css">
 </head>
@@ -31,21 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">LAB // LEAST SQUARES · GRADIENT DESCENT · LOGISTIC</div>
+      <div class="proj-pg-tag">LAB // CURVE FITTING</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="REGRESSION">REGRESSION</h1>
-      <div class="proj-pg-sub">Drag the points and the best-fit curve snaps to them. Every squared error is a square, and their total area is the loss. Then watch gradient descent creep toward the same answer, and see what happens when the model is too flexible.</div>
+      <div class="proj-pg-sub">Drag points and watch the fit snap into place. Each squared error is drawn as a square.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip pink">MODEL <span class="val" id="chip-mode">—</span></span>
-        <span class="stat-chip">DEGREE <span class="val" id="chip-deg">—</span></span>
-        <span class="stat-chip green">POINTS <span class="val" id="chip-n">—</span></span>
-        <span class="stat-chip">LOSS <span class="val" id="chip-loss">—</span></span>
-        <span class="stat-chip">ERROR <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip pink" title="Sum of squared errors of the current fit. Logistic: mean log-loss.">LOSS <span class="val" id="chip-loss">—</span></span>
+        <span class="stat-chip" title="Regression: train MSE / test MSE. Logistic: share of points on the correct side of 0.5."><span id="chip-test-lbl">ERROR</span> <span class="val" id="chip-test">—</span></span>
+        <span class="stat-chip green" title="Points on the plane">POINTS <span class="val" id="chip-n">—</span></span>
         <span class="stat-chip green">STATUS <span class="val" id="chip-status">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to see how a line or a curve is fitted to points by least squares. Drag the points on the plane and the best fit follows them, and each squared error is drawn as a square whose area is its share of the loss.</p>
+    <p style="margin-top:0.5rem">Pick a DATA preset and a DEGREE, then choose a METHOD. The exact methods answer at once, and gradient descent creeps toward the same answer when you press RUN.</p>
+    <p style="margin-top:0.5rem">Turn on HOLD OUT TEST POINTS to fit only the training points and watch the green test squares. Switch to LOGISTIC to classify the points with a probability map.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -55,15 +61,16 @@
         <div class="rg-frame" id="plane-wrap">
           <canvas id="plane" role="img" aria-label="Scatter plot: drag points to move them; the fitted curve or the logistic probability map updates live."></canvas>
         </div>
-        <div class="field-hint" id="plane-hint">Click empty space to add a point (logistic: in the active class colour). Drag a point to move it. Double-tap or right-click a point to delete it.</div>
+        <div class="field-hint" id="plane-hint">Click empty space to add a point, drag to move it, and double-tap or right-click to delete it.</div>
+        <div class="field-hint" data-mode="reg">Squares: area is the squared error. Purple dashed: the exact answer. Green: test points.</div>
+        <div class="field-hint" data-mode="log">Pink and cyan: the two classes, and new points take the class chosen in FIT. Yellow ring: a point on the wrong side.</div>
       </div>
 
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">THE LOSS: AREA OF THE SQUARES</div>
         <div class="viz-panel">
-          <div class="viz-title" id="loss-title">Gradient descent: log10 of the objective per step. The dashed line is the exact optimum (linear models only).</div>
+          <div class="viz-title" id="loss-title" title="Gradient descent starts from zero weights and takes one small step at a time. A large step size overshoots and diverges; a small one is slow, most of all at high degree.">Log10 of the objective per descent step. Dashed: exact optimum (linear models).</div>
           <canvas id="loss-chart" width="480" height="200" aria-label="Loss per gradient descent step"></canvas>
-          <div class="field-hint">Gradient descent starts from zero weights and takes one small step at a time. A large step size overshoots and diverges; a small one is slow, most of all for high degrees, where the columns are nearly collinear.</div>
         </div>
       </div>
 
@@ -72,7 +79,7 @@
         <div class="viz-panel">
           <div class="viz-title">Error by polynomial degree, fitted on the training points only</div>
           <canvas id="sweep-chart" width="480" height="200" aria-label="Train and test MSE by polynomial degree"></canvas>
-          <div class="field-hint">Cyan: training MSE. Green: test MSE on every fourth point (ids 3, 7, 11, ...). Training error only goes down; test error bottoms out and climbs once the curve starts chasing noise.</div>
+          <div class="field-hint">Cyan: train MSE. Green: test MSE on every fourth point.</div>
         </div>
       </div>
     </div>
@@ -89,13 +96,13 @@
           <div class="field-lbl">DATA</div>
           <div class="inline">
             <select class="cyber-select" id="preset" style="flex:1" aria-label="Preset data"></select>
-            <button class="cyber-btn" id="btn-new" type="button" title="new random seed"><span class="btn-txt">⟲ NEW</span></button>
+            <button class="cyber-btn" id="btn-new" type="button" title="Draw a new random seed for the preset."><span class="btn-txt">⟲ NEW</span></button>
           </div>
           <div class="field-hint" id="seed-val">seed 7</div>
         </div>
         <div class="inline">
-          <button class="cyber-btn" id="btn-undo" type="button"><span class="btn-txt">↶ UNDO</span></button>
-          <button class="cyber-btn pink" id="btn-clear" type="button"><span class="btn-txt">✕ CLEAR</span></button>
+          <button class="cyber-btn" id="btn-undo" type="button" title="Undo the last change to the points."><span class="btn-txt">↶ UNDO</span></button>
+          <button class="cyber-btn pink" id="btn-clear" type="button" title="Remove every point."><span class="btn-txt">✕ CLEAR</span></button>
         </div>
       </div>
 
@@ -103,123 +110,360 @@
       <div class="viz-panel">
         <div data-mode="reg">
           <div class="field-lbl">DEGREE <span class="field-hint" id="degree-val"></span></div>
-          <input class="cyber-range" id="degree" type="range" min="1" max="10" step="1" value="3" style="width:100%" aria-label="Polynomial degree">
-          <div class="field-hint">Degree 1 is a line; each step up adds a bend. Degree 10 can pass through almost any 11 points.</div>
+          <input class="cyber-range" id="degree" type="range" min="1" max="10" step="1" value="3" style="width:100%" aria-label="Polynomial degree" title="Degree 1 is a line; each step up adds a bend. Degree 10 can pass through almost any 11 points.">
           <div class="field-lbl" style="margin-top:0.6rem">METHOD</div>
-          <select class="cyber-select" id="method" style="width:100%" aria-label="Fitting method">
+          <select class="cyber-select" id="method" style="width:100%" aria-label="Fitting method" title="Normal equations and QR agree on paper, but the normal equations lose precision at high degree. Gradient descent creeps toward the same answer.">
             <option value="qr">Exact: QR decomposition</option>
             <option value="normal">Exact: normal equations</option>
             <option value="gd">Gradient descent (creeping)</option>
           </select>
-          <div class="field-hint">Normal equations and QR give the same answer on paper. In floating point, the normal equations square the condition number, so their error grows with degree (see the gap below).</div>
-          <label class="inline field-hint" style="margin-top:0.5rem"><input type="checkbox" id="holdout"> HOLD OUT TEST POINTS (fit on 3/4)</label>
-          <div class="field-hint" id="gap-note">Normal equations vs QR, largest weight gap: <span id="gap-val">—</span></div>
         </div>
         <div data-mode="log">
           <div class="field-lbl">FEATURE DEGREE <span class="field-hint" id="ldeg-val"></span></div>
-          <input class="cyber-range" id="ldeg" type="range" min="1" max="4" step="1" value="1" style="width:100%" aria-label="Logistic feature degree">
-          <div class="field-hint">Degree 1 draws a straight boundary; higher degrees add polynomial features (x1^i x2^j) and bend it.</div>
+          <input class="cyber-range" id="ldeg" type="range" min="1" max="4" step="1" value="1" style="width:100%" aria-label="Logistic feature degree" title="Degree 1 draws a straight boundary; higher degrees add polynomial features and bend it.">
           <div class="field-lbl" style="margin-top:0.6rem">CLASS FOR NEW POINTS</div>
           <div class="inline">
             <button class="cyber-btn pink" id="cls0" type="button" aria-pressed="false"><span class="btn-txt">PINK (0)</span></button>
             <button class="cyber-btn" id="cls1" type="button" aria-pressed="true"><span class="btn-txt">CYAN (1)</span></button>
           </div>
         </div>
-        <div>
-          <div class="field-lbl">RIDGE (L2) <span class="field-hint" id="ridge-val"></span></div>
-          <input class="cyber-range" id="ridge" type="range" min="0" max="2" step="0.01" value="0" style="width:100%" aria-label="Ridge penalty">
-          <div class="field-hint">Penalises large weights (the intercept is free). Zero is plain least squares.</div>
-        </div>
       </div>
 
       <div class="section-title pink-ttl">DESCENT</div>
       <div class="viz-panel">
-        <div>
-          <div class="field-lbl">STEP SIZE (log10) <span class="field-hint" id="lr-val"></span></div>
-          <input class="cyber-range" id="lr" type="range" min="-3" max="0" step="0.05" value="-1" style="width:100%" aria-label="Gradient descent step size">
-        </div>
-        <div>
-          <div class="field-lbl">STEPS PER FRAME <span class="field-hint" id="steps-val"></span></div>
-          <input class="cyber-range" id="steps" type="range" min="1" max="40" step="1" value="4" style="width:100%" aria-label="Gradient descent steps per frame">
-        </div>
         <div class="inline">
-          <button class="cyber-btn green" id="gd-run" type="button"><span class="btn-txt" id="gd-run-label">▶ RUN</span></button>
-          <button class="cyber-btn" id="gd-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
+          <button class="cyber-btn green" id="gd-run" type="button" title="Run or pause the gradient descent. It stops by itself if the loss blows up."><span class="btn-txt" id="gd-run-label">▶ RUN</span></button>
+          <button class="cyber-btn" id="gd-reset" type="button" title="Restart the descent from zero weights."><span class="btn-txt">↺ RESET</span></button>
         </div>
         <div class="field-hint" id="gd-status">STEP 0</div>
       </div>
 
-      <div class="section-title">HOW TO READ IT</div>
-      <div class="stack">
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">SQUARES</div>
-          <div class="field-hint">Each point's vertical error is a segment; a square of that side hangs off it. Add the areas and you have the sum of squared errors the fit minimises.</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <div data-mode="reg">
+            <label class="inline field-hint" title="Fit only three quarters of the points. The rest are drawn as green test squares that the fit never sees."><input type="checkbox" id="holdout"> HOLD OUT TEST POINTS (fit on 3/4)</label>
+            <div class="field-hint" id="gap-note" title="The largest difference between the weights from the normal equations and from QR. It grows with degree.">Normal equations vs QR, largest weight gap: <span id="gap-val">—</span></div>
+          </div>
+          <div>
+            <div class="field-lbl">RIDGE (L2) <span class="field-hint" id="ridge-val"></span></div>
+            <input class="cyber-range" id="ridge" type="range" min="0" max="2" step="0.01" value="0" style="width:100%" aria-label="Ridge penalty" title="Penalises large weights (the intercept is free). Zero is plain least squares.">
+          </div>
+          <div>
+            <div class="field-lbl">STEP SIZE (log10) <span class="field-hint" id="lr-val"></span></div>
+            <input class="cyber-range" id="lr" type="range" min="-3" max="0" step="0.05" value="-1" style="width:100%" aria-label="Gradient descent step size" title="How far each descent step moves. Too large and the run diverges.">
+          </div>
+          <div>
+            <div class="field-lbl">STEPS PER FRAME <span class="field-hint" id="steps-val"></span></div>
+            <input class="cyber-range" id="steps" type="range" min="1" max="40" step="1" value="4" style="width:100%" aria-label="Gradient descent steps per frame" title="Descent steps taken in each animation frame while running.">
+          </div>
         </div>
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">DASHED PURPLE</div>
-          <div class="field-hint">While descending, the exact solution. The solid curve is where the descent has got to.</div>
-        </div>
-        <div class="heuristic-card" style="padding:0.7rem">
-          <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">GREEN</div>
-          <div class="field-hint">Test points (every fourth) and their squares. With hold-out on, the fit never sees them.</div>
-        </div>
-      </div>
+      </details>
 
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">A fit is the set of weights that makes the total squared error smallest. For a line or a polynomial that has a closed-form answer, the normal equations. Gradient descent reaches the same answer by walking downhill. Logistic regression swaps the squared error for log-loss, which has no closed form, so descent is the only option.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Least squares</h3>
-      <p class="hiw-plain"><b>New to this?</b> Draw the line through the cloud of points so that the vertical gaps between the points and the line, squared and added up, are as small as possible. Squaring stops positive and negative gaps from cancelling, and it punishes one big miss more than several small ones.</p>
-      <p>With features X (one row per point, columns 1, x, x², …) and targets y, the model is ŷ = Xw. The objective is J(w) = (1/n) Σ (y<sub>i</sub> − x<sub>i</sub>·w)². Polynomial regression is linear regression on the powers of x, so the same algebra fits a curve.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The normal equations</h3>
-      <p class="hiw-plain"><b>New to this?</b> Setting the slope of J to zero gives a system of linear equations. Solving it is one step, and no guessing is needed.</p>
-      <p>Setting ∇J = 0 gives (XᵀX) w = Xᵀy. The page solves this by Gaussian elimination. The matrix XᵀX squares the condition number of X, so when the powers of x are nearly collinear the normal equations lose digits. QR factors X = QR instead and solves R w = Qᵀy, which keeps the precision. Both give the same answer in exact arithmetic.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Gradient descent</h3>
-      <p class="hiw-plain"><b>New to this?</b> Stand on a hill blindfolded and feel which way is downhill, then take a small step that way. Repeat. The step size is how far you move each time: too small and you crawl, too big and you overshoot the valley and climb back out.</p>
-      <p>The gradient is ∇J = (2/n) Xᵀ(Xw − y), and each step is w ← w − η ∇J. Starting from zero, the first steps fix the easy directions (the mean and the slope). High-degree powers of x are badly scaled against each other, so the valley is long and narrow and progress along it is slow. That is why a degree-10 fit creeps for hundreds of steps.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Overfitting and regularisation</h3>
-      <p class="hiw-plain"><b>New to this?</b> A model with many knobs can memorise the noise in the training points. It looks perfect on those points and fails on new ones, the way a student who memorises last year's exam fails the new one.</p>
-      <p>Train MSE falls as the degree rises. Test MSE, measured on points the fit never saw, falls and then rises. Ridge adds λ Σ w<sub>k</sub>² to the objective (the intercept is not penalised), which shrinks the weights and smooths the curve: the solution is (XᵀX + λD) w = Xᵀy with D = diag(0, 1, …, 1). Choosing λ and the degree on held-out data is how the best model is picked.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Logistic regression and log-loss</h3>
-      <p class="hiw-plain"><b>New to this?</b> For a yes/no label, predict a probability instead of a number. The sigmoid squashes any score into 0 to 1, and the log-loss punishes confident wrong answers heavily.</p>
-      <p>p = σ(Xw), σ(z) = 1/(1 + e<sup>−z</sup>). The log-loss is −[y log p + (1 − y) log(1 − p)], summed over points and divided by n. Its gradient is (1/n) Xᵀ(p − y), which has the same shape as the least-squares gradient, so the same descent code runs. The boundary is where p = 0.5, a straight line for degree 1 and a curve for higher degrees.</p>
-    </article>
-  </div>
+  <p class="hiw-lede">A <b>fit</b> is the set of <b>weights</b> that makes the total squared error of a model as small as possible. A weight is one adjustable number in the model. A line or a polynomial has a <b>closed-form</b> answer, which linear algebra computes directly, by the <b>normal equations</b> or by <b>Householder QR</b>. <b>Gradient descent</b> reaches the same answer by repeated steps downhill. <b>Logistic regression</b> replaces the squared error with the <b>log-loss</b>, which has no closed form, so it is fitted by gradient descent.</p>
 
-  <h3 class="hiw-sub">Parameters and defaults</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Range</th><th>Why this default</th></tr></thead><tbody>
-    <tr><td>Degree (linear / poly)</td><td class="num">3</td><td class="num">1 to 10</td><td>Enough bend to follow the sine preset without chasing noise. Degree 10 shows overfitting.</td></tr>
-    <tr><td>Method</td><td>QR</td><td>QR, normal, descent</td><td>Exact and numerically stable. Switch to normal equations to see the precision loss.</td></tr>
-    <tr><td>Hold out test points</td><td>off</td><td>on / off</td><td>With it off, every square counts toward the loss, so the area is the full loss. On fits 3/4 of the points and draws the rest as test error.</td></tr>
-    <tr><td>Ridge λ</td><td class="num">0</td><td class="num">0 to 2</td><td>Plain least squares, so overfitting is visible. Try 0.05 to 0.5 at high degree.</td></tr>
-    <tr><td>Step size η (log10)</td><td class="num">0.1</td><td class="num">0.001 to 1</td><td>Stable at 0.1 to 0.5 here. At η = 1, degrees 3, 5 and 10 diverge within 60 steps and the page stops and says so. Degree 1 stays finite for 500 steps, but its loss (about 7,400) never settles.</td></tr>
-    <tr><td>Steps per frame</td><td class="num">4</td><td class="num">1 to 40</td><td>About 240 steps a second: slow enough to watch the curve bend.</td></tr>
-    <tr><td>Data</td><td>noisy sine, 30 points</td><td>line, noisy sine, quadratic</td><td>The sine needs degree 3 or more; the line makes the squares small; noise 0.15 gives visible residuals.</td></tr>
-    <tr><td>Logistic feature degree</td><td class="num">1</td><td class="num">1 to 4</td><td>A straight boundary matches the two moons only roughly, so the default is the simplest case.</td></tr>
+  <h3 class="hiw-sub">Seeded data</h3>
+  <p class="hiw-note">The points come from <b>presets</b>. A preset is a rule that draws the same points for the same <b>seed</b>, the integer that starts the random generator. The generator is <b>mulberry32</b>, a 32-bit generator whose output is an integer divided by 2<sup>32</sup>, so every uniform value lies in [0, 1)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L28-L35" target="_blank" rel="noopener" title="bandits/rng.py, lines 28–35" aria-label="Code on GitHub: bandits/rng.py, lines 28 to 35">1</a></p>
+  <p class="hiw-note">Standard normal values, with mean 0 and standard deviation 1, come from the <b>polar method</b>. It draws a point uniformly in the unit disc, rejects points outside it or at the origin, and keeps one coordinate scaled by a radius term<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L41-L49" target="_blank" rel="noopener" title="bandits/rng.py, lines 41–49" aria-label="Code on GitHub: bandits/rng.py, lines 41 to 49">2</a>. The JavaScript port uses the same stream, so the same seed gives the same points in both languages<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L17-L43" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 17–43" aria-label="Code on GitHub: web/js/regression-core.js, lines 17 to 43">3</a>.</p>
+  <p class="hiw-note">A <b>regression preset</b> draws <span class="math">n</span> points with <span class="math">x</span> uniform on [−1, 1], and sets <span class="math">y</span> to a known curve plus Gaussian noise. The page uses 30 points and a noise level of 0.15. The curves are:</p>
+  <!-- regression/data.py:23-27 -->
+  <div class="math-fig">
+    <div class="math math-block">f(x) = \begin{cases} 0.6\,x - 0.2 & \text{line} \\ 0.8\,\sin(2\pi x) & \text{noisy-sine} \\ 1.2\,x^2 - 0.6 & \text{quadratic} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py#L23-L27" target="_blank" rel="noopener" title="regression/data.py, lines 23–27" aria-label="Code on GitHub: regression/data.py, lines 23 to 27">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L47-L51" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 47–51" aria-label="Code on GitHub: web/js/regression-core.js, lines 47 to 51">5</a></span>
+  </div>
+  <!-- regression/data.py:30-48 -->
+  <div class="math-fig">
+    <div class="math math-block">x_i = -1 + 2u_i, \qquad y_i = f(x_i) + 0.15\,z_i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py#L43-L47" target="_blank" rel="noopener" title="regression/data.py, lines 43–47" aria-label="Code on GitHub: regression/data.py, lines 43 to 47">6</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u_i</span> is a uniform draw and <span class="math">z_i</span> a standard normal draw for point <span class="math">i</span>. The x value is drawn first, then the noise, point by point. The noise is always drawn, even at level 0, so the x values stay the same when only the noise changes<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py#L43-L47" target="_blank" rel="noopener" title="regression/data.py, lines 43–47" aria-label="Code on GitHub: regression/data.py, lines 43 to 47">6</a>.</p>
+  <p class="hiw-note">A <b>classification preset</b> gives two labelled classes, 0 and 1, which alternate in index order so both are balanced. <b>Moons</b> are two interleaved half circles. With <span class="math">t = \pi u</span>, class 0 is <span class="math">(\cos t, \sin t)</span> and class 1 is <span class="math">(1 - \cos t, 0.5 - \sin t)</span>. Both are rescaled into the page frame and given noise of 0.1 in each coordinate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py#L73-L83" target="_blank" rel="noopener" title="regression/data.py, lines 73–83" aria-label="Code on GitHub: regression/data.py, lines 73 to 83">7</a>. <b>Blobs</b> are two Gaussian clouds, centred at (−0.45, −0.35) for class 0 and (0.45, 0.35) for class 1, with a standard deviation of 0.22<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py#L84-L87" target="_blank" rel="noopener" title="regression/data.py, lines 84–87" aria-label="Code on GitHub: regression/data.py, lines 84 to 87">8</a>.</p>
+
+  <h3 class="hiw-sub">Least squares and the design matrix</h3>
+  <p class="hiw-note">The <b>design matrix</b> <span class="math">X</span> has one row per point. Its columns are the powers <span class="math">x^0, x^1, \ldots, x^d</span> of the input, where <span class="math">d</span> is the <b>degree</b>. Column 0 is all ones, so the first weight is the <b>intercept</b>, the value of the curve at <span class="math">x = 0</span>. A polynomial is linear in its weights, so the same algebra fits a curve<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L22-L28" target="_blank" rel="noopener" title="regression/core.py, lines 22–28" aria-label="Code on GitHub: regression/core.py, lines 22 to 28">9</a>. The page's JavaScript port builds the same columns by repeated multiplication<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L112-L119" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 112–119" aria-label="Code on GitHub: web/js/regression-core.js, lines 112 to 119">10</a>.</p>
+  <!-- regression/core.py:162-169 -->
+  <div class="math-fig">
+    <div class="math math-block">J(w) = \frac{1}{n}\Big(\sum_{i=1}^{n} (y_i - x_i \cdot w)^2 + \lambda \sum_{k=1}^{d} w_k^2\Big)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L162-L169" target="_blank" rel="noopener" title="regression/core.py, lines 162–169" aria-label="Code on GitHub: regression/core.py, lines 162 to 169">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L168-L176" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 168–176" aria-label="Code on GitHub: web/js/regression-core.js, lines 168 to 176">12</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the number of points the fit uses, <span class="math">y_i</span> is the target of point <span class="math">i</span>, <span class="math">x_i</span> is row <span class="math">i</span> of <span class="math">X</span>, and <span class="math">w</span> is the vector of <span class="math">d + 1</span> weights. The double sum is the <b>sum of squared errors</b>, the total area of the squares drawn on the plane. The term with <span class="math">\lambda</span> is the <b>ridge</b> penalty, explained below. With <span class="math">\lambda = 0</span>, which is the default, this is plain least squares. Dividing by <span class="math">n</span> gives a mean and does not change where the minimum is<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L162-L169" target="_blank" rel="noopener" title="regression/core.py, lines 162–169" aria-label="Code on GitHub: regression/core.py, lines 162 to 169">11</a>.</p>
+  <p class="hiw-note">A fit with no penalty needs at least as many points as weights. With fewer, the page shows NEEDS d + 1 POINTS OR RIDGE instead of a curve<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L101-L106" target="_blank" rel="noopener" title="web/js/regression.js, lines 101–106" aria-label="Code on GitHub: web/js/regression.js, lines 101 to 106">13</a>.</p>
+
+  <h3 class="hiw-sub">The normal equations</h3>
+  <p class="hiw-note">A <b>gradient</b> is the vector of partial derivatives of a function, which points in the direction of steepest increase. At a minimum it is zero. Setting the gradient of <span class="math">J</span> to zero gives a linear system for the weights:</p>
+  <!-- regression/core.py:80-90 -->
+  <div class="math-fig">
+    <div class="math math-block">(X^{\top} X + \lambda D)\, w = X^{\top} y, \qquad D = \mathrm{diag}(0, 1, \ldots, 1)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L80-L90" target="_blank" rel="noopener" title="regression/core.py, lines 80–90" aria-label="Code on GitHub: regression/core.py, lines 80 to 90">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L217-L232" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 217–232" aria-label="Code on GitHub: web/js/regression-core.js, lines 217 to 232">15</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">X^{\top}X</span> is the <b>Gram matrix</b> of the columns, and <span class="math">X^{\top}y</span> holds the inner product of each column with the targets. <span class="math">D</span> is the penalty matrix, with 0 for the intercept and 1 for every other weight, so the intercept is never penalised.</p>
+  <p class="hiw-note">The code solves this system by <b>Gaussian elimination with partial pivoting</b>. Elimination turns the matrix into an upper-triangular one, one column at a time. Partial pivoting swaps in the row with the largest entry in the current column, so each <b>multiplier</b> <span class="math">f = A[r,k]/A[k,k]</span> has size at most 1, which limits the growth of rounding error. Back substitution then solves the triangular system from the last weight up<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L53-L77" target="_blank" rel="noopener" title="regression/core.py, lines 53–77" aria-label="Code on GitHub: regression/core.py, lines 53 to 77">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L234-L255" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 234–255" aria-label="Code on GitHub: web/js/regression-core.js, lines 234 to 255">17</a>.</p>
+  <p class="hiw-note">Forming <span class="math">X^{\top}X</span> squares the <b>condition number</b> of <span class="math">X</span>, the ratio of its largest to its smallest singular value. A large condition number means small rounding errors in the data change the answer a lot. High-degree powers of <span class="math">x</span> are nearly collinear, so the normal equations lose digits first. On all 30 points of the default data, the largest weight difference between the normal equations and QR is about 4 × 10<sup>−15</sup> at degree 3, and about 1.7 × 10<sup>−8</sup> at degree 10. The HUD's gap readout shows the same difference for the current fit.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L80-L90" target="_blank" rel="noopener" title="regression/core.py, lines 80–90" aria-label="Code on GitHub: regression/core.py, lines 80 to 90">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L217-L256" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 217–256" aria-label="Code on GitHub: web/js/regression-core.js, lines 217 to 256">18</a></span>
+    <pre class="pseudo-simple">function NORMAL-EQUATIONS(X, y, λ):
+    A ← Xᵀ X + λ D                      # D = diag(0, 1, …, 1): no penalty on the intercept
+    b ← Xᵀ y
+    for k from 0 to p − 1:              # forward elimination
+        swap rows k and the row with the largest |A[i, k]|, for i ≥ k, and the entries of b
+        for r from k + 1 to p − 1:
+            f ← A[r, k] / A[k, k]
+            A[r, k..p−1] ← A[r, k..p−1] − f · A[k, k..p−1]
+            b[r] ← b[r] − f · b[k]
+    for r from p − 1 down to 0:         # back substitution
+        w[r] ← (b[r] − A[r, r+1..p−1] · w[r+1..p−1]) / A[r, r]
+    return w</pre>
+    <pre class="pseudo-full" hidden>function NORMAL-EQUATIONS(X, y, λ):
+    p ← number of columns of X
+    A ← Xᵀ X                            # p × p Gram matrix
+    for k from 1 to p − 1:              # column 0, the intercept, is not penalised
+        A[k, k] ← A[k, k] + λ
+    b ← Xᵀ y
+    for k from 0 to p − 1:              # forward elimination
+        piv ← the row i ≥ k with the largest |A[i, k]|    # the first such row wins a tie
+        if A[piv, k] = 0:
+            raise error "singular normal equations"
+        if piv ≠ k:
+            swap rows k and piv of A, and entries k and piv of b
+        for r from k + 1 to p − 1:
+            f ← A[r, k] / A[k, k]       # at most 1 in size, because of the pivot
+            for c from k to p − 1:
+                A[r, c] ← A[r, c] − f · A[k, c]
+            b[r] ← b[r] − f · b[k]
+    for r from p − 1 down to 0:         # back substitution on the triangular system
+        s ← b[r]
+        for c from r + 1 to p − 1:
+            s ← s − A[r, c] · w[c]
+        w[r] ← s / A[r, r]
+    return w</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version is the core idea: form the system, eliminate, and substitute. The <b>full</b> version writes out the penalty on the diagonal, the tie rule for the pivot, and the check for an exact zero pivot. The Python code raises an error there, because the system is singular. The JavaScript port returns NaN weights there instead. The page checks the QR weights first, so a design that QR rejects is reported as SINGULAR: ADD RIDGE<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L110" target="_blank" rel="noopener" title="web/js/regression.js, line 110" aria-label="Code on GitHub: web/js/regression.js, line 110">19</a>.</p>
+
+  <h3 class="hiw-sub">Householder QR</h3>
+  <p class="hiw-note"><b>QR decomposition</b> factors <span class="math">X = QR</span>, where <span class="math">Q</span> has orthonormal columns and <span class="math">R</span> is upper-triangular. The code builds the factorisation from <b>Householder reflections</b>. A reflection <span class="math">H = I - 2vv^{\top}/(v^{\top}v)</span> mirrors space across the plane perpendicular to <span class="math">v</span>. Let <span class="math">x</span> be the part of the current column on and below the diagonal. Choosing <span class="math">v = x - \alpha e_1</span> sends <span class="math">x</span> to <span class="math">\alpha e_1</span>, a multiple of the first unit vector. The sign of <span class="math">\alpha</span> is chosen opposite to <span class="math">x_0</span>, so that <span class="math">v_0 = x_0 - \alpha</span> is a sum of like-signed terms and cannot cancel<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L100-L106" target="_blank" rel="noopener" title="regression/core.py, lines 100–106" aria-label="Code on GitHub: regression/core.py, lines 100 to 106">20</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L118-L120" target="_blank" rel="noopener" title="regression/core.py, lines 118–120" aria-label="Code on GitHub: regression/core.py, lines 118 to 120">21</a>.</p>
+  <!-- regression/core.py:103-120 -->
+  <div class="math-fig">
+    <div class="math math-block">H = I - \frac{2}{v^{\top} v}\, v\, v^{\top}, \qquad v = x - \alpha e_1, \qquad \alpha = \begin{cases} -\lVert x \rVert & x_0 \ge 0 \\ \lVert x \rVert & x_0 < 0 \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L103-L106" target="_blank" rel="noopener" title="regression/core.py, lines 103–106" aria-label="Code on GitHub: regression/core.py, lines 103 to 106">22</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L118-L120" target="_blank" rel="noopener" title="regression/core.py, lines 118–120" aria-label="Code on GitHub: regression/core.py, lines 118 to 120">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L291-L296" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 291–296" aria-label="Code on GitHub: web/js/regression-core.js, lines 291 to 296">23</a></span>
+  </div>
+  <p class="hiw-note">Each reflection is applied to the columns to its right and to <span class="math">y</span>. A reflection is orthogonal, so the residual norm does not change. After <span class="math">p</span> reflections, the top <span class="math">p</span> rows of the transformed matrix are <span class="math">R</span>, and the top <span class="math">p</span> entries of the transformed <span class="math">y</span> are <span class="math">c</span>. The weights solve <span class="math">Rw = c</span> by back substitution<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L124-L132" target="_blank" rel="noopener" title="regression/core.py, lines 124–132" aria-label="Code on GitHub: regression/core.py, lines 124 to 132">24</a>. The page never forms <span class="math">X^{\top}X</span>, so the conditioning is that of <span class="math">X</span> itself.</p>
+  <p class="hiw-note"><b>Ridge</b> enters QR as extra rows. Each extra row <span class="math">\sqrt{\lambda}\, e_k</span>, for <span class="math">k \ge 1</span>, adds <span class="math">\lambda w_k^2</span> to the squared residual, so minimising the augmented residual is the same as minimising the ridge objective<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L135-L150" target="_blank" rel="noopener" title="regression/core.py, lines 135–150" aria-label="Code on GitHub: regression/core.py, lines 135 to 150">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L258-L275" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 258–275" aria-label="Code on GitHub: web/js/regression-core.js, lines 258 to 275">26</a>:</p>
+  <!-- regression/core.py:135-150 -->
+  <div class="math-fig">
+    <div class="math math-block">\min_{w}\ \left\lVert \begin{bmatrix} y \\ 0 \end{bmatrix} - \begin{bmatrix} X \\ \sqrt{\lambda}\, E \end{bmatrix} w \right\rVert^2, \qquad E = \text{the rows } e_1, \ldots, e_d</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L135-L150" target="_blank" rel="noopener" title="regression/core.py, lines 135–150" aria-label="Code on GitHub: regression/core.py, lines 135 to 150">25</a></span>
+  </div>
+  <p class="hiw-note">A column that depends on the columns before it leaves a remaining norm that is only rounding noise. Dividing by it would give meaningless weights, so the code refuses it when that norm falls below <span class="math">\mathrm{tol} = \max(m, p)\, \varepsilon\, \max_j \lVert A_{:,j} \rVert</span>, where <span class="math">m</span> is the number of rows, <span class="math">p</span> the number of columns and <span class="math">\varepsilon</span> the machine epsilon. The page then shows SINGULAR: ADD RIDGE<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L93-L97" target="_blank" rel="noopener" title="regression/core.py, lines 93–97" aria-label="Code on GitHub: regression/core.py, lines 93 to 97">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L277-L291" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 277–291" aria-label="Code on GitHub: web/js/regression-core.js, lines 277 to 291">28</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L135-L150" target="_blank" rel="noopener" title="regression/core.py, lines 135–150" aria-label="Code on GitHub: regression/core.py, lines 135 to 150">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L263-L320" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 263–320" aria-label="Code on GitHub: web/js/regression-core.js, lines 263 to 320">29</a></span>
+    <pre class="pseudo-simple">function QR-SOLVE(X, y, λ):
+    A ← X;  b ← y
+    if λ &gt; 0:                           # ridge: one extra row √λ eₖ for each k ≥ 1
+        for k from 1 to p − 1:
+            append the row √λ eₖ to A, and 0 to b
+    for k from 0 to p − 1:
+        x ← A[k.., k]                   # column k, on and below the diagonal
+        α ← −‖x‖ if x[0] ≥ 0, else ‖x‖
+        v ← x;  v[0] ← v[0] − α
+        apply H = I − 2 v vᵀ / (vᵀ v) to A[k.., k..] and to b[k..]
+    return BACK-SUBSTITUTE(the top p rows of A, the top p entries of b)</pre>
+    <pre class="pseudo-full" hidden>function QR-SOLVE(X, y, λ):
+    A ← X;  b ← y
+    if λ &gt; 0:                           # ridge: extra rows instead of a penalty term
+        for k from 1 to p − 1:
+            append the row √λ · eₖ to A, and 0 to b
+    m ← number of rows of A;  p ← number of columns of A
+    tol ← max(m, p) · ε · (largest column norm of A)     # ε is the machine epsilon
+    for k from 0 to p − 1:
+        norm ← ‖A[k..m−1, k]‖
+        if norm ≤ tol:
+            raise error "rank deficient design"
+        α ← −norm if A[k, k] ≥ 0, else norm            # the sign that avoids cancellation
+        v ← A[k..m−1, k];  v[0] ← v[0] − α
+        vv ← vᵀ v
+        if vv = 0:
+            continue
+        for j from k to p − 1:                          # reflect each remaining column
+            A[k..m−1, j] ← A[k..m−1, j] − (2 · (vᵀ A[k..m−1, j]) / vv) · v
+        b[k..m−1] ← b[k..m−1] − (2 · (vᵀ b[k..m−1]) / vv) · v
+    R ← top p × p block of A;  c ← top p entries of b
+    for r from p − 1 down to 0:                         # back substitution
+        s ← c[r]
+        for col from r + 1 to p − 1:
+            s ← s − R[r, col] · w[col]
+        w[r] ← s / R[r, r]
+    return w</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version shows the reflections and the augmented rows. The <b>full</b> version adds the rank tolerance, the skip when a reflector is zero, and the update of each column and of <span class="math">y</span>. The JavaScript port has the same steps, except that it returns NaN weights where the Python code raises an error. The page treats NaN as singular.</p>
+  <p class="hiw-note"><b>Example.</b> A design with columns [1, x] and identical x values in every row has a second column that is a multiple of the first. After the first reflection its remaining norm is zero up to rounding, below the tolerance, so QR refuses the fit. Adding a ridge makes the augmented system full rank, which is why the page suggests a ridge.</p>
+
+  <h3 class="hiw-sub">Gradient descent</h3>
+  <p class="hiw-note"><b>Gradient descent</b> does not solve the system. It starts from zero weights and moves every weight a small step against the gradient. The <b>step size</b> <span class="math">\eta</span>, shown as STEP SIZE (log10) on the page, sets the length of each step. The gradient of the same objective is:</p>
+  <!-- regression/core.py:189-196 -->
+  <div class="math-fig">
+    <div class="math math-block">\nabla J(w) = \frac{2}{n}\left(X^{\top}(Xw - y) + \lambda D w\right), \qquad w \leftarrow w - \eta\, \nabla J(w)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L189-L196" target="_blank" rel="noopener" title="regression/core.py, lines 189–196" aria-label="Code on GitHub: regression/core.py, lines 189 to 196">30</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L235-L252" target="_blank" rel="noopener" title="regression/core.py, lines 235–252" aria-label="Code on GitHub: regression/core.py, lines 235 to 252">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L352-L365" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 352–365" aria-label="Code on GitHub: web/js/regression-core.js, lines 352 to 365">32</a></span>
+  </div>
+  <p class="hiw-note">Each step records <span class="math">J</span> at the weights it starts from. The recorded list therefore has one entry per step, plus a final entry at the last weights. If <span class="math">J</span> becomes non-finite or exceeds <span class="math">10^{12}</span>, the run stops and is marked <b>diverged</b>. The limit is a constant in the code<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L227-L232" target="_blank" rel="noopener" title="regression/core.py, lines 227–232" aria-label="Code on GitHub: regression/core.py, lines 227 to 232">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L235-L252" target="_blank" rel="noopener" title="regression/core.py, lines 235–252" aria-label="Code on GitHub: regression/core.py, lines 235 to 252">31</a>.</p>
+  <p class="hiw-note">The descent speed depends on the curvature of the loss in each direction. For a quadratic loss with Hessian <span class="math">H = \frac{2}{n}(X^{\top}X + \lambda D)</span>, a step size below <span class="math">2 / \lambda_{\max}(H)</span> shrinks every error direction. On all 30 points of the default data, that threshold is 0.99 at degree 1, 0.86 at degree 3, 0.81 at degree 5 and 0.74 at degree 10. The flattest direction, which lies in the long narrow valley, then moves slowly. That is why a degree-10 fit creeps for hundreds of steps.</p>
+  <p class="hiw-note">On the page, the descent runs STEPS PER FRAME steps in each animation frame, and the weights carry over between frames. They restart from zero only when the model or the degree changes, and they continue when points are moved. Consecutive frames share their boundary loss, so the recorded list holds one entry per step, and the loss chart plots the last 400 of them against their step numbers<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L137-L163" target="_blank" rel="noopener" title="web/js/regression.js, lines 137–163" aria-label="Code on GitHub: web/js/regression.js, lines 137 to 163">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L149-L154" target="_blank" rel="noopener" title="web/js/regression.js, lines 149–154" aria-label="Code on GitHub: web/js/regression.js, lines 149 to 154">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L404-L424" target="_blank" rel="noopener" title="web/js/regression.js, lines 404–424" aria-label="Code on GitHub: web/js/regression.js, lines 404 to 424">36</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L255-L266" target="_blank" rel="noopener" title="regression/core.py, lines 255–266" aria-label="Code on GitHub: regression/core.py, lines 255 to 266">37</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L329-L373" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 329–373" aria-label="Code on GitHub: web/js/regression-core.js, lines 329 to 373">38</a></span>
+    <pre class="pseudo-simple">function GRADIENT-DESCENT(X, y, η, steps, λ):
+    w ← zeros                           # start from zero weights
+    repeat steps times:
+        g ← (2 / n) (Xᵀ (X w − y) + λ D w)      # gradient of J at w
+        w ← w − η g                     # one step downhill
+    return w</pre>
+    <pre class="pseudo-full" hidden>function GRADIENT-DESCENT(X, y, η, steps, λ, w0):
+    w ← zeros, or a copy of w0 if it is given
+    losses ← empty list
+    diverged ← false
+    for t from 0 to steps − 1:
+        J ← (1 / n) (Σᵢ (yᵢ − xᵢ · w)² + λ Σ_{k ≥ 1} w[k]²)
+        append J to losses
+        if J is not finite or J &gt; 10¹²:
+            diverged ← true
+            break
+        g ← Xᵀ (X w − y)                # sum over the points of xᵢ · (xᵢ · w − yᵢ)
+        for k from 0 to p − 1:
+            penalty ← λ · w[k] if k ≥ 1, else 0          # the intercept is not penalised
+            w[k] ← w[k] − η · (2 / n) · (g[k] + penalty)
+    if not diverged:
+        J ← the same formula at the final w
+        append J to losses
+        diverged ← J is not finite or J &gt; 10¹²
+    return w, losses, diverged</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version is the update rule. The <b>full</b> version keeps the loss list and the divergence test. Both use the old weights for every component of the gradient, so the update is a true simultaneous step. <code>losses[t]</code> is <span class="math">J</span> at the weights that step <span class="math">t</span> starts from, and the last entry is <span class="math">J</span> at the final weights.</p>
+
+  <h3 class="hiw-sub">Ridge penalty</h3>
+  <p class="hiw-note">The <b>ridge</b> penalty <span class="math">\lambda \sum_{k \ge 1} w_k^2</span>, also called L2, shrinks the weights toward zero and smooths the curve. The intercept is not penalised, because lifting the whole curve does not make it wiggle. The penalty changes the normal equations to <span class="math">(X^{\top}X + \lambda D)w = X^{\top}y</span>, the QR system to the augmented one, and the gradient by the term <span class="math">\frac{2}{n}\lambda D w</span>. The RIDGE slider runs from 0 to 2 in steps of 0.01. Zero is plain least squares<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L46-L50" target="_blank" rel="noopener" title="regression/core.py, lines 46–50" aria-label="Code on GitHub: regression/core.py, lines 46 to 50">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L658-L662" target="_blank" rel="noopener" title="web/js/regression.js, lines 658–662" aria-label="Code on GitHub: web/js/regression.js, lines 658 to 662">40</a>.</p>
+
+  <h3 class="hiw-sub">Overfitting and the train/test split</h3>
+  <p class="hiw-note">With HOLD OUT TEST POINTS on, the fit uses only the training points. Test points are every fourth point, with id 3, 7, 11 and so on. The rule depends only on the point index, so it does not depend on a random draw<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L279-L285" target="_blank" rel="noopener" title="regression/core.py, lines 279–285" aria-label="Code on GitHub: regression/core.py, lines 279 to 285">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L66-L67" target="_blank" rel="noopener" title="web/js/regression.js, lines 66–67" aria-label="Code on GitHub: web/js/regression.js, lines 66 to 67">42</a>. The error on a set of points is the <b>mean squared error</b>:</p>
+  <!-- regression/core.py:288-293 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{MSE}(w) = \frac{1}{N} \sum_{i} (y_i - x_i \cdot w)^2</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L288-L293" target="_blank" rel="noopener" title="regression/core.py, lines 288–293" aria-label="Code on GitHub: regression/core.py, lines 288 to 293">43</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">N</span> is the number of points in the set. The sum runs over those points only, and the penalty is not included. <b>Overfitting</b> means the fit is much better on the points it was fitted to than on new points. The page sweeps the degree from 1 to 10, fits each degree on the training points, and measures the MSE on both sets<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L166-L183" target="_blank" rel="noopener" title="web/js/regression.js, lines 166–183" aria-label="Code on GitHub: web/js/regression.js, lines 166 to 183">44</a>. The default data, with 23 training points and 7 test points, gives:</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Degree</th><th>Train MSE</th><th>Test MSE</th></tr></thead><tbody>
+    <tr><td class="num">1</td><td class="num">0.3368</td><td class="num">0.2796</td></tr>
+    <tr><td class="num">3</td><td class="num">0.2870</td><td class="num">0.2868</td></tr>
+    <tr><td class="num">5</td><td class="num">0.0472</td><td class="num">0.0852</td></tr>
+    <tr><td class="num">7</td><td class="num">0.0141</td><td class="num">0.0718</td></tr>
+    <tr><td class="num">10</td><td class="num">0.0129</td><td class="num">0.0917</td></tr>
   </tbody></table></div>
+  <p class="hiw-note">Train MSE falls as the degree rises, from 0.3368 at degree 1 to 0.0129 at degree 10. Test MSE is lowest at degree 7, at 0.0718, and climbs to 0.0917 at degree 10, as the curve starts to follow the noise in the training points. The test set has only 7 points, so the exact location of the minimum is uncertain.</p>
+  <p class="hiw-note">Ridge is a second control. At degree 10 on the same split, a small penalty helps and a large one hurts: λ = 0.01 lowers the test MSE from 0.0917 to 0.0837, while λ = 0.05 raises it to 0.1311, and λ = 0.5 gives train 0.2899 and test 0.2531. A penalty that is too large underfits, so the train error rises with it. Choosing λ and the degree on held-out data is how the best model is picked.</p>
+
+  <h3 class="hiw-sub">Logistic regression and log-loss</h3>
+  <p class="hiw-note">For a 0/1 label, the model predicts a probability. The <b>logistic function</b>, also called the <b>sigmoid</b>, maps any real score into the interval (0, 1). The score is the linear combination <span class="math">z = x \cdot w</span>:</p>
+  <!-- regression/core.py:153-159 -->
+  <div class="math-fig">
+    <div class="math math-block">p_i = \sigma(x_i \cdot w), \qquad \sigma(z) = \frac{1}{1 + e^{-z}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L153-L159" target="_blank" rel="noopener" title="regression/core.py, lines 153–159" aria-label="Code on GitHub: regression/core.py, lines 153 to 159">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L178-L183" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 178–183" aria-label="Code on GitHub: web/js/regression-core.js, lines 178 to 183">46</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">p_i</span> is the predicted probability that point <span class="math">i</span> has label 1. The code evaluates the sigmoid on the side where <span class="math">e^{-z}</span> cannot overflow. The Python version also clips <span class="math">z</span> to ±500, which changes nothing visible, because beyond that range the sigmoid is 0 or 1 to machine precision.</p>
+  <p class="hiw-note">The <b>log-loss</b> of one point is <span class="math">-[y \log p + (1 - y)\log(1 - p)]</span>. It is small when the model gives high probability to the true label, and it grows without limit when the model is confidently wrong. The code computes it as <span class="math">\operatorname{softplus}(z) - yz</span>, where <span class="math">\operatorname{softplus}(z) = \log(1 + e^{z})</span>. This form never takes the logarithm of a probability that has rounded to 0 or 1<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L172-L186" target="_blank" rel="noopener" title="regression/core.py, lines 172–186" aria-label="Code on GitHub: regression/core.py, lines 172 to 186">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L185-L199" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 185–199" aria-label="Code on GitHub: web/js/regression-core.js, lines 185 to 199">48</a>.</p>
+  <!-- regression/core.py:172-186 -->
+  <div class="math-fig">
+    <div class="math math-block">J(w) = \frac{1}{n}\Big(\sum_{i=1}^{n} \big(\operatorname{softplus}(x_i \cdot w) - y_i\, x_i \cdot w\big) + \lambda \sum_{k=1}^{d} w_k^2\Big), \qquad \nabla J(w) = \frac{1}{n}\left(X^{\top}(p - y) + 2\lambda D w\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L172-L186" target="_blank" rel="noopener" title="regression/core.py, lines 172–186" aria-label="Code on GitHub: regression/core.py, lines 172 to 186">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L199-L210" target="_blank" rel="noopener" title="regression/core.py, lines 199–210" aria-label="Code on GitHub: regression/core.py, lines 199 to 210">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L190-L199" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 190–199" aria-label="Code on GitHub: web/js/regression-core.js, lines 190 to 199">50</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">p</span> is the vector of probabilities and <span class="math">y</span> the vector of labels. The objective averages the log-loss over the <span class="math">n</span> points and adds the same ridge penalty as the regression objective. The gradient has the same shape as the least-squares gradient, with the residual <span class="math">p - y</span> in place of <span class="math">Xw - y</span>. The penalty's derivative is <span class="math">2\lambda w</span>, which explains the factor 2<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L199-L210" target="_blank" rel="noopener" title="regression/core.py, lines 199–210" aria-label="Code on GitHub: regression/core.py, lines 199 to 210">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L352-L365" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 352–365" aria-label="Code on GitHub: web/js/regression-core.js, lines 352 to 365">32</a>.</p>
+  <p class="hiw-note">The <b>decision boundary</b> is where <span class="math">p = 0.5</span>, which is where <span class="math">x \cdot w = 0</span>. For degree 1 it is a straight line, and for higher degrees a curve. The features are the monomials <span class="math">x_1^i x_2^j</span> with <span class="math">i + j \le d</span>, so there are <span class="math">(d + 1)(d + 2)/2</span> weights. That is 3, 6, 10 and 15 for degrees 1 to 4<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L31-L43" target="_blank" rel="noopener" title="regression/core.py, lines 31–43" aria-label="Code on GitHub: regression/core.py, lines 31 to 43">51</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L303-L305" target="_blank" rel="noopener" title="web/js/regression.js, lines 303–305" aria-label="Code on GitHub: web/js/regression.js, lines 303 to 305">52</a>. The accuracy readout in the header is the fraction of points whose predicted side of 0.5 matches the label:</p>
+  <!-- regression/core.py:296-299 -->
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{acc} = \frac{1}{n} \sum_{i=1}^{n} \mathbf{1}\big[(p_i \ge 0.5) = (y_i > 0.5)\big]</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L296-L299" target="_blank" rel="noopener" title="regression/core.py, lines 296–299" aria-label="Code on GitHub: regression/core.py, lines 296 to 299">53</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L201-L209" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 201–209" aria-label="Code on GitHub: web/js/regression-core.js, lines 201 to 209">54</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\mathbf{1}[\cdot]</span> is 1 when the condition holds and 0 otherwise. Accuracy is a count of correct sides, so it ignores how confident each prediction is. The log-loss does not, which is why the two are read together.</p>
+
+  <h3 class="hiw-sub">Fitting the classifier</h3>
+  <p class="hiw-note">The classifier is fitted by the same descent as the regression, on every point, starting from zero weights. Only the residual and the constants change. The pseudocode below shows the update with the log-loss gradient.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py#L269-L276" target="_blank" rel="noopener" title="regression/core.py, lines 269–276" aria-label="Code on GitHub: regression/core.py, lines 269 to 276">55</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L337-L339" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 337–339" aria-label="Code on GitHub: web/js/regression-core.js, lines 337 to 339">56</a></span>
+    <pre class="pseudo-simple">function FIT-LOGISTIC(X, labels, η, steps, λ):
+    w ← zeros
+    repeat steps times:
+        p ← σ(X w)                      # probability of label 1, for each point
+        g ← (1 / n) (Xᵀ (p − labels) + 2 λ D w)
+        w ← w − η g
+    return w</pre>
+    <pre class="pseudo-full" hidden>function FIT-LOGISTIC(X, labels, η, steps, λ):
+    w ← zeros;  losses ← empty list;  diverged ← false
+    for t from 0 to steps − 1:
+        J ← LOG-LOSS(X, labels, w, λ)
+        append J to losses
+        if J is not finite or J &gt; 10¹²:
+            diverged ← true
+            break
+        r ← empty list
+        for each point i:
+            r[i] ← σ(xᵢ · w) − labels[i]    # p − y: the log-loss derivative
+        g ← Xᵀ r
+        for k from 0 to p − 1:
+            penalty ← 2 λ · w[k] if k ≥ 1, else 0      # derivative of λ w² is 2 λ w
+            w[k] ← w[k] − η · (1 / n) · (g[k] + penalty)
+    if not diverged:
+        J ← LOG-LOSS(X, labels, w, λ)
+        append J to losses
+        diverged ← J is not finite or J &gt; 10¹²
+    return w, losses, diverged
+
+function LOG-LOSS(X, labels, w, λ):
+    total ← 0
+    for each point i:
+        z ← xᵢ · w
+        total ← total + softplus(z) − labels[i] · z     # the log-loss of point i
+    return (total + λ Σ_{k ≥ 1} w[k]²) / n
+
+function softplus(z):
+    return max(z, 0) + log(1 + e^(−|z|))             # log(1 + eᶻ), without overflow</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version is the update: a sigmoid, a residual, and a step. The <b>full</b> version adds the log-loss bookkeeping, the divergence test, and the stable form of <span class="math">\operatorname{softplus}</span>. The JavaScript port evaluates the sigmoid on the side where the exponential is small, and the log-loss in the same softplus form<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js#L178-L199" target="_blank" rel="noopener" title="web/js/regression-core.js, lines 178–199" aria-label="Code on GitHub: web/js/regression-core.js, lines 178 to 199">57</a>.</p>
+  <p class="hiw-note"><b>Example.</b> On the default moons data, 60 points with seed 7, the page's accuracy is the same, 95.0%, at every feature degree from 1 to 4 when the descent runs 2,000 steps with step size 0.5. The log-loss still falls, from 0.1566 at degree 1 to 0.1092 at degree 4. The blobs preset reaches 100% at every degree, with a log-loss of about 0.015 after the same run. With the page's default step size of 0.1 and 500 steps, degree 1 reaches a log-loss of 0.1747 on the same data<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L46" target="_blank" rel="noopener" title="web/js/regression.js, line 46" aria-label="Code on GitHub: web/js/regression.js, line 46">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L123-L131" target="_blank" rel="noopener" title="web/js/regression.js, lines 123–131" aria-label="Code on GitHub: web/js/regression.js, lines 123 to 131">59</a>.</p>
+
+  <h3 class="hiw-sub">Step size and divergence</h3>
+  <p class="hiw-note">The table gives the objective <span class="math">J</span> after 500 steps from zero weights, on the default regression data, with no penalty. The last row is the exact least-squares value, from QR, for comparison.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Step size η</th><th>Degree 1</th><th>Degree 3</th><th>Degree 5</th><th>Degree 10</th></tr></thead><tbody>
+    <tr><td class="num">0.1</td><td class="num">0.32085</td><td class="num">0.28413</td><td class="num">0.27514</td><td class="num">0.23878</td></tr>
+    <tr><td class="num">0.5</td><td class="num">0.32085</td><td class="num">0.28346</td><td class="num">0.19947</td><td class="num">0.12772</td></tr>
+    <tr><td class="num">1</td><td class="num">7373, still growing</td><td>diverged</td><td>diverged</td><td>diverged</td></tr>
+    <tr><td>exact</td><td class="num">0.32085</td><td class="num">0.28346</td><td class="num">0.04898</td><td class="num">0.01979</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">At step size 0.1 and 0.5 every degree stays finite, but the high degrees are still far from the exact value after 500 steps. At step size 1, degree 1 stays finite but grows, and reaches about 7,400 at step 500. Degrees 3, 5 and 10 blow past the limit and stop early, within 60 steps. The threshold above, 0.74 at degree 10 and 0.86 at degree 3, explains the boundary between the stable and diverging rows<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js#L663-L666" target="_blank" rel="noopener" title="web/js/regression.js, lines 663–666" aria-label="Code on GitHub: web/js/regression.js, lines 663 to 666">60</a>.</p>
+
+  <h3 class="hiw-sub">Parameters and their defaults</h3>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Default</th><th>Range</th><th>Why this default</th></tr></thead><tbody>
+    <tr><td>Degree (linear / poly)</td><td class="num">3</td><td class="num">1 to 10</td><td>Degree 3 bends enough to follow the sine curve. On the default data the test error is lowest at degree 7.</td></tr>
+    <tr><td>Method</td><td>QR</td><td>QR, normal equations, descent</td><td>Exact and numerically stable. The normal equations give the same answer up to rounding, and lose digits at high degree.</td></tr>
+    <tr><td>Hold out test points</td><td>off</td><td>on / off</td><td>With it off, every square counts toward the loss. With it on, the fit uses three quarters of the points, and the green squares are not used for the fit.</td></tr>
+    <tr><td>Ridge λ</td><td class="num">0</td><td class="num">0 to 2</td><td>Zero is plain least squares, so overfitting is visible. A small value, 0.01, lowers the test error at degree 10 on the held-out split.</td></tr>
+    <tr><td>Step size η (log10)</td><td class="num">0.1</td><td class="num">0.001 to 1</td><td>Stable from 0.1 to 0.5 on the default data. At 1, degrees 3, 5 and 10 diverge.</td></tr>
+    <tr><td>Steps per frame</td><td class="num">4</td><td class="num">1 to 40</td><td>At a typical 60 frames a second, 4 steps per frame is about 240 steps a second.</td></tr>
+    <tr><td>Data</td><td>noisy sine, 30 points, noise 0.15</td><td>line, noisy sine, quadratic</td><td>Points on a known curve with noise 0.15. The line gives the simplest fit.</td></tr>
+    <tr><td>Logistic feature degree</td><td class="num">1</td><td class="num">1 to 4</td><td>The default moons data reaches 95% accuracy at degree 1 already. Higher degrees lower the log-loss.</td></tr>
+    <tr><td>Class for new points</td><td>cyan (1)</td><td>pink (0) or cyan (1)</td><td>The label given to each point added in logistic mode.</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note"><b>How these were chosen:</b> The page's defaults match the CLI defaults, so <code>python -m regression fit</code> starts from the same data and degree<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/regression/__main__.py#L183-L191" target="_blank" rel="noopener" title="regression/__main__.py, lines 183–191" aria-label="Code on GitHub: regression/__main__.py, lines 183 to 191">61</a>. The tables above were measured from this code on the default data.</p>
 
   <h3 class="hiw-sub">Try this</h3>
-  <p class="hiw-note">Set degree 10 and click HOLD OUT TEST POINTS: the curve threads the training points, and the green test squares are the ones to watch. Then raise RIDGE to 0.3 and compare. For the descent, pick METHOD: gradient descent at degree 10 with the step size at 0.3, and watch the purple target stay far ahead of the curve; at step size 1 it blows up.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/core.py">regression/core.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/data.py">regression/data.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/regression/__main__.py">regression/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression-core.js">web/js/regression-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/regression.js">web/js/regression.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_regression.py">tests/test_regression.py</a></p>
+  <p class="hiw-note">Set degree 10 and click HOLD OUT TEST POINTS. The curve threads the training points, and the green test squares are the ones to watch. Then set RIDGE to 0.3 and compare. For the descent, choose gradient descent in METHOD, keep the step size at about 0.3, and watch the purple dashed target stay far ahead of the curve. At step size 1 the run diverges.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/regression.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

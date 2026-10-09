@@ -13,7 +13,7 @@ A particle is one guess at the robot's pose (x, y, th). Each step:
                are kept, a fast one and a slow one. When the fast average falls well below the slow one, the robot
                has probably been kidnapped (or the map and the sensor disagree), so a fraction of the particles is
                replaced by poses drawn uniformly over the floor. The fraction is 1 - fast/slow, from the ratio of
-               the two.
+               the two. The replaced particles are a uniform random subset, so no hypothesis is wiped out.
 
 The estimate reports the densest cluster of particles, not the mean of the whole cloud. With two possible
 locations the mean would fall between them, in a wall; the cluster around the heaviest particle is a place the robot
@@ -63,6 +63,7 @@ class ParticleFilter:
         self.ess = float(n)
         self.p_inject = 0.0
         self.injected = 0
+        self.replaced = np.empty(0, dtype=np.int64)  # indices replaced by the injection on the latest tick
         self.resampled = False
         self.ls = None   # slow log-likelihood average
         self.lf = None   # fast log-likelihood average
@@ -107,15 +108,31 @@ class ParticleFilter:
         self.resampled = self.ess < n / 2.0
         if self.resampled:
             self._systematic_resample()
-        # 4. Recovery: replace the lowest-weight particles with uniform draws.
+        # 4. Recovery: replace a random subset of the particles with uniform draws.
         self.injected = int(round(self.p_inject * n))
         if self.injected > 0:
-            idx = np.argsort(self.w, kind="stable")[: self.injected]
+            idx = self._choose_replaced(self.injected)
+            self.replaced = idx
             x, y, th = self._sample_cells(self.injected)
             self.x[idx], self.y[idx], self.th[idx] = x, y, th
             self.w[idx] = 1.0 / n
             self.w /= self.w.sum()
         self.steps += 1
+
+    def _choose_replaced(self, k: int) -> np.ndarray:
+        """Indices of k particles chosen uniformly at random without replacement (a partial Fisher-Yates shuffle).
+
+        Step i swaps position i with a uniform position j in [i, N). After k steps the first k positions hold the
+        chosen particles. Systematic resampling leaves copies of a good particle next to each other, so taking the
+        first k indices would replace one or two hypotheses wholesale. The random choice spreads the replacements
+        over the whole cloud, as in Thrun, Burgard and Fox's augmented MCL. It does not look at the weights."""
+        n = self.n
+        perm = np.arange(n)
+        u = self.stream.uniforms(k)
+        for i in range(k):
+            j = i + min(n - 1 - i, int(u[i] * (n - i)))
+            perm[i], perm[j] = perm[j], perm[i]
+        return perm[:k]
 
     def _systematic_resample(self) -> None:
         """Low-variance resampling: one uniform u0 in [0, 1/N), then pointers u0 + i/N through the cumulative

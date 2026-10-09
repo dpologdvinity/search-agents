@@ -4,15 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>N-PUZZLE // SEARCH AGENTS</title>
-<meta name="description" content="Watch nine search algorithms solve the N-Puzzle live, including IDA* with a pattern database and a neural heuristic trained by value iteration.">
+<meta name="description" content="Watch ten search algorithms solve the N-Puzzle live, including IDA* with a pattern database and a neural heuristic trained by value iteration.">
 <meta property="og:title" content="N-PUZZLE // SEARCH AGENTS">
-<meta property="og:description" content="Watch nine search algorithms solve the N-Puzzle live, including IDA* with a pattern database and a neural heuristic trained by value iteration.">
+<meta property="og:description" content="Watch ten search algorithms solve the N-Puzzle live, including IDA* with a pattern database and a neural heuristic trained by value iteration.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/npuzzle.html">
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -32,7 +33,7 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">01 // STATE-SPACE SEARCH · PYTHON BACKEND</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="N-PUZZLE AGENTS">N-PUZZLE AGENTS</h1>
-      <div class="proj-pg-sub">10 algorithms · 4 heuristics, including a pattern database and a learned neural heuristic · streamed live from Python</div>
+      <div class="proj-pg-sub">Ten search algorithms solve the sliding puzzle live, with each search streamed from Python.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -44,13 +45,20 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to slide the tiles into order, with the blank in the top-left corner. Click a tile next to the blank to slide it, or press an arrow key to move the blank.</p>
+    <p style="margin-top:0.5rem">Pick an algorithm and press SOLVE. The search streams here as it runs, and the exploration panels show the boards it is expanding.</p>
+    <p style="margin-top:0.5rem">When a solution is found, PLAY replays it one slide at a time, and STEP moves through it by hand.</p>
+  </section>
+
   <div class="proj-body">
 
     <!-- BOARD + VISUALIZATION -->
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1.1rem">
         <div id="board" class="np-grid"></div>
-        <div class="field-hint" id="board-hint">Click a tile next to the blank to move it, or let an agent solve it.</div>
+        <div class="field-hint" id="board-hint">Click a tile next to the blank, or press an arrow key. The agents solve from the board shown.</div>
 
         <div style="width:100%;max-width:380px">
           <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem">
@@ -63,12 +71,12 @@
         </div>
 
         <div class="inline" style="justify-content:center">
-          <button class="cyber-btn pink" id="btn-solve"><span class="btn-txt">▶ SOLVE</span></button>
-          <button class="cyber-btn" id="btn-cancel" disabled><span class="btn-txt">■ STOP</span></button>
-          <button class="cyber-btn" id="btn-back" disabled><span class="btn-txt">◀ STEP</span></button>
-          <button class="cyber-btn" id="btn-fwd" disabled><span class="btn-txt">STEP ▶</span></button>
-          <button class="cyber-btn green" id="btn-play" disabled><span class="btn-txt">▶ PLAY</span></button>
-          <button class="cyber-btn" id="btn-reset"><span class="btn-txt">↺ RESET</span></button>
+          <button class="cyber-btn pink" id="btn-solve" title="Run the selected algorithm on this board"><span class="btn-txt">▶ SOLVE</span></button>
+          <button class="cyber-btn" id="btn-cancel" disabled title="Stop the running search"><span class="btn-txt">■ STOP</span></button>
+          <button class="cyber-btn" id="btn-back" disabled title="Go back one slide in the solution"><span class="btn-txt">◀ STEP</span></button>
+          <button class="cyber-btn" id="btn-fwd" disabled title="Go forward one slide in the solution"><span class="btn-txt">STEP ▶</span></button>
+          <button class="cyber-btn green" id="btn-play" disabled title="Replay the solution one slide at a time"><span class="btn-txt">▶ PLAY</span></button>
+          <button class="cyber-btn" id="btn-reset" title="Return to the start of the solution, or to the goal"><span class="btn-txt">↺ RESET</span></button>
         </div>
         <div class="moves-list" id="moves-list" style="max-width:520px;text-align:center"></div>
       </div>
@@ -80,17 +88,16 @@
             <div class="viz-title">Expanding now</div>
             <div id="mini-board" class="mini-grid"></div>
             <div class="field-hint" id="mini-info">g = — · h = —</div>
-            <button class="cyber-btn" id="btn-replay" style="padding:0.3rem 0.6rem;font-size:0.58rem" disabled><span class="btn-txt">↻ REPLAY SEARCH</span></button>
+            <button class="cyber-btn" id="btn-replay" style="padding:0.3rem 0.6rem;font-size:0.58rem" disabled title="Replay the recorded expansions on this board and the charts"><span class="btn-txt">↻ REPLAY SEARCH</span></button>
           </div>
           <div class="viz-panel">
             <div class="viz-title">Expanded states: depth g vs Manhattan h</div>
-            <canvas id="scatter"></canvas>
-            <div class="field-hint" id="scatter-note">Color shows expansion order, cyan to pink. Shows the first 3,000 expansions.</div>
+            <canvas id="scatter" title="Each point is an expanded board: x is its depth g, y is its Manhattan distance h. Colour runs from cyan (first) to pink (last)."></canvas>
+            <div class="field-hint" id="scatter-note">Cyan is the first expansion, pink the last. The first 3,000 are shown.</div>
           </div>
           <div class="viz-panel">
             <div class="viz-title">Expansions per depth</div>
-            <canvas id="histogram"></canvas>
-            <div class="field-hint">Breadth-first fills every layer; informed search reaches deep layers with few nodes.</div>
+            <canvas id="histogram" title="Boards expanded at each depth g. Breadth-first search fills every layer; informed search reaches deep layers with few boards."></canvas>
           </div>
         </div>
       </div>
@@ -99,7 +106,7 @@
         <div class="section-title purple-ttl">COMPARE ALGORITHMS ON THIS BOARD</div>
         <div class="cmp-presets" id="cmp-presets"></div>
         <div class="inline" style="margin-top:0.7rem">
-          <button class="cyber-btn" id="btn-compare"><span class="btn-txt">⇶ RUN COMPARISON</span></button>
+          <button class="cyber-btn" id="btn-compare" title="Run each ticked configuration on this board, one after another"><span class="btn-txt">⇶ RUN COMPARISON</span></button>
           <span class="field-hint" id="cmp-status"></span>
         </div>
         <table class="cmp-table" style="margin-top:0.7rem">
@@ -108,12 +115,12 @@
         </table>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">SEARCH LOG</div>
+      <details class="log-fold" style="margin-top:1.6rem">
+        <summary>Search log</summary>
         <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)">
           <span class="log-info">// Connecting to the Python search server…</span>
         </div>
-      </div>
+      </details>
     </div>
 
     <!-- CONTROLS -->
@@ -122,28 +129,33 @@
         <div class="section-title pink-ttl">PUZZLE SETUP</div>
         <div class="stack">
           <div>
-            <div class="field-lbl">PUZZLE SIZE</div>
-            <select class="cyber-select" id="size" style="width:100%">
-              <option value="3">8-Puzzle (3×3)</option>
-              <option value="4">15-Puzzle (4×4)</option>
-            </select>
-          </div>
-          <div>
             <div class="field-lbl">SCRAMBLE DEPTH: <span id="depth-lbl" style="color:var(--pink)">20</span> RANDOM MOVES</div>
-            <input type="range" class="cyber-range" id="depth" min="1" max="80" value="20">
+            <input type="range" class="cyber-range" id="depth" min="1" max="80" value="20" aria-label="Scramble depth" title="How many random slides the scramble makes from the goal">
           </div>
           <div class="inline">
-            <button class="cyber-btn pink grow" id="btn-scramble"><span class="btn-txt">⚄ SCRAMBLE</span></button>
-            <button class="cyber-btn grow" id="btn-random"><span class="btn-txt">⚂ FULLY RANDOM</span></button>
+            <button class="cyber-btn pink grow" id="btn-scramble" title="A solvable board made by random slides from the goal"><span class="btn-txt">⚄ SCRAMBLE</span></button>
+            <button class="cyber-btn grow" id="btn-random" title="A uniformly random solvable board"><span class="btn-txt">⚂ FULLY RANDOM</span></button>
           </div>
-          <div>
-            <div class="field-lbl">CUSTOM BOARD (comma-separated, 0 = blank)</div>
-            <div class="inline">
-              <input type="text" class="cyber-input grow" id="custom" placeholder="7,2,4,5,0,6,8,3,1">
-              <button class="cyber-btn" id="btn-load"><span class="btn-txt">LOAD</span></button>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <div class="stack">
+              <div>
+                <div class="field-lbl">PUZZLE SIZE</div>
+                <select class="cyber-select" id="size" style="width:100%" aria-label="Puzzle size" title="8-puzzle on a 3 × 3 board, or 15-puzzle on a 4 × 4 board">
+                  <option value="3">8-Puzzle (3×3)</option>
+                  <option value="4">15-Puzzle (4×4)</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-lbl">CUSTOM BOARD</div>
+                <div class="inline">
+                  <input type="text" class="cyber-input grow" id="custom" placeholder="7,2,4,5,0,6,8,3,1" aria-label="Custom board" title="Enter 9 or 16 tiles row by row, separated by commas, with 0 for the blank. Unsolvable boards are rejected.">
+                  <button class="cyber-btn" id="btn-load" title="Load the typed board"><span class="btn-txt">LOAD</span></button>
+                </div>
+                <div class="field-err" id="custom-err"></div>
+              </div>
             </div>
-            <div class="field-err" id="custom-err"></div>
-          </div>
+          </details>
         </div>
       </div>
 
@@ -152,29 +164,25 @@
         <div class="stack">
           <div>
             <div class="field-lbl">ALGORITHM</div>
-            <select class="cyber-select" id="algorithm" style="width:100%"></select>
+            <select class="cyber-select" id="algorithm" style="width:100%" title="The search algorithm that solves the board"></select>
           </div>
           <div id="heuristic-wrap">
             <div class="field-lbl">HEURISTIC</div>
-            <select class="cyber-select" id="heuristic" style="width:100%"></select>
+            <select class="cyber-select" id="heuristic" style="width:100%" title="The estimate of moves left that the search uses"></select>
           </div>
           <div id="weight-wrap" class="hidden">
             <div class="field-lbl">HEURISTIC WEIGHT w: <span id="weight-lbl" style="color:var(--pink)">2.0</span></div>
-            <input type="range" class="cyber-range" id="weight" min="1" max="5" step="0.1" value="2">
+            <input type="range" class="cyber-range" id="weight" min="1" max="5" step="0.1" value="2" aria-label="Heuristic weight" title="Weight w on the heuristic in f = g + w·h. Higher is faster, with longer paths possible.">
           </div>
           <div id="bwas-wrap" class="hidden stack">
             <div>
               <div class="field-lbl">BATCH SIZE: <span id="batch-lbl" style="color:var(--pink)">100</span></div>
-              <input type="range" class="cyber-range" id="batch" min="1" max="1000" step="1" value="100">
+              <input type="range" class="cyber-range" id="batch" min="1" max="1000" step="1" value="100" aria-label="Batch size" title="Boards popped and expanded per step; their children share one heuristic call">
             </div>
             <div>
               <div class="field-lbl">g WEIGHT: <span id="gw-lbl" style="color:var(--pink)">0.8</span></div>
-              <input type="range" class="cyber-range" id="gweight" min="0.1" max="1" step="0.05" value="0.8">
+              <input type="range" class="cyber-range" id="gweight" min="0.1" max="1" step="0.05" value="0.8" aria-label="g weight" title="Weight on the moves made so far in f = g_weight·g + h. Lower favours the heuristic.">
             </div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div class="field-hint" id="algo-desc">—</div>
-            <div class="field-hint" id="heur-desc" style="margin-top:0.4rem;color:var(--text)"></div>
           </div>
         </div>
       </div>
@@ -182,27 +190,13 @@
       <div>
         <div class="section-title pink-ttl">SEARCH STATS</div>
         <div class="stack" style="gap:0.4rem">
-          <div class="row-stat"><span class="lbl">PATH LENGTH</span><span class="val pink" id="st-path">—</span></div>
-          <div class="row-stat"><span class="lbl">NODES EXPANDED</span><span class="val" id="st-nodes">—</span></div>
-          <div class="row-stat"><span class="lbl">NODES / SECOND</span><span class="val" id="st-rate">—</span></div>
-          <div class="row-stat"><span class="lbl">MAX FRONTIER</span><span class="val" id="st-frontier">—</span></div>
-          <div class="row-stat"><span class="lbl">MAX DEPTH</span><span class="val purple" id="st-depth">—</span></div>
-          <div class="row-stat"><span class="lbl">SEARCH TIME</span><span class="val green" id="st-time">—</span></div>
-          <div class="row-stat"><span class="lbl">YOUR MOVES</span><span class="val yellow" id="st-yours">0</span></div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">NOTES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">RUNS ON THE SERVER</div>
-            <div class="field-hint">Every search runs in Python on the backend and streams here over a WebSocket. Searches stop after 10 seconds. Searches that keep every state in memory stop at 250,000 nodes; IDS and IDA* keep only the current path and may run to 3 million.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">⚠ UNINFORMED SEARCH ON 4×4</div>
-            <div class="field-hint">The 15-puzzle has about 10¹³ reachable states. BFS, DFS, IDS, and UCS hit the limits on deep scrambles; IDA* with the pattern database solves uniformly random boards.</div>
-          </div>
+          <div class="row-stat"><span class="lbl" title="Moves in the solution the search found">PATH LENGTH</span><span class="val pink" id="st-path">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Boards the search expanded, which means generated their children">NODES EXPANDED</span><span class="val" id="st-nodes">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Expanded boards per second of search time">NODES / SECOND</span><span class="val" id="st-rate">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Largest number of boards waiting to be expanded">MAX FRONTIER</span><span class="val" id="st-frontier">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Deepest board expanded, counted in moves from the start">MAX DEPTH</span><span class="val purple" id="st-depth">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Wall-clock time of the search on the server">SEARCH TIME</span><span class="val green" id="st-time">—</span></div>
+          <div class="row-stat"><span class="lbl" title="Slides you have made by hand on this board">YOUR MOVES</span><span class="val yellow" id="st-yours">0</span></div>
         </div>
       </div>
     </div>
@@ -211,77 +205,491 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Each agent searches the space of board positions. A move slides one tile into the blank square, and the agent looks for a shortest sequence of slides to the solved board. The ten methods differ in which board they explore next; the informed ones use a heuristic, an estimate of the moves still needed.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Breadth-first search (BFS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Check every spot one step from the start, then every spot two steps away, and so on. The first arrival at the goal is always by the fewest steps.</p>
-      <p>Expands every board k slides away before any board k+1 away. Always shortest; on deep 15-puzzle scrambles it hits the node limit.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Depth-first search (DFS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Explore a maze by taking the first unexplored corridor and turning back only at dead ends. It remembers little, but the route is often far longer than the shortest.</p>
-      <p>Follows one line of slides as far as it goes. On the 8-puzzle benchmark no DFS path was optimal (0 of 50), with a mean of 43,671.8 moves against 21.8.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Iterative deepening search (IDS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Search one step deep, then two, then three, starting over each time. The repeats are cheap, so you keep breadth-first's guarantee with little memory.</p>
-      <p>Depth-first search with a depth limit that grows each round. Optimal. Only the current path is kept, so it may expand up to 3 million boards.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Uniform-cost search (UCS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Like breadth-first search, but always extend the cheapest route so far, in case roads differ in length.</p>
-      <p>Orders the frontier by path cost g. Every slide costs 1 here, so it returns the same lengths as BFS with more bookkeeping.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Bidirectional BFS</h3>
-      <p class="hiw-plain"><b>New to this?</b> Two walkers start at opposite ends of a trail and meet in the middle, covering far less ground than one walker.</p>
-      <p>Runs BFS from both boards until the frontiers meet. Optimal on all 50 benchmark boards, expanding a mean of 1,941 boards against 73,756 for BFS.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy best-first search</h3>
-      <p class="hiw-plain"><b>New to this?</b> At each fork take the road that looks closest to the destination by a rough estimate, ignoring the distance already driven. It is quick, but the estimate can lead into dead ends.</p>
-      <p>Orders the frontier by h alone. Only 5 of 50 paths were optimal on the 8-puzzle benchmark, with a mean of 40.7 moves against 21.8.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>A* search</h3>
-      <p class="hiw-plain"><b>New to this?</b> Pick the route with the smallest total of distance travelled plus an estimate of distance left. If the estimate never overshoots, the first arrival is by a shortest route.</p>
-      <p>Orders boards by f = g + h. Optimal when h never overestimates. On the 8-puzzle benchmark it expanded a mean of 771 boards with Manhattan and 404 with linear conflict, optimal in every case.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Weighted A*</h3>
-      <p class="hiw-plain"><b>New to this?</b> Give the estimate more say than the distance travelled. You reach the goal sooner, at the price of a route that may be a little longer.</p>
-      <p>Orders boards by f = g + w·h, with w = 2 by default (slider 1 to 5). With an admissible heuristic the answer is at most w times optimal. At w = 2 on the benchmark: 313 boards expanded, 20 of 50 optimal, mean gap 8.7%.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>IDA* search</h3>
-      <p class="hiw-plain"><b>New to this?</b> A depth-first search that refuses to go past a cost limit. If it fails, raise the limit to the smallest cost it cut off and retry. You get A*'s answers with very little memory, at the price of repeated early work.</p>
-      <p>A* with iterative deepening on f. Optimal with an admissible heuristic. On the 40-board 15-puzzle run with the pattern database, the median was 598,988.5 boards expanded.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Batch weighted A* (BWAS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Ask the neural network about a whole tray of boards in one call instead of one at a time. That avoids most of the per-call overhead.</p>
-      <p>Weighted A* with f = g_weight·g + h, g_weight = 0.8 by default, popping up to 100 boards per step. Paths are not guaranteed optimal. Built for the neural heuristic.</p>
-    </article>
+  <p class="hiw-lede">This page runs ten search algorithms on the N-Puzzle, a sliding-tile puzzle: the 8-puzzle on a 3 × 3 board, and the 15-puzzle on a 4 × 4 board. A <b>search</b> starts from the scrambled board and looks for a shortest sequence of slides to the solved board. The methods differ in which board they expand next. The informed methods use a <b>heuristic</b>, an estimate of the moves still needed.</p>
+
+  <h3 class="hiw-sub">The board, the moves and the goal</h3>
+  <p>A <b>board</b> is a list of n × n tiles read row by row, where n = 3 for the 8-puzzle and n = 4 for the 15-puzzle. The number 0 marks the <b>blank</b> square, and the other numbers are the <b>tiles</b>. The code stores a board as a tuple of n² integers, and a tile's index is its position in reading order.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L1-L6" target="_blank" rel="noopener" title="npuzzle/board.py, lines 1–6" aria-label="Code on GitHub: npuzzle/board.py, lines 1 to 6">1</a></p>
+  <p>The <b>goal</b> is the solved board (0, 1, …, n² − 1). Its blank is in the top-left corner, and tile t sits at index t.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L33-L35" target="_blank" rel="noopener" title="npuzzle/board.py, lines 33–35" aria-label="Code on GitHub: npuzzle/board.py, lines 33 to 35">2</a> A <b>move</b> slides a tile into the blank, which is the same as the blank moving one square up, down, left or right. A move that would leave the board is not <b>legal</b>. The blank has two legal moves in a corner, three on an edge and four in the middle. The code lists them in the order Up, Down, Left, Right.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L38-L54" target="_blank" rel="noopener" title="npuzzle/board.py, lines 38–54" aria-label="Code on GitHub: npuzzle/board.py, lines 38 to 54">3</a></p>
+  <p>A <b>successor</b> is a board reached by one legal move. The state space is the set of boards reachable from the start, and a search explores it one successor at a time.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L57-L63" target="_blank" rel="noopener" title="npuzzle/board.py, lines 57–63" aria-label="Code on GitHub: npuzzle/board.py, lines 57 to 63">4</a></p>
+  <p>Not every board can reach the goal. Let inv(s) be the number of <b>inversions</b> of board s: the pairs of tiles, not counting the blank, that stand in the wrong order, with the larger tile first. Let b be the index of the blank, so that ⌊b/n⌋ is its row. A board is solvable when the formula below holds.</p>
+  <div class="math-fig">
+    <!-- npuzzle/board.py:80-92 -->
+    <div class="math math-block">\text{solvable}(s) \iff \begin{cases} \operatorname{inv}(s) \text{ is even} & n \text{ odd} \\ \operatorname{inv}(s) + \lfloor b/n \rfloor \text{ is even} & n \text{ even} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L80-L92" target="_blank" rel="noopener" title="npuzzle/board.py, lines 80–92" aria-label="Code on GitHub: npuzzle/board.py, lines 80 to 92">5</a></span>
   </div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Manhattan</td><td>Row and column steps from each tile to its goal square, summed. The blank is not counted.</td><td class="num">Exact sum, no weight. Never overestimates.</td></tr>
-    <tr><td>Linear conflict</td><td>Manhattan, plus 2 for each tile that must leave its row or column so a tile belonging there can pass.</td><td class="num">+2 per removed tile (the rule's constant)</td></tr>
-    <tr><td>5-5-5 pattern database (4×4)</td><td>Exact moves to place three groups of five tiles, ignoring the others: (1,2,3,6,7), (4,5,8,9,12), (10,11,13,14,15). The three costs are added.</td><td class="num">Tables of 16⁵ = 1,048,576 entries per group, built by a 0-1 breadth-first search from the goal; stored in npuzzle/data/pdb_555.npz</td></tr>
-    <tr><td>Neural correction (4×4)</td><td>h = PDB + softplus(MLP(board)). Not admissible.</td><td class="num">Learned. Output weights start at zero and the output bias at −4, so h starts near the pattern database.</td></tr>
+  <p>For an odd n, a move never changes the parity of inv(s). For an even n, a vertical move changes inv(s) by n − 1, which is odd, so the row of the blank is needed to keep the parity fixed. Exactly half of all arrangements are solvable, so the 15-puzzle has <span class="math">16!/2 \approx 1.05 \times 10^{13}</span> reachable boards.</p>
+  <p><i>Example.</i> Swapping tiles 1 and 2 on the 8-puzzle gives (0, 2, 1, 3, 4, 5, 6, 7, 8). Its one inversion is odd, so the board cannot reach the goal, and <code>is_solvable</code> returns False for it.</p>
+
+  <h3 class="hiw-sub">Breadth-first search (BFS)</h3>
+  <p><b>Breadth-first search</b> expands boards in order of their distance from the start, so every board k moves away is expanded before any board k + 1 moves away. Its <b>frontier</b>, the set of boards generated but not yet expanded, is a first-in, first-out queue. A <b>reached</b> set holds every board generated so far, so no board enters the queue twice. Every move costs 1, so the first arrival at the goal lies on a shortest path.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L96-L125" target="_blank" rel="noopener" title="npuzzle/search.py, lines 96–125" aria-label="Code on GitHub: npuzzle/search.py, lines 96 to 125">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L14-L34" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 14–34" aria-label="Code on GitHub: npuzzle/frontier.py, lines 14 to 34">7</a></p>
+  <p>The goal test runs when a board is generated, not when it leaves the queue. That finds the goal one full layer of expansions earlier.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L121-L122" target="_blank" rel="noopener" title="npuzzle/search.py, lines 121–122" aria-label="Code on GitHub: npuzzle/search.py, lines 121 to 122">8</a></p>
+  <p>BFS stores every board it reaches, so its memory grows with the number of boards. The server stops any search that stores boards at 250,000 expanded boards, and BFS hits that limit on deep 15-puzzle scrambles.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L41" target="_blank" rel="noopener" title="server/npuzzle_api.py, line 41" aria-label="Code on GitHub: server/npuzzle_api.py, line 41">9</a></p>
+  <p>On the 8-puzzle benchmark, BFS solved all 50 boards optimally. It expanded a mean of 73,756 boards for a mean path of 21.8 moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L96-L125" target="_blank" rel="noopener" title="npuzzle/search.py, lines 96–125" aria-label="Code on GitHub: npuzzle/search.py, lines 96 to 125">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L14-L34" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 14–34" aria-label="Code on GitHub: npuzzle/frontier.py, lines 14 to 34">7</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L57-L63" target="_blank" rel="noopener" title="npuzzle/board.py, lines 57–63" aria-label="Code on GitHub: npuzzle/board.py, lines 57 to 63">4</a></span>
+    <pre class="pseudo-simple">function BFS(start):
+    frontier ← queue holding start
+    reached ← {start}
+    while frontier is not empty:
+        board ← remove the oldest board from frontier
+        for each move m in LEGAL-MOVES(board):
+            child ← RESULT(board, m)
+            if child is the goal:
+                return the moves from start to child
+            if child is not in reached:
+                add child to reached
+                add child to frontier
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>function BFS(start):
+    if not SOLVABLE(start):                          # the parity test in the formula above
+        return unsolvable
+    if start is the goal:
+        return solved, with no moves
+    frontier ← queue holding start                   # first in, first out
+    reached ← {start}                                # every board ever queued
+    while frontier is not empty:
+        if expanded ≥ max-nodes, or the time limit has passed:
+            return limit reached                     # checked before each expansion
+        board ← remove the oldest board from frontier
+        expanded ← expanded + 1
+        for each (move, child) in SUCCESSORS(board):  # Up, Down, Left, Right
+            if child is in reached:
+                continue
+            generated ← generated + 1
+            node ← child, with parent board, move and depth ← depth(board) + 1
+            if child is the goal:
+                return solved, the moves from start to node   # found at generation
+            add child to reached
+            add node to the back of frontier
+    return exhausted                                 # nothing left to search</pre>
+  </div>
+  <p><b>Goal test at generation.</b> The full version tests the goal as each child is made, which is why the search returns one layer sooner than a test at removal would. The node holds its parent and move, so the path is rebuilt by walking the parent links back to the start.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/board.py#L101-L125" target="_blank" rel="noopener" title="npuzzle/board.py, lines 101–125" aria-label="Code on GitHub: npuzzle/board.py, lines 101 to 125">11</a></p>
+  <p><b>Reached set.</b> A board is added to reached when it is queued, not when it is expanded. Without it a board could enter the queue once for each path that reaches it.</p>
+
+  <h3 class="hiw-sub">Depth-first search (DFS)</h3>
+  <p><b>Depth-first search</b> follows one line of moves as far as it can, then backs up to the last choice that is still open. Its frontier is a last-in, first-out <b>stack</b>. It often finds a solution quickly, but that solution is rarely a short one.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L128-L152" target="_blank" rel="noopener" title="npuzzle/search.py, lines 128–152" aria-label="Code on GitHub: npuzzle/search.py, lines 128 to 152">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L37-L43" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 37–43" aria-label="Code on GitHub: npuzzle/frontier.py, lines 37 to 43">13</a></p>
+  <p>The code pushes the successors in reverse order, so that they come off the stack in Up, Down, Left, Right order. The goal is tested when a board leaves the stack. A board that is already expanded or already on the stack is not pushed again.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L141-L151" target="_blank" rel="noopener" title="npuzzle/search.py, lines 141–151" aria-label="Code on GitHub: npuzzle/search.py, lines 141 to 151">14</a></p>
+  <p>On the 8-puzzle benchmark no DFS path was optimal (0 of 50). Its mean path was 43,671.8 moves, against 21.8 for BFS, and it expanded a mean of 79,209 boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L128-L152" target="_blank" rel="noopener" title="npuzzle/search.py, lines 128–152" aria-label="Code on GitHub: npuzzle/search.py, lines 128 to 152">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L37-L43" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 37–43" aria-label="Code on GitHub: npuzzle/frontier.py, lines 37 to 43">13</a></span>
+    <pre class="pseudo-simple">function DFS(start):
+    stack ← [start]
+    done ← empty set
+    while stack is not empty:
+        board ← pop the top of stack
+        if board is the goal:
+            return the moves from start to board
+        add board to done
+        for each child of board:
+            if child is not in done and not on stack:
+                push child onto stack
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>function DFS(start):
+    if not SOLVABLE(start):
+        return unsolvable
+    stack ← [start]                                  # last in, first out
+    done ← empty set                                 # boards already expanded
+    while stack is not empty:
+        board ← pop the top of stack
+        if board is the goal:
+            return solved, the moves from start to board
+        if expanded ≥ max-nodes, or the time limit has passed:
+            return limit reached
+        add board to done
+        expanded ← expanded + 1
+        for each (move, child) in reverse(SUCCESSORS(board)):   # so Up is popped first
+            if child is not in done and not on stack:
+                generated ← generated + 1
+                push node for child onto stack
+    return exhausted</pre>
+  </div>
+  <p><b>Reverse push order.</b> Pushing the successors in reverse makes the last one pushed, the Up move, the first one popped. The search therefore prefers Up, then Down, Left and Right, at every board.</p>
+
+  <h3 class="hiw-sub">Iterative deepening search (IDS)</h3>
+  <p><b>Iterative deepening search</b> runs depth-first search with a depth limit that starts at 0 and grows by one each round. Each round repeats the work of the earlier rounds, but those repeats are cheap, because the number of boards grows quickly with depth. The first round that finds the goal has found a shortest path, so IDS is optimal. It keeps only the current path in memory.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L116-L118" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 116–118" aria-label="Code on GitHub: npuzzle/iterative.py, lines 116 to 118">15</a></p>
+  <p>IDS is the IDA* procedure below with the heuristic set to zero, so its bound is the depth limit. Since only the path is stored, IDS may expand up to 3,000,000 boards, against 250,000 for the searches that store every board.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L42-L43" target="_blank" rel="noopener" title="server/npuzzle_api.py, lines 42–43" aria-label="Code on GitHub: server/npuzzle_api.py, lines 42 to 43">16</a></p>
+
+  <h3 class="hiw-sub">Uniform-cost search (UCS)</h3>
+  <p><b>Uniform-cost search</b> is best-first search with the priority g alone, where g is the number of moves from the start. Its frontier is a <b>priority queue</b>, so the board with the smallest g is expanded next. When every move costs 1, UCS returns the same lengths as BFS, with more bookkeeping.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L201-L203" target="_blank" rel="noopener" title="npuzzle/search.py, lines 201–203" aria-label="Code on GitHub: npuzzle/search.py, lines 201 to 203">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L46-L96" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 46–96" aria-label="Code on GitHub: npuzzle/frontier.py, lines 46 to 96">18</a></p>
+  <p>On the 8-puzzle benchmark UCS was optimal on all 50 boards. It expanded a mean of 88,444 boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+
+  <h3 class="hiw-sub">Bidirectional BFS</h3>
+  <p><b>Bidirectional BFS</b> runs a breadth-first search from the start and another from the goal at the same time. Each step expands one whole layer on whichever side has the smaller layer. Each search covers about half the depth of the solution, so far fewer boards are expanded. When a board generated on one side is already in the other side's table, the two halves join into a solution.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L217-L266" target="_blank" rel="noopener" title="npuzzle/search.py, lines 217–266" aria-label="Code on GitHub: npuzzle/search.py, lines 217 to 266">19</a></p>
+  <p>The code records the total length through each meeting board and keeps the cheapest one in the layer. Each move from the goal side is stored as the move that led from the goal toward the board, so JOIN reverses it with INVERSE when it rebuilds the path from the goal end.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L259-L281" target="_blank" rel="noopener" title="npuzzle/search.py, lines 259–281" aria-label="Code on GitHub: npuzzle/search.py, lines 259 to 281">20</a></p>
+  <p>On the 8-puzzle benchmark, bidirectional BFS was optimal on all 50 boards. It expanded a mean of 1,941 boards, against 73,756 for BFS.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L217-L281" target="_blank" rel="noopener" title="npuzzle/search.py, lines 217–281" aria-label="Code on GitHub: npuzzle/search.py, lines 217 to 281">21</a></span>
+    <pre class="pseudo-simple">function BIDIRECTIONAL-BFS(start):
+    layers ← ([start], [goal])
+    seen ← ({start}, {goal})
+    while both layers are not empty:
+        expand the smaller layer one full layer:
+            for each board in that layer:
+                for each child of board:
+                    if child is new on this side:
+                        add child to the next layer
+                        if child was seen on the other side:
+                            record the meeting point and its total length
+        if a meeting point was found in this layer:
+            return the path through the cheapest meeting point
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>function BIDIRECTIONAL-BFS(start):
+    if not SOLVABLE(start):
+        return unsolvable
+    if start is the goal:
+        return solved, with no moves
+    layers ← ([start], [goal])                       # the current layer on each side
+    parents ← ({start: none}, {goal: none})          # parents[side][board] = (parent, move, depth)
+    while both layers are not empty:
+        side ← 0 if the start layer is no larger than the goal layer, else 1
+        mine, other ← parents[side], parents[1 − side]
+        next-layer ← empty
+        best ← none                                  # (total moves, meeting board)
+        for each board in layers[side]:
+            if expanded ≥ max-nodes, or the time limit has passed:
+                return limit reached
+            depth ← depth stored for board in mine
+            expanded ← expanded + 1
+            for each (move, child) in SUCCESSORS(board):
+                if child is in mine:
+                    continue
+                generated ← generated + 1
+                mine[child] ← (board, move, depth + 1)
+                add child to next-layer
+                if child is in other:
+                    total ← depth + 1 + depth of child in other
+                    if best is none or total < best.total:
+                        best ← (total, child)
+        layers[side] ← next-layer
+        if best is not none:
+            return solved, JOIN(parents, best.board)
+    return exhausted
+
+function JOIN(parents, meet):
+    path ← moves from the start to meet, read back from meet and reversed
+    b ← meet
+    while b has a parent on the goal side:
+        append INVERSE(move that reached b from its goal-side parent) to path
+        b ← that parent
+    return path</pre>
+  </div>
+  <p><b>Smaller layer first.</b> Expanding whichever side has the smaller layer keeps the work low. Each step adds one full layer, so the two searches meet at about half the solution depth.</p>
+  <p><b>Meeting cost.</b> A meeting board gives a path of length depth + 1 plus the other side's depth. The search does not stop at the first meeting it sees: it takes the smallest total in that layer. On the benchmark, every path it returned was optimal.</p>
+
+  <h3 class="hiw-sub">Heuristics</h3>
+  <p>A <b>heuristic</b> h(s) estimates the number of moves from board s to the goal. It is <b>admissible</b> if it never overestimates the true distance h*(s), so that h(s) ≤ h*(s) for every board s. A search that uses an admissible heuristic in A* or IDA* returns an optimal path. Every heuristic on this page except the neural one is admissible.</p>
+  <p><b>Manhattan distance</b> adds, for each tile, the number of rows plus the number of columns between the tile and its goal square. The blank is not counted.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py#L12-L33" target="_blank" rel="noopener" title="npuzzle/heuristics.py, lines 12–33" aria-label="Code on GitHub: npuzzle/heuristics.py, lines 12 to 33">22</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/heuristics.py:26-33 -->
+    <div class="math math-block">h_{\text{M}}(s) = \sum_{t \neq 0} \Big( \big|\lfloor p_t/n \rfloor - \lfloor t/n \rfloor\big| + \big|(p_t \bmod n) - (t \bmod n)\big| \Big)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py#L26-L33" target="_blank" rel="noopener" title="npuzzle/heuristics.py, lines 26–33" aria-label="Code on GitHub: npuzzle/heuristics.py, lines 26 to 33">23</a></span>
+  </div>
+  <p>Here <span class="math">p_t</span> is the index of tile <span class="math">t</span> on board <span class="math">s</span>. Its goal index is <span class="math">t</span> itself, so <span class="math">\lfloor t/n \rfloor</span> is its goal row and <span class="math">t \bmod n</span> its goal column. A move slides one tile by one square, so it lowers the sum by at most 1. That is why the heuristic never overestimates.</p>
+  <p><b>Linear conflict</b> adds a penalty to Manhattan distance for tiles that block each other in their goal line. Two tiles conflict when both belong in the same row (or column) and stand there in reverse order. One of them must leave the line and come back, two moves that Manhattan distance does not count. For each line, the code counts the tiles that must leave, which is the number of tiles minus the longest increasing run of their goal positions, and adds 2 for each.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py#L36-L74" target="_blank" rel="noopener" title="npuzzle/heuristics.py, lines 36–74" aria-label="Code on GitHub: npuzzle/heuristics.py, lines 36 to 74">24</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/heuristics.py:53-74 -->
+    <div class="math math-block">\begin{aligned}
+h_{\text{LC}}(s) &= h_{\text{M}}(s) + 2 \sum_{\ell=0}^{n-1} \Big( r^{\text{row}}_\ell(s) + r^{\text{col}}_\ell(s) \Big) \\
+r^{\text{row}}_\ell(s) &= k^{\text{row}}_\ell - \operatorname{LIS}\big(q^{\text{row}}_\ell\big)
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py#L53-L74" target="_blank" rel="noopener" title="npuzzle/heuristics.py, lines 53–74" aria-label="Code on GitHub: npuzzle/heuristics.py, lines 53 to 74">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py#L36-L50" target="_blank" rel="noopener" title="npuzzle/heuristics.py, lines 36–50" aria-label="Code on GitHub: npuzzle/heuristics.py, lines 36 to 50">26</a></span>
+  </div>
+  <p>Here <span class="math">q^{\text{row}}_\ell</span> is the list of goal columns of the tiles on row <span class="math">\ell</span> whose goal row is <span class="math">\ell</span>, in board order from left to right, and <span class="math">k^{\text{row}}_\ell</span> is its length. The function LIS gives the length of the longest strictly increasing subsequence of a list. The removal count <span class="math">r</span> is the fewest tiles to take out of the line so that the rest are in goal order. The column term <span class="math">r^{\text{col}}_\ell</span> is built the same way from the goal rows of the tiles on column <span class="math">\ell</span> whose goal column is <span class="math">\ell</span>, read from top to bottom. The code adds 2 for each removed tile, the rule's constant.</p>
+  <p><i>Example.</i> On the board (2, 1, 0, 3, 4, 5, 6, 8, 7), the top row holds tiles 2 and 1, with goal columns 2 and 1, so its longest increasing subsequence has length 1 and <span class="math">r = 1</span>. The bottom row gives another removal, so <span class="math">h_{\text{M}} = 4</span> and <span class="math">h_{\text{LC}} = 4 + 2 \times 2 = 8</span>. The true distance is 20 moves, found by BFS, so both values stay below it.</p>
+  <p><b>Pattern database</b> (PDB, 4 × 4 only) splits the 15 tiles into three groups of five: (1, 2, 3, 6, 7), (4, 5, 8, 9, 12) and (10, 11, 13, 14, 15). For each group, a table gives the exact number of moves that the group's own tiles need to reach their goal squares, with every other tile treated as unlabelled. A move of another tile costs 0 in the table, so the three groups never count the same move twice. Their values can therefore be added, and the sum is admissible. It is far stronger than Manhattan distance, which ignores every interaction between tiles.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py#L25-L32" target="_blank" rel="noopener" title="npuzzle/pdb.py, lines 25–32" aria-label="Code on GitHub: npuzzle/pdb.py, lines 25 to 32">27</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/pdb.py:37-42, 109-118 -->
+    <div class="math math-block">h_{\text{PDB}}(s) = \sum_{g=1}^{3} T_g\big[k_g(s)\big], \qquad k_g(s) = \sum_{j=1}^{5} p_{g,j}(s)\cdot 16^{\,5-j}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py#L37-L42" target="_blank" rel="noopener" title="npuzzle/pdb.py, lines 37–42" aria-label="Code on GitHub: npuzzle/pdb.py, lines 37 to 42">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py#L109-L118" target="_blank" rel="noopener" title="npuzzle/pdb.py, lines 109–118" aria-label="Code on GitHub: npuzzle/pdb.py, lines 109 to 118">29</a></span>
+  </div>
+  <p>Here <span class="math">T_g</span> is the table for group <span class="math">g</span>, with 16⁵ = 1,048,576 entries, one for each key. The value <span class="math">p_{g,j}(s)</span> is the index on board <span class="math">s</span> of the <span class="math">j</span>-th tile of group <span class="math">g</span>. The key <span class="math">k_g(s)</span> writes those five positions as base-16 digits, with the first tile most significant. Each table is built by a 0-1 breadth-first search from the goal. A blank move that swaps with a tile of the group costs 1, and any other blank move costs 0. The first time a key is reached gives its minimum cost over all blank positions. The finished tables are committed as a data file, so the server loads them instead of building them.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py#L45-L81" target="_blank" rel="noopener" title="npuzzle/pdb.py, lines 45–81" aria-label="Code on GitHub: npuzzle/pdb.py, lines 45 to 81">30</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/data/pdb_555.npz" target="_blank" rel="noopener" title="npuzzle/data/pdb_555.npz" aria-label="Code on GitHub: npuzzle/data/pdb_555.npz">31</a></p>
+  <p><b>Neural correction</b> (4 × 4 only) is the learned heuristic. It adds a neural network's output to the pattern database. A <b>neural network</b> is a function whose weights are learned from data. Here its input <span class="math">x(s)</span> is a <b>one-hot</b> encoding of the board: 256 features, one for each pair of an index and a tile, where feature <span class="math">16i + t</span> is 1 if tile <span class="math">t</span> sits at index <span class="math">i</span>. The network is two residual blocks of 512 units, and the <b>ReLU</b> activation is <span class="math">\max(z, 0)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py#L26-L31" target="_blank" rel="noopener" title="npuzzle/neural.py, lines 26–31" aria-label="Code on GitHub: npuzzle/neural.py, lines 26 to 31">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py#L55-L61" target="_blank" rel="noopener" title="npuzzle/neural.py, lines 55–61" aria-label="Code on GitHub: npuzzle/neural.py, lines 55 to 61">33</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/neural.py:55-61, 63-68 -->
+    <div class="math math-block">\begin{aligned}
+h(s) &= h_{\text{PDB}}(s) + \operatorname{softplus}\big(\operatorname{net}(s)\big), \qquad h(\text{goal}) = 0 \\
+a_0 &= \operatorname{ReLU}(W_{\text{in}}\,x + b_{\text{in}}) \\
+y_k &= \operatorname{ReLU}(W_{k,1}\,a_k + b_{k,1}) \\
+a_{k+1} &= \operatorname{ReLU}(a_k + W_{k,2}\,y_k + b_{k,2}), \qquad k = 0, 1 \\
+\operatorname{net}(s) &= w_{\text{out}}^{\top} a_2 + b_{\text{out}}
+\end{aligned}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py#L55-L61" target="_blank" rel="noopener" title="npuzzle/neural.py, lines 55–61" aria-label="Code on GitHub: npuzzle/neural.py, lines 55 to 61">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py#L63-L68" target="_blank" rel="noopener" title="npuzzle/neural.py, lines 63–68" aria-label="Code on GitHub: npuzzle/neural.py, lines 63 to 68">34</a></span>
+  </div>
+  <p>Here <span class="math">\operatorname{softplus}(z) = \log(1 + e^{z})</span> is a smooth function that is always positive, so the network can only add to the pattern database value. The total is never below the pattern database. The weights <span class="math">W</span>, <span class="math">b</span> and <span class="math">w_{\text{out}}</span> are learned. The network starts with zero output weights and an output bias of −4, so <span class="math">h</span> starts near the pattern database, since <span class="math">\operatorname{softplus}(-4) \approx 0.018</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L36-L55" target="_blank" rel="noopener" title="npuzzle/train.py, lines 36–55" aria-label="Code on GitHub: npuzzle/train.py, lines 36 to 55">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L47-L49" target="_blank" rel="noopener" title="npuzzle/train.py, lines 47–49" aria-label="Code on GitHub: npuzzle/train.py, lines 47 to 49">36</a></p>
+  <p>The neural heuristic is not admissible. It can overestimate, so A* and IDA* can return longer than optimal paths. The server runs it only with batch weighted A*.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L112-L113" target="_blank" rel="noopener" title="server/npuzzle_api.py, lines 112–113" aria-label="Code on GitHub: server/npuzzle_api.py, lines 112 to 113">37</a></p>
+
+  <h3 class="hiw-sub">Greedy best-first search</h3>
+  <p><b>Greedy best-first search</b> orders the frontier by h alone and ignores g, the moves already made. It heads straight for the boards that look closest to the goal, which makes it fast. Its estimate can lead it into dead ends, though, so the path it returns is often long.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L155-L188" target="_blank" rel="noopener" title="npuzzle/search.py, lines 155–188" aria-label="Code on GitHub: npuzzle/search.py, lines 155 to 188">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L206-L208" target="_blank" rel="noopener" title="npuzzle/search.py, lines 206–208" aria-label="Code on GitHub: npuzzle/search.py, lines 206 to 208">39</a></p>
+  <p>On the 8-puzzle benchmark, greedy search expanded a mean of 267 boards. Only 5 of 50 paths were optimal, and the mean path was 40.7 moves against 21.8.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+
+  <h3 class="hiw-sub">A* search</h3>
+  <p><b>A*</b> orders the frontier by f = g + h. Here g is the <b>depth</b> of a board, the number of moves from the start along the path found, and h is the heuristic estimate of the moves left. The code computes f for each generated board and keeps the frontier in a priority queue.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L191-L198" target="_blank" rel="noopener" title="npuzzle/search.py, lines 191–198" aria-label="Code on GitHub: npuzzle/search.py, lines 191 to 198">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L155-L188" target="_blank" rel="noopener" title="npuzzle/search.py, lines 155–188" aria-label="Code on GitHub: npuzzle/search.py, lines 155 to 188">38</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/search.py:191-198 -->
+    <div class="math math-block">f(s) = g(s) + h(s)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L191-L198" target="_blank" rel="noopener" title="npuzzle/search.py, lines 191–198" aria-label="Code on GitHub: npuzzle/search.py, lines 191 to 198">40</a></span>
+  </div>
+  <p>Ties in f go to the board with the larger g, which has the smaller h and is nearer the goal. When h is admissible, the first board to leave the frontier is the goal, along a shortest path. A board reached again by a shorter path has its key lowered in place (<b>decrease-key</b>). The heap has no such operation, so the code adds a new entry and marks the old one stale.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L46-L56" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 46–56" aria-label="Code on GitHub: npuzzle/frontier.py, lines 46 to 56">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L73-L83" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 73–83" aria-label="Code on GitHub: npuzzle/frontier.py, lines 73 to 83">42</a></p>
+  <p>On the 8-puzzle benchmark A* was optimal on all 50 boards. It expanded a mean of 771 boards with Manhattan distance, and 404 with linear conflict.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L155-L198" target="_blank" rel="noopener" title="npuzzle/search.py, lines 155–198" aria-label="Code on GitHub: npuzzle/search.py, lines 155 to 198">43</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L73-L83" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 73–83" aria-label="Code on GitHub: npuzzle/frontier.py, lines 73 to 83">42</a></span>
+    <pre class="pseudo-simple">function A-STAR(start):
+    frontier ← priority queue holding start, keyed by f = g + h
+    done ← empty set
+    while frontier is not empty:
+        board ← remove the entry with the smallest f
+        if board is the goal:
+            return the moves from start to board
+        add board to done
+        for each child of board:
+            if child is not in done:
+                g ← g(board) + 1
+                if child is in frontier with a larger g:
+                    lower child's key to g + h(child)
+                else if child is not in frontier:
+                    add child to frontier with key g + h(child)
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>function BEST-FIRST(start, priority):           # A*: priority = (g + h, −g)
+    if not SOLVABLE(start):
+        return unsolvable
+    frontier ← priority queue holding start, keyed by priority(start)
+    done ← empty set
+    while frontier is not empty:
+        board ← remove the entry with the smallest key   # stale entries are skipped
+        if board is the goal:
+            return solved, the moves from start to board
+        if expanded ≥ max-nodes, or the time limit has passed:
+            return limit reached
+        add board to done
+        expanded ← expanded + 1
+        for each (move, child) in SUCCESSORS(board):
+            if child is in done:
+                continue
+            generated ← generated + 1
+            key ← priority(child)                    # g = depth(board) + 1, plus h(child)
+            if child is in frontier:
+                if key is lower than child's current key:
+                    lower child's key to key         # decrease-key; the old entry turns stale
+            else:
+                add child to frontier with key
+    return exhausted</pre>
+  </div>
+  <p><b>Other keys.</b> The same loop becomes the other best-first searches by changing the priority: UCS uses g, greedy uses h, and weighted A* uses g + w·h with the tie-break on −g.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L201-L214" target="_blank" rel="noopener" title="npuzzle/search.py, lines 201–214" aria-label="Code on GitHub: npuzzle/search.py, lines 201 to 214">44</a></p>
+  <p><b>Lazy deletion.</b> A stale entry is an old frontier entry for a board whose key has been lowered. The pop step skips it, so the heap never has to find and move an entry. The frontier's length counts only the live boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/frontier.py#L46-L56" target="_blank" rel="noopener" title="npuzzle/frontier.py, lines 46–56" aria-label="Code on GitHub: npuzzle/frontier.py, lines 46 to 56">41</a></p>
+
+  <h3 class="hiw-sub">Weighted A*</h3>
+  <p><b>Weighted A*</b> uses f = g + w·h, where the weight w is at least 1. The default is w = 2, and the page slider goes from 1 to 5. A larger weight gives the estimate more say than the distance already travelled, so the search reaches the goal after fewer expansions. The path can be longer, though. With an admissible h, the path is at most w times the optimal length.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L211-L214" target="_blank" rel="noopener" title="npuzzle/search.py, lines 211–214" aria-label="Code on GitHub: npuzzle/search.py, lines 211 to 214">45</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/search.py:211-214 -->
+    <div class="math math-block">f(s) = g(s) + w\,h(s), \qquad w = 2 \text{ by default}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py#L211-L214" target="_blank" rel="noopener" title="npuzzle/search.py, lines 211–214" aria-label="Code on GitHub: npuzzle/search.py, lines 211 to 214">45</a></span>
+  </div>
+  <p>Here <span class="math">g(s)</span> is the depth of board <span class="math">s</span>, <span class="math">h(s)</span> its heuristic, and <span class="math">w</span> the weight. With <span class="math">w = 1</span> the formula is A*.</p>
+  <p>On the 8-puzzle benchmark, with w = 2 and Manhattan distance, weighted A* expanded a mean of 313 boards. Its paths were optimal on 20 of 50 boards, with a mean <b>gap</b> of 8.7%. The gap of a path is (its moves − the optimal moves) divided by the optimal moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+
+  <h3 class="hiw-sub">IDA* search</h3>
+  <p><b>IDA*</b> (iterative-deepening A*) runs a depth-first search with a bound on f, where the depth limit of IDS would be. Boards with f above the bound are cut off, and the search remembers the smallest f among the boards it cut off. If no goal is found, the next round uses that value as its bound. The bound therefore rises to the next f that any board actually has.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L29-L113" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 29–113" aria-label="Code on GitHub: npuzzle/iterative.py, lines 29 to 113">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L121-L126" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 121–126" aria-label="Code on GitHub: npuzzle/iterative.py, lines 121 to 126">47</a></p>
+  <p>The search keeps only the current path in memory, so its memory grows with the solution length, not with the number of boards. The price is repeated work, because every round repeats the earlier ones. The code does not record the boards it has visited, so a board can be expanded more than once. It does skip the move that undoes the previous one.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L7-L10" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 7–10" aria-label="Code on GitHub: npuzzle/iterative.py, lines 7 to 10">48</a></p>
+  <p>The heuristic is updated in constant time rather than recomputed. When the blank swaps with a tile, only that tile's contribution changes. For Manhattan distance, the change is the difference of two table entries. For the pattern database, only the key of the tile's group changes. Linear conflict is recomputed from the board.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L39-L64" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 39–64" aria-label="Code on GitHub: npuzzle/iterative.py, lines 39 to 64">49</a></p>
+  <p>On the 8-puzzle benchmark IDA* was optimal on all 50 boards. It expanded a mean of 2,090 boards with Manhattan distance, and 1,024 with linear conflict.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <p>On the 15-puzzle, the median IDA* run with the pattern database expanded 598,988.5 boards over the first 40 boards of the 100-board test set. The test set's optimal costs were computed by that same search.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/testset.py#L37-L45" target="_blank" rel="noopener" title="npuzzle/testset.py, lines 37–45" aria-label="Code on GitHub: npuzzle/testset.py, lines 37 to 45">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/data/testset_15_seed0.json" target="_blank" rel="noopener" title="npuzzle/data/testset_15_seed0.json" aria-label="Code on GitHub: npuzzle/data/testset_15_seed0.json">51</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L121-L126" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 121–126" aria-label="Code on GitHub: npuzzle/iterative.py, lines 121 to 126">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L71-L99" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 71–99" aria-label="Code on GitHub: npuzzle/iterative.py, lines 71 to 99">52</a></span>
+    <pre class="pseudo-simple">function IDA-STAR(start):
+    bound ← h(start)
+    while true:
+        result ← SEARCH(start, g = 0, bound)
+        if result is FOUND:
+            return the moves on the path
+        if result is infinity:
+            return no solution
+        bound ← result                               # the smallest f that was cut off
+
+function SEARCH(board, g, bound):
+    f ← g + h(board)
+    if f > bound:
+        return f                                     # cut off; report f
+    if board is the goal:
+        return FOUND
+    smallest ← infinity
+    for each move m from board, except the undo of the last move:
+        result ← SEARCH(RESULT(board, m), g + 1, bound)
+        if result is FOUND:
+            return FOUND
+        smallest ← min(smallest, result)
+    return smallest</pre>
+    <pre class="pseudo-full" hidden>function IDA-STAR(start, heuristic):           # IDS: heuristic = 0 everywhere
+    if not SOLVABLE(start):
+        return unsolvable
+    board ← mutable copy of start                    # one board, changed in place
+    path ← empty list
+    h ← heuristic(start)
+    bound ← h
+    try:
+        while true:
+            t ← VISIT(blank position of start, g = 0, h, prev = none, bound)
+            if t is FOUND:
+                return solved, path
+            if t is infinity:
+                return exhausted
+            bound ← t                                # the smallest f that exceeded the bound
+    on time-limit reached:
+        return limit reached
+
+function VISIT(blank, g, h, prev, bound):
+    f ← g + h
+    if f > bound:
+        return f
+    if h = 0 and board is the goal:                  # every heuristic here is 0 only at the goal
+        return FOUND
+    if expanded ≥ max-nodes, or the time limit has passed:
+        raise time-limit reached                     # unwinds to IDA-STAR
+    expanded ← expanded + 1
+    minimum ← infinity
+    for each (to, move) in NEIGHBORS(blank), in Up, Down, Left, Right order:
+        if prev is not none and move is INVERSE(prev):
+            continue                                 # never undo the previous move
+        tile ← board[to]
+        board[blank] ← tile;  board[to] ← 0          # slide the tile into the blank
+        path.append(move)
+        generated ← generated + 1
+        h′ ← UPDATED-H(h, blank, to, tile)
+        t ← VISIT(to, g + 1, h′, move, bound)
+        if t is FOUND:
+            return FOUND                             # path now holds the solution
+        UNDO-H(blank, to, tile)                      # pattern database keys only
+        path.pop()
+        board[blank] ← 0;  board[to] ← tile          # slide the tile back
+        minimum ← min(minimum, t)
+    return minimum
+
+function UPDATED-H(h, blank, to, tile):
+    if heuristic is Manhattan:
+        return h + d(tile, blank) − d(tile, to)      # d = table distance of a tile at an index
+    if heuristic is the pattern database:
+        change the key of tile's group from to to blank
+        return h − T(old key) + T(new key)
+    if the search is IDS:
+        return 0
+    return heuristic(board)                          # linear conflict: recomputed</pre>
+  </div>
+  <p><b>Repeated work.</b> IDA* repeats the earlier rounds each time the bound rises. The repeats cost little when the tree grows quickly with each extra move, because the last round dominates the total.</p>
+  <p><b>Incremental heuristic.</b> The blank moves one square, so only the moved tile changes its place. Manhattan distance and the pattern database each need only a few table lookups per move, and <code>UNDO-H</code> restores the pattern database key when the child returns.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py#L39-L52" target="_blank" rel="noopener" title="npuzzle/iterative.py, lines 39–52" aria-label="Code on GitHub: npuzzle/iterative.py, lines 39 to 52">53</a></p>
+
+  <h3 class="hiw-sub">Batch weighted A* (BWAS)</h3>
+  <p><b>Batch weighted A*</b> (BWAS) is weighted best-first search built for a heuristic that is slow to call one board at a time, such as the neural network. Each step pops up to 100 boards by default, expands them, and scores every new child in one batched heuristic call. Sharing one call across many boards removes most of the per-call overhead of Python.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L27-L79" target="_blank" rel="noopener" title="npuzzle/batched.py, lines 27–79" aria-label="Code on GitHub: npuzzle/batched.py, lines 27 to 79">54</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L79" target="_blank" rel="noopener" title="server/npuzzle_api.py, line 79" aria-label="Code on GitHub: server/npuzzle_api.py, line 79">55</a></p>
+  <p>The priority is f = g_weight · g + h, with g_weight = 0.8 by default and a range from 0.1 to 1. A weight below 1 favours boards that the heuristic rates close to the goal. That is faster, but the path is not guaranteed to be optimal, even with an admissible heuristic.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L8-L11" target="_blank" rel="noopener" title="npuzzle/batched.py, lines 8–11" aria-label="Code on GitHub: npuzzle/batched.py, lines 8 to 11">56</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L78" target="_blank" rel="noopener" title="server/npuzzle_api.py, line 78" aria-label="Code on GitHub: server/npuzzle_api.py, line 78">57</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/batched.py:27-79 -->
+    <div class="math math-block">f(s) = g_{\text{weight}}\, g(s) + h(s), \qquad g_{\text{weight}} = 0.8 \text{ by default}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L27-L79" target="_blank" rel="noopener" title="npuzzle/batched.py, lines 27–79" aria-label="Code on GitHub: npuzzle/batched.py, lines 27 to 79">54</a></span>
+  </div>
+  <p>Here <span class="math">g(s)</span> is the depth of board <span class="math">s</span>. A board can sit in the heap several times, once for each cheaper path found to it. An entry whose g is no longer the best is stale and is skipped. A board is closed when it leaves the heap, so it is never expanded twice.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L46-L51" target="_blank" rel="noopener" title="npuzzle/batched.py, lines 46–51" aria-label="Code on GitHub: npuzzle/batched.py, lines 46 to 51">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L78" target="_blank" rel="noopener" title="npuzzle/batched.py, line 78" aria-label="Code on GitHub: npuzzle/batched.py, line 78">59</a></p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py#L27-L79" target="_blank" rel="noopener" title="npuzzle/batched.py, lines 27–79" aria-label="Code on GitHub: npuzzle/batched.py, lines 27 to 79">54</a></span>
+    <pre class="pseudo-simple">function BWAS(start):
+    heap ← [start with priority h(start)]
+    while heap is not empty:
+        batch ← up to batch-size boards popped from heap
+        if batch is empty:
+            return no solution
+        for each board in batch:
+            if board is the goal:
+                return the moves from start to board
+            close board
+            for each child of board:
+                if child is not closed and reached by a cheaper path:
+                    record the cheaper path to child
+                    add child to new
+        h-values ← HEURISTIC-BATCH(new)              # one call for every new child
+        push each child in new with key g_weight · g + h
+    return no solution</pre>
+    <pre class="pseudo-full" hidden>function BWAS(start, batch-heuristic, batch-size, g-weight):
+    if not SOLVABLE(start):
+        return unsolvable
+    best-g[start] ← 0;  parent[start] ← none
+    closed ← empty set
+    heap ← [(batch-heuristic(start), 0, counter, start)]
+    while heap is not empty:
+        batch ← empty list
+        while heap is not empty and length(batch) &lt; batch-size:
+            (key, −g, id, board) ← pop smallest from heap
+            if board is closed or −g ≠ best-g[board]:
+                continue                             # stale: a cheaper path was found later
+            if board is the goal:
+                return solved, the moves from start to board
+            add board to closed
+            add board to batch
+        if batch is empty:
+            break
+        if expanded ≥ max-nodes, or the time limit has passed:
+            return limit reached
+        new ← empty list
+        for each board in batch:
+            g ← best-g[board]
+            expanded ← expanded + 1
+            for each (move, child) in SUCCESSORS(board):
+                if child is in closed:
+                    continue
+                if g + 1 &lt; best-g[child]:           # best-g of an unseen child is infinity
+                    generated ← generated + 1
+                    best-g[child] ← g + 1;  parent[child] ← (board, move)
+                    add child to new
+        if new is not empty:
+            h-values ← batch-heuristic(new)          # one batched call scores every new child
+            for each (child, h) in zip(new, h-values):
+                push (g-weight · best-g[child] + h, −best-g[child], counter, child) onto heap
+    return exhausted</pre>
+  </div>
+  <p><b>Batches.</b> The batch size only changes how many boards are popped per step, and so how many children share one heuristic call. The priorities and the closed rule do not depend on it.</p>
+  <p><b>Closed boards.</b> The closed set marks a board as expanded when it leaves the heap. A board reached by a cheaper path while it waits in the heap gets a second entry, and the stale test removes the older entry when it is popped.</p>
+  <p><b>Goal test on removal.</b> The goal is recognised when it is popped into a batch, not when it is generated, so the cheapest path to the goal is the one that gets returned.</p>
+
+  <h3 class="hiw-sub">Training the neural heuristic</h3>
+  <p>The network is trained by <b>approximate value iteration</b>, the method behind DeepCubeA, and it uses no solver labels. <b>Value iteration</b> sets each board's value to its immediate cost plus the smallest value among its successors, and repeats until the values settle. Here every move costs 1 and the goal's value is 0.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L1-L16" target="_blank" rel="noopener" title="npuzzle/train.py, lines 1–16" aria-label="Code on GitHub: npuzzle/train.py, lines 1 to 16">60</a></p>
+  <p>Each round samples 50,000 boards by random walks from the goal. A walk's length is drawn uniformly from 0 to 200 moves, and a walk never undoes its previous move. The targets are computed with a frozen copy of the network, called the target network. The network is then fitted to those targets with <b>Adam</b>, a gradient method with its own step size for each weight, at a learning rate of 0.001 and on minibatches of 1,000. The target network is then replaced by a copy of the fitted network.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batch.py#L31-L58" target="_blank" rel="noopener" title="npuzzle/batch.py, lines 31–58" aria-label="Code on GitHub: npuzzle/batch.py, lines 31 to 58">61</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L120-L130" target="_blank" rel="noopener" title="npuzzle/train.py, lines 120–130" aria-label="Code on GitHub: npuzzle/train.py, lines 120 to 130">62</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L145-L164" target="_blank" rel="noopener" title="npuzzle/train.py, lines 145–164" aria-label="Code on GitHub: npuzzle/train.py, lines 145 to 164">63</a></p>
+  <div class="math-fig">
+    <!-- npuzzle/train.py:66-76 -->
+    <div class="math math-block">y(s) = \begin{cases} 0 & s \text{ is the goal} \\ 1 + \min_{a \text{ legal in } s} \bar h(s_a) & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L66-L76" target="_blank" rel="noopener" title="npuzzle/train.py, lines 66–76" aria-label="Code on GitHub: npuzzle/train.py, lines 66 to 76">64</a></span>
+  </div>
+  <p>Here <span class="math">\bar h</span> is the heuristic of the target network, and <span class="math">s_a</span> is the board after move <span class="math">a</span>. Each board's target is one more than the smallest value among its legal successors, so the values spread outward from the goal one move at a time.</p>
+  <div class="math-fig">
+    <!-- npuzzle/train.py:157 -->
+    <div class="math math-block">L = \frac{1}{B} \sum_{i=1}^{B} \big( h(s_i) - y_i \big)^2</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L157" target="_blank" rel="noopener" title="npuzzle/train.py, line 157" aria-label="Code on GitHub: npuzzle/train.py, line 157">65</a></span>
+  </div>
+  <p>Here <span class="math">L</span> is the mean squared error on a minibatch, <span class="math">B</span> is its size (1,000 by default), and <span class="math">h</span> is the network's heuristic.</p>
+  <p>Every 10 rounds the script scores the network against the 100 boards of the 15-puzzle test set, whose optimal costs are known. The mean absolute error is the average of <span class="math">|h(s) - h^*(s)|</span>, and the overestimate rate is the share of boards with <span class="math">h(s) > h^*(s)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L105-L115" target="_blank" rel="noopener" title="npuzzle/train.py, lines 105–115" aria-label="Code on GitHub: npuzzle/train.py, lines 105 to 115">66</a></p>
+  <p>The committed log has 172 rounds over 42.3 minutes. At round 170, the mean absolute error was 2.84 against 12.22 for the pattern database alone, and the network overestimated on 46% of the boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_train_log.jsonl" target="_blank" rel="noopener" title="results/npuzzle_train_log.jsonl" aria-label="Code on GitHub: results/npuzzle_train_log.jsonl">67</a></p>
+  <p>The shipped weights are the final export after round 172, which the log does not evaluate. The network size, the 50,000-board batch and the 200-move walk length are the script's defaults. The log does not record those settings, and no sweep is recorded.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L176" target="_blank" rel="noopener" title="npuzzle/train.py, line 176" aria-label="Code on GitHub: npuzzle/train.py, line 176">68</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py#L120-L130" target="_blank" rel="noopener" title="npuzzle/train.py, lines 120–130" aria-label="Code on GitHub: npuzzle/train.py, lines 120 to 130">62</a></p>
+
+  <h3 class="hiw-sub">Benchmark results</h3>
+  <p>The table compares the configurations on 50 random 8-puzzle boards, drawn with a fixed seed. Each row ran every board with the same limits. The gap is the same measure as in weighted A* above.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/benchmark.py#L32-L40" target="_blank" rel="noopener" title="npuzzle/benchmark.py, lines 32–40" aria-label="Code on GitHub: npuzzle/benchmark.py, lines 32 to 40">69</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md" target="_blank" rel="noopener" title="results/npuzzle_8puzzle.md" aria-label="Code on GitHub: results/npuzzle_8puzzle.md">10</a></p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Configuration</th><th class="num">Solved</th><th class="num">Mean nodes</th><th class="num">Mean time (s)</th><th class="num">Mean cost</th><th class="num">Optimal paths</th><th class="num">Mean gap</th></tr></thead><tbody>
+    <tr><td>bfs</td><td class="num">50/50</td><td class="num">73,756</td><td class="num">1.079</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>dfs</td><td class="num">50/50</td><td class="num">79,209</td><td class="num">1.537</td><td class="num">43671.8</td><td class="num">0/50</td><td class="num">202380.3%</td></tr>
+    <tr><td>ucs</td><td class="num">50/50</td><td class="num">88,444</td><td class="num">2.096</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>bibfs</td><td class="num">50/50</td><td class="num">1,941</td><td class="num">0.012</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>greedy</td><td class="num">50/50</td><td class="num">267</td><td class="num">0.006</td><td class="num">40.7</td><td class="num">5/50</td><td class="num">87.2%</td></tr>
+    <tr><td>astar</td><td class="num">50/50</td><td class="num">771</td><td class="num">0.022</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>wastar</td><td class="num">50/50</td><td class="num">313</td><td class="num">0.012</td><td class="num">23.6</td><td class="num">20/50</td><td class="num">8.7%</td></tr>
+    <tr><td>idastar</td><td class="num">50/50</td><td class="num">2,090</td><td class="num">0.011</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>astar+lc</td><td class="num">50/50</td><td class="num">404</td><td class="num">0.029</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
+    <tr><td>idastar+lc</td><td class="num">50/50</td><td class="num">1,024</td><td class="num">0.033</td><td class="num">21.8</td><td class="num">50/50</td><td class="num">0.0%</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> Manhattan and linear conflict are standard rules, not tuned. The pattern-database groups are fixed in <code>npuzzle/pdb.py</code>; the repo does not record why this split was picked. The network size (input 256, two residual blocks of 512 units) and training settings are defaults in <code>npuzzle/train.py</code>; no sweep is recorded.</p>
 
-  <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">Trained by approximate value iteration (the method behind DeepCubeA), with no solver labels. Each round samples 50,000 boards by random walks of up to 200 moves from the goal, sets each target to 1 plus the smallest child value under a frozen copy of the network (0 at the goal), and fits the network with Adam (learning rate 0.001, minibatches of 1,000). The committed log has 172 rounds over 42.3 minutes. At round 170, on 100 held-out 15-puzzle states, the mean absolute error was 2.84 against 12.22 for the pattern database; it overestimated on 46% of states.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/search.py">npuzzle/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/iterative.py">npuzzle/iterative.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/batched.py">npuzzle/batched.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/heuristics.py">npuzzle/heuristics.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/pdb.py">npuzzle/pdb.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/neural.py">npuzzle/neural.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/npuzzle/train.py">npuzzle/train.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_8puzzle.md">results/npuzzle_8puzzle.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/npuzzle_train_log.jsonl">results/npuzzle_train_log.jsonl</a></p>
+  <h3 class="hiw-sub">Limits on the server</h3>
+  <p>Every search runs in Python on the server and streams its progress to the page over a WebSocket. A search stops after 10 seconds.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L37" target="_blank" rel="noopener" title="server/npuzzle_api.py, line 37" aria-label="Code on GitHub: server/npuzzle_api.py, line 37">70</a></p>
+  <p>A search that stores every board stops at 250,000 expanded boards. IDS and IDA* keep only the current path, so they may run to 3,000,000 expanded boards before the limit applies.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L41-L47" target="_blank" rel="noopener" title="server/npuzzle_api.py, lines 41–47" aria-label="Code on GitHub: server/npuzzle_api.py, lines 41 to 47">71</a></p>
+  <p>The pattern database and the neural heuristic cover the 4 × 4 board only, so the 8-puzzle menu leaves them out. The server runs the neural heuristic with batch weighted A* alone.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L51" target="_blank" rel="noopener" title="server/npuzzle_api.py, line 51" aria-label="Code on GitHub: server/npuzzle_api.py, line 51">72</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/npuzzle_api.py#L104-L113" target="_blank" rel="noopener" title="server/npuzzle_api.py, lines 104–113" aria-label="Code on GitHub: server/npuzzle_api.py, lines 104 to 113">73</a></p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/npuzzle.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

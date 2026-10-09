@@ -238,7 +238,6 @@ function setMode(mode) {
     b.setAttribute('aria-pressed', String(on));
   }
   $('map-hint').textContent = MODE_HINTS[mode];
-  $('mode-hint').textContent = MODE_HINTS[mode];
 }
 
 // ── Canvas drawing ─────────────────────────────────────────────────────
@@ -639,8 +638,9 @@ function paintTree() {
   const py = (n) => PAD + NODE_H / 2 + n.depth * GAP_Y;
   const shown = (n) => n.parentIdx < state.reveal;   // a node appears when its parent is expanded
   const nowId = state.reveal > 0 ? state.result.trace[state.reveal - 1].id : null;
-  const solutionCost = state.result?.status === 'solved' ? state.result.stats.sum_of_costs : null;
-  let solutionMarked = false;
+  // The server names the tree node whose plan is returned. Matching by id marks that node, not a
+  // different node that happens to have the same cost.
+  const solutionId = state.result?.solution_id ?? null;
 
   // Edges first, so node boxes sit on top of them.
   for (const n of t.list) {
@@ -660,12 +660,7 @@ function paintTree() {
 
   for (const n of t.list) {
     if (!shown(n)) continue;
-    // The solution is the cheapest leaf that was never expanded: a node with no collisions left.
-    let solution = false;
-    if (solutionCost !== null && !n.expanded && !n.dead && n.cost === solutionCost && !solutionMarked) {
-      solution = true;
-      solutionMarked = true;
-    }
+    const solution = solutionId !== null && n.id === solutionId;
     const classes = ['wh-node'];
     if (n.expanded) classes.push('expanded');
     if (n.dead) classes.push('dead');
@@ -784,13 +779,7 @@ function renderConflicts() {
   const res = state.result;
   if (!res) return;
   const conflicts = res.conflicts ?? [];
-  if (!conflicts.length) {
-    const li = document.createElement('li');
-    li.className = 'none';
-    li.textContent = 'No collisions in this plan.';
-    list.appendChild(li);
-    return;
-  }
+  if (!conflicts.length) return;   // the note above the list already says there are none
   for (const c of conflicts) {
     const li = document.createElement('li');
     li.dataset.t = String(c.t);
@@ -809,14 +798,14 @@ function refreshChips() {
   const res = state.result;
   $('chip-robots').textContent = String(state.robots.filter((r) => r.goal).length);
   $('chip-sum').textContent = res?.stats?.sum_of_costs ?? '—';
-  $('chip-span').textContent = res?.stats?.makespan ?? '—';
   $('chip-conf').textContent = res ? String(res.stats.conflicts) : '—';
   const status = $('chip-status');
   if (res) {
     status.textContent = statusLabel(res.planner, res.status);
     status.className = `val ${statusClass(res.status)}`;
   } else {
-    status.textContent = state.robots.length ? 'PLACE GOALS' : 'PLACE ROBOTS';
+    status.textContent = !state.robots.length ? 'PLACE ROBOTS'
+      : state.robots.some((r) => !r.goal) ? 'PLACE GOALS' : 'READY';
     status.className = 'val';
   }
 }
@@ -994,7 +983,7 @@ function populateControls() {
 
 function describePlanner() {
   const info = state.meta?.planners.find((p) => p.name === $('planner').value);
-  $('planner-desc').textContent = info ? info.description : '';
+  $('planner').title = info ? info.description : '';   // the planner's one-line description, on hover
 }
 
 function wire() {

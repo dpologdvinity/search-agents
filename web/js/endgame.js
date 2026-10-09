@@ -258,7 +258,6 @@ function renderChips() {
   $('chip-turn').textContent = p ? `${sideName(p.stm)}${turnTag(p.stm)}` : '—';
   $('chip-mate').textContent = n === null || n === undefined ? '—' : String(n);
   $('chip-moves').textContent = String(state.moves);
-  $('chip-pos').textContent = state.meta ? state.meta.pieces[state.piece].legal.toLocaleString('en-US') : '—';
 }
 
 // The big number above the board: moves left for the side with the piece, with best play from both sides.
@@ -409,41 +408,18 @@ function drawHistogram() {
     ctx.moveTo(x, pad.t);
     ctx.lineTo(x, pad.t + plotH);
     ctx.stroke();
+    // The label sits on a dark patch, so the bars under it do not run through the text.
+    const label = `you are here: ${n}`;
+    const lx = Math.min(x + 4, W - 110);
+    ctx.fillStyle = 'rgba(2,6,16,0.9)';
+    ctx.fillRect(lx - 2, pad.t, ctx.measureText(label).width + 4, 14);
     ctx.fillStyle = '#ffe600';
     ctx.textAlign = 'left';
-    ctx.fillText(`you are here: ${n}`, Math.min(x + 4, W - 110), pad.t + 10);
+    ctx.fillText(label, lx, pad.t + 10);
   }
   $('hist-title').textContent = `${data.name}: ${data.legal.toLocaleString('en-US')} legal positions`;
   $('hist-note').textContent = `Green: the side to move wins in k moves (longest ${data.max_win_moves}). `
     + `Pink: it is mated in k moves (longest ${data.max_loss_moves}).`;
-}
-
-// The "how it is built" cards, filled with the real numbers from the server.
-function renderHow() {
-  const { Q: q, R: r } = state.meta.pieces;
-  const cards = [
-    ['01 · THE SEEDS', 'cyan', 'A position where the side to move is checkmated is decided at once: zero plies from mate. A stalemate is a draw. Everything else is decided by what it leads to.'],
-    ['02 · STEP BACKWARDS', 'pink', 'For each decided position, find its predecessors: the positions one quiet move earlier that lead to it. A piece steps back along the lines it could have slid along; a king steps to a neighbouring square.'],
-    ['03 · COUNT THE ESCAPES', 'green', 'Every undecided position counts its legal moves. A predecessor where the side to move has a move into a lost position is a win at once. A predecessor whose moves all lead to wins is lost once its last such move is decided.'],
-    ['04 · ORDER BY DISTANCE', 'yellow', 'Positions are processed in order of distance to mate. So the first win found is the fastest, and the last move to be decided in a lost position is its longest defence. Whatever is never decided is a draw.'],
-    ['05 · THE RESULT', 'cyan', `KQK: ${q.legal.toLocaleString('en-US')} legal positions, longest mate ${q.max_win_moves} moves. KRK: ${r.legal.toLocaleString('en-US')} positions, longest mate ${r.max_win_moves} moves. Each table builds in seconds, and every entry was re-checked against the rules.`],
-  ];
-  const wrap = $('how');
-  wrap.textContent = '';
-  for (const [title, color, text] of cards) {
-    const card = document.createElement('div');
-    card.className = 'heuristic-card';
-    card.style.padding = '0.7rem';
-    const t = document.createElement('div');
-    t.className = 'eg-how-n';
-    t.style.color = `var(--${color})`;
-    t.textContent = title;
-    const d = document.createElement('div');
-    d.className = 'field-hint';
-    d.textContent = text;
-    card.append(t, d);
-    wrap.appendChild(card);
-  }
 }
 
 function log(text, cls = 'log-info') {
@@ -794,6 +770,7 @@ async function setMode(mode) {
   $('eg-side-wrap').hidden = state.watching;
   $('eg-opp-wrap').hidden = state.watching;
   $('eg-watch-wrap').hidden = !state.watching;
+  $('eg-watch-pace').hidden = !state.watching;
   $('eg-watch-controls').hidden = !state.watching;
   $('eg-score-box').hidden = !state.watching;
   $('btn-heat').disabled = state.watching;
@@ -913,7 +890,6 @@ async function init() {
     $('chip-status').textContent = 'OFFLINE';
     return;
   }
-  renderHow();
   await newPosition();
 }
 

@@ -166,4 +166,5 @@ def _result(status: str, node: _Node | None, stats: CBSStats, started: float) ->
         conflicts_resolved=stats.expanded if node is not None else 0,
         seconds=time.perf_counter() - started,
         trace=stats.trace,
+        solution=node.id if node is not None else None,
     )

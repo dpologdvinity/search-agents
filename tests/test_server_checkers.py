@@ -92,6 +92,6 @@ def test_chance_agent_and_describe_endpoint(client):
     assert tuple(r.json()["move"]["path"]) in {tuple(m.path) for m in legal_moves(START, -1)}
     text = client.get("/api/checkers/describe", params={"red": "mcts", "red_level": 3, "white": "alphabeta",
                                                         "white_level": 1, "size": 10}).json()["text"]
-    assert text == "Red: MCTS (1,000 playouts) vs White: alpha-beta search, iterative deepening, 0.2 s"
+    assert text == "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.2 s)"
     human = client.get("/api/checkers/describe", params={"white": "chance"}).json()["text"]
-    assert human == "White: chance (fixed odds)"  # red defaults to a human
+    assert human == "White: Chance (fixed odds)"  # red defaults to a human

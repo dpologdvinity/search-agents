@@ -199,8 +199,6 @@ function paintText(v) {
   $('chip-status').textContent = locked ? 'LOCKED' : (injecting ? 'KIDNAPPED?' : 'SEARCHING');
   $('chip-pf').textContent = `${pfErr.toFixed(2)} m`;
   $('chip-grid').textContent = `${gErr.toFixed(2)} m`;
-  $('chip-ess').textContent = `${pf.ess.toFixed(0)}/${pf.n}`;
-  $('chip-modes').textContent = String(modes);
   $('chip-step').textContent = String(step);
   $('lr-info').textContent = locked
     ? `Locked: the particles and the robot agree to ${pfErr.toFixed(2)} m.`

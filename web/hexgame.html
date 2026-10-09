@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="hexgame.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">HEX // MONTE CARLO TREE SEARCH · RAVE</div>
+      <div class="proj-pg-tag">HEX // MONTE CARLO TREE SEARCH</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="HEX">HEX</h1>
-      <div class="proj-pg-sub">Join your two edges with a chain of stones. There are no draws: a full board always has exactly one winner. The agent searches by random playouts and shares what it learns between moves. Chance plays a fixed-odds draw instead, with no search.</div>
+      <div class="proj-pg-sub">Join your two edges with a chain of stones. The agents search by random games; Chance draws from fixed odds.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -45,6 +46,12 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Join your two edges with an unbroken chain of stones. DOWN (pink) joins the top and bottom rows, and ACROSS (cyan) joins the left and right columns. Hex has no draws, so a full board always has one winner.</p>
+    <p>Click a hexagon to place a stone. DOWN moves first, and MATCH sets which side you play. With the swap rule on, the second player may take over the first stone: you press SWAP when you are ACROSS, and the agent decides when it is ACROSS.</p>
+    <p>Press HINT to see the search's suggestion without playing it. To watch two agents instead, set MODE to agent vs agent, choose both agents, and press START.</p>
+  </section>
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="field-hint" id="matchup" style="text-align:center"></div>
@@ -55,30 +62,21 @@
       </div>
       <div class="field-hint" id="hx-note" aria-live="polite">Click a hexagon to place a stone. Your goal is the pink edges.</div>
       <div class="inline" style="justify-content:center;flex-wrap:wrap;margin-top:0.6rem">
-        <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
-        <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
-        <button class="cyber-btn" id="btn-swap" type="button" hidden><span class="btn-txt">⇄ SWAP</span></button>
-        <button class="cyber-btn" id="btn-watch" type="button" aria-pressed="false"><span class="btn-txt">▶▶ WATCH</span></button>
+        <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new game with the settings on the right"><span class="btn-txt">↺ NEW GAME</span></button>
+        <button class="cyber-btn green" id="btn-hint" type="button" title="Run the RAVE search and show its suggestion. The move is not played."><span class="btn-txt">✦ HINT</span></button>
+        <button class="cyber-btn" id="btn-swap" type="button" hidden title="Take the first stone over instead of replying (swap rule)"><span class="btn-txt">⇄ SWAP</span></button>
+        <button class="cyber-btn" id="btn-watch" type="button" aria-pressed="false" title="Start or stop the game between the two agents"><span class="btn-txt">▶▶ WATCH</span></button>
       </div>
 
-      <!-- Watch controls: pause, single-step, playback speed, auto-restart, and the W/D/L score across games. -->
+      <!-- Watch controls: pause and single-step, and the W/D/L score across games. Speed and auto-restart are in More settings. -->
       <div id="watch-bar" style="margin-top:0.6rem" hidden>
         <div class="inline" style="justify-content:center;flex-wrap:wrap">
-          <button class="cyber-btn" id="btn-pause" type="button" aria-pressed="false" disabled><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button" disabled><span class="btn-txt">▶| STEP</span></button>
-          <select class="cyber-select" id="watch-speed" aria-label="Playback speed">
-            <option value="1200">Slow</option>
-            <option value="450" selected>Normal</option>
-            <option value="150">Fast</option>
-            <option value="0">Instant</option>
-          </select>
-          <label class="field-hint" style="display:flex;gap:0.5rem;align-items:center;cursor:pointer">
-            <input type="checkbox" id="auto-restart" checked> Auto-restart after each game
-          </label>
+          <button class="cyber-btn" id="btn-pause" type="button" aria-pressed="false" disabled title="Hold after the current move; press again to resume"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" disabled title="While paused, play one move and pause again"><span class="btn-txt">▶| STEP</span></button>
         </div>
         <div class="inline" style="justify-content:center;flex-wrap:wrap;margin-top:0.4rem">
           <div class="field-hint" id="score" aria-live="polite"></div>
-          <button class="cyber-btn" id="btn-score-reset" type="button"><span class="btn-txt">RESET SCORE</span></button>
+          <button class="cyber-btn" id="btn-score-reset" type="button" title="Set DOWN's wins and losses back to zero"><span class="btn-txt">RESET SCORE</span></button>
         </div>
       </div>
 
@@ -88,11 +86,11 @@
           <div class="inline" style="justify-content:space-between;flex-wrap:wrap">
             <div class="viz-title" id="think-title">Make a move, or press HINT, to see the search.</div>
             <div class="hx-toggle" role="group" aria-label="Heat map">
-              <button class="cyber-btn" id="heat-visits" type="button" aria-pressed="true"><span class="btn-txt">VISITS</span></button>
-              <button class="cyber-btn" id="heat-rave" type="button" aria-pressed="false"><span class="btn-txt">RAVE</span></button>
+              <button class="cyber-btn" id="heat-visits" type="button" aria-pressed="true" title="Shade each empty cell by how many simulations the search gave it"><span class="btn-txt">VISITS</span></button>
+              <button class="cyber-btn" id="heat-rave" type="button" aria-pressed="false" title="Shade each empty cell by its RAVE rate, the shared all-moves-as-first win rate"><span class="btn-txt">RAVE</span></button>
             </div>
           </div>
-          <div class="hx-gauge" aria-label="Win probability">
+          <div class="hx-gauge" aria-label="Win probability" title="The search's win chance for each side">
             <div class="hx-gauge-bar"><i id="gauge-down"></i><i id="gauge-across"></i></div>
             <div class="hx-gauge-lbl"><span id="gauge-down-lbl" class="hx-pink">DOWN 50%</span><span id="gauge-across-lbl" class="hx-cyan">ACROSS 50%</span></div>
           </div>
@@ -107,10 +105,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.4rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Move log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -118,19 +116,15 @@
         <div class="section-title pink-ttl">MATCH</div>
         <div class="stack">
           <div>
-            <div class="field-lbl">BOARD</div>
-            <select class="cyber-select" id="size" style="width:100%"></select>
-          </div>
-          <div>
             <div class="field-lbl">MODE</div>
-            <select class="cyber-select" id="mode" style="width:100%">
+            <select class="cyber-select" id="mode" style="width:100%" title="Play against an agent, or watch two agents play each other">
               <option value="vs" selected>You vs agent</option>
               <option value="watch">Agent vs agent</option>
             </select>
           </div>
           <div id="you-row">
             <div class="field-lbl">YOU PLAY</div>
-            <select class="cyber-select" id="you" style="width:100%">
+            <select class="cyber-select" id="you" style="width:100%" title="The side you play. DOWN moves first.">
               <option value="1" selected>DOWN (X, top to bottom)</option>
               <option value="2">ACROSS (O, left to right)</option>
             </select>
@@ -144,7 +138,6 @@
               <option value="random">Random</option>
               <option value="chance">Chance (fixed odds)</option>
             </select>
-            <div class="field-hint" id="desc-a"></div>
           </div>
           <div id="agent2-row" hidden>
             <div class="field-lbl">ACROSS AGENT</div>
@@ -155,87 +148,344 @@
               <option value="random">Random</option>
               <option value="chance">Chance (fixed odds)</option>
             </select>
-            <div class="field-hint" id="desc-b"></div>
           </div>
           <div>
             <div class="field-lbl">SEARCH LEVEL</div>
-            <select class="cyber-select" id="level" style="width:100%">
+            <select class="cyber-select" id="level" style="width:100%" title="Search budget per move. Random, shortest-path and chance ignore it.">
               <option value="1">1 · quick</option>
               <option value="2" selected>2 · standard</option>
               <option value="3">3 · deep</option>
             </select>
           </div>
-          <label class="field-hint" style="display:flex;gap:0.5rem;align-items:center;cursor:pointer">
-            <input type="checkbox" id="swap-rule"> Swap rule: the second player may take the opening stone
-          </label>
         </div>
       </div>
-      <div>
-        <div class="section-title green-ttl">HOW IT THINKS</div>
+
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">PLAYOUTS FILL THE BOARD</div>
-            <div class="field-hint">A random game is finished by shuffling the empty cells and alternating colours. Hex has no draws, so the full board has one winner, and one connectivity check decides the playout.</div>
+          <div>
+            <div class="field-lbl">BOARD</div>
+            <select class="cyber-select" id="size" style="width:100%" title="Board side, from 5 to 11 cells"></select>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">UCT TRUSTS ITS OWN WINS</div>
-            <div class="field-hint">Each move is scored by its win rate plus an exploration bonus. It needs many visits before the rate means much.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">RAVE SHARES BETWEEN MOVES</div>
-            <div class="field-hint">A stone played anywhere below a node counts as if it had been played first there (AMAF). Early on, the shared estimate is blended in with weight beta = sqrt(k / (3n + k)), which fades as the move gets visits.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">HEAT AND PRINCIPAL VARIATION</div>
-            <div class="field-hint">Heat shows where the search spent its visits, or the RAVE rate. The numbered line is the most-visited path from the root: the agent's expectation of how the game goes.</div>
+          <label class="field-hint" style="display:flex;gap:0.5rem;align-items:center;cursor:pointer" title="The second player may take over the first stone instead of replying">
+            <input type="checkbox" id="swap-rule"> Swap rule
+          </label>
+          <div id="watch-opts" hidden>
+            <div class="field-lbl">WATCH SPEED</div>
+            <select class="cyber-select" id="watch-speed" style="width:100%" aria-label="Playback speed" title="Pause between moves when two agents play">
+              <option value="1200">Slow</option>
+              <option value="450" selected>Normal</option>
+              <option value="150">Fast</option>
+              <option value="0">Instant</option>
+            </select>
+            <label class="field-hint" style="display:flex;gap:0.5rem;align-items:center;cursor:pointer;margin-top:0.6rem" title="Deal a new game after each finished one">
+              <input type="checkbox" id="auto-restart" checked> Auto-restart after each game
+            </label>
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The agent is Monte Carlo tree search. From the current position it plays many random games to the end, keeps score of which first moves win, and plays the move it has visited most often. The default, RAVE, also counts a move's results from random games where that move came later, so it learns faster when the budget is small.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>RAVE-MCTS (default)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Judging a dish from a few tasting plates is slow if you only count a dish when it is served first. RAVE also counts it whenever it turns up later in the meal, so every dish gets feedback sooner. The estimate is noisy, so as a dish is tasted more, its own record takes over.</p>
-      <p>Each simulation selects down the tree by score, adds one new move, finishes the game at random, and adds the result to every node on the path. A child's score blends its win rate with its RAVE rate: Q = (1 - beta) Q_uct + beta Q_rave, with beta = sqrt(k / (3n + k)), k = 300, and exploration constant c = 0.6. Expansion tries the untried move with the best RAVE rate first.</p>
-      <ul>
-        <li>With the swap rule on, the agent's first turn as the second player runs two searches, one for staying and one for swapping, and swaps when its win chance is higher after swapping.</li>
-        <li>The move it plays is the most-visited child of the root.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Plain UCT</h3>
-      <p class="hiw-plain"><b>New to this?</b> UCT is the rule "try the best option, but also check the ones you have barely tried". Each move's score is its win rate plus a bonus that is large for moves with few visits, so the search explores instead of fixating on an early favourite.</p>
-      <p>Its score is the win rate plus c * sqrt(ln N / n), with c = 0.6, where N is the parent's visits and n the child's. Untried moves are expanded in random order, and it uses no RAVE statistics.</p>
-      <ul>
-        <li>On the 7×7 benchmark at 400 simulations per move, it wins 13 of 40 games against the shortest-path race.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Shortest-path race (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Hex is a race to connect. Count how many empty cells each side still needs to finish its chain, the way you would count the bricks left in a wall. Then play the cell that slows the opponent the most while speeding you up.</p>
-      <p>Distance is a 0-1 breadth-first search: your stones cost 0, empty cells cost 1, and opponent stones are walls. A move scores the opponent's distance minus your own, with random tie-breaks. It looks one move ahead only.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Random (baseline)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A random empty cell, chosen without any thought. It sets the floor for the others.</p>
-      <ul>
-        <li>RAVE and UCT both beat it in all 40 benchmark games.</li>
-      </ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Chance (fixed odds)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A weighted die with no thinking behind it. Cells near the middle of the board come up more often, and the rest come up less often, but the draw is still random.</p>
-      <p>It does no search, evaluation or lookahead. Each empty cell gets a fixed weight from its hex ring around the centre cell: 4 for the centre, 3 for ring 1, 2 for ring 2, and 1 for ring 3 and beyond. The weights are renormalised over the empty cells and one cell is drawn at random. It never swaps.</p>
-    </article>
+  <p class="hiw-lede">The agents are variants of <b>Monte Carlo tree search</b> (MCTS), which plays many random games from the current position and keeps score of each candidate move. The default agent, <b>RAVE</b>, also credits a move with the results of random games in which that move was played later, so it learns faster from a small budget. The page also offers a plain UCT search, two baselines, and a chance player that does no search at all.</p>
+
+  <h3 class="hiw-sub">Hex and the board</h3>
+  <p class="hiw-note"><b>Hex</b> is a two-player game on a rhombus of hexagons. The board is n rows by n columns, with n = 7 by default and 5 to 11 on this page. Cell (r, c), the cell in row r and column c, is stored at index r · n + c<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L3-L4" target="_blank" rel="noopener" title="hexgame/board.py, lines 3–4" aria-label="Code on GitHub: hexgame/board.py, lines 3 to 4">1</a>. <b>DOWN</b> wins by joining the top row to the bottom row with a chain of its stones. <b>ACROSS</b> wins by joining the left column to the right column. The two acute corners belong to both edges. On a full board exactly one player has such a chain, so Hex has no draws.</p>
+  <p class="hiw-note">Each cell has up to six <b>neighbours</b>: the cells to its left and right, the cells above and below, and the two diagonals (r − 1, c + 1) and (r + 1, c − 1). The <code>neighbours</code> function keeps only the ones that lie on the board<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L37-L46" target="_blank" rel="noopener" title="hexgame/board.py, lines 37–46" aria-label="Code on GitHub: hexgame/board.py, lines 37 to 46">2</a>.</p>
+  <p class="hiw-note">A <b>connection</b> is a chain of one player's stones from its start edge to its goal edge. The <code>connect</code> function finds a shortest chain with a <b>breadth-first search</b> (BFS). BFS starts from every stone on the start edge and visits neighbours in rings of growing distance, recording each stone's parent so the chain can be read back from the goal edge<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L64-L91" target="_blank" rel="noopener" title="hexgame/board.py, lines 64–91" aria-label="Code on GitHub: hexgame/board.py, lines 64 to 91">3</a>. <code>winner_of</code> checks DOWN first, then ACROSS<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L94-L100" target="_blank" rel="noopener" title="hexgame/board.py, lines 94–100" aria-label="Code on GitHub: hexgame/board.py, lines 94 to 100">4</a>.</p>
+
+  <h3 class="hiw-sub">Monte Carlo tree search and UCT</h3>
+  <p class="hiw-note"><b>Monte Carlo tree search</b> estimates a move by playing random games from it, not with a hand-written evaluation. It builds a <b>game tree</b> whose root is the current position and whose children are the moves tried so far. Each node stores a <b>visit count</b>, the number of simulations that passed through it, and a <b>win count</b>, the number of those simulations that the player who moved into the node won<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L37-L53" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 37–53" aria-label="Code on GitHub: hexgame/mcts.py, lines 37 to 53">5</a>.</p>
+  <p class="hiw-note">Each <b>simulation</b> has four steps. <b>Selection</b> descends from the root, choosing the child with the best score, while the node has no untried moves and has children<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L107-L112" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 107–112" aria-label="Code on GitHub: hexgame/mcts.py, lines 107 to 112">6</a>. <b>Expansion</b> adds one child for an untried move<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L113-L125" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 113–125" aria-label="Code on GitHub: hexgame/mcts.py, lines 113 to 125">7</a>. <b>Simulation</b> decides the game: if the new child connected its mover's stones, the game is already won, and otherwise a <b>random playout</b> finishes it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L126-L131" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 126–131" aria-label="Code on GitHub: hexgame/mcts.py, lines 126 to 131">8</a>. <b>Backpropagation</b> adds one visit to every node on the path, and one win to each node whose mover won<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L132-L136" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 132–136" aria-label="Code on GitHub: hexgame/mcts.py, lines 132 to 136">9</a>.</p>
+  <p class="hiw-note"><b>UCT</b> (upper confidence bounds applied to trees) chooses the child with the highest score: its win rate plus an exploration bonus, which is large when the child has few visits compared with its parent<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L56-L70" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 56–70" aria-label="Code on GitHub: hexgame/mcts.py, lines 56 to 70">10</a>.</p>
+  <!-- hexgame/mcts.py:56-70, 33 -->
+  <div class="math-fig">
+    <div class="math math-block">a^{\star}=\arg\max_{i}\Bigl(\frac{w_i}{n_i}+c\sqrt{\frac{\ln N}{n_i}}\Bigr),\qquad c=0.6</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L56-L70" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 56–70" aria-label="Code on GitHub: hexgame/mcts.py, lines 56 to 70">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L33" target="_blank" rel="noopener" title="hexgame/mcts.py, line 33" aria-label="Code on GitHub: hexgame/mcts.py, line 33">11</a></span>
   </div>
+  <p class="hiw-note">Here i ranges over the children of the node, w_i and n_i are the wins and visits of child i, and N is the node's own visit count, which the code reads as <code>node.visits</code>. The win count w_i belongs to the player who moved into child i, who is the player choosing among the children, so a higher score is always better for the chooser. The constant c = 0.6 is <code>EXPLORE</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L33" target="_blank" rel="noopener" title="hexgame/mcts.py, line 33" aria-label="Code on GitHub: hexgame/mcts.py, line 33">11</a>, and ln is the natural logarithm. A child always has at least one visit by the time it can be selected, because it is backed up in the simulation that creates it.</p>
+  <p class="hiw-note"><b>Random playouts</b> fill the board instead of playing it move by move. <code>fill_playout</code> shuffles the empty cells and hands them out alternately, starting with the player to move. It then checks once whether DOWN is connected. A full board has exactly one winner, so that single check decides the game. The shuffle gives the same distribution of finished games as playing uniformly random legal moves<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L103-L123" target="_blank" rel="noopener" title="hexgame/board.py, lines 103–123" aria-label="Code on GitHub: hexgame/board.py, lines 103 to 123">12</a>.</p>
+  <p class="hiw-note">The agent plays the child with the most visits, not the child with the highest win rate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L157" target="_blank" rel="noopener" title="hexgame/mcts.py, line 157" aria-label="Code on GitHub: hexgame/mcts.py, line 157">13</a>. The search's <b>value</b> is the win chance it reports for the mover, which is the win rate of that same child<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L178" target="_blank" rel="noopener" title="hexgame/mcts.py, line 178" aria-label="Code on GitHub: hexgame/mcts.py, line 178">14</a>.</p>
+  <!-- hexgame/mcts.py:157, 178 -->
+  <div class="math-fig">
+    <div class="math math-block">\hat p=\frac{w_b}{n_b},\qquad b=\arg\max_{i}\,n_i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L157" target="_blank" rel="noopener" title="hexgame/mcts.py, line 157" aria-label="Code on GitHub: hexgame/mcts.py, line 157">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L178" target="_blank" rel="noopener" title="hexgame/mcts.py, line 178" aria-label="Code on GitHub: hexgame/mcts.py, line 178">14</a></span>
+  </div>
+  <p class="hiw-note">Here b is the most-visited child of the root, and w_b and n_b are its wins and visits. The gauge on the page shows this value for DOWN and for ACROSS.</p>
+
+  <!-- hexgame/mcts.py:1-23 (the four steps), 56-70, 73-83, 86-181 (search) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L86-L181" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 86–181" aria-label="Code on GitHub: hexgame/mcts.py, lines 86 to 181">15</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L56-L83" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 56–83" aria-label="Code on GitHub: hexgame/mcts.py, lines 56 to 83">16</a></span>
+    <pre class="pseudo-simple">function MCTS-SEARCH(position, simulations):
+    repeat simulations times:
+        path ← DESCEND(root)                # best blended score at each level
+        node ← the last node of path
+        if node has untried moves:
+            node ← EXPAND(node)             # RAVE tries the best AMAF rate first
+        winner ← PLAYOUT(node)              # a connected child is decided; else random fill
+        BACKUP(path, winner)                # visits, wins and AMAF counts
+    return the move of the root child with the most visits</pre>
+    <pre class="pseudo-full" hidden>function MCTS-SEARCH(position, simulations, seconds, rave = true, c = 0.6, k = 300):
+    board ← copy of the cells of position     # stones on the tree path are placed here, then taken back
+    root ← NODE(to move = the player to move, untried = the empty cells)
+    start ← now
+    sims ← 0
+    repeat while sims &lt; simulations:
+        if seconds is set and sims mod 32 = 0 and now − start &gt; seconds:
+            stop                              # the time budget is spent
+        node ← root
+        path ← [root]                         # the nodes from the root to this simulation's leaf
+        moves ← empty list                    # the cells played along the tree part
+        # 1. selection: descend while the node has no untried moves and has children
+        while node has no untried moves and node has children:
+            node ← SELECT(node, c, k, rave)
+            board[node.cell] ← node.mover
+            append node to path
+            append node.cell to moves
+        # 2. expansion: add one child for an untried move
+        if node has untried moves:
+            cell ← PICK-UNTRIED(node, rave), removed from node.untried
+            mover ← node.to_move
+            board[cell] ← mover
+            connected ← CONNECTED(board, mover)
+            child ← NODE(cell, mover, to move = other(mover), untried = [] if connected else the empty cells, terminal = connected)
+            add child to node.children
+            node ← child
+            append node to path
+            append cell to moves
+        # 3. simulation: a finished game has a known winner
+        if node is terminal:
+            winner ← node.mover
+            order ← empty list
+        else:
+            winner, order ← FILL-PLAYOUT(copy of board, node.to_move)
+        # 4. backpropagation: visit and win counts, then the AMAF counts
+        for each nd in path:
+            nd.visits ← nd.visits + 1
+            if nd.mover = winner:
+                nd.wins ← nd.wins + 1
+        if rave:
+            seq ← moves followed by order
+            for each depth d, nd in path:       # nd.to_move plays seq[d], seq[d+2], ...
+                for j ← d, d + 2, ... while j &lt; length of seq:
+                    m ← seq[j]
+                    nd.rave_n[m] ← nd.rave_n[m] + 1
+                    if winner = nd.to_move:
+                        nd.rave_w[m] ← nd.rave_w[m] + 1
+        for each cell m in moves:
+            board[m] ← EMPTY                  # the board is back to the root position
+        sims ← sims + 1
+    best ← the root child with the most visits
+    return best.cell, sims, the visit and win counts, value = best.wins / best.visits
+
+function SELECT(node, c, k, rave):
+    log_n ← ln(node.visits)
+    for each child ch of node:
+        q ← ch.wins / ch.visits
+        if rave and node.rave_n[ch.cell] &gt; 0:
+            q_rave ← node.rave_w[ch.cell] / node.rave_n[ch.cell]
+            β ← sqrt(k / (3 · ch.visits + k))
+            q ← (1 − β) · q + β · q_rave
+        score ← q + c · sqrt(log_n / ch.visits)
+    return the child with the largest score
+
+function PICK-UNTRIED(node, rave):
+    if not rave:
+        return a random index into node.untried
+    for each index i, cell m in node.untried:
+        key ← ((node.rave_w[m] + 1) / (node.rave_n[m] + 2), a random number)
+    return the index with the largest key
+
+function FILL-PLAYOUT(cells, to_move):
+    order ← the empty cells of cells, shuffled
+    player ← to_move
+    for each cell i in order:
+        cells[i] ← player
+        player ← other(player)
+    if CONNECTED(cells, DOWN):
+        winner ← DOWN
+    else:
+        winner ← ACROSS
+    return winner, order
+
+function CONNECTED(cells, player):
+    queue ← the stones of player on its start edge, each with no parent
+    while queue is not empty:
+        u ← the first cell in queue, removed
+        if u is on the goal edge:
+            return the chain of parents back from u
+        for each neighbour v of u with cells[v] = player and v not yet reached:
+            record u as the parent of v
+            add v to the back of queue
+    return none</pre>
+  </div>
+  <p class="hiw-note"><b>Selection and expansion in the full version.</b> The selection loop descends until it reaches a node with an untried move, or a node without children, which is a finished game. <code>PICK-UNTRIED</code> is where UCT and RAVE differ: UCT chooses at random, while RAVE chooses the move with the best AMAF rate. The rate uses a Laplace-smoothed estimate, so an unseen move starts at one half.</p>
+  <p class="hiw-note"><b>The board is shared, not copied.</b> The stones of the current path are placed on one list, and they are taken off again after the backup, so each simulation starts from the root position. The random playout still works on a copy, because it fills every empty cell and does not undo the fill.</p>
+  <p class="hiw-note"><b>Terminal children.</b> When expansion creates a child whose stone connects its mover, the game is decided at once. The child is marked terminal and gets no random playout, and its result is known exactly.</p>
+  <p class="hiw-note"><b>The time budget.</b> The clock is read only every 32 simulations, which keeps the timing check cheap. A budget of simulations and a time limit can both be set, and the search stops at whichever comes first.</p>
+
+  <h3 class="hiw-sub">RAVE: all-moves-as-first statistics</h3>
+  <p class="hiw-note"><b>RAVE</b> (rapid action value estimation) adds <b>all-moves-as-first</b> (AMAF) statistics to UCT. In a playout, a cell that a player takes after a node has been reached is credited to that node's player as if it had been played first. Each node keeps, for every cell m, <code>rave_n[m]</code>, how often its player took m after the node in a simulation through it, and <code>rave_w[m]</code>, how often that player then won<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L37-L53" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 37–53" aria-label="Code on GitHub: hexgame/mcts.py, lines 37 to 53">5</a>. These estimates are biased, because a cell played later is often a different move in the position where the node sits. They come in much larger numbers early in the search, which is why they help when the budget is small.</p>
+  <p class="hiw-note">Each child's score then blends the UCT win rate q with the RAVE rate q_RAVE, for the child's cell m, read at the parent<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L63-L66" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 63–66" aria-label="Code on GitHub: hexgame/mcts.py, lines 63 to 66">17</a>:</p>
+  <!-- hexgame/mcts.py:63-66 -->
+  <div class="math-fig">
+    <div class="math math-block">Q=(1-\beta)\,q+\beta\,q_{\mathrm{RAVE}},\qquad \beta=\sqrt{\frac{k}{3n+k}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L63-L66" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 63–66" aria-label="Code on GitHub: hexgame/mcts.py, lines 63 to 66">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L65" target="_blank" rel="noopener" title="hexgame/mcts.py, line 65" aria-label="Code on GitHub: hexgame/mcts.py, line 65">18</a></span>
+  </div>
+  <p class="hiw-note">Here q = w / n is the child's own win rate, and n is its visit count. The RAVE rate q_RAVE = rave_w[m] / rave_n[m] is used only when rave_n[m] is above zero. Otherwise the score is the plain UCT value. The constant k = 300 is <code>RAVE_K</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L34" target="_blank" rel="noopener" title="hexgame/mcts.py, line 34" aria-label="Code on GitHub: hexgame/mcts.py, line 34">19</a>, and β, the weight on the RAVE rate, falls as the child gains visits. A child with few visits trusts the shared estimate, and a child with many visits trusts its own win rate.</p>
+  <p class="hiw-note"><em>Example.</em> At n = 300 visits, β = √(300 / (900 + 300)) = 0.5, so the two estimates count equally. A child with 3 visits has β = √(300 / 309) ≈ 0.99, so almost all of its score is the RAVE rate.</p>
+  <p class="hiw-note">RAVE also changes which untried move is expanded first. Each untried cell m gets the Laplace-smoothed rate below, which is one half for a cell that has never been played in a simulation through the node<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L73-L83" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 73–83" aria-label="Code on GitHub: hexgame/mcts.py, lines 73 to 83">20</a>. Ties are broken at random.</p>
+  <!-- hexgame/mcts.py:80 -->
+  <div class="math-fig">
+    <div class="math math-block">\frac{\mathrm{rave\_w}[m]+1}{\mathrm{rave\_n}[m]+2}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L80" target="_blank" rel="noopener" title="hexgame/mcts.py, line 80" aria-label="Code on GitHub: hexgame/mcts.py, line 80">21</a></span>
+  </div>
+  <p class="hiw-note">The expansion picks the untried cell with the largest value of this rate. The numerator and denominator are the RAVE win and visit counts of the cell at this node. One is added to the win count and two to the visit count, so a cell with no samples scores one half.</p>
+  <p class="hiw-note">In backpropagation, the sequence of cells played after the root is the tree moves followed by the playout order<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L137-L148" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 137–148" aria-label="Code on GitHub: hexgame/mcts.py, lines 137 to 148">22</a>. The player who moves at each depth d also plays the cells at positions d, d + 2 and so on, so each node receives one AMAF sample for every such cell. The full MCTS pseudocode above shows this loop.</p>
+
+  <h3 class="hiw-sub">The swap rule</h3>
+  <p class="hiw-note">The optional <b>swap rule</b>, also called the pie rule, lets the second player take over the first stone instead of replying. The stone changes colour, and the turn passes back to the first player. The move is written SWAP, as −1, and it is legal only as the reply to the first move, with the rule on<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py#L207-L222" target="_blank" rel="noopener" title="hexgame/board.py, lines 207–222" aria-label="Code on GitHub: hexgame/board.py, lines 207 to 222">23</a>.</p>
+  <p class="hiw-note">The agent decides this only on ACROSS's first turn, as the second player. It runs two searches, each with the full budget of its level, so that turn can take about twice as long: one for staying, from the position as it is, and one for swapping, from the position with the first stone recoloured and DOWN to move. The agent swaps when its win chance is higher after the swap<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L107-L123" target="_blank" rel="noopener" title="hexgame/agents.py, lines 107–123" aria-label="Code on GitHub: hexgame/agents.py, lines 107 to 123">24</a>.</p>
+  <!-- hexgame/agents.py:117-119 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{swap}\iff 1-v_{\mathrm{after}}>v_{\mathrm{stay}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L117-L119" target="_blank" rel="noopener" title="hexgame/agents.py, lines 117–119" aria-label="Code on GitHub: hexgame/agents.py, lines 117 to 119">25</a></span>
+  </div>
+  <p class="hiw-note">Here v_stay is ACROSS's win chance from the search that stays, and v_after is DOWN's win chance from the search after the swap. The term 1 − v_after is therefore ACROSS's win chance after the swap. If the swap is not chosen, the agent plays the most-visited move of the search that stays.</p>
+
+  <!-- hexgame/agents.py:80-131 (choose), 107-123 (the swap check) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L80-L131" target="_blank" rel="noopener" title="hexgame/agents.py, lines 80–131" aria-label="Code on GitHub: hexgame/agents.py, lines 80 to 131">26</a></span>
+    <pre class="pseudo-simple">function CHOOSE-MOVE(board):
+    if the swap rule is on and ACROSS is to move with one stone on the board:
+        stay ← ACROSS's win chance from MCTS-SEARCH(board)
+        swapped ← board with the first stone recoloured
+        swap ← 1 − DOWN's win chance from MCTS-SEARCH(swapped)
+        if swap &gt; stay:
+            return SWAP
+    return the move of MCTS-SEARCH(board)</pre>
+    <pre class="pseudo-full" hidden>function CHOOSE-MOVE(board, agent, sims, seconds, seed):
+    rng ← random generator seeded with seed
+    if board.swap_rule and length of board.moves = 1 and board.to_move = ACROSS:
+        stay ← MCTS-SEARCH(board.cells, ACROSS, sims, seconds, seed = a new random seed)
+        swapped ← copy of board.cells
+        swapped[first move] ← other(swapped[first move])      # the second player takes the stone
+        after ← MCTS-SEARCH(swapped, DOWN, sims, seconds, seed = another new random seed)
+        win_stay ← stay.value                                 # ACROSS's win chance
+        win_swap ← 1 − after.value                            # ACROSS's win chance after the swap
+        if win_swap &gt; win_stay:
+            return SWAP, analysis with both searches' counts and both win chances
+        return stay.move, analysis of stay, with both win chances
+    move, analysis ← MCTS-SEARCH(board.cells, board.to_move, sims, seconds, a new random seed)
+    return move, analysis</pre>
+  </div>
+  <p class="hiw-note"><b>Why the swap is compared with the stay.</b> Both values are estimates of the same thing, ACROSS's chance of winning, so the larger one is the better choice. The search after a swap has DOWN to move, so its value is read as 1 − value to get ACROSS's chance. Each search draws its own seed from the agent's generator, so a seeded game repeats exactly.</p>
+
+  <h3 class="hiw-sub">Shortest-path race (baseline)</h3>
+  <p class="hiw-note">The <b>shortest-path</b> agent does not search. It measures each side's <b>distance to connection</b>, the fewest empty cells that side still has to fill to complete a chain. Its own stones cost 0, empty cells cost 1, and opposing stones are walls<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L1-L8" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 1–8" aria-label="Code on GitHub: hexgame/heuristic.py, lines 1 to 8">27</a>. The distance is found with a <b>0-1 breadth-first search</b>, a shortest-path search in which each step costs 0 or 1 and a double-ended queue keeps the frontier in order<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L27-L57" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 27–57" aria-label="Code on GitHub: hexgame/heuristic.py, lines 27 to 57">28</a>.</p>
+  <!-- hexgame/heuristic.py:57, 71 -->
+  <div class="math-fig">
+    <div class="math math-block">d_p=\min_{g\in G_p}\operatorname{dist}_p(g),\qquad \operatorname{score}(m)=d_{\mathrm{opp}}-d_{p}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L57" target="_blank" rel="noopener" title="hexgame/heuristic.py, line 57" aria-label="Code on GitHub: hexgame/heuristic.py, line 57">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L71" target="_blank" rel="noopener" title="hexgame/heuristic.py, line 71" aria-label="Code on GitHub: hexgame/heuristic.py, line 71">30</a></span>
+  </div>
+  <p class="hiw-note">Here d_p is the distance of player p, G_p is the set of its goal-edge cells, and dist_p(g) is the cheapest cost to reach g from the start edge. Both distances are measured with the candidate move m placed. The agent plays the empty cell with the largest score, which lengthens the opponent's route the most while shortening its own. Ties are broken at random<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L60-L77" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 60–77" aria-label="Code on GitHub: hexgame/heuristic.py, lines 60 to 77">31</a>. It looks one move ahead, so it does not see that a block can be answered. It is a fair but weak benchmark opponent.</p>
+  <!-- hexgame/heuristic.py:60-77 (shortest_path_move), 27-57 (distance) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L60-L77" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 60–77" aria-label="Code on GitHub: hexgame/heuristic.py, lines 60 to 77">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L27-L57" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 27–57" aria-label="Code on GitHub: hexgame/heuristic.py, lines 27 to 57">28</a></span>
+    <pre class="pseudo-simple">function SHORTEST-PATH-MOVE(position):
+    for each empty cell m:
+        score(m) ← DISTANCE(opponent) − DISTANCE(player to move), with m placed
+    return a cell with the largest score, ties broken at random</pre>
+    <pre class="pseudo-full" hidden>function SHORTEST-PATH-MOVE(cells, to_move, rng):
+    opp ← other(to_move)
+    best ← empty list
+    best_score ← none
+    for each cell m from 0 to n × n − 1:
+        if cells[m] is occupied:
+            skip m
+        cells[m] ← to_move
+        score ← DISTANCE(cells, opp) − DISTANCE(cells, to_move)
+        cells[m] ← EMPTY
+        if best_score is none or score &gt; best_score:
+            best ← [m]
+            best_score ← score
+        else if score = best_score:
+            append m to best
+    return a random element of best
+
+function DISTANCE(cells, player):
+    dist[i] ← infinity for every cell i       # the code uses 10^6 as infinity
+    queue ← empty double-ended queue
+    for each start-edge cell s with cells[s] ≠ opp:
+        w ← 0 if cells[s] = player, else 1
+        dist[s] ← w
+        push s to the front if w = 0, else to the back
+    while queue is not empty:
+        u ← pop from the front
+        for each neighbour v of u with cells[v] ≠ opp:
+            w ← 0 if cells[v] = player, else 1
+            if dist[u] + w &lt; dist[v]:
+                dist[v] ← dist[u] + w
+                push v to the front if w = 0, else to the back
+    return the minimum of dist over the goal-edge cells</pre>
+  </div>
+  <p class="hiw-note"><b>The deque.</b> A 0-1 search needs a queue sorted by distance. Zero-cost steps go to the front and one-cost steps to the back, so the first cell popped always has the smallest distance so far. This is cheaper than a general shortest-path search.</p>
+
+  <h3 class="hiw-sub">Random (baseline)</h3>
+  <p class="hiw-note">The random agent plays a uniformly random empty cell with no thought<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py#L80-L82" target="_blank" rel="noopener" title="hexgame/heuristic.py, lines 80–82" aria-label="Code on GitHub: hexgame/heuristic.py, lines 80 to 82">32</a>. It sets the floor for the others. It ignores the strength setting, as the shortest-path agent does.</p>
+
+  <h3 class="hiw-sub">Chance (fixed odds)</h3>
+  <p class="hiw-note">The <b>chance</b> agent is a fixed-odds baseline with no search, evaluation or lookahead. Each empty cell gets a weight from its <b>hex ring</b>, which is its hex distance from the centre cell. The centre is ring 0, its six neighbours are ring 1, and so on. The weights for rings 0, 1, 2 and 3 and beyond are 4, 3, 2 and 1<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L29" target="_blank" rel="noopener" title="hexgame/agents.py, line 29" aria-label="Code on GitHub: hexgame/agents.py, line 29">33</a>.</p>
+  <p class="hiw-note">The hex distance is measured on the same six-neighbour grid as the board. With m = ⌊(n − 1) / 2⌋ the centre row and column, and dr and dc the row and column offsets from the centre<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L40-L50" target="_blank" rel="noopener" title="hexgame/agents.py, lines 40–50" aria-label="Code on GitHub: hexgame/agents.py, lines 40 to 50">34</a>:</p>
+  <!-- hexgame/agents.py:40-50 -->
+  <div class="math-fig">
+    <div class="math math-block">\operatorname{ring}=\begin{cases}\max(|dr|,|dc|) & dr\cdot dc\le 0\\ |dr|+|dc| & \text{otherwise}\end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L40-L50" target="_blank" rel="noopener" title="hexgame/agents.py, lines 40–50" aria-label="Code on GitHub: hexgame/agents.py, lines 40 to 50">34</a></span>
+  </div>
+  <p class="hiw-note">The six neighbour steps are (0, ±1), (±1, 0), (−1, +1) and (+1, −1). A diagonal step therefore changes the row and column in opposite directions, and two offsets with the same sign need the sum of their sizes.</p>
+  <p class="hiw-note">Each empty cell i gets the weight of its ring, with rings 3 and beyond sharing the last weight, and the weights are renormalised over the empty cells<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L53-L65" target="_blank" rel="noopener" title="hexgame/agents.py, lines 53–65" aria-label="Code on GitHub: hexgame/agents.py, lines 53 to 65">35</a>:</p>
+  <!-- hexgame/agents.py:53-65 -->
+  <div class="math-fig">
+    <div class="math math-block">p(i)=\frac{w_{\min(\mathrm{ring}(i),\,3)}\;\mathbf{1}[i\ \text{empty}]}{\sum_{j}w_{\min(\mathrm{ring}(j),\,3)}\;\mathbf{1}[j\ \text{empty}]},\qquad (w_0,w_1,w_2,w_3)=(4,3,2,1)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L53-L65" target="_blank" rel="noopener" title="hexgame/agents.py, lines 53–65" aria-label="Code on GitHub: hexgame/agents.py, lines 53 to 65">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L29" target="_blank" rel="noopener" title="hexgame/agents.py, line 29" aria-label="Code on GitHub: hexgame/agents.py, line 29">33</a></span>
+  </div>
+  <p class="hiw-note">Here 1[i empty] is 1 for an empty cell and 0 for an occupied one, so an occupied cell has probability zero. The denominator sums the weights of the empty cells, so the probabilities add to one while any cell is empty. The agent draws one cell with these probabilities<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L68-L70" target="_blank" rel="noopener" title="hexgame/agents.py, lines 68–70" aria-label="Code on GitHub: hexgame/agents.py, lines 68 to 70">36</a>.</p>
+  <p class="hiw-note"><em>Example.</em> On an empty 7 × 7 board, the centre is ring 0, six cells are ring 1, twelve are ring 2, and the other 30 are ring 3 or beyond. The weights total 4 + 18 + 24 + 30 = 76, so the centre has probability 4/76 ≈ 5.3%, a ring 1 cell 3/76 ≈ 3.9%, a ring 2 cell 2/76 ≈ 2.6%, and an outer cell 1/76 ≈ 1.3%. The page's table lists the most likely cells with their odds. The strength setting has no effect on this agent.</p>
+
+  <!-- hexgame/agents.py:68-70 (chance_move), 53-65 (chance_odds), 40-50 (hex_ring) -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L68-L70" target="_blank" rel="noopener" title="hexgame/agents.py, lines 68–70" aria-label="Code on GitHub: hexgame/agents.py, lines 68 to 70">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L53-L65" target="_blank" rel="noopener" title="hexgame/agents.py, lines 53–65" aria-label="Code on GitHub: hexgame/agents.py, lines 53 to 65">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L40-L50" target="_blank" rel="noopener" title="hexgame/agents.py, lines 40–50" aria-label="Code on GitHub: hexgame/agents.py, lines 40 to 50">34</a></span>
+    <pre class="pseudo-simple">function CHANCE-MOVE(position):
+    for each cell i:
+        weight[i] ← 0 if i is occupied, else CHANCE-RING-WEIGHTS[min(HEX-RING(i), 3)]
+    return one empty cell drawn with probability weight[i] / total weight</pre>
+    <pre class="pseudo-full" hidden>function CHANCE-MOVE(cells, rng):
+    weights ← empty list
+    for each cell i:
+        if cells[i] is occupied:
+            weights[i] ← 0
+        else:
+            weights[i] ← CHANCE-RING-WEIGHTS[min(HEX-RING(i), 3)]     # (4, 3, 2, 1)
+    total ← sum of weights
+    odds[i] ← weights[i] / total for each cell i                       # sums to 1, occupied cells get 0
+    return one cell drawn from 0 to n × n − 1 with probabilities odds, using rng
+
+function HEX-RING(cell):
+    r, c ← the row and column of cell
+    m ← floor((n − 1) / 2)                                             # the centre row and column
+    dr ← r − m
+    dc ← c − m
+    if dr × dc ≤ 0:
+        return max(|dr|, |dc|)
+    return |dr| + |dc|</pre>
+  </div>
+  <p class="hiw-note">The chance agent never swaps, and its analysis carries the odds rather than a search table. The page's requests pass no seed to the agents, so the same position can get different moves on different requests. The CLI and the benchmark pass seeds, which makes their games repeatable.</p>
+
   <h3 class="hiw-sub">Parameters and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Exploration c</td><td>Bonus for moves with few visits, in UCT and RAVE</td><td class="num">0.6</td></tr>
-    <tr><td>Equivalence k</td><td>How many visits before a child's own win rate outweighs its RAVE rate</td><td class="num">300</td></tr>
+    <tr><td>Exploration c</td><td>Bonus for children with few visits, in UCT and RAVE</td><td class="num">0.6</td></tr>
+    <tr><td>Equivalence k</td><td>Visits before a child's own win rate outweighs its RAVE rate</td><td class="num">300</td></tr>
     <tr><td>beta</td><td>Weight on the RAVE rate for a child with n visits</td><td class="num">sqrt(k / (3n + k)); 0.5 at n = 300</td></tr>
     <tr><td>Level 1 budget</td><td>Simulations or seconds per move, whichever ends first</td><td class="num">300 or 0.4 s</td></tr>
     <tr><td>Level 2 budget (default)</td><td>Same rule, the page's standard setting</td><td class="num">1,000 or 0.9 s</td></tr>
@@ -243,13 +493,24 @@
     <tr><td>Chance ring weights</td><td>Fixed weight per hex ring from the centre cell, before renormalising over empty cells</td><td class="num">4 / 3 / 2 / 1 for rings 0 / 1 / 2 / 3+</td></tr>
     <tr><td>Board size</td><td>Side of the rhombus of hexagons</td><td class="num">5 to 11; the page starts at 7</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> c = 0.6 and k = 300 are constants in <code>hexgame/mcts.py</code>, set by hand and not tuned: the repository has no sweep over either. The beta formula is the RAVE blend from Gelly and Silver, as the code cites. Each level's budget caps the work per move at a simulation count or a time, whichever comes first, so one request stays bounded.</p>
-  <p class="hiw-note"><b>Results</b> (7×7, 400 simulations per move, 40 seeded games per matchup, 95% Wilson intervals): RAVE beats UCT in 40 of 40 games, and it beats the shortest-path race in 39 of 40. UCT wins 13 of 40 against the race. Speed on an empty board, single core, pure Python: RAVE 5,811 simulations per second, UCT 5,783, random playouts 10,739 per second. A check at 1,000 simulations (20 games, recorded in the README but not in <code>results/</code>) has RAVE winning 18 of 20 against UCT, so the gap narrows with budget. That is not a measured reversal.</p>
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py">hexgame/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py">hexgame/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/heuristic.py">hexgame/heuristic.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/board.py">hexgame/board.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/benchmark.py">hexgame/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/hexgame_benchmark.md">results/hexgame_benchmark.md</a></p>
+  <p class="hiw-note"><b>How these were chosen.</b> c = 0.6 and k = 300 are constants in <code>hexgame/mcts.py</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L33-L34" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 33–34" aria-label="Code on GitHub: hexgame/mcts.py, lines 33 to 34">37</a>, set by hand and not tuned: the repository has no sweep over either. The beta formula is the RAVE blend that the module attributes to Gelly and Silver<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/mcts.py#L12-L18" target="_blank" rel="noopener" title="hexgame/mcts.py, lines 12–18" aria-label="Code on GitHub: hexgame/mcts.py, lines 12 to 18">38</a>. Each level's budget caps the work per move at a simulation count or a time, whichever comes first, so one request stays bounded<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/agents.py#L32-L36" target="_blank" rel="noopener" title="hexgame/agents.py, lines 32–36" aria-label="Code on GitHub: hexgame/agents.py, lines 32 to 36">39</a>.</p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note">The benchmark plays seeded games on a 7 × 7 board with 400 simulations per move and 40 games per matchup, alternating colours<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/hexgame_benchmark.md" target="_blank" rel="noopener" title="results/hexgame_benchmark.md" aria-label="Code on GitHub: results/hexgame_benchmark.md">40</a>. RAVE beats UCT in 40 of 40 games, and it beats the shortest-path race in 39 of 40. UCT wins 13 of 40 against the race, and both search agents beat the random agent in all 40 games. Each win rate carries a 95% <b>Wilson score interval</b>, the interval in which the true rate lies with 95% confidence, computed from the win count k in n games<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/benchmark.py#L44-L52" target="_blank" rel="noopener" title="hexgame/benchmark.py, lines 44–52" aria-label="Code on GitHub: hexgame/benchmark.py, lines 44 to 52">41</a>:</p>
+  <!-- hexgame/benchmark.py:44-52 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{centre}=\frac{p+\frac{z^{2}}{2n}}{1+\frac{z^{2}}{n}},\qquad \text{half}=\frac{z\sqrt{\frac{p(1-p)}{n}+\frac{z^{2}}{4n^{2}}}}{1+\frac{z^{2}}{n}},\qquad p=\frac{k}{n},\; z=1.96</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/hexgame/benchmark.py#L44-L52" target="_blank" rel="noopener" title="hexgame/benchmark.py, lines 44–52" aria-label="Code on GitHub: hexgame/benchmark.py, lines 44 to 52">41</a></span>
+  </div>
+  <p class="hiw-note">The interval is centre ± half. Here k is the number of wins, n the number of games, p the observed win rate and z the 95% normal quantile. For 20 wins in 20 games the interval is 91.2% to 100%.</p>
+  <p class="hiw-note">Speed on an empty 7 × 7 board, on one core in pure Python, is 5,811 simulations per second for RAVE, 5,783 for UCT, and 10,739 random fill playouts per second<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/hexgame_benchmark.md" target="_blank" rel="noopener" title="results/hexgame_benchmark.md" aria-label="Code on GitHub: results/hexgame_benchmark.md">40</a>. A check at 1,000 simulations per move, which is in the README but not in <code>results/</code>, has RAVE winning 18 of 20 games against UCT<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/README.md#L585-L595" target="_blank" rel="noopener" title="README.md, lines 585–595" aria-label="Code on GitHub: README.md, lines 585 to 595">42</a>. The gap narrows as the budget grows. That check is not a measured reversal.</p>
+  <p class="hiw-note">Against the chance player at level 1, 300 simulations per move, RAVE won all 20 games with colours alternating<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/hexgame_chance_match.md" target="_blank" rel="noopener" title="results/hexgame_chance_match.md" aria-label="Code on GitHub: results/hexgame_chance_match.md">43</a>.</p>
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/hexgame.js"></script>
 </body>

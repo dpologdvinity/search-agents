@@ -12,6 +12,7 @@
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="walkers.css">
 </head>
@@ -31,20 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">09 // GENETIC ALGORITHM · SOFT-BODY PHYSICS</div>
+      <div class="proj-pg-tag">09 // LAB // SOFT-BODY EVOLUTION</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="EVOLVING WALKERS">EVOLVING WALKERS</h1>
       <div class="proj-pg-sub">Soft creatures start out flailing. Each generation the ones that travel farthest breed and mutate. Nobody teaches them to walk.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip">GEN <span class="val" id="st-gen">—</span></span>
-        <span class="stat-chip green">CHAMPION <span class="val" id="st-best">—</span></span>
-        <span class="stat-chip">MEAN <span class="val" id="st-mean">—</span></span>
-        <span class="stat-chip pink">SPECIES <span class="val" id="st-species">—</span></span>
-        <span class="stat-chip green">RECORD <span class="val" id="st-record">—</span></span>
+        <span class="stat-chip" title="Generation number in this run"><span class="val" id="st-gen">—</span></span>
+        <span class="stat-chip green" title="Best fitness (metres) in the current generation"><span class="val" id="st-best">—</span></span>
+        <span class="stat-chip pink" title="Number of species in the current generation"><span class="val" id="st-species">—</span></span>
+        <span class="stat-chip green" title="Best fitness (metres) of any generation in this run"><span class="val" id="st-record">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to watch walking evolve. Each creature is a soft body of nodes and springs, scored by how far its centre of mass travels to the right in 10 simulated seconds.</p>
+    <p style="margin-top:0.5rem">Let the run go, or press PAUSE to stop it and STEP to run one generation at a time. The FITNESS chart shows the champion's score rising as the population learns.</p>
+    <p style="margin-top:0.5rem">To test a design, build one in CREATURE LAB, press TEST, then DROP IN to add it to the population. MORE SETTINGS holds the population size, mutation, seed, gravity and friction.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -65,37 +72,37 @@
           </div>
         </div>
         <div class="ew-transport">
-          <button class="cyber-btn green" id="btn-toggle" type="button"><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">› STEP</span></button>
-          <label class="ew-slider">
+          <button class="cyber-btn green" id="btn-toggle" type="button" title="Pause or resume the evolution"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Run one generation"><span class="btn-txt">› STEP</span></button>
+          <label class="ew-slider" title="How many generations run per second">
             <span class="field-lbl">GENERATIONS <span class="field-hint" id="gen-speed-val"></span></span>
             <input class="cyber-range" id="gen-speed" type="range" min="0" max="6" step="1" value="2" aria-label="Generations per second">
           </label>
-          <label class="ew-slider">
+          <label class="ew-slider" title="How fast the arena replays a creature">
             <span class="field-lbl">REPLAY <span class="field-hint" id="ew-speed-val">1×</span></span>
             <input class="cyber-range" id="replay-speed" type="range" min="0" max="3" step="1" value="2" aria-label="Replay speed">
           </label>
         </div>
-        <div class="field-hint" id="ew-hint">Ghosts are the champions of the last generations, racing alongside. Muscles glow pink when they pull and cyan when they push.</div>
+        <div class="field-hint" id="ew-hint">Pink muscles pull and cyan muscles push. Faint ghosts are earlier champions.</div>
       </div>
 
       <div class="ew-charts">
         <div class="ew-panel">
-          <div class="section-title green-ttl">FITNESS</div>
+          <div class="section-title green-ttl" title="Best, mean and median fitness per generation">FITNESS</div>
           <canvas class="ew-chart" id="ch-fitness" aria-label="Best, mean and median distance per generation"></canvas>
           <div class="field-hint" id="chart-legend"></div>
+          <!-- the legend above already gives the mean; the page script still fills this span -->
+          <span id="st-mean" hidden></span>
         </div>
         <div class="ew-panel">
-          <div class="section-title pink-ttl">SPECIES</div>
+          <div class="section-title pink-ttl" title="One colour per species. Each column is a generation, stacked by species.">SPECIES</div>
           <canvas class="ew-chart" id="ch-species" aria-label="Species sizes per generation"></canvas>
-          <div class="field-hint">One colour per species. Each column is a generation, stacked by species.</div>
         </div>
       </div>
 
       <div class="ew-lower">
         <div class="ew-panel">
-          <div class="section-title">LINEAGE</div>
-          <div class="field-hint">The champion and its ancestors. Click a row to replay it.</div>
+          <div class="section-title" title="The champion and its ancestors. Click a row to replay it.">LINEAGE</div>
           <div class="lineage" id="lineage"></div>
         </div>
         <div class="ew-panel">
@@ -115,55 +122,53 @@
         </div>
       </div>
 
-      <div class="ew-log-wrap">
-        <div class="section-title">EVOLUTION LOG</div>
+      <details class="log-fold">
+        <summary>Evolution log</summary>
         <div class="agent-log ew-log" id="ew-log"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
       <div>
-        <div class="section-title">EVOLUTION</div>
-        <div class="stack">
-          <div>
-            <div class="field-lbl">POPULATION</div>
-            <select class="cyber-select" id="pop-size" style="width:100%">
-              <option value="40">40 creatures</option>
-              <option value="80" selected>80 creatures</option>
-              <option value="120">120 creatures</option>
-            </select>
-          </div>
-          <div>
-            <div class="field-lbl">MUTATION RATE <span class="field-hint" id="mutation-val"></span></div>
-            <input class="cyber-range" id="mutation" type="range" min="0.05" max="1" step="0.05" value="0.5" aria-label="Mutation rate">
-          </div>
-          <div>
-            <div class="field-lbl">SEED <span class="field-hint">(same seed, same run)</span></div>
-            <div class="inline">
-              <input class="cyber-input" id="ew-seed" type="number" min="0" max="2147483647" value="7" style="flex:1">
-              <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">RANDOM</span></button>
-            </div>
-          </div>
-          <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ NEW RUN</span></button>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">WORLD</div>
+        <div class="section-title">RUN</div>
         <div class="stack">
           <div>
             <div class="field-lbl">TERRAIN</div>
-            <select class="cyber-select" id="terrain" style="width:100%"></select>
+            <select class="cyber-select" id="terrain" style="width:100%" title="Flat, hills, steps or gaps. Changing it starts a new run."></select>
           </div>
-          <div>
-            <div class="field-lbl">GRAVITY <span class="field-hint" id="gravity-val"></span></div>
-            <input class="cyber-range" id="gravity" type="range" min="2" max="20" step="0.1" value="9.8" aria-label="Gravity">
-          </div>
-          <div>
-            <div class="field-lbl">FRICTION <span class="field-hint" id="friction-val"></span></div>
-            <input class="cyber-range" id="friction" type="range" min="0.1" max="1.5" step="0.05" value="0.8" aria-label="Friction">
-            <div class="field-hint">Gravity and friction take effect from the next generation. Terrain starts a new run.</div>
-          </div>
+          <button class="cyber-btn pink" id="btn-reset" type="button" title="Start a new run with the current seed, population and world settings"><span class="btn-txt">↺ NEW RUN</span></button>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <div class="stack">
+              <div>
+                <div class="field-lbl">POPULATION</div>
+                <select class="cyber-select" id="pop-size" style="width:100%" title="Creatures per generation. More creatures search more shapes, and each generation takes longer.">
+                  <option value="40">40 creatures</option>
+                  <option value="80" selected>80 creatures</option>
+                  <option value="120">120 creatures</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-lbl">MUTATION RATE <span class="field-hint" id="mutation-val"></span></div>
+                <input class="cyber-range" id="mutation" type="range" min="0.05" max="1" step="0.05" value="0.5" aria-label="Mutation rate" title="Scales every mutation chance. 0.5 is the default.">
+              </div>
+              <div>
+                <div class="field-lbl">SEED</div>
+                <div class="inline">
+                  <input class="cyber-input" id="ew-seed" type="number" min="0" max="2147483647" value="7" style="flex:1" title="The same seed and settings give the same run">
+                  <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">RANDOM</span></button>
+                </div>
+              </div>
+              <div>
+                <div class="field-lbl">GRAVITY <span class="field-hint" id="gravity-val"></span></div>
+                <input class="cyber-range" id="gravity" type="range" min="2" max="20" step="0.1" value="9.8" aria-label="Gravity" title="Acceleration in m/s² (2 to 20). Takes effect from the next generation.">
+              </div>
+              <div>
+                <div class="field-lbl">FRICTION <span class="field-hint" id="friction-val"></span></div>
+                <input class="cyber-range" id="friction" type="range" min="0.1" max="1.5" step="0.05" value="0.8" aria-label="Friction" title="Kinetic friction coefficient (0.1 to 1.5). Static friction is 1.2 times it. Takes effect from the next generation.">
+              </div>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -178,9 +183,8 @@
       </div>
 
       <div>
-        <div class="section-title green-ttl">CREATURE LAB</div>
+        <div class="section-title green-ttl" title="Build a creature and drop it into the population: can your design beat evolution?">CREATURE LAB</div>
         <div class="stack">
-          <div class="field-hint">Build a creature and drop it into the population: can your design beat evolution?</div>
           <div class="ew-tools">
             <button class="cyber-btn on" type="button" data-tool="node"><span class="btn-txt">NODE</span></button>
             <button class="cyber-btn" type="button" data-tool="link"><span class="btn-txt">LINK</span></button>
@@ -218,53 +222,243 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Each creature is a soft body: point masses joined by springs, some of them muscles whose rest length pulses. A genetic algorithm scores every creature by how far its centre of mass travels to the right in 10 simulated seconds, then breeds the next generation from the best of each species. Nothing about walking is coded in: the gaits you see come from selection on distance alone.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Genetic algorithm (the loop)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Breed the way farmers breed animals: keep the best, mix two of them, and make small random changes. Repeat for many generations. Nobody writes the answer down; the population finds it by trying things and keeping what works.</p>
-      <p>One generation: simulate all 80 creatures for 10 s at 240 steps per second; fitness is the centre-of-mass travel in x, less a spin penalty, plus a bonus for speed in the second half; speciate; breed. The next population is made of the elites (the best of each species of 5 or more, unchanged), then children of tournament picks from the top half of each species, with each species' share of the 80 slots set by its adjusted fitness.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Genome and encoding</h3>
-      <p class="hiw-plain"><b>New to this?</b> A genome is the creature's recipe: where each point goes, what joins which, and how each spring behaves. The recipe is short enough to paste into a chat message, so a creature can be shared as one line of text.</p>
-      <p>A genome is a list of nodes (x, y in metres, relative to the body) and springs (two node indices, rest length, stiffness k, damping c, a muscle flag, and for muscles an amplitude, frequency and phase). The text form is <code>w1|x,y;…|a,b,rest,k,c,muscle,amp,freq,phase;…</code>. Every gene sits on a 0.0001 grid, so the text reads back to the same genome, bit for bit, in JavaScript and Python.</p>
-      <p>Bodies have 2 to 12 nodes and at most 40 springs. Every body is connected, has at least one muscle, and has no duplicate springs. A repair step enforces this after every operator: it links any unreached node to the nearest reached one.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Selection and crossover</h3>
-      <p class="hiw-plain"><b>New to this?</b> Crossover is like taking the left half of one parent's recipe and the right half of another's. Each child gets some of each parent's traits, so good traits from two creatures can combine in one.</p>
-      <p>Parents are chosen by tournament: three random members of the top half, the fittest wins. Crossover, with probability 0.6, is aligned by node index, which is the only stable way to line up two bodies: node <i>i</i> of one parent is node <i>i</i> of the other. The fitter parent sets the node count. A node both parents have is taken from one of them at random. A spring both parents have (the same two endpoints) takes its genes from one parent at random. Springs that only the fitter parent has are kept; springs that only the weaker parent has are dropped, the rule NEAT uses for disjoint genes.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Mutation</h3>
-      <p class="hiw-plain"><b>New to this?</b> Mutation is a copying mistake that is sometimes useful. Most children get small nudges (a node moves a little, a muscle beats a little faster). Rarely a whole new point or link appears, and occasionally a spring turns into a muscle, or the other way.</p>
-      <p>Each node and each spring jitters with probability rate/2 (rate is the mutation slider, 0.5 by default): a node by up to ±0.06 m, rest length ±10%, stiffness and damping ±20%, amplitude ±0.05, frequency ±20%, phase ±0.5 rad. Structural operators fire with their own chance: add a node (0.15 × rate), remove a node (0.10), add a spring (0.20), remove a spring (0.15), toggle a spring between muscle and plain (0.20). A new node joins a random existing node and its nearest neighbour.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Speciation (keeping novel bodies alive)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A new body plan usually scores worse than the old champions at first, so it would die out before it has time to improve. Grouping similar creatures into species, and sharing each group's score among its members, gives an odd shape its own quota of breeding slots.</p>
-      <p>Two creatures are compared by a distance: 0.4 per difference in node count, 0.3 per difference in spring count, the difference in muscle fraction, and one minus the Jaccard similarity of their node-index pairs. A creature joins the first species within 1.2 of its representative, or founds a new one. Each species' members share the fitness (divided by the species size), and the population is split between species in proportion to the summed shared fitness.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Springs and muscles (the physics)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A spring pulls its two ends together when stretched and pushes them apart when squeezed. A muscle is a spring whose natural length keeps changing, so it pulls and pushes in rhythm, and that rhythm is what makes a body move.</p>
-      <p>Each spring applies Hooke's law along the line between its nodes: F = k(L − L<sub>0</sub>) + c·(dL/dt), where L is the current length and L<sub>0</sub> the rest length. The damping term c·(dL/dt) removes energy as the spring stretches and relaxes. For a muscle, L<sub>0</sub>(t) = rest · (1 + amp · sin(2πft + φ)), so the muscle lengthens and shortens with its own frequency and phase. Its colour in the arena is the tension: pink when it pulls the ends together past its current rest, cyan when it pushes them apart.</p>
-      <p>Each node has mass 1 kg, gravity acts on every node, and a small linear drag (0.1 per second) slows the nodes and damps the springs. Drag does not prevent the contact limit described under integration.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Ground contact and friction</h3>
-      <p class="hiw-plain"><b>New to this?</b> Friction is what lets a foot push against the floor without sliding away. Sticky feet grip, slippery feet slide. The simulation decides how much each foot can grip from how hard it is pressed down.</p>
-      <p>A node below the ground is put back on it. Its normal speed is reversed with the restitution (0.2) if the impact is faster than 0.5 m/s, and otherwise stopped, so resting feet do not jitter. The tangential speed is cut with a Coulomb limit of (1 + restitution) × normal speed: a foot sticks if its sliding speed is within the static coefficient (μ<sub>s</sub> = 1.2 × friction) times that limit, otherwise it loses the kinetic coefficient (friction, 0.8 by default) times that limit.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Integration and its limits</h3>
-      <p class="hiw-plain"><b>New to this?</b> A simulation moves time forward in small steps, and each step uses the last positions to work out the next. If the steps are too big, the springs overshoot and the body blows up. The steps here are small, so each overshoot is small, but that is not the whole story: see the known limit below.</p>
-      <p>Semi-implicit (symplectic) Euler at a fixed step of 1/240 s: forces from the positions at the start of the step, then velocities, then positions, then ground contact. Velocities are clamped to 30 m/s. A NaN makes the creature's fitness 0 and marks it exploded. A body whose centre of mass drops below −1.5 m has fallen into a gap, and its score is frozen where it fell.</p>
-      <p><b>Known limit: nodes pass through each other.</b> There is no contact between nodes, so two nodes of one body can cross. A spring's force is k(L − L<sub>0</sub>) along the line between its ends. When the ends cross, the length L passes through zero and the direction of that line flips, so the force pushes the wrong way. Undamped, this adds energy. In a check with one spring (k 200, rest 0.4 m, released at 1.0 m apart, no gravity, no ground, no drag), the energy rose from 35.8 J to 59.6 J, a gain of 67%. A spring that never comes near zero length keeps its energy within about 5%. Drag damps the effect but does not prevent it. The physics has not been changed, because the evolved champions depend on it; a minimum-separation contact would fix it and would need a new evolution run.</p>
-      <p>The sine used by the muscles is a polynomial in basic arithmetic rather than <code>Math.sin</code>, so JavaScript and Python agree bit for bit, which matters because a chaotic body amplifies any last-bit difference.</p>
-    </article>
+  <p class="hiw-lede">A <b>soft body</b> is a creature made of <b>nodes</b>, point masses of 1 kg each, joined by <b>springs</b>. Some springs are <b>muscles</b>, whose natural length changes in a rhythm. Each creature is scored by its <b>fitness</b>, which is mainly the distance its <b>centre of mass</b> travels to the right in 10 simulated seconds. A <b>genetic algorithm</b> breeds each new <b>generation</b> from the best creatures: it keeps the fittest, combines pairs with <b>crossover</b>, and makes small random changes, called <b>mutation</b>. Nothing about walking is coded in. The gaits come from selection on the score.</p>
+
+  <h3 class="hiw-sub">The generation loop</h3>
+  <p class="hiw-note">A generation is one cycle over the <b>population</b>, 80 creatures by default. Each creature is simulated for 10 s at 240 steps per second and scored. The creatures are then grouped into <b>species</b>, groups of similar bodies, and the next population is bred from the species' shares of the slots. The first population is 80 random creatures. One cycle is <code>Evolver.step</code>: evaluate, speciate, summarise, then breed<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1104-L1118" target="_blank" rel="noopener" title="walkers/core.py, lines 1104–1118" aria-label="Code on GitHub: walkers/core.py, lines 1104 to 1118">1</a>.</p>
+  <!-- walkers/core.py:1104-1118 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1019-L1102" target="_blank" rel="noopener" title="walkers/core.py, lines 1019–1102" aria-label="Code on GitHub: walkers/core.py, lines 1019 to 1102">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L792-L876" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 792–876" aria-label="Code on GitHub: web/js/walkers-core.js, lines 792 to 876">3</a></span>
+    <pre class="pseudo-simple">function NEXT-GENERATION(population):
+    for each creature m: SIMULATE and score m                # fitness, see FITNESS below
+    SPECIATE(population)
+    for each species s:                                       # fitness sharing
+        share[s] ← mean over its members of (fitness − lowest + 1)
+    for each species s:
+        quota[s] ← its share of the P slots, rounded down, with leftovers to the largest parts
+    next ← empty list
+    for each species s with quota[s] &gt; 0:
+        survivors ← the top half of s by fitness
+        add the best creature of s unchanged, if s is large or holds the best
+        while next has fewer than quota[s] children from s:
+            child ← crossover of two tournament winners, or a copy of one
+            add MUTATE(child) to next
+    return next</pre>
+    <pre class="pseudo-full" hidden>function NEXT-GENERATION(population, P):
+    for each creature m in population:
+        m.fitness, m.distance, m.exploded, m.fallen ← SIMULATE and FITNESS of m.genome
+    SPECIATE(population)                                     # the species list and one representative each
+    lowest ← smallest fitness in population
+    best ← the creature with the highest fitness, the first one on ties
+    for each species s, in order:
+        s.share ← sum over members m of (m.fitness − lowest + 1) / |s|
+    total ← sum of s.share over all species
+    for each species s, in order:
+        exact ← P · s.share / total
+        quota[s] ← floor(exact)
+    remaining ← P − sum of quota
+    order ← species sorted by fractional part of exact, largest first, earlier species first on ties
+    for r from 0 to remaining − 1:
+        quota[order[r mod number of species]] ← quota[order[r mod number of species]] + 1
+    next ← empty list
+    for each species s, in order, with quota[s] &gt; 0:
+        ranked ← members of s sorted by fitness, highest first, then lowest id
+        survivors ← the first max(1, ceil(0.5 · |s|)) creatures of ranked
+        made ← 0
+        if |s| ≥ 5 or best is a member of s:                 # elite
+            add a copy of ranked[0], unchanged, to next
+            made ← 1
+        while made &lt; quota[s]:
+            if |survivors| ≥ 2 and RANDOM() &lt; 0.6:
+                a ← TOURNAMENT(survivors, 3)
+                b ← TOURNAMENT(survivors, 3)
+                child ← CROSSOVER(a, b)                      # the fitter of a and b dominates
+                parents ← [a, b]
+            else:
+                a ← TOURNAMENT(survivors, 3)
+                child ← a copy of a.genome
+                parents ← [a]
+            add MUTATE(child, mutation rate) to next
+            made ← made + 1
+    the injected user creatures replace the last slots of next
+    while |next| &gt; P: remove the last creature
+    while |next| &lt; P: add a random creature
+    return next</pre>
   </div>
+  <p class="hiw-note">The <b>simple</b> version is the cycle: score, group, share the slots, and breed. The <b>full</b> version adds the species representatives, the largest-remainder quotas, the elite rule, and the injection of user creatures. The random draws happen in the same order as in the JavaScript, which is what keeps a seed reproducible in both<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_walkers_parity.py" target="_blank" rel="noopener" title="tests/test_walkers_parity.py" aria-label="Code on GitHub: tests/test_walkers_parity.py">4</a>.</p>
+
+  <h3 class="hiw-sub">Genome and encoding</h3>
+  <p class="hiw-note">A <b>genome</b> is the creature's recipe: a list of nodes and a list of springs. A node has x and y in metres, relative to the body. A spring has two end indices a and b, a <b>rest length</b> (its natural length, in metres), a <b>stiffness</b> k in newtons per metre, a <b>damping</b> c, a muscle flag, and for a muscle an <b>amplitude</b>, a <b>frequency</b> in hertz and a <b>phase</b> in radians. Each gene is rounded to the 0.0001 grid<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L105-L107" target="_blank" rel="noopener" title="walkers/core.py, lines 105–107" aria-label="Code on GitHub: walkers/core.py, lines 105 to 107">5</a>.</p>
+  <p class="hiw-note">A genome is written as one line of text, <code>w1|x,y;…|a,b,rest,k,c,muscle,amp,freq,phase;…</code>, and the decoder reads it back to the same genome, in JavaScript and in Python<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L411-L467" target="_blank" rel="noopener" title="walkers/core.py, lines 411–467" aria-label="Code on GitHub: walkers/core.py, lines 411 to 467">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L301-L328" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 301–328" aria-label="Code on GitHub: web/js/walkers-core.js, lines 301 to 328">7</a>. That is how a creature is shared.</p>
+  <p class="hiw-note">Bodies have 2 to 12 nodes and at most 40 springs. Random creatures have 3 to 7 nodes<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L243-L269" target="_blank" rel="noopener" title="walkers/core.py, lines 243–269" aria-label="Code on GitHub: walkers/core.py, lines 243 to 269">8</a>. The <b>repair</b> step runs after every operator<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L272-L361" target="_blank" rel="noopener" title="walkers/core.py, lines 272–361" aria-label="Code on GitHub: walkers/core.py, lines 272 to 361">9</a>. It clamps each value to its range, drops self-links, out-of-range springs and duplicates, and keeps at least one spring and one muscle. Then it connects the body: while some node cannot be reached from node 0, the lowest-index unreached node is linked to the nearest reached node, and the lowest index wins a tie. The result is always connected, has a muscle, and has no duplicate springs.</p>
+
+  <h3 class="hiw-sub">Fitness: distance, spin and speed</h3>
+  <p class="hiw-note">Fitness is measured from the spawn point. A body is spawned with its centre at x = 2 m and its lowest node 0.45 m above the ground<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L469-L513" target="_blank" rel="noopener" title="walkers/core.py, lines 469–513" aria-label="Code on GitHub: walkers/core.py, lines 469 to 513">10</a>. Its <b>spine</b> is the pair of nodes farthest apart at spawn. The <b>spin</b> σ is the total turning of that spine, summed step by step, so a body that tumbles accumulates a large spin. Each step adds the magnitude of the 2D cross product of the old and new unit spine vectors, which is the sine of the small turn<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L725-L726" target="_blank" rel="noopener" title="walkers/core.py, lines 725–726" aria-label="Code on GitHub: walkers/core.py, lines 725 to 726">11</a>.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:725-726 -->
+    <div class="math math-block">\sigma = \sum_{k} \bigl|\, u_{k-1} \times u_k \,\bigr|, \qquad u \times w = u_x w_y - u_y w_x</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L725-L726" target="_blank" rel="noopener" title="walkers/core.py, lines 725–726" aria-label="Code on GitHub: walkers/core.py, lines 725 to 726">11</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L540" target="_blank" rel="noopener" title="web/js/walkers-core.js, line 540" aria-label="Code on GitHub: web/js/walkers-core.js, line 540">12</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">u_k</span> is the unit vector along the spine after step <span class="math">k</span>, and the cross product is in the plane. The sum is in radians, because the sine of a small turn is almost the turn itself. A body that spins less than one radian in total is not penalised.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:739-749 -->
+    <div class="math math-block">F = \Delta x_c \;-\; 1.0\,\max(0,\ \sigma - 1) \;+\; \frac{0.5\ \mathrm{s}\,(x_{\mathrm{end}} - x_{\mathrm{mid}})}{5\ \mathrm{s}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L739-L749" target="_blank" rel="noopener" title="walkers/core.py, lines 739–749" aria-label="Code on GitHub: walkers/core.py, lines 739 to 749">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L555-L568" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 555–568" aria-label="Code on GitHub: web/js/walkers-core.js, lines 555 to 568">14</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\Delta x_c</span> is the travel of the centre of mass in x, which is the mean node position, measured from the spawn point. The penalty is 1.0 m per radian of spin beyond the first radian. The speed bonus is 0.5 s times the mean forward speed over the second half: the centre of mass moves from <span class="math">x_{\mathrm{mid}}</span> at 5 s to <span class="math">x_{\mathrm{end}}</span> at 10 s. A body whose centre of mass drops below −1.5 m has fallen. Its travel and spin are then frozen where it fell, and it gets no speed bonus. A body whose state becomes NaN is scored 0 and marked exploded.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L739-L749" target="_blank" rel="noopener" title="walkers/core.py, lines 739–749" aria-label="Code on GitHub: walkers/core.py, lines 739 to 749">13</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L555-L568" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 555–568" aria-label="Code on GitHub: web/js/walkers-core.js, lines 555 to 568">14</a></span>
+    <pre class="pseudo-simple">function FITNESS(creature):
+    if creature exploded:
+        return 0
+    travel ← x of the centre of mass at the end, minus x at spawn   # frozen at the fall
+    penalty ← 1.0 · max(0, spin − 1)                                  # spin in radians
+    bonus ← 0.5 s · mean forward speed of the second half, or 0 if it fell
+    return travel − penalty + bonus</pre>
+    <pre class="pseudo-full" hidden>function FITNESS(creature):
+    if creature exploded:
+        return 0
+    if creature fell:                                       # centre of mass below −1.5 m at some step
+        distance ← travel at the step of the fall
+        spin used ← spin at the step of the fall
+        bonus ← 0
+    else:
+        distance ← x of the centre of mass at the end, minus x at spawn
+        spin used ← spin at the end
+        bonus ← 0.5 · (x at the end − x at the midpoint) / ((steps − midpoint) · DT)
+        # the midpoint is step 1200, so the second half is 5 s
+    penalty ← 1.0 · max(0, spin used − 1)                    # SPIN_PENALTY and SPIN_FREE
+    return distance − penalty + bonus</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version lists the three terms. The <b>full</b> version separates the fallen case from the standing case, because a fall freezes both the distance and the spin, and removes the bonus. A body that is on its feet keeps its bonus. The spin used in the penalty is the value at the fall for a fallen body, and the value at the end otherwise.</p>
+  <p class="hiw-note"><b>Example.</b> The runner in the results travels 13.72 m in 10 s and scores 14.32, so its speed bonus minus its spin penalty is +0.60 m<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md#L32-L36" target="_blank" rel="noopener" title="results/walkers_evolution.md, lines 32–36" aria-label="Code on GitHub: results/walkers_evolution.md, lines 32 to 36">15</a>.</p>
+
+  <h3 class="hiw-sub">Springs and muscles</h3>
+  <p class="hiw-note">Each spring applies <b>Hooke's law</b> along the line between its two nodes. The force grows in proportion to how far the spring is stretched past its rest length. A <b>damper</b> adds a force that depends on how fast the length changes, which removes energy. A muscle differs in one respect: its rest length is not constant. It swings around the rest length in a rhythm<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L655-L660" target="_blank" rel="noopener" title="walkers/core.py, lines 655–660" aria-label="Code on GitHub: walkers/core.py, lines 655 to 660">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L776-L779" target="_blank" rel="noopener" title="walkers/core.py, lines 776–779" aria-label="Code on GitHub: walkers/core.py, lines 776 to 779">17</a>.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:655-660 -->
+    <div class="math math-block">L = \lVert p_b - p_a \rVert, \qquad n = \frac{p_b - p_a}{L}, \qquad L_0(t) = \begin{cases} \mathrm{rest}\,\bigl(1 + \mathrm{amp}\,\sin(2\pi\,\mathrm{freq}\,t + \phi)\bigr) & \text{muscle} \\ \mathrm{rest} & \text{passive spring} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L655-L660" target="_blank" rel="noopener" title="walkers/core.py, lines 655–660" aria-label="Code on GitHub: walkers/core.py, lines 655 to 660">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L449-L457" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 449–457" aria-label="Code on GitHub: web/js/walkers-core.js, lines 449 to 457">18</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">p_a</span> and <span class="math">p_b</span> are the positions of the two end nodes, and <span class="math">L</span> is the current length. In the code <span class="math">L</span> is raised to at least <span class="math">10^{-9}</span> m before the direction is taken, so the division never divides by zero. The unit vector <span class="math">n</span> points from node a to node b. <span class="math">L_0(t)</span> is the rest length. For a muscle it swings by <span class="math">\pm\mathrm{amp}</span> times the rest length, at <span class="math">\mathrm{freq}</span> hertz, with phase <span class="math">\phi</span> in radians. The code writes the angular speed as <span class="math">2\pi\,\mathrm{freq}</span>, and it evaluates the sine with the polynomial described at the end of this section.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:655-668 -->
+    <div class="math math-block">f = k\,(L - L_0) + c\,\bigl((v_b - v_a)\cdot n\bigr), \qquad F_a \leftarrow F_a + f\,n, \qquad F_b \leftarrow F_b - f\,n</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L655-L668" target="_blank" rel="noopener" title="walkers/core.py, lines 655–668" aria-label="Code on GitHub: walkers/core.py, lines 655 to 668">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L457-L470" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 457–470" aria-label="Code on GitHub: web/js/walkers-core.js, lines 457 to 470">20</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">k</span> is the stiffness and <span class="math">c</span> the damping. The damping term is the rate of change of the length, <span class="math">(v_b - v_a)\cdot n</span>, so it is positive while the spring is stretching. The spring pulls node a towards b when <span class="math">f</span> is positive, and node b towards a by the same amount. Forces are summed per node over all springs. The arena colours each muscle by its tension: pink when it is stretched past its current rest length, cyan when it is squeezed short of it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers.js#L75-L80" target="_blank" rel="noopener" title="web/js/walkers.js, lines 75–80" aria-label="Code on GitHub: web/js/walkers.js, lines 75 to 80">21</a>.</p>
+  <p class="hiw-note">Each node has mass 1 kg. Gravity pulls every node down with <span class="math">g</span> = 9.8 m/s² by default, and a linear drag of 0.1 per second slows every node's velocity<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L35" target="_blank" rel="noopener" title="walkers/core.py, line 35" aria-label="Code on GitHub: walkers/core.py, line 35">22</a>.</p>
+
+  <h3 class="hiw-sub">Integration</h3>
+  <p class="hiw-note">Time moves forward in fixed steps of <span class="math">\Delta t</span> = 1/240 s. Each step computes all forces from the positions at its start. It then updates the velocities, then the positions, then the ground contact. This is <b>semi-implicit Euler</b>: the new velocity is used to move the position in the same step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L613" target="_blank" rel="noopener" title="walkers/core.py, line 613" aria-label="Code on GitHub: walkers/core.py, line 613">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L673-L684" target="_blank" rel="noopener" title="walkers/core.py, lines 673–684" aria-label="Code on GitHub: walkers/core.py, lines 673 to 684">24</a>.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:673-684 -->
+    <div class="math math-block">v \leftarrow \bigl(v + (F - g\,\hat{e}_y)\,\Delta t\bigr)\,(1 - c_d\,\Delta t), \qquad v \leftarrow \mathrm{clamp}_{\pm 30}(v), \qquad x \leftarrow x + v\,\Delta t</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L673-L684" target="_blank" rel="noopener" title="walkers/core.py, lines 673–684" aria-label="Code on GitHub: walkers/core.py, lines 673 to 684">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L471-L492" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 471–492" aria-label="Code on GitHub: web/js/walkers-core.js, lines 471 to 492">25</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">F</span> is the sum of the spring forces on the node, <span class="math">\hat{e}_y</span> is the upward unit vector, and <span class="math">c_d</span> = 0.1 per second is the drag. Gravity acts only in y. The drag factor is applied after the force and gravity. Each velocity component is then clamped to ±30 m/s. The clamp is counted, and it does not end a run by itself. The position moves with the clamped velocity.</p>
+  <p class="hiw-note">The forces are summed in two passes: every a-end of every spring in spring order, then every b-end. The two languages use this same order, so their floating-point sums agree bit for bit. The sine inside the muscle is a polynomial in basic arithmetic, not a library call, for the same reason<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L64-L80" target="_blank" rel="noopener" title="walkers/core.py, lines 64–80" aria-label="Code on GitHub: walkers/core.py, lines 64 to 80">26</a>.</p>
+  <p class="hiw-note"><b>Example.</b> The check spring in the known limit below has stiffness 200 N/m and rest length 0.4 m, released 1.0 m long. Its stored energy is ½ · 200 · (1.0 − 0.4)² = 36 J, which the test reads as 35.8 J at its first step<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_walkers.py#L113-L121" target="_blank" rel="noopener" title="tests/test_walkers.py, lines 113–121" aria-label="Code on GitHub: tests/test_walkers.py, lines 113 to 121">27</a>.</p>
+
+  <h3 class="hiw-sub">Ground contact and friction</h3>
+  <p class="hiw-note">The ground is a height function h(x) over the terrain (see Terrains below). A node that ends a step below the surface is moved back onto it. Its velocity into the surface is then reversed with the <b>restitution</b> e, which is the bounce, or stopped. The restitution is 0.2 by default and applies only to impacts faster than 0.5 m/s. Slower impacts are inelastic, so resting feet do not jitter<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L685-L701" target="_blank" rel="noopener" title="walkers/core.py, lines 685–701" aria-label="Code on GitHub: walkers/core.py, lines 685 to 701">28</a>.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:692-701 -->
+    <div class="math math-block">s = -v_n, \qquad e = \begin{cases} e_r & s &gt; 0.5\ \mathrm{m/s} \\ 0 & \text{otherwise} \end{cases}, \qquad v_n \leftarrow -e\,v_n, \qquad \lambda = (1 + e)\,s</div>
+    <div class="math math-block">v_t \leftarrow \begin{cases} 0 & |v_t| \le \mu_s\,\lambda \\ v_t - \mu_k\,\lambda\,\mathrm{sgn}(v_t) & \text{otherwise} \end{cases}, \qquad \mu_s = 1.2\,\mu_k</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L692-L701" target="_blank" rel="noopener" title="walkers/core.py, lines 692–701" aria-label="Code on GitHub: walkers/core.py, lines 692 to 701">29</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L493-L520" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 493–520" aria-label="Code on GitHub: web/js/walkers-core.js, lines 493 to 520">30</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">v_n</span> and <span class="math">v_t</span> are the normal and tangential velocity components relative to the surface, and <span class="math">s</span> is the speed into the surface. <span class="math">e_r</span> is the restitution, and <span class="math">e</span> is the restitution that is actually used, which is zero for a slow impact. <span class="math">\lambda</span> is the limit on the tangential change. <b>Coulomb friction</b> caps the tangential force at the friction coefficient times the normal force, and the code applies that cap to the tangential speed. The kinetic coefficient <span class="math">\mu_k</span> is the friction setting, 0.8 by default. The static coefficient <span class="math">\mu_s</span> is 1.2 times it. A foot whose sideways speed is within <span class="math">\mu_s\lambda</span> sticks. A faster foot slides and loses <span class="math">\mu_k\lambda</span> of its sideways speed in that contact.</p>
+  <p class="hiw-note">The whole step, as the code runs it, is:</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L644-L701" target="_blank" rel="noopener" title="walkers/core.py, lines 644–701" aria-label="Code on GitHub: walkers/core.py, lines 644 to 701">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L445-L520" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 445–520" aria-label="Code on GitHub: web/js/walkers-core.js, lines 445 to 520">32</a></span>
+    <pre class="pseudo-simple">function SIMULATE-STEP(creature, t):                        # one step of 1/240 s
+    for each spring s = (a, b):
+        n ← unit vector from node a to node b
+        L₀ ← rest length of s at time t                  # a muscle swings, a passive spring does not
+        f ← k · (L − L₀) + c · (rate of change of L)
+        push node a along n with f, and node b with −f
+    for each node:
+        v ← (v + (F − g in y) · Δt) · (1 − drag · Δt)
+        x ← x + v · Δt
+    for each node below the ground:
+        put it back on the ground
+        reflect or stop its normal speed, and apply friction to its sideways speed</pre>
+    <pre class="pseudo-full" hidden>function SIMULATE-STEP(creature, t):                        # one step of Δt = 1/240 s
+    for each spring s = (a, b), in spring order:
+        dx, dy ← position of b − position of a
+        L ← sqrt(dx² + dy²), raised to 10⁻⁹ if smaller
+        n ← (dx, dy) / L
+        L₀ ← rest · (1 + amp · sin(2π · freq · t + phase)) if s is a muscle, else rest
+        f ← k · (L − L₀) + c · ((v_b − v_a) · n)
+        store f and n for s
+    for each spring s, in spring order:
+        F_a ← F_a + f_s · n_s                              # a-ends of all springs first
+    for each spring s, in spring order:
+        F_b ← F_b − f_s · n_s                              # then b-ends
+    for each node i:
+        v_x ← (v_x + F_x · Δt) · (1 − 0.1 · Δt)
+        v_y ← (v_y + (F_y − g) · Δt) · (1 − 0.1 · Δt)
+        for each component of v: clamp to ±30 and count each clamp
+        x_i ← x_i + v_x · Δt
+        y_i ← y_i + v_y · Δt
+    for each node i:                                       # ground contact
+        h, slope ← GROUND(terrain, x_i)
+        if y_i &lt; h:
+            y_i ← h
+            n ← (−slope, 1) / sqrt(1 + slope²)
+            t ← (1, slope) / sqrt(1 + slope²)
+            v_n ← v · n,  v_t ← v · t
+            if v_n &lt; 0:                                     # moving into the ground
+                s ← −v_n
+                e ← restitution if s &gt; 0.5 else 0
+                v_n ← −e · v_n
+                λ ← (1 + e) · s
+                if |v_t| ≤ 1.2 · friction · λ: v_t ← 0      # sticks
+                else: v_t ← v_t − friction · λ · sign(v_t)  # slides
+                v ← v_n · n + v_t · t
+    if any position or velocity is not finite:
+        mark the creature exploded and freeze it
+    if the creature has not fallen:                        # bookkeeping
+        com ← mean node position, comY ← mean node y
+        spin ← spin + |u_prev × u_new|, then u_prev ← u_new
+        if comY &lt; −1.5: record the fall: distance and spin are frozen
+        if step is the midpoint: com_mid ← com</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version is one step: spring forces, velocities, positions, then contact. The <b>full</b> version keeps the code's order, which is what makes the two languages agree: forces are summed in two passes, velocity clamps are counted, a non-finite state freezes the creature, and the centre of mass, spine and fall test are updated after contact. The bookkeeping is skipped for a creature that has already fallen.</p>
+  <p class="hiw-note"><b>Non-obvious.</b> The ground check uses the positions after the velocity update. Contact changes only the velocity of a node that is moving into the ground, but it moves every node below the surface back onto it, even a node that is moving away.</p>
+
+  <h3 class="hiw-sub">Known limit: nodes pass through each other</h3>
+  <p class="hiw-note"><b>Known limit: nodes pass through each other.</b> There is no contact between nodes, so two nodes of one body can cross. A spring's force is <span class="math">k(L - L_0)</span> along the line between its ends. When the ends cross, the length passes through zero and the direction <span class="math">n</span> flips, so the force pushes the wrong way. Undamped, this adds energy. In the test with one spring (stiffness 200 N/m, rest length 0.4 m, released 1.0 m apart, with no gravity, no drag and no damping), the energy rose from 35.8 J to 59.6 J, a gain of 67%<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_walkers.py#L113-L121" target="_blank" rel="noopener" title="tests/test_walkers.py, lines 113–121" aria-label="Code on GitHub: tests/test_walkers.py, lines 113 to 121">27</a>. A spring whose length never comes near zero keeps its energy within about 5%. Drag damps the effect but does not prevent it. The physics has not been changed, because the evolved champions depend on it. A minimum-separation contact would fix it, and would need a new evolution run.</p>
+
+  <h3 class="hiw-sub">Selection and crossover</h3>
+  <p class="hiw-note">A parent is chosen by a <b>tournament</b>: three creatures are drawn at random, with replacement, from the survivors of the species, and the fittest wins. A tie keeps the earlier draw. The <b>survivors</b> are the top half of each species, rounded up and never fewer than one<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L802-L809" target="_blank" rel="noopener" title="walkers/core.py, lines 802–809" aria-label="Code on GitHub: walkers/core.py, lines 802 to 809">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1041-L1102" target="_blank" rel="noopener" title="walkers/core.py, lines 1041–1102" aria-label="Code on GitHub: walkers/core.py, lines 1041 to 1102">34</a>.</p>
+  <p class="hiw-note">A child is made by <b>crossover</b> with probability 0.6, otherwise it is a copy of one tournament winner. Crossover needs at least two survivors. With fewer, the child is always a copy, and no random number is drawn for the crossover test<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L812-L835" target="_blank" rel="noopener" title="walkers/core.py, lines 812–835" aria-label="Code on GitHub: walkers/core.py, lines 812 to 835">35</a>.</p>
+  <p class="hiw-note">Crossover aligns the two parents by node index: node i of one parent is node i of the other. The <b>dominant</b> parent is the fitter one, and it sets the node count. A node that both parents have takes the other parent's position with probability 1/2, and otherwise the dominant parent's. A spring that both parents have, with the same pair of end nodes, takes the other parent's genes with probability 1/2. Springs that only the dominant parent has are kept. Springs that only the weaker parent has are dropped. This is the rule NEAT uses for disjoint genes. The child is then repaired.</p>
+
+  <h3 class="hiw-sub">Mutation</h3>
+  <p class="hiw-note">Each node is jittered with probability rate/2, where rate is the mutation setting, 0.5 by default. The jitter moves x and y each by up to ±0.06 m. Each spring is jittered with the same probability: its rest length by up to ±10%, its stiffness and damping by up to ±20%, its amplitude by ±0.05, its frequency by up to ±20%, and its phase by ±0.5 rad. Every value is then clamped to its range<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L905-L921" target="_blank" rel="noopener" title="walkers/core.py, lines 905–921" aria-label="Code on GitHub: walkers/core.py, lines 905 to 921">36</a>.</p>
+  <p class="hiw-note">Five structural operators then each fire on their own chance, scaled by the rate<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L922-L934" target="_blank" rel="noopener" title="walkers/core.py, lines 922–934" aria-label="Code on GitHub: walkers/core.py, lines 922 to 934">37</a>. A new node is added with chance 0.15 × rate, up to 12 nodes. It is placed within ±0.3 m of a random node, linked to that node, and linked to its nearest other node. A node is removed with chance 0.10 × rate, down to 2 nodes. A spring is added with chance 0.20 × rate, up to 40 springs, by trying up to 12 random pairs. A spring is removed with chance 0.15 × rate, keeping at least one. A spring is toggled between muscle and passive with chance 0.20 × rate. Every child, including a copy, is mutated and then repaired.</p>
+
+  <h3 class="hiw-sub">Speciation and compatibility</h3>
+  <p class="hiw-note"><b>Speciation</b> keeps new body plans alive. A new shape usually scores below the old champions at first, so without protection it would die out before it could improve. Creatures are grouped into <b>species</b>, and each species is bred with its own share of the slots.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:787-799 -->
+    <div class="math math-block">\delta(a, b) = 0.4\,\lvert n_a - n_b \rvert + 0.3\,\lvert s_a - s_b \rvert + \lvert m_a - m_b \rvert + (1 - J), \qquad J = \frac{\lvert E_a \cap E_b \rvert}{\lvert E_a \cup E_b \rvert}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L787-L799" target="_blank" rel="noopener" title="walkers/core.py, lines 787–799" aria-label="Code on GitHub: walkers/core.py, lines 787 to 799">38</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L598-L611" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 598–611" aria-label="Code on GitHub: web/js/walkers-core.js, lines 598 to 611">39</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">n</span> is the node count, <span class="math">s</span> the spring count, and <span class="math">m = \text{muscles} / \text{springs}</span> the muscle fraction. <span class="math">E</span> is the set of end-node pairs of a creature's springs, and <span class="math">J</span> is its <b>Jaccard similarity</b> with another creature, the share of pairs they have in common. A pair is counted once. Two creatures with the same topology have <span class="math">J = 1</span> and distance 0. When both sets are empty, <span class="math">J</span> is set to 1<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L787-L799" target="_blank" rel="noopener" title="walkers/core.py, lines 787–799" aria-label="Code on GitHub: walkers/core.py, lines 787 to 799">38</a>.</p>
+  <p class="hiw-note">Creatures are assigned in population order. Each joins the first species whose <b>representative</b> is less than 1.2 away, and a creature that matches none founds a new species. Species with no members are dropped. After the grouping, each species draws one random member as its representative for the next generation<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1019-L1039" target="_blank" rel="noopener" title="walkers/core.py, lines 1019–1039" aria-label="Code on GitHub: walkers/core.py, lines 1019 to 1039">40</a>.</p>
+
+  <h3 class="hiw-sub">Fitness sharing and quotas</h3>
+  <p class="hiw-note">A species' <b>share</b> of the slots comes from its members' fitness. Fitness can be negative, so each value is first shifted by the population's lowest fitness and by 1, which makes every shifted value at least 1. A species' share is the mean shifted fitness of its members. Dividing the sum by the species size means a large species does not get more slots just for being large.</p>
+  <div class="math-fig">
+    <!-- walkers/core.py:1041-1067 -->
+    <div class="math math-block">f'_i = f_i - \min_j f_j + 1, \qquad S_s = \frac{1}{\lvert s \rvert}\sum_{i \in s} f'_i, \qquad q_s = \Bigl\lfloor \frac{P\,S_s}{\sum_t S_t} \Bigr\rfloor</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1041-L1067" target="_blank" rel="noopener" title="walkers/core.py, lines 1041–1067" aria-label="Code on GitHub: walkers/core.py, lines 1041 to 1067">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js#L816-L834" target="_blank" rel="noopener" title="web/js/walkers-core.js, lines 816–834" aria-label="Code on GitHub: web/js/walkers-core.js, lines 816 to 834">42</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">f_i</span> is the fitness of creature <span class="math">i</span>, <span class="math">S_s</span> the share of species <span class="math">s</span>, and <span class="math">P</span> the population size. Each species first gets the floor of its exact quota <span class="math">q_s</span>. The slots left over are given one each to the species with the largest fractional parts, with earlier species first on ties. This is the <b>largest-remainder</b> method, and it makes the quotas sum to exactly <span class="math">P</span>.</p>
+  <p class="hiw-note">Within a species, the <b>elite</b> rule copies its best creature unchanged into the next population. The rule applies when the species has at least 5 members, or when it holds the best creature of the generation. Injected user creatures take the last slots of the next population, replacing children<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L1041-L1102" target="_blank" rel="noopener" title="walkers/core.py, lines 1041–1102" aria-label="Code on GitHub: walkers/core.py, lines 1041 to 1102">34</a>.</p>
 
   <h3 class="hiw-sub">Parameters and how they were chosen</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>What it does</th><th class="num">Default</th></tr></thead><tbody>
@@ -272,41 +466,45 @@
     <tr><td>duration</td><td>Simulated seconds per creature.</td><td class="num">10 s</td></tr>
     <tr><td>time step</td><td>Fixed physics step (1/240 s).</td><td class="num">0.00417 s</td></tr>
     <tr><td>mutation rate</td><td>Scales every mutation chance (UI slider).</td><td class="num">0.50</td></tr>
-    <tr><td>crossover rate</td><td>Share of children made by crossover (the rest are clones).</td><td class="num">0.60</td></tr>
+    <tr><td>crossover rate</td><td>Share of children made by crossover (the rest are copies).</td><td class="num">0.60</td></tr>
     <tr><td>tournament size</td><td>Candidates per parent pick, from the top half of a species.</td><td class="num">3</td></tr>
-    <tr><td>survivors</td><td>Share of each species that may be parents.</td><td class="num">50%</td></tr>
-    <tr><td>elite threshold</td><td>Species of at least this size keep their best unchanged.</td><td class="num">5</td></tr>
+    <tr><td>survivors</td><td>Share of each species that may be parents, rounded up.</td><td class="num">50%</td></tr>
+    <tr><td>elite threshold</td><td>Species of at least this size keep their best unchanged, and so does the species holding the best creature.</td><td class="num">5</td></tr>
     <tr><td>species threshold</td><td>Compatibility distance below which creatures share a species.</td><td class="num">1.2</td></tr>
     <tr><td>gravity</td><td>Acceleration (UI: 2 to 20 m/s²).</td><td class="num">9.8</td></tr>
     <tr><td>friction</td><td>Kinetic coefficient (UI: 0.1 to 1.5); static is 1.2 times.</td><td class="num">0.80</td></tr>
     <tr><td>restitution</td><td>Bounce on impacts faster than 0.5 m/s.</td><td class="num">0.20</td></tr>
-    <tr><td>spring stiffness k</td><td>Random start range, and the mutation clamp is 20 to 600 N/m.</td><td class="num">60 to 250</td></tr>
-    <tr><td>muscle amplitude</td><td>Random start range for the rest-length swing (fraction of rest).</td><td class="num">0.10 to 0.35</td></tr>
-    <tr><td>muscle frequency</td><td>Random start range (Hz); the mutation clamp is 0.4 to 4 Hz.</td><td class="num">0.8 to 3.0</td></tr>
+    <tr><td>drag</td><td>Linear drag on every node, per second.</td><td class="num">0.1 /s</td></tr>
+    <tr><td>velocity clamp</td><td>Largest velocity component allowed in a step, counted but not fatal.</td><td class="num">30 m/s</td></tr>
+    <tr><td>spring stiffness k</td><td>Random start range (N/m). Mutation keeps it within 20 to 600.</td><td class="num">60 to 250</td></tr>
+    <tr><td>spring damping c</td><td>Random start range. Mutation keeps it within 0.2 to 10.</td><td class="num">0.5 to 6</td></tr>
+    <tr><td>muscle amplitude</td><td>Random start range for the rest-length swing (fraction of rest). Mutation keeps it within 0 to 0.4.</td><td class="num">0.10 to 0.35</td></tr>
+    <tr><td>muscle frequency</td><td>Random start range (Hz). Mutation keeps it within 0.4 to 4 Hz.</td><td class="num">0.8 to 3.0</td></tr>
     <tr><td>spin penalty</td><td>Metres lost per radian of spine rotation beyond 1 rad. Tumbling must cost more than it earns.</td><td class="num">1.00</td></tr>
     <tr><td>speed bonus</td><td>Seconds of mean forward speed in the second half added to the score (no bonus after a fall).</td><td class="num">0.5 s</td></tr>
+    <tr><td>fall line</td><td>Centre-of-mass height below which a body has fallen.</td><td class="num">−1.5 m</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The physics constants (step, drag, velocity clamp, restitution threshold, fall line) are standard for explicit simulation and were set by hand; none was tuned against the node-crossing limit. The genetic parameters (crossover 0.6, tournament 3, half the top as parents, elites of 5, threshold 1.2, the compatibility weights) follow the usual NEAT-style defaults and were set by hand. The mutation sizes and the speed bonus are judgement calls. The spin penalty began at 0.25 m per radian; a two-node body then tumbled sixteen turns for 99 m and scored 79, so it went to 1.00. The checks were the 300-generation runs below, and a friction sweep on the inchworm (friction 0.1 to 1.2). No sweep over these values is committed. Gravity and friction are the UI's to change, and each change alters what evolves.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> The physics constants (step, drag, velocity clamp, restitution threshold, fall line) are standard for explicit simulation and were set by hand. None was tuned against the node-crossing limit. The genetic parameters (crossover 0.6, tournament 3, the top half as parents, elites of 5, threshold 1.2, the compatibility weights) follow the usual NEAT-style defaults and were set by hand. The mutation sizes and the speed bonus are judgement calls. The spin penalty began at 0.25 m per radian. A two-node body then tumbled sixteen turns for 99 m and scored 79, so the penalty went to 1.00<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md#L44-L51" target="_blank" rel="noopener" title="results/walkers_evolution.md, lines 44–51" aria-label="Code on GitHub: results/walkers_evolution.md, lines 44 to 51">43</a>. The checks were the 300-generation runs below, and a friction sweep on the inchworm from 0.1 to 1.2, whose figures are quoted in the results file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md#L53-L58" target="_blank" rel="noopener" title="results/walkers_evolution.md, lines 53–58" aria-label="Code on GitHub: results/walkers_evolution.md, lines 53 to 58">44</a>. Gravity and friction are the UI's to change, and each change alters what evolves.</p>
 
   <h3 class="hiw-sub">Terrains</h3>
-  <p class="hiw-note">Flat: a plain floor. Hills: a ramp-in from 3 m, then two sine waves (0.35 m and 0.12 m amplitude). Steps: 0.15 m risers every 1.2 m from 3 m, up to eight. Gaps: 0.9 m holes every 3.2 m from 4 m, where a body that falls through is scored where it fell. The start is always 2 m from the origin, on flat ground.</p>
+  <p class="hiw-note">Flat: a plain floor. Hills: a ramp-in from 3 m to 5 m, then two sine waves with 0.35 m and 0.12 m amplitude. Steps: 0.15 m risers every 1.2 m from 3 m, up to eight. Gaps: 0.9 m holes every 3.2 m from 4 m, where a body that falls through is scored where it fell. The start is always 2 m from the origin, on flat ground<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py#L153-L176" target="_blank" rel="noopener" title="walkers/core.py, lines 153–176" aria-label="Code on GitHub: walkers/core.py, lines 153 to 176">45</a>.</p>
 
   <h3 class="hiw-sub">Results: 300 generations, population 80</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Run</th><th class="num">Gen 100</th><th class="num">Gen 200</th><th class="num">Gen 300 best</th><th>Champion at gen 300</th></tr></thead><tbody>
-    <tr class="best"><td>seed 1, flat</td><td class="num">2.13</td><td class="num">5.74</td><td class="num">14.32</td><td>runner: 13.7 m in 10 s, a one-hop skipper at 1.4 m/s</td></tr>
-    <tr><td>seed 2, flat</td><td class="num">1.67</td><td class="num">7.17</td><td class="num">11.70</td><td>10 nodes at generation 297: a crawler, 12.9 m</td></tr>
-    <tr class="best"><td>seed 3, flat</td><td class="num">2.20</td><td class="num">4.82</td><td class="num">14.07</td><td>inchworm: 15.3 m in 10 s, centre of mass never above 0.31 m</td></tr>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Run</th><th class="num">Gen 100</th><th class="num">Gen 200</th><th class="num">Gen 300 best</th><th>Champion</th></tr></thead><tbody>
+    <tr class="best"><td>seed 1, flat</td><td class="num">2.13</td><td class="num">5.74</td><td class="num">14.32</td><td>runner, generation 299: 13.7 m in 10 s, a one-hop skipper at 1.4 m/s</td></tr>
+    <tr><td>seed 2, flat</td><td class="num">1.67</td><td class="num">7.17</td><td class="num">11.70</td><td>10 nodes at generation 297: 12.9 m in 10 s, gait not characterised in the results</td></tr>
+    <tr class="best"><td>seed 3, flat</td><td class="num">2.20</td><td class="num">4.82</td><td class="num">14.07</td><td>inchworm, generation 300: 15.3 m in 10 s, centre of mass never above 0.31 m</td></tr>
     <tr><td>seed 1, hills</td><td class="num">1.26</td><td class="num">2.55</td><td class="num">3.14</td><td>8 nodes, uneven ground: 3.8 m</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>Scores in metres, best of each run's population.</b> Earlier runs (60 generations, spin penalty 0.25, no speed bonus) are kept in <code>results/walkers_evolution_v1.md</code>.</p>
-  <p class="hiw-note"><b>Honest results:</b> every flat run climbs from random flailing to bodies that cover 12 m or more in 10 s, with no explosions. The two best bodies are different body plans from different seeds: a 10-node skipper that gets off the ground once, and an 11-node low crawler that never leaves the ground by more than 0.31 m. Neither runs as a clean gait, and no champion hops three times, so there is no hopper preset. The best scores were still rising by about 3 m between generations 250 and 300, so these runs are not converged. The hills runs are much slower to learn. Full numbers and the study command are in the results file.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-core.js">web/js/walkers-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/walkers-worker.js">web/js/walkers-worker.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/core.py">walkers/core.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/walkers/__main__.py">walkers/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_walkers_parity.py">tests/test_walkers_parity.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md">results/walkers_evolution.md</a></p>
+  <p class="hiw-note"><b>Scores in metres, best of each run's population.</b> The per-generation numbers are in the results file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md#L19-L26" target="_blank" rel="noopener" title="results/walkers_evolution.md, lines 19–26" aria-label="Code on GitHub: results/walkers_evolution.md, lines 19 to 26">46</a>, and the champion code of every generation is in the JSON<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.json" target="_blank" rel="noopener" title="results/walkers_evolution.json" aria-label="Code on GitHub: results/walkers_evolution.json">47</a>. Earlier runs (60 generations, spin penalty 0.25, no speed bonus) are kept in <code>results/walkers_evolution_v1.md</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution_v1.md" target="_blank" rel="noopener" title="results/walkers_evolution_v1.md" aria-label="Code on GitHub: results/walkers_evolution_v1.md">48</a>.</p>
+  <p class="hiw-note"><b>Honest results:</b> every flat run climbs from random flailing to bodies that cover 12 m or more in 10 s, with no explosions. The two best bodies are different body plans from different seeds: a 10-node skipper that gets off the ground once, and an 11-node low crawler that never leaves the ground by more than 0.31 m. Neither runs as a clean gait, and no champion hops three times, so there is no hopper preset. The best scores were still rising by about 3 m between generations 250 and 300, so these runs are not converged. The hills runs are much slower to learn. The full numbers and the study command are in the results file<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/walkers_evolution.md" target="_blank" rel="noopener" title="results/walkers_evolution.md" aria-label="Code on GitHub: results/walkers_evolution.md">49</a>.</p>
 </section>
 </div>
 </div>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/walkers.js"></script>
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

@@ -133,7 +133,7 @@ def evolve(s: Settings, on_generation=None) -> tuple[np.ndarray, Score, list[dic
 
     `on_generation(record, best_genome)` is called after each generation with the best-ever training genome,
     so the CLI can print progress and write checkpoints as it goes.
-    Candidates for champion are the best genome of every generation and the top five of the last one.
+    Candidates for champion are the best-ever genome and the top five genomes of the last generation.
     They are re-scored on VALIDATION_SEEDS, a fixed board set, and the best of them is the champion.
     """
     rng = np.random.default_rng(s.seed)

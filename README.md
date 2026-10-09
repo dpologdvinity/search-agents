@@ -94,18 +94,18 @@ The move generator matches the published perft counts from the opening (7, 49, 3
 | First | Second | First W-D-L | Second W-D-L |
 |---|---|---|---|
 | alpha-beta | minimax | 7-3-0 | 0-3-7 |
-| alpha-beta | MCTS | 9-1-0 | 0-1-9 |
+| alpha-beta | MCTS | 5-5-0 | 0-5-5 |
 | alpha-beta | greedy | 10-0-0 | 0-0-10 |
 | alpha-beta | random | 10-0-0 | 0-0-10 |
-| minimax | MCTS | 6-4-0 | 0-4-6 |
+| minimax | MCTS | 1-6-3 | 3-6-1 |
 | minimax | greedy | 10-0-0 | 0-0-10 |
 | minimax | random | 10-0-0 | 0-0-10 |
-| MCTS | greedy | 6-2-2 | 2-2-6 |
-| MCTS | random | 6-4-0 | 0-4-6 |
+| MCTS | greedy | 9-1-0 | 0-1-9 |
+| MCTS | random | 10-0-0 | 0-0-10 |
 | greedy | random | 7-3-0 | 0-3-7 |
 | alpha-beta | chance | 10-0-0 | 0-0-10 |
 
-Totals over 40 games each: alpha-beta 36-4-0, minimax 26-7-7, MCTS 12-11-17, greedy 9-5-26, random 0-7-33.
+Totals over 40 games each: alpha-beta 32-8-0, MCTS 22-12-6, minimax 21-9-10, greedy 7-4-29, random 0-3-37.
 
 ### Battleship: shots to sink a random fleet
 
@@ -133,7 +133,7 @@ shot, so its time per game is well over 100 times the baselines'.
 
 ### 2048: TD-learned n-tuple network
 
-The network has four 5-cell patterns and two 6-cell patterns (`PATTERNS` in `game2048/ntuple.py`; the shapes are in `web/2048.html`), each read under all 8 board symmetries. Trained with `python -m game2048.train_td --minutes 70 --games 1000 --alpha 0.1 --seed 0`. The trainer logs once a minute and writes no final record, so the counts cited are the last logged records: the current network at 45,514 games and 69.04 minutes (`results/game2048_train_log_v2.jsonl`), and the earlier six-5-cell network at 42,980 games and 64.1 minutes (`results/game2048_train_log_v1.jsonl`). Held-out games use the seed 500000 for their batch, which neither the trainer nor the tuner used. Intervals are 95% (normal for the mean, Wilson for the rates).
+The network has four 5-cell patterns and two 6-cell patterns (`PATTERNS` in `game2048/ntuple.py`; the shapes are in `web/2048.html`), each read under all 8 board symmetries. Trained with `python -m game2048.train_td --minutes 70 --games 1000 --alpha 0.1 --seed 0`. The trainer logs once a minute; the current network's run predates the final record it now writes at exit, so the counts cited are the last logged records: the current network at 45,514 games and 69.04 minutes (`results/game2048_train_log_v2.jsonl`), and the earlier six-5-cell network at 42,980 games and 64.1 minutes (`results/game2048_train_log_v1.jsonl`). Held-out games use the seed 500000 for their batch, which neither the trainer nor the tuner used. Intervals are 95% (normal for the mean, Wilson for the rates).
 
 Greedy, no search, each move chosen by reward + learned afterstate value (`results/game2048_ntuple_v1.md`, `results/game2048_ntuple_v2.md`):
 
@@ -367,26 +367,26 @@ The robot knows the floor plan but not where it is. Its range beams see walls at
 
 | Particles | Median steps to within 0.5 m | Failures | ms per step |
 |---|---:|---:|---:|
-| 100 | 65 | 11/16 | 4.2 |
-| 500 | 4 | 4/16 | 8.4 |
-| 2000 | 2 | 1/16 | 29.7 |
+| 100 | 12 | 12/16 | 1.0 |
+| 500 | 2 | 6/16 | 2.0 |
+| 2000 | 2 | 2/16 | 6.3 |
 
-The grid filter fails 0 of 16 runs with a median of 6 steps, at about 40 ms per step. Timings move with machine load; the committed file is from a quiet run.
+The grid filter fails 0 of 16 runs with a median of 6 steps, at about 14 ms per step. Timings move with machine load; the committed file is from a quiet run.
 
 Kidnapped at step 40 (60-step window):
 
 | Filter | Median steps to recover | Failures |
 |---|---:|---:|
-| Augmented MCL (injects random particles when the fast likelihood average falls) | 13 | 3/16 |
+| Augmented MCL (replaces a random subset of particles when the fast likelihood average falls) | 11 | 2/16 |
 | Plain MCL (no injection) | 18 | 14/16 |
 | Grid filter (exact Bayes) | 33 | 1/16 |
 
-Augmented MCL injects 1.2% of particles per step on average when nothing is wrong, and 19% per step after the kidnap. Noise sweeps (sensor sigma 0.15 to 0.6 cells, odometry scale 0.5 to 2) move the failure counts by a few trials, which at 16 trials is not a trend.
+Augmented MCL injects 1.3% of particles per step on average when nothing is wrong, and 13% per step after the kidnap. Noise sweeps (sensor sigma 0.15 to 0.6 cells, odometry scale 0.5 to 2) move the failure counts by a few trials, which at 16 trials is not a trend.
 
 **Honest limits**
 
-- **100 particles fail 11 of 16 runs.** The cloud is too thin to keep the possible places alive until one of them wins; 2000 is the page default.
-- **Kidnap recovery is slow in look-alike rooms.** Twin Halls has six rooms that look alike from inside, so after a kidnap the beams match several places and the belief splits. Recovery takes a median of 13 steps for augmented MCL and 33 for the grid filter. In a spot check of six kidnaps with a 240-step window, five recovered after 52 to 167 steps and one stayed lost.
+- **100 particles fail 12 of 16 runs.** The cloud is too thin to keep the possible places alive until one of them wins; 2000 is the page default.
+- **Kidnap recovery is slow in look-alike rooms.** Twin Halls has six rooms that look alike from inside, so after a kidnap the beams match several places and the belief splits. Recovery takes a median of 11 steps for augmented MCL and 33 for the grid filter.
 - **The page's default seed was chosen to show a visible split.** Seed 4 on Twin Halls starts the belief in three places before it locks. It was picked by search for that picture and is not a benchmark result or a typical run.
 
 ```
@@ -779,7 +779,7 @@ This page is an easter egg, not a lab: it is checked by its tests, and it has no
 ### Connect Four
 
 - **Board** (`connect4/board.py`). Two 64-bit integers (all stones, and the stones of the player to move), with a spare bit per column so line checks never wrap. Four in a row is four shift-and-AND operations.
-- **AlphaZero** (`connect4/puct.py`, `connect4/train_az.py`). PUCT search guided by a residual policy-value network. Self-play runs 128 games at once and batches every game's leaf evaluation into one network call per simulation round. Positions are stored with mirror images; the loss is value MSE plus policy cross-entropy.
+- **AlphaZero** (`connect4/puct.py`, `connect4/train_az.py`). PUCT search guided by a residual policy-value network. Self-play runs a whole iteration's games at once (128 per iteration on the laptop, 512 on Kaggle) and batches every game's leaf evaluation into one network call per simulation round. Positions are stored with mirror images; the loss is value MSE plus policy cross-entropy.
 - **Serving without torch** (`connect4/net.py`). Batch norm is folded into the convolutions at export, so inference is NumPy convolutions and matrix multiplies.
 - **Chance baseline** (`connect4/agents.py`). A no-skill opponent with no search or evaluation: it draws a column from fixed weights 1,2,3,4,3,2,1 (odds 6%/12%/19%/25%/19%/12%/6% on an open board), renormalised over the columns that still have room. The page and `python -m connect4` both offer it. A 20-game match against AlphaZero at level 1, with alternating colours and seed 0, is in `results/connect4_chance_match.md`, from `python -m connect4 --match 20 --agent alphazero --level 1 --seed 0`: AlphaZero won all 20 games.
 
@@ -971,7 +971,7 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 
 - **Floor plans and sensors** (`localize/world.py`). Walls are rectangles on a grid. Twin Halls has six rooms that look alike from inside (only one differs), and Vault is an irregular plan with no symmetry. Eight range beams are ray-cast against the walls, with Gaussian noise on each distance. Odometry noise grows with the size of the turn and the drive.
 - **Histogram Bayes filter** (`localize/grid.py`). A belief over every (x, y, heading) bin. Each step predicts with the motion model, then multiplies by the beam likelihoods and normalises. Exact on its discretisation, and the baseline for the others.
-- **Monte Carlo localisation** (`localize/particles.py`). N weighted particles, each moved with noise and weighed by its beams, with systematic (low-variance) resampling when the effective sample size drops. Augmented MCL keeps a fast and a slow running average of the measurement likelihood and injects random particles when the fast one falls below the slow one, which is how it recovers from a kidnap.
+- **Monte Carlo localisation** (`localize/particles.py`). N weighted particles, each moved with noise and weighed by its beams, with systematic (low-variance) resampling when the effective sample size drops. Augmented MCL keeps a fast and a slow running average of the measurement likelihood and, when the fast one falls below the slow one, replaces a uniform random subset of the particles with poses over the floor, which is how it recovers from a kidnap.
 - **Autopilot and mode count** (`localize/sim.py`). The true robot drives along breadth-first routes to random destinations. The filters see only the beams and the odometry readings, never the true pose. The page counts the separate places the belief occupies.
 - **Browser core** (`web/js/localize-core.js`). The same floors, sensor and motion models, grid filter and particle filter. `tests/test_localize_parity.py` runs it in node on a fixed scenario and compares the output with Python.
 - **Checks** (`tests/test_localize.py`, `tests/test_localize_parity.py`, `tests/test_server_localize.py`). Filter behaviour on simple floors, the ray caster, resampling, kidnap injection, the CLI, the JavaScript parity test, and the router metadata.

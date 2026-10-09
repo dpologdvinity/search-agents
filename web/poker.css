@@ -64,6 +64,8 @@
 
 .pk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
 .pk-actions .cyber-btn:disabled { opacity: 0.3; }
+/* Narrower side padding lets all seven action buttons share one row at 1280, so HINT does not sit alone on a second. */
+.pk-actions .cyber-btn { padding-left: 1rem; padding-right: 1rem; }
 
 .pk-log {
   font-family: var(--mono); font-size: 0.7rem; color: var(--dim); line-height: 1.6;
@@ -131,3 +133,9 @@
   .pk-card.deal { animation: none; }
   .pk-bar-fill { transition: none; }
 }
+
+/* The watch speed and auto-restart live in a fold inside the watch bar, so the bar keeps only START and STEP. */
+.pk-watch-more { margin: 0; padding: 0; border: 0; }
+.pk-watch-more > summary { color: var(--cyan); }
+.pk-watch-more[open] { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; justify-content: center; }
+.pk-watch-more[open] > summary { flex-basis: 100%; text-align: center; justify-content: center; }

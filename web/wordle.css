@@ -61,12 +61,12 @@
 }
 .wd-bar-row .w { color: var(--text); letter-spacing: 0.12em; }
 .wd-bar-track { height: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,245,255,0.12); }
-.wd-bar-fill { height: 100%; width: 0; background: var(--purple); box-shadow: 0 0 8px var(--purple); transition: width 0.45s ease-out; }
+.wd-bar-fill { display: block; height: 100%; width: 0; background: var(--purple); box-shadow: 0 0 8px var(--purple); transition: width 0.45s ease-out; }
 .wd-bar-row.cand .wd-bar-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 .wd-bar-row.best { color: var(--green); }
 .wd-bar-row.best .w { color: var(--green); text-shadow: 0 0 8px var(--green); }
 .wd-bar-row.best .wd-bar-fill { background: var(--green); box-shadow: 0 0 10px var(--green); }
-.wd-bar-row .v { text-align: right; }
+.wd-bar-row .v { text-align: right; white-space: nowrap; }
 
 /* Words still possible: chips, shown when there are few enough to name. */
 .wd-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; max-height: 180px; overflow-y: auto; }
@@ -82,7 +82,7 @@
   .wd-board { --tile: min(54px, calc((100vw - 9rem) / 5)); }
   .wd-key { min-width: 1.7rem; height: 2.3rem; font-size: 0.7rem; }
   .wd-key.wide { min-width: 2.6rem; }
-  .wd-bar-row { grid-template-columns: 4.2rem 1fr 3.6rem; }
+  .wd-bar-row { grid-template-columns: 4.2rem 1fr 4.8rem; }
   .wd-bar-row .v:last-child { display: none; }
 }
 

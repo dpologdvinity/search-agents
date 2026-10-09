@@ -14,8 +14,8 @@ and when a round settles it credits each decision with what the hands it affecte
   for each pair.
 - Every-visit Monte Carlo with sample averages: Q(s, a) is the mean payoff of all hands in which action a
   was taken in state s. There is no discounting; the only reward arrives when the hand settles.
-- Epsilon-greedy exploration: each legal action is tried once in a state before its estimate is trusted;
-  afterwards a random legal action is taken with probability epsilon, otherwise the best Q.
+- Epsilon-greedy exploration: a hand's first decision picks a legal action uniformly (an exploring start);
+  later ones take a random legal action with probability epsilon, else the best Q (untried actions count 0).
 - A split credits its decision with the sum of both hands' payoffs, because the split is worth both hands.
 
 Statistics live in flat lists indexed by state, not nested dicts: a hand is a few dozen array operations, so
@@ -158,7 +158,7 @@ class MonteCarloControl:
         self.episodes = 0
 
     def epsilon(self) -> float:
-        """Exploration rate after the hands played so far: halves every EPSILON_HALF_LIFE hands, floored."""
+        """Exploration START / (1 + n / HALF_LIFE) after n hands, floored: half at HALF_LIFE hands, then about 1/n."""
         return max(EPSILON_MIN, EPSILON_START / (1 + self.episodes / EPSILON_HALF_LIFE))
 
     def run(self, hands: int) -> None:

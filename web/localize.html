@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="localize.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,21 +32,26 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">BAYES FILTERING · GRID VS PARTICLES</div>
+      <div class="proj-pg-tag">LOCALIZATION</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="LOST ROBOT">LOST ROBOT</h1>
-      <div class="proj-pg-sub">The robot does not know where it is on this floor plan. Its range sensors see walls at a few distances, and its wheels drift. Each guess is weighed against what the sensors see. Watch the belief split between look-alike rooms, then collapse onto the robot.</div>
+      <div class="proj-pg-sub">A robot on a known floor plan does not know where it is. Two filters estimate its position from noisy range sensors and drifting wheels.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
         <span class="stat-chip">PARTICLE ERR <span class="val" id="chip-pf">—</span></span>
         <span class="stat-chip green">GRID ERR <span class="val" id="chip-grid">—</span></span>
-        <span class="stat-chip">ESS <span class="val" id="chip-ess">—</span></span>
-        <span class="stat-chip pink">PLACES <span class="val" id="chip-modes">—</span></span>
         <span class="stat-chip">STEP <span class="val" id="chip-step">0</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The robot starts at a random place on the floor, and both filters start knowing nothing about where it is. Its range sensors measure the distance to the nearest wall in eight directions by default, and its wheels drift.</p>
+    <p style="margin-top:0.5rem">Press AUTOPILOT to let the robot drive itself, or steer with the arrow keys or WASD. KIDNAP carries the robot to a new place without telling the filters.</p>
+    <p style="margin-top:0.5rem">The particle cloud and the grid's heat map show each filter's belief. The error charts show how far each estimate is from the true position, and the side panel sets the floor, the particle count and the view.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -100,10 +106,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.2rem">
-        <div class="section-title pink-ttl">EVENT LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Event log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -112,7 +118,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">PLAN</div>
-            <select class="cyber-select" id="layout" style="width:100%">
+            <select class="cyber-select" id="layout" style="width:100%" title="The floor plan. Twin Halls has six rooms that look alike; The Vault is irregular.">
               <option value="halls" selected>Twin Halls (rooms that look alike)</option>
               <option value="vault">The Vault (irregular)</option>
             </select>
@@ -120,8 +126,8 @@
           <div>
             <div class="field-lbl">SEED (pillars and robot start)</div>
             <div class="inline">
-              <input class="cyber-select" id="seed" type="number" min="0" max="4294967295" value="4" style="flex:1;min-width:0">
-              <button class="cyber-btn" id="btn-shuffle" type="button"><span class="btn-txt">⚄</span></button>
+              <input class="cyber-select" id="seed" type="number" min="0" max="4294967295" value="4" style="flex:1;min-width:0" title="The number that places the pillars and the robot. The same plan and seed always give the same floor.">
+              <button class="cyber-btn" id="btn-shuffle" type="button" title="Draw a floor from a random seed."><span class="btn-txt">⚄</span></button>
             </div>
           </div>
         </div>
@@ -132,26 +138,29 @@
         <div class="stack">
           <div>
             <div class="field-lbl">PARTICLES</div>
-            <select class="cyber-select" id="particles" style="width:100%">
+            <select class="cyber-select" id="particles" style="width:100%" title="Fewer particles lose the other places sooner (particle deprivation).">
               <option value="100">100</option>
               <option value="500">500</option>
               <option value="2000" selected>2000</option>
             </select>
-            <div class="field-hint">Fewer particles lose the other places sooner (particle deprivation).</div>
           </div>
-          <div>
-            <div class="field-lbl">BEAMS <span id="rays-val">8</span></div>
-            <input id="rays" type="range" min="4" max="16" step="1" value="8" style="width:100%" aria-label="Number of range beams">
-            <div class="field-hint">Changing the beams rebuilds the grid's sensor table.</div>
-          </div>
-          <div>
-            <div class="field-lbl">SENSOR NOISE <span id="sigma-val">0.30 cells (0.15 m)</span></div>
-            <input id="sigma" type="range" min="0.1" max="1" step="0.05" value="0.3" style="width:100%" aria-label="Range sensor noise in cells">
-          </div>
-          <div>
-            <div class="field-lbl">ODOMETRY NOISE <span id="scale-val">1.0×</span></div>
-            <input id="scale" type="range" min="0" max="3" step="0.1" value="1" style="width:100%" aria-label="Odometry noise multiplier">
-          </div>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <div class="stack">
+              <div>
+                <div class="field-lbl">BEAMS <span id="rays-val">8</span></div>
+                <input id="rays" type="range" min="4" max="16" step="1" value="8" style="width:100%" aria-label="Number of range beams" title="Changing the beams rebuilds the grid's sensor table.">
+              </div>
+              <div>
+                <div class="field-lbl">SENSOR NOISE <span id="sigma-val">0.30 cells (0.15 m)</span></div>
+                <input id="sigma" type="range" min="0.1" max="1" step="0.05" value="0.3" style="width:100%" aria-label="Range sensor noise in cells">
+              </div>
+              <div>
+                <div class="field-lbl">ODOMETRY NOISE <span id="scale-val">1.0×</span></div>
+                <input id="scale" type="range" min="0" max="3" step="0.1" value="1" style="width:100%" aria-label="Odometry noise multiplier">
+              </div>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -160,8 +169,7 @@
         <div class="stack">
           <button class="cyber-btn" id="tog-particles" type="button" aria-pressed="true"><span class="btn-txt">PARTICLES ON</span></button>
           <button class="cyber-btn" id="tog-rays" type="button" aria-pressed="true"><span class="btn-txt">BEAMS ON</span></button>
-          <button class="cyber-btn" id="tog-heat" type="button" aria-pressed="false"><span class="btn-txt">GRID HEAT MAP</span></button>
-          <div class="field-hint">The heat map is the grid filter's belief over position: bright is likely. It is exact on its bins; the particles are a sample of the same belief.</div>
+          <button class="cyber-btn" id="tog-heat" type="button" aria-pressed="false" title="The grid filter's belief over position: bright is likely. It is exact on its bins; the particles are a sample of the same belief."><span class="btn-txt">GRID HEAT MAP</span></button>
         </div>
       </div>
     </div>
@@ -169,39 +177,332 @@
 
   <section class="hiw" id="how-it-works">
     <div class="section-title pink-ttl">HOW IT WORKS</div>
-    <p class="hiw-lede">Two filters, the same robot, the same beams. Both start from total ignorance. On 16 seeded trials, the 2000-particle filter holds within 0.5 m for ten steps in 15 of them; the exact grid filter does so in all 16, but takes about 2.7 times as long per step in this implementation. Two devices do most of the work: the particles are resampled when their weights bunch up, and a fraction is re-scattered over the floor when the beams stop matching the belief.
-    <div class="hiw-grid">
-      <div class="hiw-card">
-        <h3>1. Bayes' rule: belief times evidence</h3>
-        <p><b>New to this?</b> Start with a guess about where the robot could be, the prior. Each sensor reading says how likely it is under each place. Multiply the two, divide by their total, and the result is the posterior: the new belief. The robot is never "found" in one jump; the belief shifts a little with each reading.</p>
-        <p>Written out: <code>p(x | z) = p(z | x) p(x) / p(z)</code>. Here <code>x</code> is the pose (position and heading), <code>z</code> the beams, and <code>p(z)</code> just the sum that makes the numbers add to one.</p>
-      </div>
-      <div class="hiw-card">
-        <h3>2. Predict, then update</h3>
-        <p><b>New to this?</b> Each tick has two steps. Predict: move every possible pose by the odometry, spreading the belief because the wheels drift. Update: multiply by how well the beams fit each pose, then renormalise. Prediction makes the belief wider; the sensor makes it narrower.</p>
-        <p>With no sensor the belief only spreads out. With no odometry the robot could only ever be where the first scan put it. The two together give the filter its shape.</p>
-      </div>
-      <div class="hiw-card">
-        <h3>3. Grid filter: one number per bin</h3>
-        <p><b>New to this?</b> Chop the floor into small bins, each with a heading, and keep one probability for every bin. Prediction moves probability from each bin to where the odometry could have taken it. Update multiplies by the likelihood of the beams in that bin. Nothing is sampled, so the result is the exact Bayes filter on these bins.</p>
-        <p>The cost grows with the number of bins, so it is exact but limited: 48 by 32 positions with 16 headings is 24 576 bins, and every bin is updated on every tick.</p>
-      </div>
-      <div class="hiw-card">
-        <h3>4. Particle filter: a sample of the belief</h3>
-        <p><b>New to this?</b> Instead of a number per bin, keep a few thousand guesses, each a pose. Predict moves each guess by the odometry plus its own random noise. Update scores each guess by how well its own beams match the sensor, and that score becomes its weight. The cloud of weighted guesses is the belief.</p>
-        <p>The cost grows with the particle count, not the size of the floor, which is why it scales to large maps. The price is randomness: fewer particles can lose a place for good.</p>
-      </div>
-      <div class="hiw-card">
-        <h3>5. Resampling: keep the good guesses</h3>
-        <p><b>New to this?</b> After a few updates most weight sits on a handful of particles. Resampling redraws the cloud in proportion to the weights: heavy particles are copied, light ones die. The effective sample size (ESS) measures how concentrated the weights are; when it falls below half the particles, the cloud is resampled. Systematic resampling uses one random offset and evenly spaced pointers, so every copy count is as even as it can be.</p>
-      </div>
-      <div class="hiw-card">
-        <h3>6. Kidnapped robot: inject new guesses</h3>
-        <p><b>New to this?</b> If someone carries the robot to a new room, every particle is now wrong and the cloud can never recover by itself. The filter compares the average likelihood of the beams now with its longer-run average. When the recent average falls well below the long-run one, it replaces the lowest-weight particles with random poses over the whole floor. This is augmented Monte Carlo localisation.</p>
-      </div>
+    <p class="hiw-lede">A <b>filter</b> combines the commands a robot sends its wheels, which it knows, with the readings of its <b>range sensor</b>, which are noisy, into a running estimate of where the robot is. This page runs two filters on the same robot and the same beams. Both start from total ignorance. On 16 seeded trials, the 2000-particle filter holds within 0.5 m for ten steps in 14 of them; the exact grid filter does so in all 16, but takes about 2.5 times as long per step in this implementation. Two devices do most of the work: the particles are resampled when their weights bunch up, and a fraction is re-scattered over the floor when the beams stop matching the belief.</p>
+
+    <h3 class="hiw-sub">The floor, the robot and its sensors</h3>
+    <p>The floor is a grid of 24 by 16 cells, and each cell is 0.5 m on a side, so the floor measures 12 m by 8 m.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L21-L31" target="_blank" rel="noopener" title="localize/world.py, lines 21–31" aria-label="Code on GitHub: localize/world.py, lines 21 to 31">1</a> Walls fill whole cells, and the robot itself is a point. Two plans are offered. <b>Twin Halls</b> has six rooms that look the same from inside, so the belief can split between them until a feature shows up. <b>The Vault</b> is an irregular plan with no symmetry.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L37-L64" target="_blank" rel="noopener" title="localize/world.py, lines 37–64" aria-label="Code on GitHub: localize/world.py, lines 37 to 64">2</a></p>
+    <p>Each plan has a few <b>pillar slots</b>, single cells that may or may not hold a pillar. The seed draws one uniform number per slot, and a slot holds a pillar when the draw is below 0.5. The same plan and seed therefore always give the same floor.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L117-L133" target="_blank" rel="noopener" title="localize/world.py, lines 117–133" aria-label="Code on GitHub: localize/world.py, lines 117 to 133">3</a> The robot is placed in the <b>region</b>, the largest connected block of free cells, so that it never starts in a pocket cut off by a pillar.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L90-L114" target="_blank" rel="noopener" title="localize/world.py, lines 90–114" aria-label="Code on GitHub: localize/world.py, lines 90 to 114">4</a></p>
+    <p>A <b>pose</b> is the robot's state: its position and heading (x, y, θ). The position is in cells, and the heading θ is in radians, measured from the +x direction. Between two ticks the robot is commanded a <b>turn</b> r and a <b>drive</b> f. Both commands are noisy. The standard deviations of that noise grow with the size of the command, and the odometry noise slider multiplies both.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L150-L154" target="_blank" rel="noopener" title="localize/world.py, lines 150–154" aria-label="Code on GitHub: localize/world.py, lines 150 to 154">5</a></p>
+    <!-- localize/world.py:150-154 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L150-L154" target="_blank" rel="noopener" title="localize/world.py, lines 150–154" aria-label="Code on GitHub: localize/world.py, lines 150 to 154">5</a></span>
+      <div class="math math-block">\sigma_r = s\,(0.05 + 0.15\,|r|) \qquad \sigma_f = s\,(0.03 + 0.10\,|f|)</div>
+    </div>
+    <p>Here <span class="math">s</span> is the odometry noise multiplier (1.0 by default), <span class="math">r</span> is the commanded turn in radians, <span class="math">f</span> is the commanded drive in cells, and <span class="math">\sigma_r</span> and <span class="math">\sigma_f</span> are the standard deviations of the turn and drive noise. For a turn of 0.25 rad and a drive of 0.3 cells, the noise is 0.0875 rad and 0.06 cells.</p>
+    <p>The motion itself is simple. The robot drives along its heading, then turns. If the end of the drive lands in a wall or outside the floor, the robot <b>bumps</b>: it keeps its position but still turns. Steps are shorter than a cell, so a robot cannot pass through a one-cell wall in a single move. The heading is wrapped into the range minus pi to pi.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L136-L166" target="_blank" rel="noopener" title="localize/world.py, lines 136–166" aria-label="Code on GitHub: localize/world.py, lines 136 to 166">6</a></p>
+    <!-- localize/world.py:157-166 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L157-L166" target="_blank" rel="noopener" title="localize/world.py, lines 157–166" aria-label="Code on GitHub: localize/world.py, lines 157 to 166">7</a></span>
+      <div class="math math-block">x' = x + f\cos\theta,\quad y' = y + f\sin\theta,\quad \theta' = \operatorname{wrap}(\theta + r)</div>
+    </div>
+    <p>If the end point (x', y') is inside a wall or outside the floor, x' and y' are replaced by x and y. The function <span class="math">\operatorname{wrap}(a) = a - 2\pi\lfloor (a + \pi) / 2\pi \rfloor</span> maps any angle into the range from minus pi up to pi.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L145-L147" target="_blank" rel="noopener" title="localize/world.py, lines 145–147" aria-label="Code on GitHub: localize/world.py, lines 145 to 147">8</a> It is written with a floor so that the JavaScript port gives the same value.</p>
+    <p>The sensor has <span class="math">R</span> <b>beams</b>, 8 by default, spaced evenly around the full circle and starting from the robot's heading. Beam <span class="math">i</span> points at the angle below. Each beam reports the distance to the first wall it meets, up to a <b>maximum range</b> of 8 cells (4 m).<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L206-L208" target="_blank" rel="noopener" title="localize/world.py, lines 206–208" aria-label="Code on GitHub: localize/world.py, lines 206 to 208">9</a></p>
+    <!-- localize/world.py:206-208 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L206-L208" target="_blank" rel="noopener" title="localize/world.py, lines 206–208" aria-label="Code on GitHub: localize/world.py, lines 206 to 208">9</a></span>
+      <div class="math math-block">\theta_i = \theta + \dfrac{2\pi\, i}{R}, \qquad i = 0, 1, \dots, R-1</div>
+    </div>
+    <p>The distance is found by <b>ray casting</b>. The ray is marched forward in steps of 0.25 cells until one step lands inside a wall or outside the floor, and the distance is the step count times 0.25. The distance is therefore quantised to 0.25 cells, and a ray that finds nothing reads 8. All rays advance together, which keeps the cast fast enough for thousands of particles.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L179-L203" target="_blank" rel="noopener" title="localize/world.py, lines 179–203" aria-label="Code on GitHub: localize/world.py, lines 179 to 203">10</a></p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L179-L203" target="_blank" rel="noopener" title="localize/world.py, lines 179–203" aria-label="Code on GitHub: localize/world.py, lines 179 to 203">10</a></span>
+      <pre class="pseudo-simple">function RAY-CAST(walls, x, y, angle):
+    for k in 1 to 32:                              # march in steps of 0.25 cells, up to 8 cells
+        (x, y) ← (x, y) + 0.25 × (cos angle, sin angle)
+        if (x, y) is in a wall or outside the floor:
+            return k × 0.25                        # distance = steps × step length
+    return 8                                       # nothing hit: the maximum range</pre>
+      <pre class="pseudo-full" hidden>function RAY-CAST(walls, x, y, angle):
+    dx ← 0.25 × cos(angle)                         # one step of the march
+    dy ← 0.25 × sin(angle)
+    d ← 8                                          # MAX-RANGE, kept if no wall is reached
+    hit ← false
+    k ← 0
+    repeat 32 times:
+        k ← k + 1
+        x ← x + dx
+        y ← y + dy
+        if not hit and (x, y) is in a wall or outside the floor:
+            d ← k × 0.25                           # the first hit fixes the distance
+            hit ← true
+        if hit:
+            stop                                   # nothing after the first hit can change d
+    return d</pre>
+    </div>
+    <p>The simple version marches one ray until it meets a wall. The full version uses the same march, with the step vector split into its two parts. Once a ray has hit, its distance is fixed, so the loop can stop early without changing the result. The code applies this to all rays at once and stops when every ray has hit.</p>
+    <p>The ray cast also builds the grid filter's table of expected ranges, and it runs inside every particle's sensing step.</p>
+    <p>The real sensor adds noise. A reading is the true distance <span class="math">d</span> plus Gaussian noise with standard deviation <span class="math">\sigma</span>, clipped to the range from 0 to 8. With probability <span class="math">p_d</span>, a <b>dropout</b>, the reading is 8 instead. The defaults are <span class="math">\sigma = 0.3</span> cells (0.15 m) and <span class="math">p_d = 0.05</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L224-L231" target="_blank" rel="noopener" title="localize/world.py, lines 224–231" aria-label="Code on GitHub: localize/world.py, lines 224 to 231">11</a></p>
+    <!-- localize/world.py:224-231 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L224-L231" target="_blank" rel="noopener" title="localize/world.py, lines 224–231" aria-label="Code on GitHub: localize/world.py, lines 224 to 231">11</a></span>
+      <div class="math math-block">z = \begin{cases} 8 & \text{with probability } p_d \\ \operatorname{clip}(d + \sigma n,\ 0,\ 8) & \text{otherwise} \end{cases}</div>
+    </div>
+    <p>Here <span class="math">n</span> is a standard normal draw. The filters' likelihood below ignores the clip at zero, which matters only when the robot is within about one noise standard deviation of a wall.</p>
+    <p>The autopilot drives the true robot along shortest routes. It picks a random destination in the region and finds the route with a <b>breadth-first search</b>, which explores cells in rings of increasing distance from the start, so the first route that reaches the goal has the fewest steps. Neighbours are tried in the order north, east, south, west, so ties break the same way every run.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py#L68-L89" target="_blank" rel="noopener" title="localize/sim.py, lines 68–89" aria-label="Code on GitHub: localize/sim.py, lines 68 to 89">12</a> It steers toward each waypoint with a turn of at most 0.25 rad per tick, and it drives 0.3 cells per tick only once it faces the waypoint to within 0.5 rad. A waypoint counts as reached within 0.35 cells.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py#L95-L129" target="_blank" rel="noopener" title="localize/sim.py, lines 95–129" aria-label="Code on GitHub: localize/sim.py, lines 95 to 129">13</a></p>
+    <!-- localize/sim.py:117-129 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py#L117-L129" target="_blank" rel="noopener" title="localize/sim.py, lines 117–129" aria-label="Code on GitHub: localize/sim.py, lines 117 to 129">14</a></span>
+      <div class="math math-block">e = \operatorname{wrap}\big(\operatorname{atan2}(t_y - y,\ t_x - x) - \theta\big), \qquad r = \operatorname{clip}(e,\ -0.25,\ 0.25), \qquad f = \begin{cases} 0.3 & \text{if } |e| < 0.5 \\ 0 & \text{otherwise} \end{cases}</div>
+    </div>
+    <p>Here <span class="math">(t_x, t_y)</span> is the centre of the next waypoint. The autopilot steers by the true pose, which a real robot's controller would know about its own motion. The filters are not given that pose. They receive only the commanded turn and drive, and the beams.</p>
+
+    <h3 class="hiw-sub">Bayes' rule: belief times evidence</h3>
+    <p><b>Bayes' rule</b> is the update that combines a prior with evidence. The <b>belief</b> is the filter's probability distribution over where the robot is. Before a reading, the belief is the <b>prior</b>. Each sensor reading is <b>evidence</b>, and the <b>likelihood</b> of a reading is how probable that reading is at each pose. The new belief, the <b>posterior</b>, is the prior times the likelihood, divided by a normaliser that makes the posterior add up to one.</p>
+    <!-- localize/grid.py:102-110 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L102-L110" target="_blank" rel="noopener" title="localize/grid.py, lines 102–110" aria-label="Code on GitHub: localize/grid.py, lines 102 to 110">15</a></span>
+      <div class="math math-block">p(x \mid z) = \dfrac{p(z \mid x)\; p(x)}{p(z)}</div>
+    </div>
+    <p>Here <span class="math">x</span> is the pose and <span class="math">z</span> is the set of beams. The term <span class="math">p(z)</span> is the sum over all poses that makes the posterior add to one. The filters never compute it. They scale by the largest likelihood before taking exponentials and normalise at the end, which gives the same posterior.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L107-L110" target="_blank" rel="noopener" title="localize/grid.py, lines 107–110" aria-label="Code on GitHub: localize/grid.py, lines 107 to 110">16</a></p>
+    <p>Each tick has two parts. The <b>predict</b> step moves the belief by the commanded motion, including its noise. The noise makes the belief wider. The <b>update</b> step multiplies the belief by the likelihood of the beams. The sensor makes it narrower. A filter with no sensor would only spread out, and a filter with no odometry could only ever be where its first scan put it.</p>
+    <p>The beams are treated as independent, so the likelihood of a whole set of beams is a product of per-beam likelihoods. The product is computed as a sum of logarithms, because eight or sixteen small numbers multiply to something that underflows quickly. The expected range <span class="math">e_i(x)</span> is the ray-cast distance for beam <span class="math">i</span> from pose <span class="math">x</span>.</p>
+    <!-- localize/world.py:211-221 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L211-L221" target="_blank" rel="noopener" title="localize/world.py, lines 211–221" aria-label="Code on GitHub: localize/world.py, lines 211 to 221">17</a></span>
+      <div class="math math-block">\ell(x) = \sum_{i=1}^{R} \log L\big(z_i \mid e_i(x)\big)</div>
+    </div>
+    <p>The per-beam likelihood <span class="math">L(z \mid e)</span> has two cases, because a reading of 8 is a "no return" that a dropout or a long true range can both produce.</p>
+    <!-- localize/world.py:211-221 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L211-L221" target="_blank" rel="noopener" title="localize/world.py, lines 211–221" aria-label="Code on GitHub: localize/world.py, lines 211 to 221">17</a></span>
+      <div class="math math-block">L(z \mid e) = \begin{cases} (1 - p_d)\,\dfrac{\exp\!\big(-\tfrac{(z - e)^2}{2\sigma^2}\big)}{\sigma\sqrt{2\pi}} + \dfrac{\varepsilon}{8} & \text{if } z < 8 \\[2ex] p_d + (1 - p_d)\cdot\tfrac12\operatorname{erfc}\!\Big(\dfrac{8 - e}{\sigma\sqrt2}\Big) + \dfrac{\varepsilon}{8} & \text{if } z = 8 \end{cases}</div>
+    </div>
+    <p>Here <span class="math">e</span> is the expected range, <span class="math">\sigma = 0.3</span> is the sensor noise, <span class="math">p_d = 0.05</span> is the dropout probability, and <span class="math">\varepsilon = 0.02</span> is the weight of a uniform "unexpected reading" term. The term <span class="math">\varepsilon / 8</span> is that uniform density over the range from 0 to 8, so one surprising beam cannot erase a pose completely. In the second case, the erfc term is the chance that noise pushed a true range beyond 8. The code evaluates erfc with a polynomial approximation whose error is below 1.2 × 10⁻⁷, so that JavaScript computes the same numbers.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py#L169-L176" target="_blank" rel="noopener" title="localize/world.py, lines 169–176" aria-label="Code on GitHub: localize/world.py, lines 169 to 176">18</a></p>
+    <p><i>Example.</i> A beam with expected range 4 cells and a reading of 4.2 cells, with <span class="math">\sigma = 0.3</span>, is 0.2 above the expectation. That is two thirds of a sigma, so its Gaussian factor is about 0.8 of the peak. A reading one cell away from its expectation is 3.3 sigma off, so its Gaussian factor is about 0.004 of the peak. The uniform term <span class="math">\varepsilon / 8</span> keeps the factor above zero.</p>
+
+    <h3 class="hiw-sub">Grid filter: one number per bin</h3>
+    <p>The <b>grid filter</b> is also called a <b>histogram filter</b>. It cuts the state space into <b>bins</b> and keeps one probability per bin. A bin is a quarter-cell position (0.25 m, so two positions per cell along each axis) times one of 16 headings, 22.5° apart. The floor therefore has 48 × 32 × 16 = 24 576 bins. Bins inside walls are given zero probability.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L32-L36" target="_blank" rel="noopener" title="localize/grid.py, lines 32–36" aria-label="Code on GitHub: localize/grid.py, lines 32 to 36">19</a> The belief starts uniform over every free bin, which is what "the robot could be anywhere" means.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L62-L65" target="_blank" rel="noopener" title="localize/grid.py, lines 62–65" aria-label="Code on GitHub: localize/grid.py, lines 62 to 65">20</a></p>
+    <p>The predict step uses a <b>motion kernel</b>: the probability of landing in each bin, given the command. The noise is Gaussian in turn and drive, and the kernel's integral over each bin is approximated with <b>Gauss–Hermite quadrature</b>. A quadrature rule replaces an integral with a weighted sum at a few fixed points. Here each noise dimension uses three points, at −√3, 0 and √3 standard deviations, with weights 1/6, 2/3 and 1/6. Those weights give the exact mean and variance of a standard normal. Two dimensions with three points each give nine sample poses per bin.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L32-L36" target="_blank" rel="noopener" title="localize/grid.py, lines 32–36" aria-label="Code on GitHub: localize/grid.py, lines 32 to 36">19</a></p>
+    <!-- localize/grid.py:83-97 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L83-L97" target="_blank" rel="noopener" title="localize/grid.py, lines 83–97" aria-label="Code on GitHub: localize/grid.py, lines 83 to 97">21</a></span>
+      <div class="math math-block">a, b \in \{-\sqrt3,\ 0,\ \sqrt3\}, \qquad w_{a}, w_{b} \in \{\tfrac16,\ \tfrac23,\ \tfrac16\}, \qquad r_{ab} = r + a\,\sigma_r, \qquad f_{ab} = f + b\,\sigma_f</div>
+    </div>
+    <p>Each sample pose <span class="math">(r_{ab}, f_{ab})</span> carries the weight <span class="math">w_{ab} = w_a\,w_b</span>. Its destination from bin <span class="math">s</span> is the bin at the moved position, with the heading rounded to the nearest of the 16 bins. If the move bumps, the destination keeps the old position and takes the new heading.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L88-L95" target="_blank" rel="noopener" title="localize/grid.py, lines 88–95" aria-label="Code on GitHub: localize/grid.py, lines 88 to 95">22</a> The predicted belief is then a sum over those destinations.</p>
+    <!-- localize/grid.py:73-100 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L73-L100" target="_blank" rel="noopener" title="localize/grid.py, lines 73–100" aria-label="Code on GitHub: localize/grid.py, lines 73 to 100">23</a></span>
+      <div class="math math-block">\mathrm{bel}'(s') = \sum_{s}\ \sum_{a,b}\ w_{a}\,w_{b}\ \mathbf{1}\big[\,d_{ab}(s) = s'\,\big]\ \mathrm{bel}(s)</div>
+    </div>
+    <p>Here <span class="math">d_{ab}(s)</span> is the destination bin of sample pose <span class="math">(a, b)</span> from bin <span class="math">s</span>, and <span class="math">\mathbf{1}[\cdot]</span> is 1 when its condition holds and 0 otherwise. The nine weights sum to one, so predict keeps the total probability unchanged, and the code does not renormalise after it.</p>
+    <p>The update step multiplies each bin by the likelihood of the beams. The expected ranges <span class="math">e_i(s)</span> come from a table, computed once per floor, that ray-casts from every bin's centre. Each bin's log-likelihood is then compared with the largest one, and the result is normalised.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L66-L70" target="_blank" rel="noopener" title="localize/grid.py, lines 66–70" aria-label="Code on GitHub: localize/grid.py, lines 66 to 70">24</a></p>
+    <!-- localize/grid.py:102-110 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L102-L110" target="_blank" rel="noopener" title="localize/grid.py, lines 102–110" aria-label="Code on GitHub: localize/grid.py, lines 102 to 110">15</a></span>
+      <div class="math math-block">\mathrm{bel}(s) \leftarrow \dfrac{\mathrm{bel}(s)\,\exp\big(\ell(s) - \ell^{*}\big)}{\sum_{s'} \mathrm{bel}(s')\,\exp\big(\ell(s') - \ell^{*}\big)}, \qquad \ell^{*} = \max_{s:\ \mathrm{bel}(s) > 0} \ell(s)</div>
+    </div>
+    <p>Here <span class="math">\ell(s)</span> is the log-likelihood of the beams in bin <span class="math">s</span>, from the formula above. Subtracting <span class="math">\ell^{*}</span> keeps every exponent at or below zero, so no value overflows. Bins with zero belief stay at zero.</p>
+    <p>The <b>estimate</b> of a grid filter is the centre of its most probable bin. The heat map sums the belief over the 16 headings for each position.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L112-L119" target="_blank" rel="noopener" title="localize/grid.py, lines 112–119" aria-label="Code on GitHub: localize/grid.py, lines 112 to 119">25</a> The cost grows with the number of bins, and every bin is updated on every tick, so the grid filter is exact but limited. In the Python benchmark it takes about 14 ms per step, against about 6 ms for the 2000-particle filter.</p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py#L73-L110" target="_blank" rel="noopener" title="localize/grid.py, lines 73–110" aria-label="Code on GitHub: localize/grid.py, lines 73 to 110">26</a></span>
+      <pre class="pseudo-simple">function GRID-STEP(belief, rot, fwd, z):
+    belief ← PREDICT(belief, rot, fwd)        # spread the belief by the odometry noise
+    for each bin s:
+        belief[s] ← belief[s] × LIKELIHOOD(z, s)   # beams that fit the bin raise it
+    return belief / sum(belief)</pre>
+      <pre class="pseudo-full" hidden>function GRID-STEP(belief, rot, fwd, z):
+    σ_r ← SCALE × (0.05 + 0.15 × |rot|)            # turn noise in radians
+    σ_f ← SCALE × (0.03 + 0.10 × |fwd|)            # drive noise in cells
+    new ← zeros, one entry per bin                 # predict: push the belief through the kernel
+    for a in (−√3, 0, √3):
+        for b in (−√3, 0, √3):
+            w ← weight(a) × weight(b)              # weights 1/6, 2/3, 1/6
+            r ← rot + a × σ_r                      # sampled turn
+            f ← fwd + b × σ_f                      # sampled drive
+            for each bin s = (x, y, θ) with belief[s] > 0:
+                x' ← x + f × cos θ
+                y' ← y + f × sin θ
+                θ' ← wrap(θ + r)
+                if (x', y') is a wall or outside the floor:
+                    dest ← bin at (x, y) with heading θ'     # bump: keep the position
+                else:
+                    dest ← bin at (x', y') with heading θ'
+                new[dest] ← new[dest] + w × belief[s]
+    belief ← new
+    for each bin s:                                # update: score every bin by its beams
+        ℓ[s] ← 0
+        for each beam i:
+            ℓ[s] ← ℓ[s] + log L(z_i | e_i[s])      # e_i[s] from the ray-cast table
+    ℓ* ← max of ℓ[s] over bins with belief[s] > 0
+    for each bin s:
+        belief[s] ← belief[s] × exp(ℓ[s] − ℓ*)    # zero stays zero
+    return belief / sum(belief)</pre>
+    </div>
+    <p>The simple version shows the idea: predict spreads the belief, and update reweights it. The full version adds the details that the code computes. The heading of a destination is the nearest of the 16 bins, so it is found by rounding the angle divided by 22.5°. The position of a destination is the bin that contains it, with the coordinates clipped to the floor. Every bin's log-likelihood is a sum over the beams, and the largest one is subtracted before exponentiating.</p>
+
+    <h3 class="hiw-sub">Particle filter: a sample of the belief</h3>
+    <p>A <b>particle filter</b> keeps instead a set of guesses, the <b>particles</b>. Each particle is one pose (x, y, θ), and the set as a whole is the belief: a region with many heavy particles is a likely place for the robot. The method is called <b>Monte Carlo localisation</b> (MCL), after the random sampling it uses. The default is 2000 particles. Its cost per step grows with the particle count, not with the size of the floor, which is why it scales to larger maps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L1-L21" target="_blank" rel="noopener" title="localize/particles.py, lines 1–21" aria-label="Code on GitHub: localize/particles.py, lines 1 to 21">27</a></p>
+    <p>At the start, each particle is a uniform draw over the free cells and headings. Four uniform random numbers per particle choose a cell, an offset inside it, and a heading.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L55-L62" target="_blank" rel="noopener" title="localize/particles.py, lines 55–62" aria-label="Code on GitHub: localize/particles.py, lines 55 to 62">28</a> Each tick then runs four stages: motion, sensing, resampling and recovery. The first two draw on the same odometry model that the true robot obeys, so the cloud spreads out the way the real uncertainty does.</p>
+    <p>In the <b>motion</b> stage each particle gets its own noise draws. The two standard normal draws <span class="math">n_{i,1}</span> and <span class="math">n_{i,2}</span> come from the random stream, and the particle moves with the motion equations above.</p>
+    <!-- localize/particles.py:81-85 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L82-L86" target="_blank" rel="noopener" title="localize/particles.py, lines 82–86" aria-label="Code on GitHub: localize/particles.py, lines 82 to 86">29</a></span>
+      <div class="math math-block">r_i = r + \sigma_r\, n_{i,1}, \qquad f_i = f + \sigma_f\, n_{i,2}</div>
+    </div>
+    <p>In the <b>sensing</b> stage each particle casts its own beams, so its expected ranges <span class="math">e_i</span> depend on where that particle is. Its weight is multiplied by the likelihood of the real beams, and the weights are then normalised.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L87-L93" target="_blank" rel="noopener" title="localize/particles.py, lines 87–93" aria-label="Code on GitHub: localize/particles.py, lines 87 to 93">30</a></p>
+    <!-- localize/particles.py:86-104 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L87-L105" target="_blank" rel="noopener" title="localize/particles.py, lines 87–105" aria-label="Code on GitHub: localize/particles.py, lines 87 to 105">31</a></span>
+      <div class="math math-block">w_i \leftarrow \dfrac{w_i\,\exp(\ell_i - \ell^{*})}{\sum_j w_j\,\exp(\ell_j - \ell^{*})}, \qquad \ell^{*} = \max_j \ell_j</div>
+    </div>
+    <p>Here <span class="math">\ell_i</span> is the log-likelihood of the beams for particle <span class="math">i</span>, from the formula in the Bayes section, and <span class="math">w_i</span> is its weight before the step.</p>
+    <p>A small number of heavy particles makes the cloud a poor sample of the belief. The <b>effective sample size</b> (ESS) measures how concentrated the weights are. It equals N when all weights are equal and falls toward 1 when one particle holds nearly all the weight.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L106-L110" target="_blank" rel="noopener" title="localize/particles.py, lines 106–110" aria-label="Code on GitHub: localize/particles.py, lines 106 to 110">32</a></p>
+    <!-- localize/particles.py:105-107 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L106-L108" target="_blank" rel="noopener" title="localize/particles.py, lines 106–108" aria-label="Code on GitHub: localize/particles.py, lines 106 to 108">33</a></span>
+      <div class="math math-block">\mathrm{ESS} = \dfrac{1}{\sum_i w_i^2}, \qquad \text{resample when } \mathrm{ESS} < N/2</div>
+    </div>
+    <p>Here <span class="math">N</span> is the particle count and the weights <span class="math">w_i</span> sum to one. A threshold of N/2 is the common compromise between keeping diversity and copying good particles.</p>
+
+    <h3 class="hiw-sub">Resampling: keep the good particles</h3>
+    <p><b>Resampling</b> redraws the cloud in proportion to the weights, so heavy particles are copied and light ones die. After resampling, every weight is reset to 1/N. The code uses <b>systematic resampling</b>, a low-variance method. It draws one random offset, then places N evenly spaced pointers through the cumulative weights. Each particle is copied about N times its weight, and the copies are spread as evenly as the weights allow, which adds less noise than N independent draws.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L137-L148" target="_blank" rel="noopener" title="localize/particles.py, lines 137–148" aria-label="Code on GitHub: localize/particles.py, lines 137 to 148">34</a></p>
+    <!-- localize/particles.py:120-131 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L137-L148" target="_blank" rel="noopener" title="localize/particles.py, lines 137–148" aria-label="Code on GitHub: localize/particles.py, lines 137 to 148">34</a></span>
+      <div class="math math-block">u_0 = \dfrac{U}{N}, \qquad p_i = u_0 + \dfrac{i}{N}, \qquad j_i = \min\big(N - 1,\ \min\{\,j : C_j \ge p_i\,\}\big), \qquad C_j = \sum_{k \le j} w_k, \quad C_{N-1} := 1</div>
+    </div>
+    <p>Here <span class="math">U</span> is one uniform draw on [0, 1), <span class="math">p_i</span> is the i-th pointer, and <span class="math">j_i</span> is the index of the particle that the i-th copy comes from. The cap at N − 1 and the forced value <span class="math">C_{N-1} = 1</span> guard against rounding error in the cumulative sum.</p>
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L137-L148" target="_blank" rel="noopener" title="localize/particles.py, lines 137–148" aria-label="Code on GitHub: localize/particles.py, lines 137 to 148">34</a></span>
+      <pre class="pseudo-simple">function SYSTEMATIC-RESAMPLE(particles, weights):
+    u0 ← UNIFORM() / N                          # one random offset in [0, 1/N)
+    for i in 0 to N − 1:
+        pointer ← u0 + i / N                    # N evenly spaced pointers
+        new[i] ← the particle whose cumulative weight covers pointer
+    return new, with every weight 1/N</pre>
+      <pre class="pseudo-full" hidden>function SYSTEMATIC-RESAMPLE(particles, weights):
+    u0 ← UNIFORM() / N                          # one random offset in [0, 1/N)
+    C ← running sum of weights
+    C[N − 1] ← 1                                # guard against rounding
+    for i in 0 to N − 1:
+        pointer ← u0 + i / N
+        j ← smallest index with C[j] ≥ pointer  # binary search over C
+        j ← min(j, N − 1)
+        new[i] ← particles[j]
+    particles ← new
+    weights ← 1 / N for every particle
+    return particles, weights</pre>
+    </div>
+    <p>The full version is the same as the simple one, with the cumulative sum and the binary search written out. The search finds the first particle whose cumulative weight reaches the pointer, so a particle with weight 0.3 covers 30% of the pointers.</p>
+
+    <h3 class="hiw-sub">Kidnapped robot: augmented MCL</h3>
+    <p>If the robot is carried to a new place, every particle is wrong, and resampling cannot help, because it only copies particles that already exist. <b>Augmented Monte Carlo localisation</b> adds a detector and an injection. The detector watches the average likelihood of the beams. The <b>injection</b> replaces some particles with random poses over the whole floor, which gives the filter a chance to find the robot again.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L100-L119" target="_blank" rel="noopener" title="localize/particles.py, lines 100–119" aria-label="Code on GitHub: localize/particles.py, lines 100 to 119">35</a></p>
+    <p>The average likelihood of a tick is the log of the mean of the particles' likelihoods. The code keeps two running averages of it in log form, a <b>fast</b> one that moves 10% toward each new value and a <b>slow</b> one that moves 1%. Both start at the first value.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L94-L99" target="_blank" rel="noopener" title="localize/particles.py, lines 94–99" aria-label="Code on GitHub: localize/particles.py, lines 94 to 99">36</a></p>
+    <!-- localize/particles.py:92-98 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L92-L99" target="_blank" rel="noopener" title="localize/particles.py, lines 92–99" aria-label="Code on GitHub: localize/particles.py, lines 92 to 99">37</a></span>
+      <div class="math math-block">\bar L = \log\Big(\dfrac{1}{N}\sum_i \exp(\ell_i)\Big), \qquad \lambda_{\text{slow}} \leftarrow \lambda_{\text{slow}} + 0.01\,(\bar L - \lambda_{\text{slow}}), \qquad \lambda_{\text{fast}} \leftarrow \lambda_{\text{fast}} + 0.1\,(\bar L - \lambda_{\text{fast}})</div>
+    </div>
+    <p>Here <span class="math">\bar L</span> is the log of the average likelihood this tick, and <span class="math">\lambda_{\text{fast}}</span> and <span class="math">\lambda_{\text{slow}}</span> are the two running averages. The code computes <span class="math">\bar L</span> as the largest <span class="math">\ell_i</span> plus the log of the mean of the scaled likelihoods, which is the same number without overflow.</p>
+    <p>When the robot is kidnapped, the fast average drops below the slow one. The <b>injection fraction</b> <span class="math">p</span> is zero unless the fast average has fallen 2.5 nats (natural-log units) below the slow one. Past that trigger, <span class="math">p</span> is the fraction by which the fast likelihood average has fallen below the slow one. The count of injected particles is <span class="math">k = \mathrm{round}(pN)</span>, rounded half to even as Python does.</p>
+    <!-- localize/particles.py:99-102 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L100-L103" target="_blank" rel="noopener" title="localize/particles.py, lines 100–103" aria-label="Code on GitHub: localize/particles.py, lines 100 to 103">38</a></span>
+      <div class="math math-block">p = \begin{cases} 1 - \exp\big(\lambda_{\text{fast}} - \lambda_{\text{slow}}\big) & \text{if } \lambda_{\text{fast}} - \lambda_{\text{slow}} < -2.5 \\ 0 & \text{otherwise} \end{cases}</div>
+    </div>
+    <p>Here <span class="math">\exp(\lambda_{\text{fast}} - \lambda_{\text{slow}})</span> is the ratio of the fast average to the slow one. The fraction jumps from 0 to about 0.92 at the trigger, since <span class="math">1 - e^{-2.5} \approx 0.92</span>, so a kidnap is answered at once. The benchmark's routine injection rate, 1.3% of particles per step when nothing is wrong, shows how rarely the trigger fires on its own.</p>
+    <p>The code replaces <span class="math">k</span> particles chosen uniformly at random, without replacement, with fresh uniform draws over the free cells and headings, and it resets their weights to 1/N. The choice does not look at the weights. It is a partial Fisher–Yates shuffle: step <span class="math">i</span> swaps position <span class="math">i</span> with a uniform position <span class="math">j</span> in <span class="math">[i, N)</span>, using the filter's seeded random stream, and the first <span class="math">k</span> positions hold the replaced particles.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L111-L136" target="_blank" rel="noopener" title="localize/particles.py, lines 111–136" aria-label="Code on GitHub: localize/particles.py, lines 111 to 136">39</a></p>
+    <p>The random choice matters because of systematic resampling. It leaves copies of one particle side by side, so replacing the first <span class="math">k</span> indices would remove one or two hypotheses at once.</p>
+
+
+    <div class="pseudo">
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L78-L120" target="_blank" rel="noopener" title="localize/particles.py, lines 78–120" aria-label="Code on GitHub: localize/particles.py, lines 78 to 120">40</a></span>
+      <pre class="pseudo-simple">function PARTICLE-STEP(particles, weights, rot, fwd, z):
+    for each particle i:
+        particle i ← MOTION(particle i, rot, fwd)   # each draws its own noise
+        ℓ[i] ← sum over beams of log LIKELIHOOD(z, RAY-CAST(particle i))
+    weights ← weights × exp(ℓ − max ℓ), normalised
+    if ESS(weights) < N / 2:
+        particles, weights ← SYSTEMATIC-RESAMPLE(particles, weights)
+    if the fast average has fallen 2.5 below the slow one:
+        replace a random subset of the particles with random poses over the floor</pre>
+      <pre class="pseudo-full" hidden>function PARTICLE-STEP(particles, weights, rot, fwd, z):
+    σ_r ← SCALE × (0.05 + 0.15 × |rot|)
+    σ_f ← SCALE × (0.03 + 0.10 × |fwd|)
+    # 1. motion: two normals per particle, turn noise first, then drive noise
+    for each particle i:
+        r_i ← rot + σ_r × NORMAL()
+        f_i ← fwd + σ_f × NORMAL()
+        (x_i, y_i, θ_i) ← MOTION(walls, x_i, y_i, θ_i, r_i, f_i)
+    # 2. sensing: each particle's own beams, then its log-likelihood
+    for each particle i:
+        for each beam j:
+            e[i][j] ← RAY-CAST(walls, x_i, y_i, θ_i + 2π × j / R)
+        ℓ[i] ← sum over j of log L(z_j | e[i][j])
+    ℓ* ← max over i of ℓ[i]
+    for each particle i:
+        lik[i] ← exp(ℓ[i] − ℓ*)
+    L̄ ← ℓ* + log(mean of lik)                       # log of the mean likelihood
+    if this is the first tick:
+        λ_slow ← L̄
+        λ_fast ← L̄
+    else:
+        λ_slow ← λ_slow + 0.01 × (L̄ − λ_slow)
+        λ_fast ← λ_fast + 0.1 × (L̄ − λ_fast)
+    if AUGMENTED and λ_fast − λ_slow < −2.5:
+        p ← 1 − exp(λ_fast − λ_slow)
+    else:
+        p ← 0
+    w[i] ← w[i] × lik[i] for each particle, then w ← w / sum(w)
+    ESS ← 1 / sum of w[i]²
+    # 3. resampling: keep the heavy particles when the weights have concentrated
+    if ESS < N / 2:
+        SYSTEMATIC-RESAMPLE(particles, w)           # copies, then every w[i] = 1 / N
+    # 4. recovery: replace k random particles with uniform random poses
+    k ← round(p × N)
+    if k > 0:
+        perm ← (0, 1, ..., N − 1)
+        for i in 0 to k − 1:                        # partial Fisher-Yates shuffle
+            j ← i + min(N − 1 − i, floor(UNIFORM() × (N − i)))
+            swap perm[i] and perm[j]
+        for each i in the first k entries of perm:
+            (x_i, y_i, θ_i) ← uniform over free cells and headings
+            w[i] ← 1 / N
+        w ← w / sum(w)
+    return particles, w</pre>
+    </div>
+    <p>The simple version has the four stages in order. The full version writes out the motion noise, the sensing, the averages and the injection, which follow the code line by line. Two details matter. The averages and the injection fraction are computed from the likelihoods before resampling. The shuffle draws its numbers after the resampling draws, so the Python and JavaScript versions draw the same numbers.</p>
+
+    <h3 class="hiw-sub">The estimate and its uncertainty</h3>
+    <p>The page does not report the mean of all the particles. With two look-alike rooms, a mean of the two clusters falls between them, in a wall. The estimate is instead the <b>densest cluster</b>: the heaviest particle <span class="math">i^*</span> and the particles close to it, within 1.5 cells and within 0.6 rad of its heading.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L150-L169" target="_blank" rel="noopener" title="localize/particles.py, lines 150–169" aria-label="Code on GitHub: localize/particles.py, lines 150 to 169">41</a></p>
+    <!-- localize/particles.py:138-152 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L155-L161" target="_blank" rel="noopener" title="localize/particles.py, lines 155–161" aria-label="Code on GitHub: localize/particles.py, lines 155 to 161">42</a></span>
+      <div class="math math-block">M_i = \mathbf{1}\big[\,\mathrm{dist}(i, i^*) < 1.5\ \text{ and }\ |\operatorname{wrap}(\theta_i - \theta_{i^*})| < 0.6\,\big], \qquad \tilde w_i = \dfrac{w_i M_i}{\sum_j w_j M_j}</div>
+    </div>
+    <p>The cluster's share of the total weight is <span class="math">\sum_j w_j M_j</span>, which the panel reports as its mass. The estimate is the weighted average over the cluster. The heading is averaged as a circle, so that headings near plus and minus pi do not cancel.</p>
+    <!-- localize/particles.py:146-147 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L162-L164" target="_blank" rel="noopener" title="localize/particles.py, lines 162–164" aria-label="Code on GitHub: localize/particles.py, lines 162 to 164">43</a></span>
+      <div class="math math-block">\hat x = \sum_i \tilde w_i\, x_i, \qquad \hat y = \sum_i \tilde w_i\, y_i, \qquad \hat\theta = \operatorname{atan2}\Big(\sum_i \tilde w_i \sin\theta_i,\ \sum_i \tilde w_i \cos\theta_i\Big)</div>
+    </div>
+    <p>The uncertainty is the covariance of the cluster's positions around <span class="math">(\hat x, \hat y)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L165-L168" target="_blank" rel="noopener" title="localize/particles.py, lines 165–168" aria-label="Code on GitHub: localize/particles.py, lines 165 to 168">44</a> The page draws an ellipse whose radii are twice the square roots of the covariance's eigenvalues, which is the 2-sigma region.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize.js#L210-L221" target="_blank" rel="noopener" title="web/js/localize.js, lines 210–221" aria-label="Code on GitHub: web/js/localize.js, lines 210 to 221">45</a></p>
+    <!-- localize/particles.py:148-151 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py#L165-L168" target="_blank" rel="noopener" title="localize/particles.py, lines 165–168" aria-label="Code on GitHub: localize/particles.py, lines 165 to 168">44</a></span>
+      <div class="math math-block">\Sigma = \sum_i \tilde w_i \begin{pmatrix} (x_i - \hat x)^2 & (x_i - \hat x)(y_i - \hat y) \\ (x_i - \hat x)(y_i - \hat y) & (y_i - \hat y)^2 \end{pmatrix}</div>
+    </div>
+    <p>The grid filter has no cluster. Its estimate is the most probable bin, as described above.</p>
+    <p>On each tick the page moves the true robot, then gives both filters the commanded turn and drive and the new beams. The grid filter predicts and then updates, and the particle filter runs its four stages. At the start, both filters take one update with zero motion so that the first beams are used.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize.js#L121-L145" target="_blank" rel="noopener" title="web/js/localize.js, lines 121–145" aria-label="Code on GitHub: web/js/localize.js, lines 121 to 145">46</a></p>
+    <p>The <b>place count</b> written to the event log is a rough measure of how many rooms the belief has split between. It sums the particles' weight into 1-cell bins, then counts the groups of bins that touch along an edge and each hold at least 2% of the total weight.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py#L132-L151" target="_blank" rel="noopener" title="localize/sim.py, lines 132–151" aria-label="Code on GitHub: localize/sim.py, lines 132 to 151">47</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py#L60" target="_blank" rel="noopener" title="localize/benchmark.py, line 60" aria-label="Code on GitHub: localize/benchmark.py, line 60">48</a></p>
+
+    <h3 class="hiw-sub">Random numbers: mulberry32</h3>
+    <p>Every random draw comes from <b>mulberry32</b>, a small seeded generator. The same seed gives the same floor, noise and beams in Python and in JavaScript, so the page, the command line and the tests draw the same numbers. The generator is written as a counter. After k draws its state is the seed plus k times a constant, and each output is a fixed mixing function of that state. The k-th number can therefore be computed directly, and a batch of thousands is one vector expression.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py#L35-L52" target="_blank" rel="noopener" title="localize/prng.py, lines 35–52" aria-label="Code on GitHub: localize/prng.py, lines 35 to 52">49</a></p>
+    <!-- localize/prng.py:18-19, 42-46 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py#L18-L19" target="_blank" rel="noopener" title="localize/prng.py, lines 18–19" aria-label="Code on GitHub: localize/prng.py, lines 18 to 19">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py#L42-L46" target="_blank" rel="noopener" title="localize/prng.py, lines 42–46" aria-label="Code on GitHub: localize/prng.py, lines 42 to 46">51</a></span>
+      <div class="math math-block">u_k = \dfrac{\operatorname{mix}\big((s + C\,k) \bmod 2^{32}\big)}{2^{32}}, \qquad C = \mathtt{0x6D2B79F5}, \qquad k = 1, 2, \dots</div>
+    </div>
+    <p>Here <span class="math">s</span> is the seed and <span class="math">\operatorname{mix}</span> is the mulberry32 output mixing, which xor-shifts and multiplies the 32-bit state. Normal draws use the <b>Marsaglia polar method</b>. Two uniforms are mapped to <span class="math">x = 2u_1 - 1</span> and <span class="math">y = 2u_2 - 1</span>. The pair is rejected unless <span class="math">0 &lt; s &lt; 1</span>, where <span class="math">s = x^2 + y^2</span>. An accepted pair gives one normal, <span class="math">z = x\sqrt{-2 \ln s / s}</span>, and the second value of the pair is not used.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py#L58-L75" target="_blank" rel="noopener" title="localize/prng.py, lines 58–75" aria-label="Code on GitHub: localize/prng.py, lines 58 to 75">52</a></p>
+    <!-- localize/prng.py:58-75 -->
+    <div class="math-fig">
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py#L58-L75" target="_blank" rel="noopener" title="localize/prng.py, lines 58–75" aria-label="Code on GitHub: localize/prng.py, lines 58 to 75">52</a></span>
+      <div class="math math-block">z = x\sqrt{\dfrac{-2\ln s}{s}}, \qquad s = x^2 + y^2, \qquad 0 &lt; s &lt; 1</div>
     </div>
 
-    <div class="section-title green-ttl" style="font-size:0.7rem">PARAMETERS AND WHERE THEY CAME FROM</div>
+    <h3 class="hiw-sub">Results and parameters</h3>
+    <p class="hiw-note"><b>How these were measured:</b> 16 seeded trials (2 floors, 4 floor seeds, 2 robot seeds), 100 steps each, in Python on one core; the full table is in results/localize_benchmark.md<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/localize_benchmark.md" target="_blank" rel="noopener" title="results/localize_benchmark.md" aria-label="Code on GitHub: results/localize_benchmark.md">53</a>. A trial succeeds when the estimate stays within 0.5 m for ten steps in a row. With 2000 particles that happens in 14 of 16 trials, at a median of 2 steps (the first step of the held window). With 500 particles it fails in 6 of 16, and with 100 in 12 of 16: the first scan leaves too few guesses, and they all sit in one of the look-alike rooms. The grid filter fails in none, at 14 ms per step against 6 ms for the particles (timings from a quiet run; they move with machine load, the ratio less so). The sensor and odometry sweeps move the failure count by a few trials either way, within what 16 trials can resolve, so they are not a trend.</p>
+    <p class="hiw-note"><b>After a kidnap</b> (at step 40), augmented MCL re-finds the robot in a median of 11 steps, with 2 of 16 trials never recovering. Plain MCL, without the injection, recovers in only 2 of 16. Augmented MCL re-scatters 1.3% of particles per step when nothing is wrong, which is the false-alarm rate, and 13% per step after the kidnap. The grid filter takes a median of 33 steps: its belief stays confident in the old room until enough new beams outweigh it. The 60-step window is short.</p>
+
     <div class="hiw-scroll">
       <table class="hiw-table">
         <thead><tr><th>parameter</th><th>value</th><th>notes</th></tr></thead>
@@ -210,33 +511,23 @@
           <tr><td>beams</td><td>8 (4 to 16)</td><td>Evenly spread around the full circle, from the robot's heading. Range 8 cells (4 m).</td></tr>
           <tr><td>sensor noise</td><td>σ = 0.3 cells (0.15 m)</td><td>Gaussian on each beam, with a 5% chance of a dropout reading the maximum range. Picked so the beams are informative but not so sharp that one scan kills the cloud.</td></tr>
           <tr><td>odometry noise</td><td>turn: 0.05 + 0.15·|turn| rad; drive: 0.03 + 0.10·|drive| cells</td><td>Scaled by the slider. Both the true robot and the filters use this model, so the page tests the filters against the noise they assume.</td></tr>
-          <tr><td>particles</td><td>2000 (100, 500, 2000)</td><td>Failures in the benchmark: 11 of 16 at 100, 4 of 16 at 500, 1 of 16 at 2000. Too few guesses lose the other rooms after the first scan. 2000 is the default; the page's slider runs over the three values.</td></tr>
+          <tr><td>particles</td><td>2000 (100, 500, 2000)</td><td>Failures in the benchmark: 12 of 16 at 100, 6 of 16 at 500, 2 of 16 at 2000. Too few guesses lose the other rooms after the first scan. 2000 is the default; the page's slider runs over the three values.</td></tr>
           <tr><td>resampling</td><td>ESS below N/2, systematic</td><td>Standard threshold; the usual compromise between diversity and copying.</td></tr>
-          <tr><td>kidnap detector</td><td>fast average α = 0.1, slow α = 0.01, trigger at a 2.5 nat drop</td><td>The trigger is a log-likelihood drop, so routine noise rarely injects particles: 1.2% per step on average in the benchmark, when nothing is wrong.</td></tr>
+          <tr><td>kidnap detector</td><td>fast average α = 0.1, slow α = 0.01, trigger at a 2.5 nat drop</td><td>The trigger is a log-likelihood drop, so routine noise rarely injects particles: 1.3% per step on average in the benchmark, when nothing is wrong.</td></tr>
           <tr><td>grid</td><td>0.25 m bins, 16 headings</td><td>Odometry noise integrated with 3-point Gauss-Hermite quadrature (9 points per bin). The sensor table is the ray cast from each bin's centre.</td></tr>
           <tr><td>estimate</td><td>densest cluster</td><td>The heaviest particle and those within 1.5 cells and 0.6 rad of it. A mean over all particles would fall between two rooms, in a wall.</td></tr>
           <tr><td>PRNG</td><td>mulberry32</td><td>The same bits in Python and JavaScript, so the page, the CLI and the tests draw the same floor, noise and beams for a seed.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="hiw-note"><b>How these were measured:</b> 16 seeded trials (2 floors, 4 floor seeds, 2 robot seeds), 100 steps each, in Python on one core; the full table is <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/localize_benchmark.md">results/localize_benchmark.md</a>. A trial succeeds when the estimate stays within 0.5 m for ten steps in a row. With 2000 particles that happens in 15 of 16 trials, at a median of 2 steps (the first step of the held window). With 500 particles it fails in 4 of 16, and with 100 in 11 of 16: the first scan leaves too few guesses, and they all sit in one of the look-alike rooms. The grid filter fails in none, at 40 ms per step against 15 ms for the particles (timings from a quiet run; they move with machine load, the ratio less so). The sensor and odometry sweeps move the failure count by a few trials either way, within what 16 trials can resolve, so they are not a trend.</p>
-    <p class="hiw-note"><b>After a kidnap</b> (at step 40), augmented MCL re-finds the robot in a median of 13 steps, with 3 of 16 trials never recovering. Plain MCL, without the injection, recovers in only 2 of 16. Augmented MCL re-scatters 1.2% of particles per step when nothing is wrong, which is the false-alarm rate, and 19% per step after the kidnap. The grid filter takes a median of 33 steps: its belief stays confident in the old room until enough new beams outweigh it. The 60-step window is short. In a separate spot check of six kidnaps with a 240-step window, five recovered, after 52 to 167 steps, and one stayed lost: the injected particles are a fresh global search, and the look-alike rooms can hold it for a while.</p>
-
-    <div class="hiw-src">
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/world.py">localize/world.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/grid.py">localize/grid.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/particles.py">localize/particles.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/sim.py">localize/sim.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/prng.py">localize/prng.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py">localize/benchmark.py</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize-core.js">web/js/localize-core.js</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize.js">web/js/localize.js</a>
-      <a href="https://github.com/dpologdvinity/search-agents/blob/master/server/localize_api.py">server/localize_api.py</a>
-    </div>
+    <p class="hiw-note">The page runs the same algorithms in JavaScript, in web/js/localize-core.js<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/localize-core.js" target="_blank" rel="noopener" title="web/js/localize-core.js" aria-label="Code on GitHub: web/js/localize-core.js">54</a>, and the parity test in tests/test_localize_parity.py<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_localize_parity.py" target="_blank" rel="noopener" title="tests/test_localize_parity.py" aria-label="Code on GitHub: tests/test_localize_parity.py">55</a> checks that the two agree.</p>
+    <p class="hiw-note">The benchmark's trial and kidnap settings come from its code: REACH_M is 0.5 m, the hold window is 10 steps, the kidnap happens at step 40 of 100.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py#L27-L32" target="_blank" rel="noopener" title="localize/benchmark.py, lines 27–32" aria-label="Code on GitHub: localize/benchmark.py, lines 27 to 32">56</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py#L92-L103" target="_blank" rel="noopener" title="localize/benchmark.py, lines 92–103" aria-label="Code on GitHub: localize/benchmark.py, lines 92 to 103">57</a> A trial is a floor and a simulator seed, and the score is the first step of the held window.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/localize/benchmark.py#L106-L130" target="_blank" rel="noopener" title="localize/benchmark.py, lines 106–130" aria-label="Code on GitHub: localize/benchmark.py, lines 106 to 130">58</a></p>
   </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/localize.js"></script>
 </body>

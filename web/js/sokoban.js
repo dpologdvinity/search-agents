@@ -300,7 +300,7 @@ function thinkPanel(a) {
     body.push(para(`Matching bound ${a.h_matching}: the cheapest one-to-one pairing of boxes and goals, with the pushes each pair needs. ${pairs}.`, 'hot'));
   }
   body.push(para(`Simple bound ${a.h_simple}: each box alone counts the pushes to its nearest goal, so two boxes may claim the same goal. ` +
-    'The matching bound is never smaller, and it is the one A* uses.'));
+    'The matching bound is never smaller, and it is the one A* uses by default.'));
   body.push(para(`This level has ${S.dead.size} dead squares. The red tint shows them, and a box on one of them is a deadlock.`));
   $('think-body').replaceChildren(...body);
 }
@@ -657,6 +657,12 @@ async function init() {
     toggleButton('btn-prune', S.prune);
     $('btn-prune').querySelector('.btn-txt').textContent = `DEADLOCK PRUNING: ${S.prune ? 'ON' : 'OFF'}`;
   });
+  // The on-screen pad: each button walks or pushes one step, like the matching arrow key.
+  document.querySelectorAll('.sok-pad [data-dir]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!S.busy) playMove(btn.dataset.dir);
+    });
+  });
   $('sel-algo').addEventListener('change', (e) => {
     $('heur-wrap').hidden = e.target.value === 'bfs';
   });
@@ -690,7 +696,8 @@ async function init() {
     const sel = $('sel-level');
     sel.replaceChildren();
     for (const l of levels) {
-      sel.appendChild(new Option(`${l.number}. ${l.name} (${l.optimal_pushes} pushes)`, String(l.number)));
+      const pushes = `${l.optimal_pushes} ${l.optimal_pushes === 1 ? 'push' : 'pushes'}`;
+      sel.appendChild(new Option(`${l.number}. ${l.name} (${pushes})`, String(l.number)));
     }
     const asked = Number(new URLSearchParams(location.search).get('level'));
     await loadLevel(asked >= 1 && asked <= levels.length ? asked : 1);

@@ -29,6 +29,13 @@ const NAMES = { alphazero: 'AlphaZero', minimax: 'Minimax', mcts: 'MCTS', chance
 // The algorithm behind each agent, shown beside its name so the page says what each side is doing.
 const ALGO = { alphazero: 'PUCT + network', minimax: 'alpha-beta', mcts: 'random rollouts', chance: 'fixed odds' };
 const LABEL = (agent) => `${NAMES[agent]} (${ALGO[agent]})`;
+// One-line tooltip for each agent menu. The full method is in HOW IT WORKS.
+const AGENT_TIPS = {
+  alphazero: 'Learned from self-play: a policy-value network proposes columns, and PUCT search refines them.',
+  minimax: 'Looks ahead as far as its time budget allows and scores the leaves by counting open lines of four.',
+  mcts: 'Estimates each column by playing random games to the end. It learns nothing.',
+  chance: 'Draws a column from fixed odds (6% to 25%), with no search.',
+};
 
 // ── Rules (for rendering; the backend validates moves too) ──────────────
 
@@ -65,6 +72,8 @@ function render(dropCol = -1, suggest = -1) {
   const winSet = new Set((win || []).map(([c, r]) => `${c},${r}`));
   const last = state.moves.length ? Number(state.moves[state.moves.length - 1]) - 1 : -1;
   const el = $('c4');
+  // The board is rebuilt on every render, so remember which column had focus and give the focus back.
+  const focused = [...el.children].indexOf(document.activeElement);
   el.innerHTML = '';
   for (let c = 0; c < COLS; c++) {
     const col = document.createElement('div');
@@ -72,6 +81,20 @@ function render(dropCol = -1, suggest = -1) {
     col.className = 'c4-col' + (clickable ? '' : ' disabled');
     if (c === suggest) col.style.background = 'rgba(0,255,136,0.12)';
     col.onclick = () => clickable && humanMove(c);
+    // Keyboard: Left and Right move between columns, Enter or Space drops a disc in the focused one.
+    col.tabIndex = clickable ? 0 : -1;
+    col.setAttribute('role', 'button');
+    col.setAttribute('aria-label', `Column ${c + 1}`);
+    col.setAttribute('aria-disabled', String(!clickable));
+    col.onkeydown = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        el.children[c + (e.key === 'ArrowRight' ? 1 : -1)]?.focus();
+      } else if ((e.key === 'Enter' || e.key === ' ') && clickable) {
+        e.preventDefault();
+        humanMove(c);
+      }
+    };
     for (let r = ROWS - 1; r >= 0; r--) {
       const cell = document.createElement('div');
       const v = g[c][r];
@@ -83,6 +106,7 @@ function render(dropCol = -1, suggest = -1) {
     }
     el.appendChild(col);
   }
+  if (focused >= 0) el.children[focused].focus();  // also while the AI moves, when the column is not clickable
   $('chip-move').textContent = String(state.moves.length + 1);
   for (const id of ['btn-undo', 'btn-hint', 'btn-new']) $(id).disabled = state.busy && id !== 'btn-new';
   $('btn-undo').disabled = state.busy || state.watching || !state.moves.length;
@@ -94,11 +118,21 @@ function log(text, cls = 'log-info') {
   const line = document.createElement('div');
   line.className = cls;
   line.textContent = text;
+  if (cls === 'log-err') $('log-fold').open = true;  // errors are shown even when the log is folded
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
 
-function setStatus(text) { $('chip-status').textContent = text; }
+// The chip holds two spans, the full text and a short one; app.css shows one of them by screen width.
+function setStatus(full, short = full) {
+  const wide = document.createElement('span');
+  wide.className = 'status-wide';
+  wide.textContent = full;
+  const narrow = document.createElement('span');
+  narrow.className = 'status-narrow';
+  narrow.textContent = short;
+  $('chip-status').replaceChildren(wide, narrow);
+}
 
 // Which watch player sits on each colour. AI A takes the colour picked in #side-a; AI B takes the other.
 function watchPlayers() {
@@ -111,15 +145,23 @@ function watchPlayers() {
 }
 
 // Who is playing, naming the algorithm on each side, e.g. "You vs Chance (fixed odds)"
-// or "Red: AlphaZero (PUCT + network) vs Yellow: Chance (fixed odds)".
-function matchup() {
-  if ($('mode').value === 'human') return `You vs ${LABEL($('agent-a').value)}`;
+// or "Red: AlphaZero (PUCT + network) vs Yellow: Chance (fixed odds)". With short set, only the names,
+// e.g. "You vs Chance" or "AlphaZero vs Chance" (Red first), for a phone-width chip.
+function matchup(short = false) {
+  if ($('mode').value === 'human') {
+    const agent = $('agent-a').value;
+    return short ? `You vs ${NAMES[agent]}` : `You vs ${LABEL(agent)}`;
+  }
   const players = watchPlayers();
-  return `Red: ${LABEL(players.red[0])} vs Yellow: ${LABEL(players.yellow[0])}`;
+  const [red, yellow] = [players.red[0], players.yellow[0]];
+  return short ? `${NAMES[red]} vs ${NAMES[yellow]}` : `Red: ${LABEL(red)} vs Yellow: ${LABEL(yellow)}`;
 }
 
 // Status chip: the matchup followed by the turn state, e.g. "You vs Chance (fixed odds) · YOUR TURN".
-function showStatus(turn) { setStatus(`${matchup()} · ${turn}`); }
+// The short turn text is used with the short matchup on phones.
+function showStatus(turn, shortTurn = turn) {
+  setStatus(`${matchup()} · ${turn}`, `${matchup(true)} · ${shortTurn}`);
+}
 
 // ── Analysis panel ──────────────────────────────────────────────────────
 
@@ -241,7 +283,7 @@ function humanMove(col) {
 async function aiMove(agent, level, who) {
   const gen = state.gen;  // a NEW GAME while this search runs makes its result stale
   state.busy = true;
-  showStatus(`${NAMES[agent].toUpperCase()} THINKING`);
+  showStatus(`${NAMES[agent].toUpperCase()} THINKING`, 'THINKING');
   render();
   try {
     const result = await postJSON('/api/connect4/move', { moves: state.moves, agent, level });
@@ -403,7 +445,6 @@ function newGame() {
   const mode = $('mode').value;
   state.humanColor = $('first').value === 'human' ? 'red' : 'yellow';
   $('chip-you').textContent = mode === 'human' ? state.humanColor.toUpperCase() : '—';
-  $('chip-ai').textContent = mode === 'human' ? NAMES[$('agent-a').value] : 'AI vs AI';
   startBoard();
   setWatchButtons();
   showStatus(mode === 'human' ? 'YOUR TURN' : 'READY');
@@ -414,15 +455,11 @@ function updateSetup() {
   const ai = $('mode').value === 'ai';
   $('first-wrap').classList.toggle('hidden', ai);
   $('side-wrap').classList.toggle('hidden', !ai);
+  $('pace-wrap').classList.toggle('hidden', !ai);
   $('agent-b-wrap').classList.toggle('hidden', !ai);
   $('agent-a-title').textContent = ai ? 'AI A' : 'OPPONENT';
-  // Each selected agent's description (it includes the chance table when relevant).
-  const describe = (descId, selectId) => {
-    const info = state.meta?.agents.find((a) => a.name === $(selectId).value);
-    $(descId).textContent = info ? info.description : '';
-  };
-  describe('desc-a', 'agent-a');
-  describe('desc-b', 'agent-b');
+  $('agent-a').title = AGENT_TIPS[$('agent-a').value] ?? '';
+  $('agent-b').title = AGENT_TIPS[$('agent-b').value] ?? '';
 }
 
 async function init() {

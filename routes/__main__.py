@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import random
 import string
 import sys
@@ -42,6 +43,7 @@ def load_cities(path: str) -> list[tuple[float, float]]:
 
     Blank lines are skipped. A first line that is not numbers (a header such as x,y) is skipped
     too; a bad line anywhere else is an error, so a typo is not silently dropped from the map.
+    Infinite and NaN coordinates count as bad lines: they would make every distance meaningless.
     """
     cities = []
     with open(path, newline="") as f:
@@ -49,7 +51,10 @@ def load_cities(path: str) -> list[tuple[float, float]]:
             if not row:
                 continue
             try:
-                cities.append((float(row[0]), float(row[1])))
+                x, y = float(row[0]), float(row[1])
+                if not (math.isfinite(x) and math.isfinite(y)):
+                    raise ValueError("not a finite number")
+                cities.append((x, y))
             except (ValueError, IndexError):
                 if number == 1:
                     continue
@@ -152,15 +157,17 @@ def main(argv=None) -> int:
     if len(cities) < 3:
         parser.error(f"a tour needs at least 3 cities, got {len(cities)}")
 
-    if args.solver and not args.compare:
-        if args.solver == "held_karp" and len(cities) > HELD_KARP_LIMIT:
-            parser.error(f"held_karp handles at most {HELD_KARP_LIMIT} cities")
-        result, seconds = solve(args.solver, cities, args)
-        print(f"{args.solver}: length {result.length:.3f}, {result.steps:,} steps, {seconds:.3f} s")
-        print(plot(cities, result.tour))
-        return 0
-
-    rows = compare(cities, args)
+    try:
+        if args.solver and not args.compare:
+            if args.solver == "held_karp" and len(cities) > HELD_KARP_LIMIT:
+                parser.error(f"held_karp handles at most {HELD_KARP_LIMIT} cities")
+            result, seconds = solve(args.solver, cities, args)
+            print(f"{args.solver}: length {result.length:.3f}, {result.steps:,} steps, {seconds:.3f} s")
+            print(plot(cities, result.tour))
+            return 0
+        rows = compare(cities, args)
+    except ValueError as e:  # a setting out of range, such as --iterations 0
+        parser.error(str(e))
     optimum = next((result.length for name, result, _ in rows if name == "held_karp"), None)
     print(table(rows, optimum))
     if optimum is None:

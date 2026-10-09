@@ -42,6 +42,7 @@ class PlanResult:
     conflicts_resolved: int = 0  # CBS: collisions that were branched on
     seconds: float = 0.0
     trace: list[dict] = field(default_factory=list)  # CBS: bounded record of the tree
+    solution: int | None = None  # CBS: id of the collision-free tree node returned (None if no plan)
 
 
 def independent(problem: Problem) -> PlanResult:

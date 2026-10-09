@@ -4,7 +4,7 @@
 
 import {
   FEATURE_NAMES, PRESETS, fitForest, forestProba, leafOf, leafProba, linkStrengths, makeBuilder,
-  makePreset, nLeaves, nodeLabel, preorder, prune, trainTestSplit, treeDepth,
+  makePreset, nLeaves, nodeLabel, preorder, prune, trainTestSplit,
 } from './treelab-core.js';
 import { burst } from './fx.js';
 
@@ -969,15 +969,12 @@ function cellText(c) {
 
 function updateChips() {
   const chip = (id, v) => { $(id).textContent = v; };
-  chip('chip-mode', S.mode === 'tree' ? 'TREE' : 'FOREST');
   if (S.mode === 'tree') {
     chip('chip-leaves', S.shown ? String(nLeaves(S.shown)) : '0');
-    chip('chip-depth', S.shown ? String(treeDepth(S.shown)) : '0');
     chip('chip-train', pct(S.acc.train));
     chip('chip-test', pct(S.acc.test));
   } else {
     chip('chip-leaves', S.forest ? String(S.forest.trees.length) : '0');
-    chip('chip-depth', String(S.params.depth));
     chip('chip-train', pct(S.forestAcc.train));
     chip('chip-test', pct(S.forestAcc.test));
   }
@@ -1005,8 +1002,6 @@ function updateReadout() {
     const pure = S.shown ? preorder(S.shown).filter((nd) => !nd.left && nd.impurity === 0).length : 0;
     lines.push(row('splits made', String(splits)));
     lines.push(row('leaves (pure)', `${S.shown ? nLeaves(S.shown) : 0} (${pure})`));
-    lines.push(row('train accuracy', pct(S.acc.train)));
-    lines.push(row('test accuracy', pct(S.acc.test)));
     if (S.acc.train != null && S.acc.test != null) {
       const gap = S.acc.train - S.acc.test;
       lines.push(gap > 0.12
@@ -1016,14 +1011,12 @@ function updateReadout() {
   } else if (S.forest) {
     const a = S.forestAcc;
     lines.push(row('trees', `${S.forest.trees.length} · ${S.boot ? 'bootstrap' : 'no bootstrap'}`));
-    lines.push(row('out-of-bag', pct(a.oob)));
-    lines.push(row('test accuracy', pct(a.test)));
     lines.push(row('single deep tree', `${pct(a.single)} (depth 12)`));
     if (a.test != null && a.single != null) {
       const d = a.test - a.single;
       lines.push(d >= 0.02
         ? `<div class="ok">The forest beats the single deep tree by ${(100 * d).toFixed(0)} points.</div>`
-        : `<div class="warn">On this data the single deep tree keeps up: ${(100 * Math.abs(d)).toFixed(0)} points ${d >= 0 ? 'ahead' : 'behind'}.</div>`);
+        : `<div class="warn">On this data the single deep tree keeps up: ${Math.round(100 * Math.abs(d)) === 0 ? 'level with the forest' : `${(100 * Math.abs(d)).toFixed(0)} points ${d >= 0 ? 'ahead' : 'behind'}`}.</div>`);
     }
   } else {
     lines.push(row('forest', 'not trained yet'));
@@ -1054,7 +1047,7 @@ function updateTreePanel() {
   $('tl-depth-val').textContent = String(S.params.depth);
   $('tl-minleaf-val').textContent = String(S.params.minLeaf);
   $('tl-test-val').textContent = `${Math.round(S.params.testFrac * 100)}%`;
-  $('tl-alpha-val').textContent = S.alpha > 0 ? `α = ${S.alpha.toFixed(4)}` : 'off';
+  $('tl-alpha-val').textContent = S.alpha > 0 ? S.alpha.toFixed(4) : 'off';
   const note = $('tl-prune-note');
   if (S.full && S.shown) {
     const full = nLeaves(S.full);
@@ -1096,6 +1089,8 @@ function setMode(mode) {
   $('tl-tree-panel').hidden = mode !== 'tree';
   $('tl-forest-panel').hidden = mode !== 'forest';
   $('tl-diagram').hidden = mode !== 'tree';
+  $('tl-prune-more').hidden = mode !== 'tree';
+  $('tl-forest-more').hidden = mode !== 'forest';
   if (mode === 'forest' && !S.forest) trainForest();
   S.regionCv = null;
   S.dirty = true;

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="bandits.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -33,18 +34,24 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">08 // EXPLORATION VS EXPLOITATION</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="BANDITS">BANDITS</h1>
-      <div class="proj-pg-sub">Every machine pays out with a hidden probability. Each pull spends a little reward to learn more about the machines, so the agents must trade exploring against cashing in.</div>
+      <div class="proj-pg-sub">Slot machines with hidden payouts. Pull the levers to learn which one pays best, then watch the agents learn the same casino.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">LOADING</span></span>
-        <span class="stat-chip">PULLS <span class="val" id="chip-pulls">0/0</span></span>
-        <span class="stat-chip green">YOUR REGRET <span class="val" id="chip-regret">—</span></span>
-        <span class="stat-chip">BEST MACHINE <span class="val" id="chip-best">—</span></span>
-        <span class="stat-chip">LEADING AGENT <span class="val" id="chip-leader">—</span></span>
+        <span class="stat-chip pink" title="LIVE while the casino runs; REVEALED after STOP AND REVEAL">STATUS <span class="val" id="chip-status">LOADING</span></span>
+        <span class="stat-chip" title="Your pulls so far, out of the pulls this game allows">PULLS <span class="val" id="chip-pulls">0/0</span></span>
+        <span class="stat-chip green" title="Reward you gave up against the best machine. Lower is better.">YOUR REGRET <span class="val" id="chip-regret">—</span></span>
+        <span class="stat-chip" title="The agent with the lowest regret after the same number of pulls you have made">LEADING AGENT <span class="val" id="chip-leader">—</span></span>
       </div>
     </div>
   </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to collect as much reward as possible. Each machine pays out with a hidden probability, so you must learn which machine pays best while you play.</p>
+    <p style="margin-top:0.5rem">Click a lever, or press 1 to 9 and 0, to pull it. Press STOP AND REVEAL to see the true payouts and how your regret compares with the agents on the same pulls; the reveal also happens when your pulls run out.</p>
+    <p style="margin-top:0.5rem">The agents play the same casino at the same time. Tick an agent to draw it on the race chart, and use PAUSE AGENTS and the speed under More settings to control them.</p>
+  </section>
 
   <div class="proj-body">
     <div class="proj-game-col">
@@ -53,17 +60,17 @@
       <div class="bd-stage">
         <div class="bd-marquee" aria-hidden="true"><span>NEON CASINO</span><span>PULL A LEVER</span><span>NEON CASINO</span></div>
         <div id="floor" class="bd-floor" role="group" aria-label="Slot machines"></div>
-        <div class="field-hint" id="floor-note">Click a lever (or press 1 to 9 and 0) to pull. Payouts stay hidden until the reveal.</div>
+        <div class="field-hint" id="floor-note">Payouts stay hidden until the reveal.</div>
       </div>
       <div class="bd-actions">
-        <button class="cyber-btn green" id="btn-reveal" type="button"><span class="btn-txt">◉ STOP AND REVEAL</span></button>
-        <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW CASINO</span></button>
+        <button class="cyber-btn green" id="btn-reveal" type="button" title="Stop the agents, show the true payouts and score you against them on the same pulls"><span class="btn-txt">◉ STOP AND REVEAL</span></button>
+        <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new casino with the setup on the right"><span class="btn-txt">↺ NEW CASINO</span></button>
       </div>
 
       <div style="margin-top:1.6rem">
-        <div class="section-title green-ttl">THE RACE: CUMULATIVE REGRET</div>
+        <div class="section-title green-ttl" title="Regret is the reward lost against the best machine. Lower is better.">THE RACE: CUMULATIVE REGRET</div>
         <div class="viz-panel">
-          <div class="viz-title" id="race-title">Regret is the reward lost against the best machine. Lower is better.</div>
+          <div class="viz-title" id="race-title">Regret vs pulls. Lower is better.</div>
           <canvas id="race" class="bd-canvas" width="640" height="300" aria-label="Cumulative regret for the player and each agent"></canvas>
           <div class="bd-legend" id="race-legend"></div>
         </div>
@@ -73,12 +80,12 @@
         <div class="viz-panel">
           <div class="viz-title" id="post-title">Thompson posteriors</div>
           <canvas id="post" class="bd-canvas" width="420" height="220" aria-label="Thompson sampling posterior densities per machine"></canvas>
-          <div class="field-hint" id="post-note">Each curve is the agent's belief about one machine's payout. The sample it just drew is the dashed line.</div>
+          <div class="field-hint" id="post-note">Each curve is one machine's belief about its payout. The dashed line is the last sample.</div>
         </div>
         <div class="viz-panel">
           <div class="viz-title" id="ucb-title">UCB confidence bars</div>
           <canvas id="ucb" class="bd-canvas" width="420" height="220" aria-label="UCB index bars per machine"></canvas>
-          <div class="field-hint" id="ucb-note">Solid bar: the average so far. Pale bar: the bonus that makes an under-tried machine look worth a pull.</div>
+          <div class="field-hint" id="ucb-note">Solid bar: the average so far. Pale bar: the bonus up to the index.</div>
         </div>
       </div>
 
@@ -102,10 +109,10 @@
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">PULL LOG</div>
+      <details class="log-fold">
+        <summary>Pull log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -114,19 +121,33 @@
         <div class="stack">
           <div>
             <div class="field-lbl">PAYOUTS</div>
-            <select class="cyber-select" id="kind" style="width:100%">
+            <select class="cyber-select" id="kind" style="width:100%" title="Bernoulli: each pull pays 1 or nothing. Gaussian: noisy real payouts. Drifting: the payouts are redrawn every 500 pulls.">
               <option value="bernoulli" selected>Bernoulli: pays 1 or nothing</option>
               <option value="gaussian">Gaussian: noisy real payouts</option>
               <option value="drifting">Drifting: payouts redrawn every 500 pulls</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">AGENTS</div>
+        <div class="stack">
+          <div class="bd-agents" id="agents" title="Tick an agent to draw it on the race chart and the panels"></div>
+          <button class="cyber-btn" id="btn-run" type="button" aria-pressed="true"><span class="btn-txt">❚❚ PAUSE AGENTS</span></button>
+        </div>
+      </div>
+
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
           <div>
             <div class="field-lbl">MACHINES</div>
-            <select class="cyber-select" id="machines" style="width:100%"></select>
+            <select class="cyber-select" id="machines" style="width:100%" title="How many slot machines the casino has"></select>
           </div>
           <div>
             <div class="field-lbl">PULLS</div>
-            <select class="cyber-select" id="pulls" style="width:100%">
+            <select class="cyber-select" id="pulls" style="width:100%" title="How many pulls you get in this game">
               <option value="100">100</option>
               <option value="300" selected>300</option>
               <option value="1000">1,000</option>
@@ -135,51 +156,16 @@
           <div>
             <div class="field-lbl">SEED</div>
             <div class="bd-seed">
-              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" inputmode="numeric" aria-label="Seed">
-              <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">⟲ RANDOM</span></button>
+              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" inputmode="numeric" aria-label="Seed" title="The seed fixes the machines and every outcome, so a casino can be replayed">
+              <button class="cyber-btn" id="btn-seed" type="button" title="Draw a random seed and start a new casino"><span class="btn-txt">⟲ RANDOM</span></button>
             </div>
-            <div class="field-hint">The seed fixes the machines and every outcome, so a casino can be replayed.</div>
           </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">AGENTS</div>
-        <div class="stack">
-          <div class="bd-agents" id="agents"></div>
           <div>
             <div class="field-lbl">AGENT PULLS PER SECOND: <span id="speed-val">8</span></div>
-            <input class="bd-range" id="speed" type="range" min="1" max="60" value="8" aria-label="Agent pulls per second">
-          </div>
-          <button class="cyber-btn" id="btn-run" type="button" aria-pressed="true"><span class="btn-txt">❚❚ PAUSE AGENTS</span></button>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title pink-ttl">EXPLORATION VS EXPLOITATION</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">EXPLOIT</div>
-            <div class="field-hint">Pull the machine with the best average so far. You earn now, but a machine you have tried only twice may still be the best one.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">EXPLORE</div>
-            <div class="field-hint">Pull a machine you know little about. You may lose a few coins, and you learn whether it is worth returning to.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">OPTIMISM</div>
-            <div class="field-hint">UCB1 adds a bonus that shrinks with each pull, so every machine gets tried until its bound falls below the leader.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">PROBABILITY MATCHING</div>
-            <div class="field-hint">Thompson sampling draws each machine's payout from its posterior and pulls the best draw, so it explores exactly as long as it is unsure.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--purple);margin-bottom:0.3rem">THE FLOOR</div>
-            <div class="field-hint">Lai and Robbins (1985) showed that no agent can beat regret of about c ln T on these machines. The dashed line in the race is that floor.</div>
+            <input class="bd-range" id="speed" type="range" min="1" max="60" value="8" aria-label="Agent pulls per second" title="How fast the agents pull while they run">
           </div>
         </div>
-      </div>
+      </details>
 
       <div id="bench" hidden>
         <div class="section-title green-ttl">BENCHMARK: 100 SEEDS, T = 10,000</div>
@@ -200,40 +186,377 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Seven agents play the same casino. Each sees only the reward of the machine it pulled, and none is trained: every run starts from scratch and learns from rewards alone. The page runs a JavaScript port of the Python agents, which reproduces the same pulls for a given seed.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>The casino and regret</h3>
-      <p class="hiw-plain"><b>New to this?</b> A slot machine pays out with a hidden chance. Pull one and you learn about that machine only. Pulling the machine that has paid best so far earns now, but a machine you have barely tried may be better. That tension is the whole problem.</p>
-      <p>The benchmark casino has 5 machines. Bernoulli machines pay 1 with a hidden probability p, otherwise 0. Gaussian machines pay their mean plus noise with sigma 0.2. Drifting machines are Bernoulli, but every 500 pulls all their probabilities are redrawn. Each mean is drawn uniformly from [0.1, 0.9], and redrawn until the best machine leads the second best by at least 0.05.</p>
-      <p>Regret is the reward given up. Each pull adds (best mean minus the mean of the machine pulled), so it measures expected loss, not the luck of one pull. Every agent on a seed faces the same outcomes: each machine's reward for each pull is rolled once.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy and epsilon-greedy</h3>
-      <p class="hiw-plain"><b>New to this?</b> Greedy always takes the machine with the best average so far. Epsilon-greedy does the same most of the time, but on a fixed share of pulls it picks a machine at random, so it keeps learning about the rest.</p>
-      <p>Greedy locks onto whichever machine looked good early. Epsilon-greedy with a fixed epsilon pulls a uniformly random machine with probability 0.1. The decaying version uses epsilon_t = min(1, K / t), where K is the number of machines, so random pulls become rarer as t grows. Greedy, both epsilon-greedy versions and UCB1 begin with a forced round: each machine is pulled once before any average is used.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>UCB1 (optimism)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Give each machine the benefit of the doubt. Its score is its average plus a bonus for how little has been tried. A machine pulled only a few times gets a big bonus and is tried again, and the bonus shrinks as evidence builds up.</p>
-      <p>Each pull picks the machine with the largest mean + sigma × sqrt(2 ln t / n), where t is the pull number, n the machine's pulls so far, and sigma the reward scale: 1 for Bernoulli machines, 0.2 for Gaussian ones. This is the bound of Auer, Cesa-Bianchi and Fischer (2002).</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Thompson sampling</h3>
-      <p class="hiw-plain"><b>New to this?</b> Keep a belief about each machine's payout. Each turn, draw one plausible payout for every machine from those beliefs and pull the machine with the highest draw. A machine you are unsure about sometimes draws high, so it gets pulled. Once you know a machine well, it is pulled about as often as it is likely to be the best.</p>
-      <p>Bernoulli machines have a Beta(1 + wins, 1 + losses) posterior, starting from a uniform Beta(1, 1) prior. Gaussian machines have a normal posterior for the mean, with a N(0, 1) prior and sigma 0.2: precision = 1 + n / 0.04, mean = (sum / 0.04) / precision, standard deviation = 1 / sqrt(precision). Thompson has no forced round, so its first draws come from the prior.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>EXP3 and sliding-window UCB</h3>
-      <p class="hiw-plain"><b>New to this?</b> EXP3 keeps a score per machine, raises the scores of machines that pay, and picks machines in proportion to their scores, with a little uniform mixing so none is shut out. Sliding-window UCB is UCB1 that forgets: it counts only the last 200 pulls, so when a payout changes, the old evidence expires.</p>
-      <p>EXP3 mixes the weights into probabilities p_i = (1 − gamma) w_i / sum(w) + gamma / K. After each pull it multiplies the pulled machine's weight by exp(gamma · (reward / p_i) / K), dividing by p_i so the estimate is unbiased, and rescales the weights by their maximum. It makes no statistical assumption about the payouts. Sliding-window UCB scores each machine by its mean over the window plus sigma × sqrt(xi · ln(min(t, W)) / n_window), with W = 200 and xi = 0.6. A machine with no pulls in the window is tried first.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The Lai-Robbins floor</h3>
-      <p class="hiw-plain"><b>New to this?</b> Lai and Robbins (1985) showed that an agent which keeps pulling the best machine most of the time must have regret of at least about c × ln T on fixed machines. The c grows when machines are close together, because close machines are hard to tell apart.</p>
-      <p>For Bernoulli arms, c = sum over suboptimal arms of gap / KL(p_i ‖ p*). For Gaussian arms with sigma 0.2, each arm contributes 2 sigma² / gap. Averaged over the benchmark's machine sets, c = 7.342 for Bernoulli (a floor of 67.6 at T = 10,000) and 1.448 for Gaussian (13.3 at T = 10,000). It is an asymptotic bound, not a guarantee at one horizon: Thompson and UCB1 on Gaussian machines, and Thompson on Bernoulli machines, finish below it at T = 10,000.</p>
-    </article>
+  <p class="hiw-lede">The problem is the <b>multi-armed bandit</b>: a row of K slot machines, each called an <b>arm</b>, with payouts the player cannot see. Each <b>pull</b> chooses one arm and receives its reward, so every pull spends reward to learn more. Seven agent types are implemented, and each casino runs five of them (Bernoulli and Gaussian) or seven (drifting). Each agent sees only the reward of the machine it pulled. None is trained: every run starts from scratch and learns from rewards alone. The page runs a JavaScript port of the Python agents, which reproduces the same pulls for a given seed.</p>
+
+  <h3 class="hiw-sub">The casino and regret</h3>
+  <p>A <b>casino</b> has K machines. The benchmark uses K = 5, and the page offers 2 to 10. Its outcomes follow one of three <b>payout models</b>. Bernoulli machines pay 1 with a hidden probability p<sub>i</sub> and 0 otherwise. Gaussian machines pay their mean plus <b>noise</b>, a random error, with standard deviation sigma = 0.2. Drifting machines are Bernoulli machines whose probabilities are redrawn every 500 pulls, so the best machine can change<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L28-L29" target="_blank" rel="noopener" title="bandits/env.py, lines 28–29" aria-label="Code on GitHub: bandits/env.py, lines 28 to 29">1</a>.</p>
+  <p>Each mean is drawn uniformly from the interval [0.1, 0.9]. The draw is repeated until the best mean leads the second best by at least 0.05 (GAP), so that the best machine can be identified. The draws are made once per segment: one segment covers the whole game for stationary casinos, and a new segment starts every 500 pulls for drifting ones<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L35-L41" target="_blank" rel="noopener" title="bandits/env.py, lines 35–41" aria-label="Code on GitHub: bandits/env.py, lines 35 to 41">2</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\mu_i = 0.1 + (0.9 - 0.1)\,u_i, \qquad u_i \sim \mathrm{Uniform}[0, 1)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L31" target="_blank" rel="noopener" title="bandits/env.py, line 31" aria-label="Code on GitHub: bandits/env.py, line 31">3</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L35-L41" target="_blank" rel="noopener" title="bandits/env.py, lines 35–41" aria-label="Code on GitHub: bandits/env.py, lines 35 to 41">2</a></span>
   </div>
+  <p>Here <span class="math">\mu_i</span> is the mean of machine <span class="math">i</span>, its expected reward per pull, and <span class="math">u_i</span> is one uniform draw. The constants 0.1 and 0.9 are the code's LOW and HIGH.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L35-L41" target="_blank" rel="noopener" title="bandits/env.py, lines 35–41" aria-label="Code on GitHub: bandits/env.py, lines 35 to 41">2</a></span>
+    <pre class="pseudo-simple">function DRAW-MEANS(K):
+    while true:
+        for i in 0 to K − 1:
+            μ[i] ← LOW + (HIGH − LOW) × UNIFORM()
+        if max(μ) − second_max(μ) ≥ GAP:    # the best leads by GAP
+            return μ</pre>
+    <pre class="pseudo-full" hidden>function DRAW-MEANS(K):               # LOW = 0.1, HIGH = 0.9, GAP = 0.05
+    while true:
+        for i in 0 to K − 1:
+            μ[i] ← LOW + (HIGH − LOW) × UNIFORM()
+        ordered ← sorted(μ)
+        if ordered[K − 1] − ordered[K − 2] ≥ GAP:
+            return μ</pre>
+  </div>
+  <p>The outcomes are rolled before play, one per pull and machine, from a separate random stream. The stream is seeded with the casino seed plus 1,000,003, so it does not share numbers with the machine draws<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L85-L92" target="_blank" rel="noopener" title="bandits/env.py, lines 85–92" aria-label="Code on GitHub: bandits/env.py, lines 85 to 92">4</a>. Each stored number is called the <b>luck</b> <span class="math">l_{t,i}</span> of pull <span class="math">t</span> on machine <span class="math">i</span>. A Bernoulli machine pays when its luck is below its current probability, which gives the correct chance of 1, and a Gaussian machine adds its scaled luck to its mean<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L105-L111" target="_blank" rel="noopener" title="bandits/env.py, lines 105–111" aria-label="Code on GitHub: bandits/env.py, lines 105 to 111">5</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">r_{t,i} = \begin{cases} 1 &amp; \text{if } l_{t,i} \lt \mu_i(t) \\ 0 &amp; \text{otherwise} \end{cases} \quad \text{(Bernoulli and drifting)}, \qquad r_{t,i} = \mu_i(t) + \sigma\, l_{t,i} \quad \text{(Gaussian)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L85-L92" target="_blank" rel="noopener" title="bandits/env.py, lines 85–92" aria-label="Code on GitHub: bandits/env.py, lines 85 to 92">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L105-L111" target="_blank" rel="noopener" title="bandits/env.py, lines 105–111" aria-label="Code on GitHub: bandits/env.py, lines 105 to 111">5</a></span>
+  </div>
+  <p>Here <span class="math">r_{t,i}</span> is the reward machine <span class="math">i</span> pays on pull <span class="math">t</span>, <span class="math">\mu_i(t)</span> is its mean in force at that pull, and <span class="math">\sigma</span> is 0.2. For Bernoulli and drifting casinos the luck <span class="math">l_{t,i}</span> is uniform on [0, 1). For Gaussian casinos it is a standard normal number. Because the table is fixed, two agents that pull the same machine on the same pull get the same reward, so the comparison is fair.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L78-L92" target="_blank" rel="noopener" title="bandits/env.py, lines 78–92" aria-label="Code on GitHub: bandits/env.py, lines 78 to 92">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L105-L111" target="_blank" rel="noopener" title="bandits/env.py, lines 105–111" aria-label="Code on GitHub: bandits/env.py, lines 105 to 111">5</a></span>
+    <pre class="pseudo-simple">function REWARD(t, arm):
+    luck ← LUCK[t × K + arm]                 # rolled once per seed
+    p ← MEANS-AT(t)[arm]                     # the mean in force at pull t
+    if kind = gaussian:
+        return p + σ × luck
+    return 1 if luck &lt; p else 0</pre>
+    <pre class="pseudo-full" hidden>function ROLL-LUCK():                  # once per casino, pull-major
+    for i in 0 to horizon × K − 1:
+        if kind = gaussian:
+            LUCK[i] ← NORMAL-SAMPLE()
+        else:
+            LUCK[i] ← UNIFORM()
+
+function REWARD(t, arm):
+    luck ← LUCK[t × K + arm]
+    p ← MEANS-AT(t)[arm]
+    if kind = gaussian:
+        return p + σ × luck
+    if luck &lt; p:
+        return 1
+    return 0</pre>
+  </div>
+  <p>Each agent runs on its own random stream, seeded with the casino seed plus 2,000,029. Its random choices, such as epsilon-greedy's coin flip or Thompson sampling's draws, therefore never disturb the casino<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/sim.py#L67-L70" target="_blank" rel="noopener" title="bandits/sim.py, lines 67–70" aria-label="Code on GitHub: bandits/sim.py, lines 67 to 70">7</a>.</p>
+  <p>The <b>regret</b> is the reward given up. At pull <span class="math">t</span>, the expected loss is the gap between the best mean and the mean of the machine pulled. Over the <span class="math">T</span> pulls of the game, the regret is the sum of these gaps. It is measured on the means rather than on the luck of single pulls, so it is the expected loss.</p>
+  <div class="math-fig">
+    <div class="math math-block">R_T = \sum_{t=0}^{T-1} \Bigl(\max_i \mu_i(t) - \mu_{a_t}(t)\Bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/sim.py#L54-L59" target="_blank" rel="noopener" title="bandits/sim.py, lines 54–59" aria-label="Code on GitHub: bandits/sim.py, lines 54 to 59">8</a></span>
+  </div>
+  <p>Here <span class="math">a_t</span> is the arm pulled on pull <span class="math">t</span>, <span class="math">T</span> is the horizon (the number of pulls), and the code counts pulls from 0. Regret never decreases, and it grows slowly for an agent that finds the best machine quickly.</p>
+  <p>Every agent is run by the same loop. The agent chooses, the casino pays, the regret is added, and then the agent learns from the reward. The loop is shown here with its full bookkeeping.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/sim.py#L43-L64" target="_blank" rel="noopener" title="bandits/sim.py, lines 43–64" aria-label="Code on GitHub: bandits/sim.py, lines 43 to 64">9</a></span>
+    <pre class="pseudo-simple">function RUN-AGENT(agent, casino):
+    cum ← 0
+    for t in 0 to horizon − 1:
+        arm ← agent.CHOOSE()                 # sees only past rewards
+        reward ← REWARD(t, arm)
+        m ← MEANS-AT(t)
+        cum ← cum + max(m) − m[arm]          # expected regret of this pull
+        agent.UPDATE(arm, reward)            # the reward is the only feedback
+    return cum</pre>
+    <pre class="pseudo-full" hidden>function RUN-AGENT(agent, casino):
+    arms, rewards, regret, optimal ← empty lists
+    cum ← 0
+    for t in 0 to horizon − 1:
+        arm ← agent.CHOOSE()
+        reward ← REWARD(t, arm)
+        m ← MEANS-AT(t)                      # the k means in force at pull t
+        cum ← cum + max(m) − m[arm]          # expected regret of this pull
+        append arm to arms
+        append reward to rewards
+        append cum to regret
+        append (m[arm] = max(m)) to optimal  # True if a best machine was pulled
+        agent.UPDATE(arm, reward)            # learn after the record is kept
+    return arms, rewards, regret, optimal</pre>
+  </div>
+  <p><i>Example.</i> The generator makes the best mean lead the second best by at least 0.05. A pull of a machine whose mean is 0.05 below the best mean adds 0.05 to the regret.</p>
+
+  <h3 class="hiw-sub">Greedy</h3>
+  <p><b>Greedy</b> pulls the machine with the best <b>sample mean</b>, the average reward it has paid so far. If machine <span class="math">i</span> has been pulled <span class="math">n_i</span> times with total reward <span class="math">S_i</span>, its estimate is the average<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L74-L75" target="_blank" rel="noopener" title="bandits/agents.py, lines 74–75" aria-label="Code on GitHub: bandits/agents.py, lines 74 to 75">10</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\hat\mu_i = \frac{S_i}{n_i}, \qquad a_t = \arg\max_i \hat\mu_i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L74-L75" target="_blank" rel="noopener" title="bandits/agents.py, lines 74–75" aria-label="Code on GitHub: bandits/agents.py, lines 74 to 75">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L97-L104" target="_blank" rel="noopener" title="bandits/agents.py, lines 97–104" aria-label="Code on GitHub: bandits/agents.py, lines 97 to 104">11</a></span>
+  </div>
+  <p>Here <span class="math">\hat\mu_i</span> is the sample mean and <span class="math">a_t</span> the arm chosen on pull <span class="math">t</span>. The code uses 0 as the mean of an untried machine, but this value is never compared, because of the forced round below. Ties go to the lowest index.</p>
+  <p>The first K pulls are a <b>forced round</b>: on pull <span class="math">t &lt; K</span> the agent pulls machine <span class="math">t</span>, so every machine has one reward before any mean is compared<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L85-L89" target="_blank" rel="noopener" title="bandits/agents.py, lines 85–89" aria-label="Code on GitHub: bandits/agents.py, lines 85 to 89">12</a>. Greedy never explores on purpose, so it can lock onto a machine that looked good early. On Bernoulli machines its regret at T = 10,000 is 679.9 on average, with a wide band (see the results below).</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L97-L104" target="_blank" rel="noopener" title="bandits/agents.py, lines 97–104" aria-label="Code on GitHub: bandits/agents.py, lines 97 to 104">11</a></span>
+    <pre class="pseudo-simple">function GREEDY(t, K, means):
+    if t &lt; K:
+        return t                         # forced round: try each machine once
+    return argmax(means)                 # the best average so far</pre>
+    <pre class="pseudo-full" hidden>function GREEDY-CHOOSE(t, K, counts, sums):
+    if t &lt; K:
+        return t                         # forced round: machine t has no pulls yet
+    for i in 0 to K − 1:
+        m[i] ← sums[i] / counts[i] if counts[i] &gt; 0 else 0
+    return argmax(m)                     # the lowest index wins a tie</pre>
+  </div>
+  <p>The full version computes the means from the counts and sums on every pull. The code also keeps them in a list for the watch mode and the page, and that bookkeeping is left out of the pseudocode.</p>
+
+  <h3 class="hiw-sub">Epsilon-greedy</h3>
+  <p><b>Epsilon-greedy</b> takes the greedy choice most of the time. With probability epsilon it pulls a machine chosen uniformly from all K machines, so it keeps learning about the rest. A random pull can land on the best machine too, so an exploring pull does not always lose reward. The page offers a fixed epsilon and a decaying one.</p>
+  <div class="math-fig">
+    <div class="math math-block">\varepsilon_t = 0.1 \quad\text{(fixed)}, \qquad \varepsilon_t = \min\bigl(1, K / t\bigr) \quad\text{(decaying)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L114-L116" target="_blank" rel="noopener" title="bandits/agents.py, lines 114–116" aria-label="Code on GitHub: bandits/agents.py, lines 114 to 116">13</a></span>
+  </div>
+  <p>Here <span class="math">\varepsilon_t</span> is the chance of an exploring pull on pull <span class="math">t</span>, <span class="math">K</span> is the number of machines, and <span class="math">t</span> is the number of pulls made so far. The decaying schedule starts at 1 and falls as evidence accumulates, so exploration is heavy early and light later.</p>
+  <p>Each pull draws two random numbers. The first decides between explore and exploit, and the second, used only when exploring, picks the machine.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L107-L131" target="_blank" rel="noopener" title="bandits/agents.py, lines 107–131" aria-label="Code on GitHub: bandits/agents.py, lines 107 to 131">14</a></span>
+    <pre class="pseudo-simple">function EPSILON-GREEDY(t, K, ε, means):
+    if t &lt; K:
+        return t                         # forced round
+    if UNIFORM() &lt; ε:
+        return INDEX(K)                  # explore: a uniform machine, 0 to K − 1
+    return argmax(means)                 # exploit: the best average so far</pre>
+    <pre class="pseudo-full" hidden>function EPSILON-GREEDY-CHOOSE(t, K, counts, sums, decay):
+    if t &lt; K:
+        return t                         # forced round
+    for i in 0 to K − 1:
+        m[i] ← sums[i] / counts[i] if counts[i] &gt; 0 else 0
+    if decay:
+        ε ← min(1, K / t)                # epsilon fades as pulls accumulate
+    else:
+        ε ← 0.1
+    if UNIFORM() &lt; ε:                  # first draw: explore or exploit
+        arm ← INDEX(K)                   # second draw: min(K − 1, int(UNIFORM() × K))
+    else:
+        arm ← argmax(m)
+    return arm</pre>
+  </div>
+  <p>The decaying variant is the same procedure with <span class="math">\varepsilon_t</span> replaced by <span class="math">\min(1, K / t)</span>. The code computes it from <span class="math">t</span>, the pulls so far. The schedule is only used after the forced round, so <span class="math">t \ge K</span> whenever it is evaluated.</p>
+
+  <h3 class="hiw-sub">UCB1 (optimism)</h3>
+  <p><b>UCB1</b> is an <b>upper confidence bound</b> rule. Each machine gets an <b>index</b>, its sample mean plus a bonus that is large when the machine has few pulls. Each pull picks the largest index. Under-tried machines therefore look good until they have been tested<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L146-L159" target="_blank" rel="noopener" title="bandits/agents.py, lines 146–159" aria-label="Code on GitHub: bandits/agents.py, lines 146 to 159">15</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{UCB}_i(t) = \hat\mu_i + \sigma \sqrt{\frac{2 \ln t}{n_i}}, \qquad a_t = \arg\max_i \mathrm{UCB}_i(t)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L153" target="_blank" rel="noopener" title="bandits/agents.py, line 153" aria-label="Code on GitHub: bandits/agents.py, line 153">16</a></span>
+  </div>
+  <p>Here <span class="math">t</span> is the number of pulls made so far and <span class="math">n_i</span> the number of pulls of machine <span class="math">i</span>. The scale <span class="math">\sigma</span> is 1 for Bernoulli and drifting machines and 0.2 for Gaussian ones, so the bonus matches the noise. The constant 2 is the one in the bound of Auer, Cesa-Bianchi and Fischer (2002).</p>
+  <p>The bonus shrinks as <span class="math">n_i</span> grows, but it grows with <span class="math">\ln t</span>, so a machine that is rarely pulled keeps a large bonus. Its index rises until it is tested again.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L146-L159" target="_blank" rel="noopener" title="bandits/agents.py, lines 146–159" aria-label="Code on GitHub: bandits/agents.py, lines 146 to 159">15</a></span>
+    <pre class="pseudo-simple">function UCB1(t, K, counts, sums, σ):
+    if t &lt; K:
+        return t                         # forced round
+    for i in 0 to K − 1:
+        index[i] ← sums[i] / counts[i] + σ × sqrt(2 × log(t) / counts[i])
+    return argmax(index)                 # the largest optimistic bound</pre>
+    <pre class="pseudo-full" hidden>function UCB1-CHOOSE(t, K, counts, sums, σ):
+    if t &lt; K:
+        return t                         # forced round: every count is at least 1 after it
+    for i in 0 to K − 1:
+        m[i] ← sums[i] / counts[i] if counts[i] &gt; 0 else 0
+        bonus ← σ × sqrt(2 × log(t) / counts[i])
+        index[i] ← m[i] + bonus
+    return argmax(index)                 # the lowest index wins a tie</pre>
+  </div>
+  <p><code>log</code> in the pseudocode is the natural logarithm, written <span class="math">\ln</span> in the formulas.</p>
+
+  <h3 class="hiw-sub">Thompson sampling</h3>
+  <p><b>Thompson sampling</b> keeps a <b>posterior</b> for each machine: the belief about its mean given the rewards so far. Each pull draws one sample from every posterior and pulls the machine with the best sample. A machine that is still uncertain sometimes draws high and gets pulled, so the chance of a pull is the chance that the machine is the best under the current beliefs. This is called <b>probability matching</b>. As the posteriors narrow, the draws settle.</p>
+  <p>For Bernoulli machines the prior is uniform, Beta(1, 1). After <span class="math">S_i</span> wins in <span class="math">n_i</span> pulls, the posterior is a Beta distribution<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L167-L177" target="_blank" rel="noopener" title="bandits/agents.py, lines 167–177" aria-label="Code on GitHub: bandits/agents.py, lines 167 to 177">17</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\theta_i \sim \mathrm{Beta}\bigl(1 + S_i,\; 1 + n_i - S_i\bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L176-L177" target="_blank" rel="noopener" title="bandits/agents.py, lines 176–177" aria-label="Code on GitHub: bandits/agents.py, lines 176 to 177">18</a></span>
+  </div>
+  <p>Here <span class="math">\theta_i</span> is the sample drawn for machine <span class="math">i</span>, <span class="math">S_i</span> is its number of wins (the reward sum, since rewards are 0 or 1), and <span class="math">n_i - S_i</span> its losses. The Beta draw is <span class="math">X / (X + Y)</span> with <span class="math">X</span> and <span class="math">Y</span> independent gamma variates (see the box below).</p>
+  <p>Gaussian machines have a normal prior on the mean, N(0, 1), and known noise <span class="math">\sigma</span> = 0.2. The posterior precision (the inverse variance) is <span class="math">\tau_i</span>, the posterior mean is <span class="math">m_i</span>, and the posterior standard deviation is <span class="math">s_i</span>:</p>
+  <div class="math-fig">
+    <div class="math math-block">\tau_i = 1 + \frac{n_i}{\sigma^2}, \qquad m_i = \frac{S_i / \sigma^2}{\tau_i}, \qquad s_i = \frac{1}{\sqrt{\tau_i}}, \qquad \theta_i = m_i + s_i\, z_i</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L179-L180" target="_blank" rel="noopener" title="bandits/agents.py, lines 179–180" aria-label="Code on GitHub: bandits/agents.py, lines 179 to 180">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L190" target="_blank" rel="noopener" title="bandits/agents.py, line 190" aria-label="Code on GitHub: bandits/agents.py, line 190">20</a></span>
+  </div>
+  <p>Here <span class="math">S_i</span> is the sum of rewards from machine <span class="math">i</span>, <span class="math">z_i</span> is a standard normal draw, and the code's <span class="math">\sigma</span> is the Gaussian noise scale. Thompson has no forced round, so its first pulls are drawn from the prior.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L183-L200" target="_blank" rel="noopener" title="bandits/agents.py, lines 183–200" aria-label="Code on GitHub: bandits/agents.py, lines 183 to 200">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L167-L181" target="_blank" rel="noopener" title="bandits/agents.py, lines 167–181" aria-label="Code on GitHub: bandits/agents.py, lines 167 to 181">22</a></span>
+    <pre class="pseudo-simple">function THOMPSON(K, posterior):
+    for i in 0 to K − 1:
+        θ[i] ← a sample from machine i's posterior
+    return argmax(θ)                     # pull the best sample</pre>
+    <pre class="pseudo-full" hidden>function THOMPSON-CHOOSE(K, counts, sums, bernoulli, σ):
+    for i in 0 to K − 1:
+        if bernoulli:
+            a[i] ← 1 + sums[i]
+            b[i] ← 1 + counts[i] − sums[i]
+        else:
+            τ ← 1 + counts[i] / σ²
+            a[i] ← (sums[i] / σ²) / τ    # posterior mean
+            b[i] ← 1 / sqrt(τ)           # posterior standard deviation
+    for i in 0 to K − 1:
+        if bernoulli:
+            θ[i] ← BETA-SAMPLE(a[i], b[i])
+        else:
+            θ[i] ← a[i] + b[i] × NORMAL-SAMPLE()
+    return argmax(θ)                     # the best sample this round</pre>
+  </div>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L41-L79" target="_blank" rel="noopener" title="bandits/rng.py, lines 41–79" aria-label="Code on GitHub: bandits/rng.py, lines 41 to 79">23</a></span>
+    <pre class="pseudo-simple">function BETA-SAMPLE(α, β):
+    x ← GAMMA-SAMPLE(α)
+    y ← GAMMA-SAMPLE(β)
+    return x / (x + y)</pre>
+    <pre class="pseudo-full" hidden>function GAMMA-SAMPLE(shape):          # Marsaglia and Tsang, for shape ≥ 1
+    d ← shape − 1 / 3
+    c ← 1 / sqrt(9 × d)
+    while true:
+        x ← NORMAL-SAMPLE()
+        v ← 1 + c × x
+        if v ≤ 0:
+            continue
+        v ← v × v × v
+        u ← UNIFORM()
+        if u ≤ 0:
+            continue
+        if u &lt; 1 − 0.0331 × x × x × x × x:
+            return d × v
+        if log(u) &lt; 0.5 × x × x + d × (1 − v + log(v)):
+            return d × v
+
+function NORMAL-SAMPLE():                # polar method: a point in the unit disc
+    while true:
+        u ← 2 × UNIFORM() − 1
+        v ← 2 × UNIFORM() − 1
+        s ← u × u + v × v
+        if 0 &lt; s &lt; 1:
+            break
+    return u × sqrt(−2 × log(s) / s)
+
+function BETA-SAMPLE(α, β):
+    x ← GAMMA-SAMPLE(α)
+    y ← GAMMA-SAMPLE(β)
+    return x / (x + y)</pre>
+  </div>
+  <p>The Beta draw needs gamma variates with shape at least 1, which is all the posteriors use: a uniform prior gives shape 1 or more. The normal draw uses the polar method, which keeps a point inside the unit disc and returns one coordinate scaled by <span class="math">\sqrt{-2 \ln s / s}</span>.</p>
+
+  <h3 class="hiw-sub">EXP3 (exponential weights)</h3>
+  <p><b>EXP3</b> keeps a weight <span class="math">w_i</span> for each machine and pulls machines in proportion to their weights. It makes no statistical assumption about the payouts, so it suits machines that change. Its probabilities mix the weights with uniform exploration, so every machine keeps a probability of at least <span class="math">\gamma / K</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L216-L219" target="_blank" rel="noopener" title="bandits/agents.py, lines 216–219" aria-label="Code on GitHub: bandits/agents.py, lines 216 to 219">24</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">p_i = (1 - \gamma)\,\frac{w_i}{\sum_j w_j} + \frac{\gamma}{K}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L216-L219" target="_blank" rel="noopener" title="bandits/agents.py, lines 216–219" aria-label="Code on GitHub: bandits/agents.py, lines 216 to 219">24</a></span>
+  </div>
+  <p>Here <span class="math">p_i</span> is the probability of pulling machine <span class="math">i</span> on the next pull, and <span class="math">\gamma</span> is the <b>exploration rate</b>, the share of the probability spread uniformly over all machines. The sum is over all machines <span class="math">j</span>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\gamma = \min\left(1,\ \sqrt{\frac{K \ln K}{(e - 1)\,T}}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L212" target="_blank" rel="noopener" title="bandits/agents.py, line 212" aria-label="Code on GitHub: bandits/agents.py, line 212">25</a></span>
+  </div>
+  <p>This is the tuning Auer et al. give for a known horizon, so <span class="math">\gamma</span> depends on the horizon <span class="math">T</span>. The cap at 1 applies only for T of 4 or fewer when K = 5. <i>Example.</i> With K = 5 and T = 10,000, <span class="math">\gamma</span> is 0.0216. With T = 300 it is 0.125.</p>
+  <p>After pull <span class="math">a</span> with reward <span class="math">r</span>, the estimate <span class="math">\hat r = r / p_a</span> divides the reward by the probability of pulling that machine, which keeps the estimate unbiased. The weight of the pulled machine grows by a factor of <span class="math">\exp(\gamma \hat r / K)</span>. Then every weight is divided by the largest weight, so the weights stay at most 1. Dividing by a common constant leaves the probabilities unchanged, so the rescaling only prevents overflow<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L236-L243" target="_blank" rel="noopener" title="bandits/agents.py, lines 236–243" aria-label="Code on GitHub: bandits/agents.py, lines 236 to 243">26</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\hat r = \frac{r}{p_a}, \qquad w_a \leftarrow w_a\, \exp\!\Bigl(\frac{\gamma\,\hat r}{K}\Bigr), \qquad w_i \leftarrow \frac{w_i}{\max_j w_j}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L240-L243" target="_blank" rel="noopener" title="bandits/agents.py, lines 240–243" aria-label="Code on GitHub: bandits/agents.py, lines 240 to 243">27</a></span>
+  </div>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L221-L243" target="_blank" rel="noopener" title="bandits/agents.py, lines 221–243" aria-label="Code on GitHub: bandits/agents.py, lines 221 to 243">28</a></span>
+    <pre class="pseudo-simple">function EXP3-CHOOSE(K, w, γ):
+    for i in 0 to K − 1:
+        p[i] ← (1 − γ) × w[i] / sum(w) + γ / K
+    return a machine drawn with probability p
+
+function EXP3-UPDATE(arm, reward):
+    w[arm] ← w[arm] × exp(γ × (reward / p[arm]) / K)
+    divide every weight by the largest weight</pre>
+    <pre class="pseudo-full" hidden>function EXP3-CHOOSE(K, w, γ):
+    total ← sum(w)
+    for i in 0 to K − 1:
+        p[i] ← (1 − γ) × w[i] / total + γ / K
+    u ← UNIFORM()
+    cum ← 0
+    arm ← K − 1                          # fallback if rounding leaves u above the total
+    for i in 0 to K − 1:
+        cum ← cum + p[i]
+        if u &lt; cum:
+            arm ← i
+            break
+    return arm                           # p is kept for the update
+
+function EXP3-UPDATE(arm, reward, p, γ, K, w):
+    estimate ← reward / p[arm]           # divided by the probability of the pull
+    w[arm] ← w[arm] × exp(γ × estimate / K)
+    top ← max(w)
+    for i in 0 to K − 1:
+        w[i] ← w[i] / top                # the largest weight becomes 1</pre>
+  </div>
+  <p>The weights start at 1 for every machine. A machine that pays often gains weight quickly, but the uniform mix keeps the others in play. The uniform mix guarantees that each machine keeps a probability of at least <span class="math">\gamma / K</span>, so no machine is starved of pulls.</p>
+
+  <h3 class="hiw-sub">Sliding-window UCB</h3>
+  <p><b>Sliding-window UCB</b> runs UCB1 on only the last W = 200 pulls, counted across all machines. A pull older than the window stops counting, so a machine whose payout has changed is not judged on old evidence. The counts and sums over the window are <span class="math">n^W_i</span> and <span class="math">S^W_i</span>, and the index is<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L246-L287" target="_blank" rel="noopener" title="bandits/agents.py, lines 246–287" aria-label="Code on GitHub: bandits/agents.py, lines 246 to 287">29</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{UCB}^W_i(t) = \frac{S^W_i}{n^W_i} + \sigma \sqrt{\frac{\xi \ln \min(t, W)}{n^W_i}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L279-L281" target="_blank" rel="noopener" title="bandits/agents.py, lines 279–281" aria-label="Code on GitHub: bandits/agents.py, lines 279 to 281">30</a></span>
+  </div>
+  <p>Here <span class="math">\xi</span> is 0.6. It is smaller than UCB1's 2, because the window already limits how long evidence lasts. The value 0.6 is a fixed choice and was not tuned. A machine with no pulls in the window is tried first, in index order.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py#L261-L287" target="_blank" rel="noopener" title="bandits/agents.py, lines 261–287" aria-label="Code on GitHub: bandits/agents.py, lines 261 to 287">31</a></span>
+    <pre class="pseudo-simple">function SW-UCB-CHOOSE(t, K, W, ξ, σ):
+    if some machine i has no pulls in the window:
+        return i                         # try it first
+    for i in 0 to K − 1:
+        index[i] ← window mean + σ × sqrt(ξ × log(min(t, W)) / window count)
+    return argmax(index)</pre>
+    <pre class="pseudo-full" hidden>function SW-UCB-UPDATE(arm, reward):
+    counts[arm] ← counts[arm] + 1        # all-time totals, as for every agent
+    sums[arm] ← sums[arm] + reward
+    t ← t + 1
+    append (arm, reward) to recent       # the window, oldest first
+    wcounts[arm] ← wcounts[arm] + 1
+    wsums[arm] ← wsums[arm] + reward
+    if length of recent &gt; W:
+        (old-arm, old-reward) ← remove the oldest entry of recent
+        wcounts[old-arm] ← wcounts[old-arm] − 1
+        wsums[old-arm] ← wsums[old-arm] − old-reward
+
+function SW-UCB-CHOOSE(t, K, W, ξ, σ):
+    for i in 0 to K − 1:
+        if wcounts[i] = 0:
+            return i                     # not in the window: try it first
+    log_t ← log(min(t, W))
+    for i in 0 to K − 1:
+        index[i] ← wsums[i] / wcounts[i] + σ × sqrt(ξ × log_t / wcounts[i])
+    return argmax(index)                 # the lowest index wins a tie</pre>
+  </div>
+  <p>The window is what makes this agent adapt. Each pull enters the window once, and when the window is full the oldest pull leaves, which subtracts its reward from its machine's window sum. The forced check looks at the window counts, not the all-time counts, so a machine that has left the window is tried again.</p>
+
+  <h3 class="hiw-sub">The Lai-Robbins floor</h3>
+  <p>For fixed machines, Lai and Robbins (1985) proved a lower bound on regret. A <b>consistent</b> policy, one whose regret grows more slowly than any power of T on every set of machines, must have regret at least about <span class="math">c \ln T</span>, asymptotically. The constant <span class="math">c</span> depends only on the means. The bound is a reference shape for comparing agents, not a guarantee at one horizon<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L119-L138" target="_blank" rel="noopener" title="bandits/env.py, lines 119–138" aria-label="Code on GitHub: bandits/env.py, lines 119 to 138">32</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">c = \sum_{i:\ \mu_i &lt; \mu^*} \frac{\mu^* - \mu_i}{\mathrm{KL}(\mu_i \,\|\, \mu^*)}, \qquad \mathrm{KL}(p \,\|\, q) = p \ln\frac{p}{q} + (1 - p) \ln\frac{1 - p}{1 - q}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L114-L116" target="_blank" rel="noopener" title="bandits/env.py, lines 114–116" aria-label="Code on GitHub: bandits/env.py, lines 114 to 116">33</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L119-L138" target="_blank" rel="noopener" title="bandits/env.py, lines 119–138" aria-label="Code on GitHub: bandits/env.py, lines 119 to 138">32</a></span>
+  </div>
+  <p>Here <span class="math">\mu^*</span> is the best mean, and the sum runs over the machines with a smaller mean. <span class="math">\mathrm{KL}(p \,\|\, q)</span> is the Kullback–Leibler divergence, the distance from a Bernoulli distribution with mean <span class="math">p</span> to one with mean <span class="math">q</span>, in nats. For Gaussian machines with known noise <span class="math">\sigma</span>, the divergence is <span class="math">(\mu^* - \mu_i)^2 / (2\sigma^2)</span>, so each machine adds <span class="math">2\sigma^2 / (\mu^* - \mu_i)</span> to <span class="math">c</span>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py#L119-L138" target="_blank" rel="noopener" title="bandits/env.py, lines 119–138" aria-label="Code on GitHub: bandits/env.py, lines 119 to 138">32</a></span>
+    <pre class="pseudo-simple">function LAI-ROBBINS-RATE(means):
+    best ← max(means)
+    rate ← 0
+    for each p in means with p &lt; best:
+        rate ← rate + (best − p) / KL(p, best)
+    return rate</pre>
+    <pre class="pseudo-full" hidden>function LAI-ROBBINS-RATE(means, kind, σ):
+    if kind = drifting:
+        raise an error: drifting machines have no single bound
+    best ← max(means)
+    rate ← 0
+    for each p in means:
+        gap ← best − p
+        if gap ≤ 0:
+            continue                         # the best machine adds nothing
+        if kind = bernoulli:
+            kl ← p × log(p / best) + (1 − p) × log((1 − p) / (1 − best))
+        else:
+            kl ← gap × gap / (2 × σ × σ)
+        rate ← rate + gap / kl
+    return rate</pre>
+  </div>
+  <p>Averaged over the benchmark's machine sets, <span class="math">c = 7.342</span> for Bernoulli machines, which gives a floor of 67.6 at T = 10,000. For Gaussian machines <span class="math">c = 1.448</span>, a floor of 13.3<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.md" target="_blank" rel="noopener" title="results/bandits_benchmark.md" aria-label="Code on GitHub: results/bandits_benchmark.md">34</a>. The constant grows as machines get close, because close machines are hard to tell apart. For fixed casinos, the race chart draws <span class="math">c \ln t</span> as a dashed line.</p>
+  <p><i>Example.</i> With <span class="math">c = 7.342</span>, the floor at T = 10,000 is <span class="math">7.342 \times \ln 10{,}000 \approx 67.6</span>.</p>
 
   <h3 class="hiw-sub">Parameters and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
@@ -249,9 +572,9 @@
     <tr><td>EXP3 gamma</td><td>min(1, sqrt(K ln K / ((e − 1) T))). With K = 5: 0.0216 at T = 10,000, 0.0684 at T = 1,000, 0.125 at T = 300</td><td>EXP3</td></tr>
     <tr><td>Window W</td><td>200 pulls</td><td>sliding-window UCB</td></tr>
     <tr><td>Window bonus xi</td><td>0.6</td><td>sliding-window UCB</td></tr>
-    <tr><td>Seeds</td><td>0 to 99 in the benchmark; the page takes any seed</td><td>all</td></tr>
+    <tr><td>Seeds</td><td>0 to 99 in the benchmark; the page takes any seed from 0 to 2,147,483,647</td><td>all</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The casino constants (means in [0.1, 0.9], a 0.05 gap, sigma 0.2, a 500-pull drift period, 5 machines) were set by hand so the demonstration is clear. The gap keeps the best machine identifiable. Epsilon 0.1, the decay form K / t, the UCB1 constant 2, and Thompson's uniform prior are standard choices and were not swept. EXP3's gamma is the tuning Auer et al. give for a known horizon, so it depends on T. The window of 200 and xi = 0.6 are fixed picks; the code marks xi as not tuned. No parameter sweep is committed for any agent.</p>
+  <p class="hiw-note"><b>How these were chosen:</b> The casino constants (means from [0.1, 0.9], a 0.05 gap, sigma 0.2, a 500-pull drift period, 5 machines) are fixed in the code, and no sweep over them is committed. The gap keeps the best machine identifiable. Epsilon 0.1, the decay form K / t, the UCB1 constant 2, and Thompson's uniform prior are standard choices. EXP3's gamma is the tuning Auer et al. give for a known horizon, so it depends on T. The window of 200 and xi = 0.6 are fixed picks, and the code marks xi as not tuned. No parameter sweep is committed for any agent.</p>
 
   <h3 class="hiw-sub">Results on fixed seeds</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Bernoulli</th><th class="num">Gaussian</th><th class="num">Drifting</th></tr></thead><tbody>
@@ -263,13 +586,32 @@
     <tr><td>EXP3</td><td class="num">not run</td><td class="num">not run</td><td class="num">2558.0 ± 64.1</td></tr>
     <tr><td>Sliding-window UCB (W = 200)</td><td class="num">not run</td><td class="num">not run</td><td class="num">950.5 ± 8.4</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">Cumulative regret at T = 10,000, mean ± 95% half-width over 100 seeds. Lower is better. On drifting machines, sliding-window UCB (950.5) and UCB1 (978.3) do best, because they follow the redraws; Thompson's posteriors never forget, so it falls to about the level of greedy. The Lai-Robbins floor is 67.6 (Bernoulli) and 13.3 (Gaussian) at this horizon.</p>
+  <p class="hiw-note">Cumulative regret at T = 10,000, mean ± 95% half-width over 100 seeds, from the committed benchmark<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.md" target="_blank" rel="noopener" title="results/bandits_benchmark.md" aria-label="Code on GitHub: results/bandits_benchmark.md">34</a>. Lower is better. On drifting machines, sliding-window UCB (950.5) and UCB1 (978.3) have the lowest regret. The window lets sliding-window UCB drop old payouts, and UCB1's bonus keeps growing with ln t, so it keeps re-testing machines. Thompson's posteriors never forget, so its regret (2058.8) stays far above both. On fixed machines, Thompson sampling (35.6) is below the Bernoulli floor of 67.6, and Thompson (9.0) and UCB1 (13.0) on Gaussian machines are below the Gaussian floor of 13.3.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/agents.py">bandits/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/env.py">bandits/env.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/sim.py">bandits/sim.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/benchmark.py">bandits/benchmark.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py">bandits/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/bandits-core.js">web/js/bandits-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.md">results/bandits_benchmark.md</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/results/bandits_benchmark.json">results/bandits_benchmark.json</a></p>
+  <h3 class="hiw-sub">The browser port</h3>
+  <p>The page runs the same casino and agents in JavaScript (<code>web/js/bandits-core.js</code><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/bandits-core.js" target="_blank" rel="noopener" title="web/js/bandits-core.js" aria-label="Code on GitHub: web/js/bandits-core.js">35</a>). The random numbers come from <b>mulberry32</b>, a small 32-bit generator, so the page reproduces the Python draws exactly. Python's built-in generator cannot be matched in JavaScript, which is why the project uses this one. Each 32-bit output is divided by 2<sup>32</sup> to give a uniform number in [0, 1)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L28-L35" target="_blank" rel="noopener" title="bandits/rng.py, lines 28–35" aria-label="Code on GitHub: bandits/rng.py, lines 28 to 35">36</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L28-L35" target="_blank" rel="noopener" title="bandits/rng.py, lines 28–35" aria-label="Code on GitHub: bandits/rng.py, lines 28 to 35">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/bandits-core.js#L25-L31" target="_blank" rel="noopener" title="web/js/bandits-core.js, lines 25–31" aria-label="Code on GitHub: web/js/bandits-core.js, lines 25 to 31">37</a></span>
+    <pre class="pseudo-simple">function UNIFORM():
+    state ← (state + 0x6D2B79F5) &amp; MASK      # advance the 32-bit state
+    t ← MIX(state)                           # a few multiply, shift and XOR steps
+    return t / 2^32                          # a double in [0, 1)</pre>
+    <pre class="pseudo-full" hidden>function UNIFORM():
+    state ← (state + 0x6D2B79F5) &amp; MASK
+    t ← state
+    t ← ((t ^ (t &gt;&gt; 15)) × (1 | t)) &amp; MASK
+    t ← (((t + (((t ^ (t &gt;&gt; 7)) × (61 | t)) &amp; MASK)) &amp; MASK) ^ t)
+    return ((t ^ (t &gt;&gt; 14)) &amp; MASK) / 2^32</pre>
+  </div>
+  <p>The multiplications keep only the low 32 bits, as <code>Math.imul</code> does in JavaScript. The page's agents then draw their numbers in the same order as the Python code, so an agent makes the same pulls on the same seed.</p>
+  <p>The parity test checks this for 17 agent and casino pairs (the lineups of the three casino kinds) on seeds 0 to 4 over 1,200 pulls. Arms, the optimal flags and the reasons must match exactly. Rewards and regret must agree to 1e-9, because the Gaussian draws use logarithms and square roots, which can differ in the last bit between Python and JavaScript<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_bandits_parity.py#L1-L77" target="_blank" rel="noopener" title="tests/test_bandits_parity.py, lines 1–77" aria-label="Code on GitHub: tests/test_bandits_parity.py, lines 1 to 77">38</a>.</p>
+  <p>When a player reveals the casino, the page scores the player's pulls on the same outcome table and posts them to the server, which computes the regret with the Python agents. The server's numbers replace the page's own table once they arrive.</p>
 </section>
   </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/bandits.js"></script>
 </body>

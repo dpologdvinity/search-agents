@@ -176,7 +176,7 @@ async function init() {
   }
   $('solver').value = 'mrv_fc';
   $('solver').onchange = () => {
-    $('solver-desc').textContent = state.meta.solvers.find((s) => s.name === $('solver').value).description;
+    $('solver').title = state.meta.solvers.find((s) => s.name === $('solver').value).description;
   };
   $('solver').onchange();
   await fetchPuzzle('hard');

@@ -144,6 +144,45 @@ def test_systematic_resampling_keeps_the_count_and_resets_weights():
     assert np.allclose(pf.x, x7) and np.allclose(pf.y, y7)
 
 
+def test_injection_chooses_random_particles_not_the_first_k():
+    # Systematic resampling leaves runs of copies next to each other, so replacing the first k indices would wipe
+    # out one or two hypotheses. The choice is a seeded random subset without replacement, spread over the array.
+    f = make_floor("halls", 1)
+    pf = ParticleFilter(f, 2000, 8, 0.3, 0.05, 1.0, 21)
+    k = 200
+    draws = [pf._choose_replaced(k) for _ in range(100)]
+    for idx in draws:
+        assert len(idx) == k and len(set(idx.tolist())) == k  # distinct particles
+        assert not np.array_equal(np.sort(idx), np.arange(k))  # not the first k
+    # Uniform over the array: about half of the chosen indices fall in the second half, and each quarter is hit.
+    chosen = np.concatenate(draws)
+    assert 0.45 < (chosen >= 1000).mean() < 0.55
+    quarters = np.bincount(chosen // 500, minlength=4)
+    assert quarters.min() > 0.2 * quarters.sum()
+
+
+def test_kidnap_injection_replaces_particles_spread_over_the_cloud():
+    f = make_floor("halls", 1)
+    sim = Sim(f, 11)
+    ap = Autopilot(f, 12)
+    pf = ParticleFilter(f, 2000, 8, 0.3, 0.05, 1.0, 13)
+    for _ in range(30):
+        rot, fwd = ap.command(sim.x, sim.y, sim.th)
+        pf.step(rot, fwd, sim.drive(rot, fwd))
+    sim.kidnap()
+    ap.route = []
+    pf.step(0.0, 0.0, sim.z)
+    for _ in range(14):
+        rot, fwd = ap.command(sim.x, sim.y, sim.th)
+        pf.step(rot, fwd, sim.drive(rot, fwd))
+        if pf.injected:
+            break
+    assert pf.injected > 0
+    # The replaced indices are not the first block of the array, and they reach the far half of it.
+    assert not np.array_equal(np.sort(pf.replaced), np.arange(pf.injected))
+    assert pf.replaced.max() > pf.n // 2
+
+
 def test_kidnap_triggers_injection_and_calm_tracking_does_not():
     f = make_floor("halls", 1)
     sim = Sim(f, 11)
@@ -161,7 +200,7 @@ def test_kidnap_triggers_injection_and_calm_tracking_does_not():
     injected, errs = [], []
     pf.step(0.0, 0.0, sim.z)
     injected.append(pf.injected)
-    for _ in range(14):
+    for _ in range(20):
         rot, fwd = ap.command(sim.x, sim.y, sim.th)
         z = sim.drive(rot, fwd)
         pf.step(rot, fwd, z)
@@ -171,6 +210,7 @@ def test_kidnap_triggers_injection_and_calm_tracking_does_not():
     # The fast average has to fall well below the slow one before injection starts; in this run that takes a few steps.
     assert max(injected) > 0
     # Injection is what lets the filter find the robot again: the estimate is back within 0.5 m by the end.
+    # With the random choice of replaced particles this run takes about 18 steps to come back, so the window is 20.
     assert errs[-1] < 0.5
 
 

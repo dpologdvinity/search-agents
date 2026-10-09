@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PATHFIND // SEARCH AGENTS</title>
-<meta name="description" content="Draw walls and swamps, generate mazes, then race BFS, DFS, Dijkstra, greedy, A*, weighted A* and bidirectional search on the same map.">
+<meta name="description" content="Draw walls, paint swamps, generate a maze, then race seven searches on the same map: breadth-first, depth-first, Dijkstra, greedy, A*, weighted A* and bidirectional BFS.">
 <meta property="og:title" content="PATHFIND // SEARCH AGENTS">
-<meta property="og:description" content="Draw walls and swamps, generate mazes, then race BFS, DFS, Dijkstra, greedy, A*, weighted A* and bidirectional search on the same map.">
+<meta property="og:description" content="Race seven path searches on the same map and see what each one expanded and what its path cost.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/pathfind.html">
 <meta name="twitter:card" content="summary">
@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="pathfind.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 </head>
 <body>
 
@@ -31,9 +32,9 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">08 // PATHFINDING ARENA · SEVEN SEARCHES</div>
+      <div class="proj-pg-tag">LAB // PATHFINDING</div>
       <h1 class="proj-pg-title neon-cyan glitch" data-text="PATHFIND">PATHFIND</h1>
-      <div class="proj-pg-sub">Draw walls, paint swamps, generate a maze, then race seven searches on the same map. Each one shows what it touched and what it cost.</div>
+      <div class="proj-pg-sub">Draw walls, paint swamp, then race seven searches on the same map.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
@@ -44,16 +45,23 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to find the cheapest route from S to G. Each search explores the map in its own order, and the leaderboard ranks them by the cost of the path they found and by how many cells they expanded.</p>
+    <p style="margin-top:0.5rem">Choose a tool and drag on the map to paint walls or terrain, or move S and G. Pick a PRESET or press GENERATE under MAP for a new maze.</p>
+    <p style="margin-top:0.5rem">Press RACE to start all ticked searches on the same map. Watch the panels, or switch to FOCUS and pick one search to see it large.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div class="pf-stage">
         <div class="pf-tools" id="pf-tools" role="group" aria-label="Map tools">
-          <button class="cyber-btn pf-tool" type="button" data-tool="wall" aria-pressed="true"><span class="btn-txt">▇ WALL</span></button>
-          <button class="cyber-btn pf-tool" type="button" data-tool="swamp" aria-pressed="false"><span class="btn-txt">≈ SWAMP ×5</span></button>
-          <button class="cyber-btn pf-tool" type="button" data-tool="mud" aria-pressed="false"><span class="btn-txt">~ MUD ×3</span></button>
-          <button class="cyber-btn pf-tool" type="button" data-tool="erase" aria-pressed="false"><span class="btn-txt">⌫ ERASE</span></button>
-          <button class="cyber-btn green pf-tool" type="button" data-tool="start" aria-pressed="false"><span class="btn-txt">S START</span></button>
-          <button class="cyber-btn pink pf-tool" type="button" data-tool="goal" aria-pressed="false"><span class="btn-txt">G GOAL</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="wall" aria-pressed="true" title="Drag to draw walls. Start and goal stay open."><span class="btn-txt">▇ WALL</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="swamp" aria-pressed="false" title="Drag to paint swamp: entering a swamp cell costs 5."><span class="btn-txt">≈ SWAMP ×5</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="mud" aria-pressed="false" title="Drag to paint mud: entering a mud cell costs 3."><span class="btn-txt">~ MUD ×3</span></button>
+          <button class="cyber-btn pf-tool" type="button" data-tool="erase" aria-pressed="false" title="Drag to clear walls and terrain back to open ground (cost 1)."><span class="btn-txt">⌫ ERASE</span></button>
+          <button class="cyber-btn green pf-tool" type="button" data-tool="start" aria-pressed="false" title="Drag the start marker anywhere on the map."><span class="btn-txt">S START</span></button>
+          <button class="cyber-btn pink pf-tool" type="button" data-tool="goal" aria-pressed="false" title="Drag the goal marker anywhere on the map."><span class="btn-txt">G GOAL</span></button>
         </div>
         <div class="pf-frame">
           <canvas id="pf-grid" role="img" aria-label="Map editor. Drag to paint with the selected tool; hover a cell for its coordinates and cost."></canvas>
@@ -62,7 +70,7 @@
         <div class="inline pf-controls" style="justify-content:center">
           <button class="cyber-btn green" id="btn-race" type="button"><span class="btn-txt">▶ RACE</span></button>
           <button class="cyber-btn" id="btn-pause" type="button" disabled><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">› STEP</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" title="Advance every racer by one expansion."><span class="btn-txt">› STEP</span></button>
           <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ RESET RACE</span></button>
         </div>
       </div>
@@ -70,9 +78,9 @@
       <div class="pf-race-head">
         <div class="section-title">RACE</div>
         <div class="pf-view" role="group" aria-label="Race view">
-          <button class="cyber-btn" id="mode-panels" type="button" aria-pressed="true"><span class="btn-txt">PANELS</span></button>
-          <button class="cyber-btn" id="mode-focus" type="button" aria-pressed="false"><span class="btn-txt">FOCUS</span></button>
-          <select class="cyber-select" id="focus-algo" aria-label="Algorithm to show large">
+          <button class="cyber-btn" id="mode-panels" type="button" aria-pressed="true" title="One panel per search."><span class="btn-txt">PANELS</span></button>
+          <button class="cyber-btn" id="mode-focus" type="button" aria-pressed="false" title="One search, shown large."><span class="btn-txt">FOCUS</span></button>
+          <select class="cyber-select" id="focus-algo" aria-label="Algorithm to show large" title="The search shown in FOCUS view.">
             <option value="bfs">Breadth-first</option>
             <option value="dfs">Depth-first</option>
             <option value="ucs">Uniform cost</option>
@@ -105,43 +113,13 @@
         <div class="stack">
           <div>
             <div class="field-lbl">PRESET</div>
-            <select class="cyber-select" id="preset" style="width:100%" aria-label="Preset map"></select>
-            <div class="heuristic-card pf-card"><div class="field-hint" id="preset-note"></div></div>
-          </div>
-          <div class="pf-two">
-            <div>
-              <div class="field-lbl">GENERATOR</div>
-              <select class="cyber-select" id="kind" style="width:100%">
-                <option value="recursive">Recursive backtracker</option>
-                <option value="prim">Prim's</option>
-                <option value="scatter">Random scatter</option>
-                <option value="rooms">Rooms</option>
-                <option value="open">Open ground</option>
-              </select>
-            </div>
-            <div>
-              <div class="field-lbl">SIZE</div>
-              <select class="cyber-select" id="size" style="width:100%">
-                <option value="21">21</option>
-                <option value="31">31</option>
-                <option value="41" selected>41</option>
-                <option value="61">61</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <div class="field-lbl">SEED <span class="field-hint">(same seed, same map)</span></div>
-            <div class="inline">
-              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="3" style="flex:1">
-              <button class="cyber-btn" id="btn-seed" type="button" title="random seed"><span class="btn-txt">RANDOM</span></button>
-            </div>
+            <select class="cyber-select" id="preset" style="width:100%" aria-label="Preset map" title="A ready-made map. Its note is under More settings."></select>
           </div>
           <div>
             <div class="field-lbl">SWAMP <span id="swamp-val" class="field-hint">0%</span></div>
-            <input class="cyber-range" id="swamp" type="range" min="0" max="40" step="1" value="0" style="width:100%" aria-label="Percent of open cells that become swamp">
+            <input class="cyber-range" id="swamp" type="range" min="0" max="40" step="1" value="0" style="width:100%" aria-label="Percent of open cells that become swamp" title="Percent of open cells that become swamp when the map is generated.">
           </div>
-          <button class="cyber-btn green" id="btn-gen" type="button" style="width:100%"><span class="btn-txt">⟲ GENERATE</span></button>
-          <div class="field-hint" id="map-note"></div>
+          <button class="cyber-btn green" id="btn-gen" type="button" style="width:100%" title="Generate a new map with the generator, size and seed under More settings."><span class="btn-txt">⟲ GENERATE</span></button>
         </div>
       </div>
 
@@ -158,20 +136,6 @@
             <label><input type="checkbox" value="wastar" checked> Weighted A*</label>
             <label><input type="checkbox" value="bidi" checked> Bidirectional BFS</label>
           </fieldset>
-          <label class="pf-check"><input type="checkbox" id="diag"> Diagonal moves (8 directions, no corner cutting)</label>
-          <div>
-            <div class="field-lbl">HEURISTIC <span class="field-hint">(greedy, A*, weighted A*)</span></div>
-            <select class="cyber-select" id="heur" style="width:100%">
-              <option value="manhattan">Manhattan</option>
-              <option value="euclidean">Euclidean</option>
-              <option value="octile" selected>Octile</option>
-            </select>
-            <div class="field-hint" id="heur-note"></div>
-          </div>
-          <div>
-            <div class="field-lbl">WEIGHT w <span id="weight-val" class="field-hint">2.0</span></div>
-            <input class="cyber-range" id="weight" type="range" min="1" max="3" step="0.1" value="2" style="width:100%" aria-label="Weight w for weighted A*">
-          </div>
         </div>
       </div>
 
@@ -180,16 +144,68 @@
         <div class="stack">
           <div>
             <div class="field-lbl">SPEED <span id="speed-val" class="field-hint"></span></div>
-            <input class="cyber-range" id="speed" type="range" min="0" max="96" step="1" value="36" style="width:100%" aria-label="Expansions per frame">
+            <input class="cyber-range" id="speed" type="range" min="0" max="96" step="1" value="36" style="width:100%" aria-label="Expansions per frame" title="Expansions per frame while racing.">
           </div>
-          <div class="heuristic-card pf-card"><div class="field-hint" id="algo-desc"></div></div>
         </div>
       </div>
 
+      <details class="more-settings">
+        <summary>More settings</summary>
+        <div class="stack">
+          <div class="pf-two">
+            <div>
+              <div class="field-lbl">GENERATOR</div>
+              <select class="cyber-select" id="kind" style="width:100%" title="How GENERATE carves the map.">
+                <option value="recursive">Recursive backtracker</option>
+                <option value="prim">Prim's</option>
+                <option value="scatter">Random scatter</option>
+                <option value="rooms">Rooms</option>
+                <option value="open">Open ground</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-lbl">SIZE</div>
+              <select class="cyber-select" id="size" style="width:100%" title="Map side length in cells.">
+                <option value="21">21</option>
+                <option value="31">31</option>
+                <option value="41" selected>41</option>
+                <option value="61">61</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-hint" id="map-note"></div>
+          <div>
+            <div class="field-lbl">SEED <span class="field-hint">(same seed, same map)</span></div>
+            <div class="inline">
+              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" value="3" style="flex:1" aria-label="Map seed">
+              <button class="cyber-btn" id="btn-seed" type="button" title="random seed"><span class="btn-txt">RANDOM</span></button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">PRESET NOTE</div>
+            <div class="field-hint" id="preset-note"></div>
+          </div>
+          <label class="pf-check" title="Allow the eight neighbours; a diagonal is never cut past a wall corner."><input type="checkbox" id="diag"> Diagonal moves (8 directions, no corner cutting)</label>
+          <div>
+            <div class="field-lbl">HEURISTIC <span class="field-hint">(greedy, A*, weighted A*)</span></div>
+            <select class="cyber-select" id="heur" style="width:100%" title="The estimate of the remaining cost. Octile is admissible on both 4-way and 8-way moves.">
+              <option value="manhattan">Manhattan</option>
+              <option value="euclidean">Euclidean</option>
+              <option value="octile" selected>Octile</option>
+            </select>
+            <div class="field-hint" id="heur-note"></div>
+          </div>
+          <div>
+            <div class="field-lbl">WEIGHT w <span id="weight-val" class="field-hint">2.0</span></div>
+            <input class="cyber-range" id="weight" type="range" min="1" max="3" step="0.1" value="2" style="width:100%" aria-label="Weight w for weighted A*" title="Weighted A* orders cells by g + w·h. A larger w expands fewer cells, and the path may be longer.">
+          </div>
+          <div class="field-hint" id="algo-desc"></div>
+        </div>
+      </details>
+
       <div>
         <div class="section-title pink-ttl">HOVER A CELL</div>
-        <div class="viz-panel pf-explain">
-          <div class="field-hint">Hover a cell on the map or in any panel. Racer cells show g (cost so far), h (estimate to the goal), and f = g + w·h, the value that orders the frontier.</div>
+        <div class="viz-panel pf-explain" title="Racer cells show g (cost so far), h (estimate to the goal) and f = g + w·h, the value that orders the frontier.">
           <div class="field-hint" id="explain-note">Start a race to see how each search scores the cells it reaches.</div>
         </div>
       </div>
@@ -198,53 +214,199 @@
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">Every search keeps a frontier of cells it has found but not yet expanded, and expands one cell at a time. The seven racers differ only in how they choose the next cell. All of them run on the same map, with the same neighbour order and the same tie-breaking, so the counts are directly comparable.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Breadth-first (BFS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Explore in rings: first every cell one step from the start, then every cell two steps away, and so on. The first time you reach the goal is the shortest route in steps.</p>
-      <p>A first-in, first-out queue. It is optimal when every step costs the same. On swamp, it still returns the fewest steps, which can be an expensive path.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Depth-first (DFS)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Pick a road and follow it as far as it goes, then back up to the last fork. It is quick to write and uses little memory, but the first route it finds is rarely the shortest.</p>
-      <p>A last-in, first-out stack. The path is whatever branch reached the goal first, so it is not optimal in general.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Uniform cost (Dijkstra)</h3>
-      <p class="hiw-plain"><b>New to this?</b> Always expand the cell that is cheapest to reach from the start so far. Swamp makes some roads dearer, so it goes around them. It is slow to aim: it spreads evenly in every direction.</p>
-      <p>Priority is g, the cost from the start. Optimal for any positive costs. The lab uses it as the reference: its cost is the optimum every other path is compared with.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy best-first</h3>
-      <p class="hiw-plain"><b>New to this?</b> Head for the goal as if the map were empty: always expand the cell that looks closest to the goal by the heuristic. Very fast, but it can walk into a dead end and back out.</p>
-      <p>Priority is h alone. Not optimal: it ignores the cost already paid and the terrain entirely, so it will walk straight through swamp if that is the shortest-looking way.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>A* (the workhorse)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A* balances the cost already paid (g) against the estimate of what remains (h). Its priority is f = g + h, so it expands the cells that look best overall, and it can still find the cheapest route.</p>
-      <p>Optimal when h never overestimates the true remaining cost. Each cell it expands has f no bigger than the optimal cost, so the search never wanders into routes that are already too expensive.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Weighted A* (w)</h3>
-      <p class="hiw-plain"><b>New to this?</b> A* with a bias toward the goal. Priority is g + w·h. A bigger w is greedier: fewer cells are expanded, and the route may be a little longer.</p>
-      <p>With an admissible h, its path costs at most w times the optimum. The default is <b>w = 2</b>: the bound is loose enough to save many expansions on big mazes, and a route is never more than twice the best one. w = 1 is plain A*.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Bidirectional BFS</h3>
-      <p class="hiw-plain"><b>New to this?</b> Start two searches, one from the start and one from the goal, and stop when their frontiers touch. Two small circles of search can cover far less map than one big one.</p>
-      <p>Each side is a BFS, and the side with the smaller next level expands that whole level first. It finds the fewest steps, like BFS, even with diagonals. It counts steps, not terrain cost, so it is not optimal on swamp. The search keeps going after the first meeting until no shorter route can exist.</p>
-    </article>
+  <p class="hiw-lede">Every search keeps a <b>frontier</b>, the set of cells it has found but not yet expanded, and <b>expands</b> one cell at a time: it takes a cell from the frontier and looks at its neighbours. The seven racers differ only in how they choose the next cell. All of them run on the same map, with the same neighbour order and the same tie-breaking, so their counts can be compared directly.</p>
+
+  <h3 class="hiw-sub">Map, moves and costs</h3>
+  <p class="hiw-note">The map is a grid of cells. A <b>wall</b> cannot be entered. Open ground has terrain value 1, <b>mud</b> has 3 and <b>swamp</b> has 5. Each move goes to one of the neighbours, in a fixed order: up, right, down, left<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L8-L15" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 8–15" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 8 to 15">1</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L27-L28" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 27–28" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 27 to 28">2</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L91-L96" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 91–96" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 91 to 96">3</a>. With <b>diagonal moves</b> on, the four diagonal neighbours are added after them, but only when both orthogonal cells beside the diagonal are open, so a diagonal never squeezes past a wall corner<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L98-L103" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 98–103" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 98 to 103">4</a>.</p>
+  <p class="hiw-note">Entering a cell costs its terrain value, and a diagonal step is longer than an orthogonal one. The cost of a step <span class="math">a \to b</span> is therefore the length of the step times the terrain of the cell entered<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L107-L113" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 107–113" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 107 to 113">5</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/grid.py#L28-L88" target="_blank" rel="noopener" title="pathfind/grid.py, lines 28–88" aria-label="Code on GitHub: pathfind/grid.py, lines 28 to 88">6</a>. The cost of a path is the sum of its steps<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L115-L120" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 115–120" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 115 to 120">7</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L107-L120" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 107–120" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 107 to 120">8</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L8-L12" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 8–12" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 8 to 12">9</a></span>
+    <div class="math math-block">c(a \to b) = \ell_{ab}\; t_b, \qquad \ell_{ab} = \begin{cases} 1 &amp; \text{orthogonal} \\ \sqrt{2} &amp; \text{diagonal} \end{cases}, \qquad C(P) = \sum_{k=1}^{m} c(p_{k-1} \to p_k)</div>
   </div>
+  <p class="hiw-note">Here <span class="math">t_b</span> is the terrain value of the cell <span class="math">b</span> that is entered, and <span class="math">P = (p_0, \dots, p_m)</span> is a path from start to goal. The constant <span class="math">\sqrt{2}</span> is the diagonal length. The search counts a cell's cost once per entry, so a long walk through swamp is expensive even when it is short in steps.</p>
+  <p class="hiw-note"><b>Ties.</b> The frontier is a heap ordered by priority, then by push number, so equal priorities come out in the order they were added<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L282-L328" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 282–328" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 282 to 328">10</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L153-L202" target="_blank" rel="noopener" title="pathfind/search.py, lines 153–202" aria-label="Code on GitHub: pathfind/search.py, lines 153 to 202">11</a>. Together with the fixed neighbour order, this makes every race repeatable for a given map.</p>
+
+  <h3 class="hiw-sub">Breadth-first and depth-first</h3>
+  <p class="hiw-note"><b>Breadth-first search</b> (BFS) explores in rings: first every cell one step from the start, then every cell two steps away, and so on. It keeps a <b>first-in, first-out</b> queue, and it marks a cell as seen when it is first discovered. The first time the goal is reached gives the fewest steps. BFS is optimal when every step costs the same. On a map with swamp it still returns the fewest steps, which can be the expensive route<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L349-L375" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 349–375" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 349 to 375">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L96-L120" target="_blank" rel="noopener" title="pathfind/search.py, lines 96–120" aria-label="Code on GitHub: pathfind/search.py, lines 96 to 120">13</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L349-L375" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 349–375" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 349 to 375">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L96-L120" target="_blank" rel="noopener" title="pathfind/search.py, lines 96–120" aria-label="Code on GitHub: pathfind/search.py, lines 96 to 120">13</a></span>
+    <pre class="pseudo-simple">function BFS(grid, start, goal):
+    queue ← [start];  start is seen
+    while queue is not empty:
+        u ← remove the front of queue
+        expand u
+        if u = goal: return the path from start to goal
+        for each neighbour v of u:
+            if v is not seen:
+                v is seen;  parent(v) ← u
+                add v to the back of queue
+    return no path</pre>
+    <pre class="pseudo-full" hidden>function BFS(grid, start, goal, diagonal):
+    parent(v) ← NOT-SEEN for every cell v;  parent(start) ← ROOT
+    queue ← [start];  head ← 0;  steps ← [];  generated ← 0
+    while head &lt; length of queue:
+        u ← queue[head];  head ← head + 1
+        record step (u, discovered = [])
+        if u = goal: stop
+        for each (v, ℓ) in NEIGHBOURS(grid, u, diagonal), in the fixed order:
+            if parent(v) = NOT-SEEN:
+                parent(v) ← u
+                g(v) ← g(u) + ℓ · t_v
+                add v to the back of queue
+                add (v, g(v)) to the discovered list of this step
+                generated ← generated + 1
+    if the last step expanded goal:
+        path ← CHAIN(parent, goal)                   # start first, goal last
+        return path, cost of path, steps, generated
+    return no path, steps, generated</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> BFS does not need a cost to find the route, so its <span class="math">g</span> is recorded only so the path cost can be reported. A cell is seen when it is discovered, not when it is expanded, so each cell enters the queue at most once. The step records feed the animation and the counters: <span class="math">\text{EXPANDED}</span> is the number of steps and <span class="math">\text{GENERATED}</span> is the number of discoveries.</p>
+  <p class="hiw-note"><b>Depth-first search</b> (DFS) follows one branch as far as it goes, then backs up to the last fork. It uses a <b>last-in, first-out</b> stack. The first route it reaches the goal by is the one it returns. That route is rarely the shortest, so DFS is not optimal in general<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L377-L403" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 377–403" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 377 to 403">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L122-L151" target="_blank" rel="noopener" title="pathfind/search.py, lines 122–151" aria-label="Code on GitHub: pathfind/search.py, lines 122 to 151">15</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L377-L403" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 377–403" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 377 to 403">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L122-L151" target="_blank" rel="noopener" title="pathfind/search.py, lines 122–151" aria-label="Code on GitHub: pathfind/search.py, lines 122 to 151">15</a></span>
+    <pre class="pseudo-simple">function DFS(grid, start, goal):
+    stack ← [start]
+    while stack is not empty:
+        u ← pop the top of stack
+        if u is closed: continue
+        close u;  parent(u) ← the cell it was pushed from
+        expand u
+        if u = goal: return the path from start to goal
+        push each open neighbour of u onto stack</pre>
+    <pre class="pseudo-full" hidden>function DFS(grid, start, goal, diagonal):
+    closed(v) ← false for every cell v;  parent(v) ← ROOT
+    stack ← [(start, ROOT, 0)];  steps ← [];  generated ← 0
+    while stack is not empty:
+        (u, p, gu) ← pop the top of stack
+        if closed(u): continue
+        closed(u) ← true;  parent(u) ← p
+        record step (u, discovered = [])
+        if u = goal: stop
+        for each (v, ℓ) in NEIGHBOURS(grid, u, diagonal), in the fixed order:
+            if not closed(v):
+                gv ← gu + ℓ · t_v
+                push (v, u, gv) onto stack
+                record (v, gv) in the discovered list
+                generated ← generated + 1
+    if the last step expanded goal: return CHAIN(parent, goal), its cost, steps, generated
+    return no path, steps, generated</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> A cell can be pushed several times, once from each neighbour that reaches it. The <span class="math">\text{closed}</span> check at pop discards the copies. The parent is set when a cell is expanded, so the path follows the branch that actually reached the goal. The stack can hold up to one entry per edge, which is the memory cost in the table below.</p>
+
+  <h3 class="hiw-sub">Best-first: Dijkstra, greedy, A* and weighted A*</h3>
+  <p class="hiw-note">Four of the racers share one loop. Each cell is given a <b>priority</b>, and the frontier pops the lowest first. The cost so far is <span class="math">g</span>, and the <b>heuristic</b> <span class="math">h</span> is an estimate of the remaining cost to the goal. The priority decides the algorithm:</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L406-L418" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 406–418" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 406 to 418">16</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L153-L170" target="_blank" rel="noopener" title="pathfind/search.py, lines 153–170" aria-label="Code on GitHub: pathfind/search.py, lines 153 to 170">17</a></span>
+    <div class="math math-block">f_{\text{UCS}} = g, \qquad f_{\text{greedy}} = h, \qquad f_{\text{A*}} = g + h, \qquad f_{w\text{A*}} = g + w\,h</div>
+  </div>
+  <p class="hiw-note"><b>Uniform cost</b> (Dijkstra's algorithm) orders by <span class="math">g</span> alone, so it expands the cell that is cheapest to reach from the start. It is optimal for any positive costs, and the lab uses it as the reference: its cost is the optimum every other path is compared with. <b>Greedy best-first</b> orders by <span class="math">h</span> alone, so it heads for the goal as if the map were empty. It is fast, but it ignores the cost already paid and the terrain, so it can walk through swamp. <b>A*</b> orders by <span class="math">g + h</span>, the cost paid plus the estimate of what remains<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L449-L459" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 449–459" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 449 to 459">18</a>.</p>
+  <p class="hiw-note">Every best-first search keeps the best <span class="math">g</span> found so far for each cell. A neighbour is queued only when the route through the current cell is cheaper than any route found before, and then its parent is updated<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L423-L442" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 423–442" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 423 to 442">19</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L181-L200" target="_blank" rel="noopener" title="pathfind/search.py, lines 181–200" aria-label="Code on GitHub: pathfind/search.py, lines 181 to 200">20</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L406-L447" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 406–447" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 406 to 447">21</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L153-L202" target="_blank" rel="noopener" title="pathfind/search.py, lines 153–202" aria-label="Code on GitHub: pathfind/search.py, lines 153 to 202">11</a></span>
+    <pre class="pseudo-simple">function BEST-FIRST(grid, start, goal, priority):
+    g(start) ← 0;  push start with priority(start)
+    while the frontier is not empty:
+        u ← pop the cell with the lowest priority
+        if u is closed: continue
+        close u;  expand u
+        if u = goal: return the path from start to goal
+        for each open neighbour v of u:
+            if g(u) + c(u → v) &lt; g(v):
+                g(v) ← g(u) + c(u → v);  parent(v) ← u
+                push v with priority(v)</pre>
+    <pre class="pseudo-full" hidden>function BEST-FIRST(grid, start, goal, algo, diagonal, heur, w):
+    (gx, gy) ← coordinates of goal
+    priority(v, gv) ← gv if algo is uniform cost
+                      h(v) if algo is greedy
+                      gv + w · h(v) otherwise          # A* when w = 1
+    where h(v) = HEURISTIC(heur, v, goal)
+    g(v) ← infinity for every cell v;  g(start) ← 0
+    closed(v) ← false for every cell v;  parent(v) ← ROOT
+    heap ← empty;  seq ← 0
+    push (priority(start, 0), seq, start)          # ties: lower push number first
+    steps ← [];  generated ← 0
+    while heap is not empty:
+        (p, s, u) ← pop the minimum of the heap
+        if closed(u): continue
+        closed(u) ← true
+        record step (u, discovered = [])
+        if u = goal: stop
+        for each (v, ℓ) in NEIGHBOURS(grid, u, diagonal), in the fixed order:
+            if closed(v): continue
+            ng ← g(u) + ℓ · t_v
+            if ng &lt; g(v):
+                g(v) ← ng;  parent(v) ← u
+                seq ← seq + 1
+                push (priority(v, ng), seq, v)
+                record (v, ng) in the discovered list
+                generated ← generated + 1
+    if the last step expanded goal: return CHAIN(parent, goal), its cost, steps, generated
+    return no path, steps, generated</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> The push number is the second key of the heap, so a cell pushed earlier pops earlier when priorities tie. A cell can be pushed more than once when a cheaper route is found; the older entry is skipped at pop time because its cell is already closed. The heuristic is only read by greedy, A* and weighted A*. Dijkstra's priority ignores it, so its <span class="math">h</span> is not used at all.</p>
 
   <h3 class="hiw-sub">Heuristics: admissible and consistent</h3>
-  <p class="hiw-note"><b>Admissible</b> means h never overestimates the true remaining cost; that is what makes A* optimal. <b>Consistent</b> (monotone) means h(n) ≤ cost(n, n′) + h(n′) for every step, so a cell is never reopened once expanded. Every terrain cost is at least 1, so the estimates below use a unit cost per cell.</p>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>Formula</th><th>4-way moves</th><th>8-way moves</th></tr></thead><tbody>
-    <tr><td>Manhattan</td><td>dx + dy</td><td>admissible, consistent</td><td>overestimates a diagonal: <b>not admissible</b>, so A* can return a longer path</td></tr>
-    <tr><td>Euclidean</td><td>√(dx² + dy²)</td><td>admissible, consistent (weaker than Manhattan)</td><td>admissible, consistent (weaker)</td></tr>
-    <tr><td>Octile</td><td>max(dx, dy) + (√2 − 1)·min(dx, dy)</td><td>admissible, consistent</td><td>exact on empty ground, <b>admissible and consistent</b></td></tr>
+  <p class="hiw-note"><b>Admissible</b> means <span class="math">h</span> never overestimates the true remaining cost, and that is what makes A* return an optimal path. <b>Consistent</b> (monotone) means <span class="math">h(a) \le c(a \to b) + h(b)</span> for every step, so a cell is never reopened once expanded. Every terrain value is at least 1, so each estimate below uses cost 1 per cell, and a diagonal step costs <span class="math">\sqrt{2}</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L123-L134" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 123–134" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 123 to 134">22</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/grid.py#L89-L100" target="_blank" rel="noopener" title="pathfind/grid.py, lines 89–100" aria-label="Code on GitHub: pathfind/grid.py, lines 89 to 100">23</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L123-L134" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 123–134" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 123 to 134">22</a></span>
+    <div class="math math-block">h_{\text{Manhattan}} = |dx| + |dy|, \qquad h_{\text{Euclid}} = \sqrt{dx^2 + dy^2}, \qquad h_{\text{octile}} = \max(|dx|, |dy|) + (\sqrt{2} - 1)\min(|dx|, |dy|)</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">dx</span> and <span class="math">dy</span> are the distances from the cell to the goal along each axis. Octile is exact on empty ground with eight-way moves, because it counts the diagonal steps and then the straight ones.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>4-way moves</th><th>8-way moves</th></tr></thead><tbody>
+    <tr><td>Manhattan</td><td>admissible, consistent</td><td><b>not admissible</b>: a diagonal step costs √2, but Manhattan counts it as 2, so A* can return a longer path</td></tr>
+    <tr><td>Euclidean</td><td>admissible, consistent (weaker than Manhattan)</td><td>admissible, consistent (weaker)</td></tr>
+    <tr><td>Octile</td><td>admissible, consistent</td><td>exact on empty ground, <b>admissible and consistent</b></td></tr>
   </tbody></table></div>
-  <p class="hiw-note">The lab uses octile by default. With diagonal moves off, Manhattan is the tightest admissible choice; with diagonals on, octile is. Manhattan with diagonals still runs, and the leaderboard marks any path it makes suboptimal.</p>
+  <p class="hiw-note">The lab uses octile by default. With diagonal moves off, Manhattan is the tightest admissible choice, and with diagonals on, octile is. Manhattan with diagonals still runs, and the leaderboard marks a path it makes suboptimal<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind.js#L686-L692" target="_blank" rel="noopener" title="web/js/pathfind.js, lines 686–692" aria-label="Code on GitHub: web/js/pathfind.js, lines 686 to 692">24</a>.</p>
+
+  <h3 class="hiw-sub">Weighted A*</h3>
+  <p class="hiw-note"><b>Weighted A*</b> uses <span class="math">f = g + w\,h</span> with <span class="math">w \ge 1</span>. A larger <span class="math">w</span> pulls the search toward the goal, so fewer cells are expanded, but the path may be longer. With an admissible heuristic, the path cost is at most <span class="math">w</span> times the optimum. The default is <span class="math">w = 2</span>, so a route is never more than twice the best one, and <span class="math">w = 1</span> is plain A*<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L461-L464" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 461–464" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 461 to 464">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L117-L127" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 117–127" aria-label="Code on GitHub: tests/test_pathfind.py, lines 117 to 127">26</a>.</p>
+
+  <h3 class="hiw-sub">Bidirectional BFS</h3>
+  <p class="hiw-note"><b>Bidirectional BFS</b> runs two breadth-first searches, one from the start and one from the goal, and stops when they meet. Each side grows one whole level at a time, and the side with the smaller next level goes first. Each side only has to cover about half the route, so the two searches together can reach the meeting point with fewer expansions than one search needs for the whole route. The race shows this on a given map<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L466-L469" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 466–469" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 466 to 469">27</a>.</p>
+  <p class="hiw-note">The first meeting is not always the shortest, so each meeting is scored by its total steps, <span class="math">\text{depth}_{\text{start}}(v) + \text{depth}_{\text{goal}}(v)</span>, and the search keeps going until the best total is no more than the two completed levels reach. Like BFS, it counts steps rather than terrain cost, so it can be optimal in steps and still pay more on swamp<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L470-L523" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 470–523" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 470 to 523">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L228-L288" target="_blank" rel="noopener" title="pathfind/search.py, lines 228–288" aria-label="Code on GitHub: pathfind/search.py, lines 228 to 288">29</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L470-L523" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 470–523" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 470 to 523">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py#L228-L288" target="_blank" rel="noopener" title="pathfind/search.py, lines 228–288" aria-label="Code on GitHub: pathfind/search.py, lines 228 to 288">29</a></span>
+    <pre class="pseudo-simple">function BIDIRECTIONAL-BFS(grid, start, goal):
+    grow a BFS from start (forward) and from goal (backward)
+    always expand the side with the smaller next level, one whole level at a time
+    when a cell is seen by both sides, record the total steps through it
+    stop when the best total is no more than the levels both sides have finished
+    return the path through the best meeting cell</pre>
+    <pre class="pseudo-full" hidden>function BIDIRECTIONAL-BFS(grid, start, goal, diagonal):
+    if start = goal: return [start]
+    parent₀(v) ← NOT-SEEN;  parent₁(v) ← NOT-SEEN;  parent₀(start) ← ROOT;  parent₁(goal) ← ROOT
+    depth₀(v), depth₁(v) ← 0;  done ← [0, 0];  best ← −1;  meet ← −1
+    while a queue still has cells:
+        if best ≥ 0 and best ≤ done₀ + done₁: stop
+        waiting₀ ← cells waiting in queue 0;  waiting₁ ← cells waiting in queue 1
+        side ← 0 if waiting₀ &gt; 0 and (waiting₁ = 0 or waiting₀ ≤ waiting₁), else 1
+        levelEnd ← the length of queue[side]
+        while the head of queue[side] &lt; levelEnd:
+            u ← next cell of queue[side];  record step (u, side)
+            for each (v, ℓ) in NEIGHBOURS(grid, u, diagonal), in the fixed order:
+                if parent[side](v) is not NOT-SEEN: continue
+                parent[side](v) ← u;  depth[side](v) ← depth[side](u) + 1
+                add v to queue[side]
+                if parent[1 − side](v) is not NOT-SEEN:
+                    total ← depth[side](v) + depth[1 − side](v)
+                    if best &lt; 0 or total &lt; best:  best ← total;  meet ← v
+        done[side] ← done[side] + 1
+    if best &lt; 0: return no path
+    forward ← CHAIN(parent₀, meet)                  # start ... meet
+    backward ← reverse of CHAIN(parent₁, meet)      # meet ... goal
+    return forward followed by backward without its first cell</pre>
+  </div>
+  <p class="hiw-note"><b>Ideas in the full version.</b> The two sides take turns by level, not by cell, so when a level is finished both sides have exactly the same completed depth. The cost of a step is charged to the cell that is entered, which depends on the direction the step is walked, so the backward side charges the cell it came from. The stop test is what keeps the path short: a shorter path would have a cell that both sides already found.</p>
+
+  <h3 class="hiw-sub">Mazes and maps</h3>
+  <p class="hiw-note">The generators build a map of walls and open cells from a seed. The <b>lattice</b> generators (recursive backtracker and Prim's) work on the odd coordinates, where each cell is an open junction. A passage between two junctions is carved by opening the wall cell halfway between them, so every junction is joined to the start by exactly one route. The start is the junction at (1, 1), and the goal is the last junction in the bottom-right corner<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L138-L143" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 138–143" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 138 to 143">30</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/mazes.py#L67-L73" target="_blank" rel="noopener" title="pathfind/mazes.py, lines 67–73" aria-label="Code on GitHub: pathfind/mazes.py, lines 67 to 73">31</a>.</p>
+  <div class="math-fig">
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L145-L169" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 145–169" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 145 to 169">32</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/mazes.py#L74-L97" target="_blank" rel="noopener" title="pathfind/mazes.py, lines 74–97" aria-label="Code on GitHub: pathfind/mazes.py, lines 74 to 97">33</a></span>
+    <div class="math math-block">\text{carve}(x, y \to x', y') : \quad \text{open}\bigl(\tfrac{x + x'}{2},\ \tfrac{y + y'}{2}\bigr) \ \text{and}\ \text{open}(x', y'), \qquad (x', y') = (x, y) + (\pm 2, 0) \ \text{or}\ (0, \pm 2)</div>
+  </div>
+  <p class="hiw-note">Here <span class="math">(x, y)</span> is a junction and <span class="math">(x', y')</span> is a junction two cells away. The recursive backtracker carves into a random unvisited junction and backs up when none is left, which gives long winding corridors. Prim's algorithm grows the same kind of tree from a random frontier wall, which gives many short branches. Both are perfect mazes: exactly one route joins any two cells<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L171-L195" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 171–195" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 171 to 195">34</a>.</p>
+  <p class="hiw-note">The <b>scatter</b> generator opens each interior cell with probability 72% (walls at 28%), so a route exists only by luck, and the lab reports when none does. <b>Rooms</b> places rectangles and joins them with L-shaped corridors. <b>Open ground</b> has no walls, so only the terrain costs and the walls you draw matter. <b>Swamp</b> from the slider turns each open cell into swamp with the chosen percent chance, and the start and goal stay open<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L197-L205" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 197–205" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 197 to 205">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L207-L245" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 207–245" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 207 to 245">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js#L248-L280" target="_blank" rel="noopener" title="web/js/pathfind-core.js, lines 248–280" aria-label="Code on GitHub: web/js/pathfind-core.js, lines 248 to 280">37</a>.</p>
 
   <h3 class="hiw-sub">Complexity and what to watch</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Algorithm</th><th>Time (cells)</th><th>Memory</th><th>Optimal on this map?</th></tr></thead><tbody>
@@ -256,15 +418,18 @@
     <tr><td>Weighted A* (w)</td><td>fewer expansions as w grows</td><td>O(V)</td><td>within w times the optimum</td></tr>
     <tr><td>Bidirectional BFS</td><td>about 2·b^(d/2) instead of b^d</td><td>O(V)</td><td>fewest steps only</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">V is the number of cells, E the number of moves, b the branching factor (4, or 8 with diagonals) and d the length of the route in steps. The lab counts expansions and generated cells, which is what these bounds count.</p>
+  <p class="hiw-note">V is the number of cells, E the number of moves, b the branching factor (4, or 8 with diagonals) and d the length of the route in steps. The lab counts expansions and generated cells, which is what these bounds count. The race compares the searches on one map; it does not measure the bounds directly.</p>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/search.py">pathfind/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/grid.py">pathfind/grid.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/mazes.py">pathfind/mazes.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/pathfind/race.py">pathfind/race.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/pathfind-core.js">web/js/pathfind-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py">tests/test_pathfind.py</a></p>
+  <h3 class="hiw-sub">Checks in the test suite</h3>
+  <p class="hiw-note">Uniform cost and A* match a brute-force reference on random maps, with and without diagonals<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L81-L98" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 81–98" aria-label="Code on GitHub: tests/test_pathfind.py, lines 81 to 98">38</a>. BFS is optimal on unit-cost grids<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L99-L116" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 99–116" aria-label="Code on GitHub: tests/test_pathfind.py, lines 99 to 116">39</a>. Weighted A* stays within its bound<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L117-L127" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 117–127" aria-label="Code on GitHub: tests/test_pathfind.py, lines 117 to 127">26</a>. Bidirectional BFS is step-optimal like BFS, and it finishes the level it is on before stopping<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L152-L181" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 152–181" aria-label="Code on GitHub: tests/test_pathfind.py, lines 152 to 181">40</a>. Every search agrees on which cells are reachable<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind.py#L129-L143" target="_blank" rel="noopener" title="tests/test_pathfind.py, lines 129–143" aria-label="Code on GitHub: tests/test_pathfind.py, lines 129 to 143">41</a>. The browser core and the Python package agree on fixed seeds<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_pathfind_parity.py#L68-L85" target="_blank" rel="noopener" title="tests/test_pathfind_parity.py, lines 68–85" aria-label="Code on GitHub: tests/test_pathfind_parity.py, lines 68 to 85">42</a>.</p>
 </section>
-</div>
+  </div>
 </div>
 
 <div class="pf-tip" id="pf-tip" role="status" aria-live="off" hidden></div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/pathfind.js"></script>
 </body>

@@ -228,7 +228,7 @@ function updateControls() {
   if (!state.meta) return;
   const algo = $('algorithm').value;
   const info = state.meta.algorithms.find((a) => a.name === algo);
-  $('algo-desc').textContent = info.description;
+  $('algorithm').title = info.description;
   $('heuristic-wrap').classList.toggle('hidden', !info.informed);
   $('weight-wrap').classList.toggle('hidden', algo !== 'wastar');
   $('bwas-wrap').classList.toggle('hidden', algo !== 'bwas');
@@ -247,7 +247,7 @@ function updateControls() {
   sel.value = choices.includes(previous) ? previous
     : (algo === 'bwas' && choices.includes('neural') ? 'neural' : choices[0]);
   const h = state.meta.heuristics.find((x) => x.name === sel.value);
-  $('heur-desc').textContent = info.informed && h ? h.description : '';
+  $('heuristic').title = info.informed && h ? h.description : '';
 }
 
 function request() {
@@ -299,6 +299,18 @@ function setBoard(b, why) {
   $('cmp-body').innerHTML = '';
   $('cmp-status').textContent = '';
   if (why) log(`// ${why}: ${b.join(',')}`);
+}
+
+// Arrow keys move the blank in that direction, the same moves the solution list shows.
+function arrowMove(e) {
+  const action = { ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right' }[e.key];
+  if (!action || ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  const n = state.n, blank = state.board.indexOf(0);
+  const [dr, dc] = OFFSETS[action];
+  const r = Math.floor(blank / n) + dr, c = (blank % n) + dc;
+  if (r < 0 || r >= n || c < 0 || c >= n) return;
+  e.preventDefault();
+  playerMove(r * n + c);
 }
 
 function playerMove(index) {
@@ -607,6 +619,7 @@ function wire() {
   $('algorithm').onchange = updateControls;
   $('heuristic').onchange = updateControls;
   window.addEventListener('resize', queueDraw);
+  window.addEventListener('keydown', arrowMove);
 }
 
 async function init() {

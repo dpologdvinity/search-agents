@@ -13,6 +13,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<style>
+  /* Keyboard focus on a square you can move to, drawn in the same yellow as a focused piece. Mouse clicks do not show it. */
+  .ck-cell.target:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--yellow), 0 0 18px var(--yellow); }
+  /* Watch-mode score cells: a tighter padding and line height, so a wrapped label such as "White wins" does not make every cell tall. */
+  #watch-panel .prune-row { padding: 0.4rem; line-height: 1.2; }
+</style>
 </head>
 <body>
 
@@ -30,15 +37,13 @@
   <div class="proj-header">
     <div class="proj-header-left">
       <a class="back-btn" href="index.html">← MAIN</a>
-      <div class="proj-pg-tag">05 // ADVERSARIAL SEARCH · ALPHA-BETA PRUNING</div>
+      <div class="proj-pg-tag">05 // ADVERSARIAL SEARCH</div>
       <h1 class="proj-pg-title neon-pink glitch" data-text="CHECKERS">CHECKERS</h1>
-      <div class="proj-pg-sub">It assumes you always find your best reply, searches every line it cannot rule out, and prunes the rest.</div>
-      <div class="proj-pg-sub" id="pg-algo" style="color:var(--cyan)"></div>
+      <div class="proj-pg-sub">Play an agent, or watch two agents play each other on an 8×8, 10×10 or 12×12 board.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
         <span class="stat-chip pink">YOU <span class="val" id="chip-you">RED</span></span>
-        <span class="stat-chip">BOARD <span class="val" id="chip-size">8×8</span></span>
         <span class="stat-chip">PIECES <span class="val" id="chip-pieces">12 – 12</span></span>
         <span class="stat-chip green">MOVE <span class="val" id="chip-move">1</span></span>
         <span class="stat-chip">STATUS <span class="val" id="chip-status">YOUR TURN</span></span>
@@ -46,63 +51,55 @@
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>The goal is to capture every opposing piece, or to leave the opponent with no legal move.</p>
+    <p style="margin-top:0.5rem">Click one of your pieces, then a glowing square. Red moves first.</p>
+    <p style="margin-top:0.5rem">To watch two agents play each other, choose AI vs AI in MODE.</p>
+  </section>
+
   <div class="proj-body">
     <div class="proj-game-col">
       <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
-        <div id="ck" class="ck-board" role="grid" aria-label="Checkers board"></div>
+        <div id="ck" class="ck-board" role="group" aria-label="Checkers board"></div>
         <div class="field-hint" id="algo-line" style="text-align:center;color:var(--cyan)"></div>
-        <div class="field-hint" id="ck-hint">Click one of your pieces, then a glowing square. Captures are mandatory.</div>
+        <div class="field-hint" id="ck-hint">Captures are mandatory.</div>
         <div class="inline" style="justify-content:center">
-          <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW GAME</span></button>
-          <button class="cyber-btn" id="btn-undo" type="button"><span class="btn-txt">◀ UNDO</span></button>
-          <button class="cyber-btn green" id="btn-hint" type="button"><span class="btn-txt">✦ HINT</span></button>
-          <button class="cyber-btn" id="btn-pause" type="button" hidden><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn" id="btn-step" type="button" hidden><span class="btn-txt">▶ STEP</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new game with the settings in the side panel"><span class="btn-txt">↺ NEW GAME</span></button>
+          <button class="cyber-btn" id="btn-undo" type="button" title="Take back your last move and the agent's reply"><span class="btn-txt">◀ UNDO</span></button>
+          <button class="cyber-btn green" id="btn-hint" type="button" title="Ask alpha-beta search (Normal strength) for its move without playing it"><span class="btn-txt">✦ HINT</span></button>
+          <button class="cyber-btn" id="btn-pause" type="button" hidden title="Pause the watched game after the current move. Press again to resume."><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn" id="btn-step" type="button" hidden title="Play one move while the watched game is paused."><span class="btn-txt">▶ STEP</span></button>
         </div>
       </div>
 
       <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">WHAT THE SEARCH SAW</div>
+        <div class="section-title pink-ttl" title="Scoring: at the edge of a search, a heuristic evaluation counts material, advancement, the home row and the centre.">WHAT THE SEARCH SAW</div>
         <div class="viz-panel">
           <div class="viz-title" id="an-title">Make a move to see the agent think.</div>
           <div class="prune-meter" id="prune" hidden>
             <div class="prune-row"><span id="pm-nodes-lbl">Positions searched</span><b id="pm-nodes">0</b></div>
-            <div class="prune-row"><span id="pm-cuts-lbl">Branches cut by alpha-beta</span><b id="pm-cuts">0</b></div>
+            <div class="prune-row" title="Pruning: alpha-beta stops examining a move once one of your replies shows it is worse than an option already found."><span id="pm-cuts-lbl">Branches cut by alpha-beta</span><b id="pm-cuts">0</b></div>
             <div class="prune-row"><span>Looked ahead</span><b id="pm-depth">0</b></div>
           </div>
-          <ol class="ck-root" id="an-root"></ol>
+          <ol class="ck-root" id="an-root" title="Best reply: for each move the agent assumes you answer with the reply that is worst for it, then picks the move whose worst case is best."></ol>
           <div class="field-hint" id="an-note"></div>
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">GAME LOG</div>
+      <details class="log-fold" id="log-fold">
+        <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
       <div>
         <div class="section-title pink-ttl">MODE</div>
-        <div class="stack">
-          <select class="cyber-select" id="mode" style="width:100%">
-            <option value="human">You vs AI</option>
-            <option value="watch">AI vs AI (watch)</option>
-          </select>
-          <div>
-            <div class="field-lbl">BOARD</div>
-            <select class="cyber-select" id="size" style="width:100%">
-              <option value="8" selected>8 × 8 (standard, 12 men each)</option>
-              <option value="10">10 × 10 (20 men each)</option>
-              <option value="12">12 × 12 (30 men each)</option>
-            </select>
-          </div>
-          <label class="toggle-wrap" for="forced">
-            <span class="toggle"><input type="checkbox" id="forced" checked><span class="toggle-slider"></span></span>
-            <span class="toggle-label">Captures are forced</span>
-          </label>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="rule-desc"></div></div>
-        </div>
+        <select class="cyber-select" id="mode" style="width:100%" title="You play the opponent, or watch two agents play each other.">
+          <option value="human">You vs AI</option>
+          <option value="watch">AI vs AI (watch)</option>
+        </select>
       </div>
 
       <div id="human-panel">
@@ -110,22 +107,21 @@
         <div class="stack">
           <div>
             <div class="field-lbl">YOU PLAY</div>
-            <select class="cyber-select" id="side" style="width:100%">
+            <select class="cyber-select" id="side" style="width:100%" title="The colour you play. Red moves first.">
               <option value="1">Red (moves first, bottom)</option>
               <option value="-1">White (moves second, top)</option>
             </select>
           </div>
           <div>
             <div class="field-lbl">OPPONENT</div>
-            <select class="cyber-select" id="agent" style="width:100%"></select>
+            <select class="cyber-select" id="agent" style="width:100%" title="The agent that plays against you. Each option names its method."></select>
           </div>
           <div>
             <div class="field-lbl">STRENGTH</div>
-            <select class="cyber-select" id="level" style="width:100%">
+            <select class="cyber-select" id="level" style="width:100%" title="How much the agent may think: Fast, Normal or Strong.">
               <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
             </select>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem"><div class="field-hint" id="agent-desc"></div></div>
         </div>
       </div>
 
@@ -135,8 +131,8 @@
           <div>
             <div class="field-lbl">RED</div>
             <div class="inline">
-              <select class="cyber-select" id="red-agent" style="flex:1 1 9rem"></select>
-              <select class="cyber-select" id="red-level" style="flex:0 0 6rem" aria-label="Red strength">
+              <select class="cyber-select" id="red-agent" style="flex:1 1 9rem" aria-label="Red agent" title="The agent that plays Red."></select>
+              <select class="cyber-select" id="red-level" style="flex:0 0 6rem" aria-label="Red strength" title="How much Red's agent may think.">
                 <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
               </select>
             </div>
@@ -144,22 +140,13 @@
           <div>
             <div class="field-lbl">WHITE</div>
             <div class="inline">
-              <select class="cyber-select" id="white-agent" style="flex:1 1 9rem"></select>
-              <select class="cyber-select" id="white-level" style="flex:0 0 6rem" aria-label="White strength">
+              <select class="cyber-select" id="white-agent" style="flex:1 1 9rem" aria-label="White agent" title="The agent that plays White."></select>
+              <select class="cyber-select" id="white-level" style="flex:0 0 6rem" aria-label="White strength" title="How much White's agent may think.">
                 <option value="1">Fast</option><option value="2" selected>Normal</option><option value="3">Strong</option>
               </select>
             </div>
           </div>
           <div>
-            <div class="field-lbl">DELAY BETWEEN MOVES: <span id="speed-val">600 ms</span></div>
-            <input type="range" class="cyber-range" id="speed" min="0" max="1500" step="50" value="600" aria-label="Delay between moves">
-            <div class="cyber-range-label"><span>fast</span><span>slow</span></div>
-          </div>
-          <label class="toggle-wrap" for="auto">
-            <span class="toggle"><input type="checkbox" id="auto" checked><span class="toggle-slider"></span></span>
-            <span class="toggle-label">Auto-restart after each game</span>
-          </label>
-          <div class="heuristic-card" style="padding:0.7rem">
             <div class="field-lbl">SCORE</div>
             <div class="prune-meter" style="grid-template-columns:repeat(4,1fr);margin:0">
               <div class="prune-row"><span>Red wins</span><b id="score-red">0</b></div>
@@ -167,87 +154,406 @@
               <div class="prune-row"><span>Draws</span><b id="score-draw">0</b></div>
               <div class="prune-row"><span>Games</span><b id="score-games">0</b></div>
             </div>
-            <div class="inline" style="margin-top:0.6rem"><button class="cyber-btn" id="btn-reset-score" type="button"><span class="btn-txt">RESET SCORE</span></button></div>
+            <div class="inline" style="margin-top:0.6rem"><button class="cyber-btn" id="btn-reset-score" type="button" title="Set the Red, White, draw and game counts back to zero."><span class="btn-txt">RESET SCORE</span></button></div>
           </div>
         </div>
       </div>
 
-      <div>
-        <div class="section-title green-ttl">HOW IT DECIDES</div>
+      <details class="more-settings">
+        <summary>More settings</summary>
         <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">YOUR BEST REPLY</div>
-            <div class="field-hint">For each move it considers, it assumes you answer with the reply that hurts it most, then picks the move whose worst case is best.</div>
+          <div>
+            <div class="field-lbl">BOARD</div>
+            <select class="cyber-select" id="size" style="width:100%" title="Board size. Larger boards have more men and more moves to search.">
+              <option value="8" selected>8 × 8 (standard, 12 men each)</option>
+              <option value="10">10 × 10 (20 men each)</option>
+              <option value="12">12 × 12 (30 men each)</option>
+            </select>
           </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">PRUNING</div>
-            <div class="field-hint">As soon as one of your replies shows a move is worse than an option it already has, it stops examining that move. Same answer as plain minimax, a fraction of the work.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--yellow);margin-bottom:0.3rem">SCORING</div>
-            <div class="field-hint">At the edge of its search it counts material (kings worth more), how far men have advanced, the home row, and the centre.</div>
+          <label class="toggle-wrap" for="forced" title="On: a capture must be played whenever one is available. Off: a simple move is legal even when a capture exists.">
+            <span class="toggle"><input type="checkbox" id="forced" checked><span class="toggle-slider"></span></span>
+            <span class="toggle-label">Captures are forced</span>
+          </label>
+          <div id="watch-pace">
+            <div class="field-lbl">DELAY BETWEEN MOVES: <span id="speed-val">600 ms</span></div>
+            <input type="range" class="cyber-range" id="speed" title="Pause between moves in a watched game." min="0" max="1500" step="50" value="600" aria-label="Delay between moves">
+            <div class="cyber-range-label"><span>fast</span><span>slow</span></div>
+            <label class="toggle-wrap" for="auto" title="Start a new game automatically when one ends." style="margin-top:0.6rem">
+              <span class="toggle"><input type="checkbox" id="auto" checked><span class="toggle-slider"></span></span>
+              <span class="toggle-label">Auto-restart after each game</span>
+            </label>
           </div>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">The checkers agents look ahead through the game tree and score the positions at the end of a line with a hand-written evaluation, or, for Monte Carlo tree search, with the results of random games. The page offers five agents on three board sizes, with forced or optional captures. You can play any agent, or watch two of them play each other, each with its own strength.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Alpha-beta search</h3>
-      <p class="hiw-plain"><b>New to this?</b> While planning, once you find a line that is already worse than an option you have, stop looking at that line. You never needed to know how bad it was, so the same planning finishes sooner.</p>
-      <p>Negamax with alpha-beta pruning, searched one ply deeper each round (iterative deepening) until the time budget runs out. The best move from the deepest finished round is played. Each round tries the previous best move first, and a transposition table reuses results for positions reached by different move orders.</p>
-      <ul><li>Time budget 0.2 s, 0.8 s or 2.0 s at Fast, Normal and Strong, on every board size</li><li>When a capture is pending, the search keeps going past its depth limit until the captures run out</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Plain minimax</h3>
-      <p class="hiw-plain"><b>New to this?</b> Plan a fixed number of moves for both sides, assume each side makes its best reply, score the position at the end, and pick the first move that leads to the best result. It is simple, but every extra move of planning multiplies the work.</p>
-      <p>Negamax with no pruning, searching to a fixed depth. At the same depth, alpha-beta returns the same score with less work.</p>
-      <ul><li>Depth depends on the board and the capture rule: 2 to 5 plies with forced captures on 8x8, fewer on bigger boards</li><li>Fixed depth because it has no time limit: without pruning, each extra ply multiplies the work by the number of moves, and optional captures add many more</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Monte Carlo tree search</h3>
-      <p class="hiw-plain"><b>New to this?</b> Instead of scoring every line, it plays many quick random games from the position and keeps track of which first moves win the most of them. It spends more games on the moves that look best, and it needs no hand-written evaluation to decide between them.</p>
-      <p>UCT: each iteration walks down the tree by the upper confidence bound (average result plus a bonus for moves tried rarely), adds one new position, plays a rollout, and passes the result back up. Rollouts stop after 40 plies and are scored by the same evaluation as the tree searches. They prefer captures when one exists. The seed is fixed for each position, so the same position always gets the same answer.</p>
-      <ul><li>Iterations per move: 300, 1,000 or 2,000 on 8x8 at Fast, Normal and Strong; fewer on the bigger boards</li><li>Reports a win rate for each move, not a score</li></ul>
-    </article>
-    <article class="hiw-card">
-      <h3>Greedy and random</h3>
-      <p class="hiw-plain"><b>New to this?</b> Greedy takes the move that looks best right after it, without thinking about your reply. Random picks any legal move. They are the baselines: a search agent should beat both, and greedy shows what a one-move look ahead is worth.</p>
-      <p>Greedy scores each legal move by the evaluation after it, and scores a move that leaves you no legal reply as a win. Random chooses uniformly from the legal moves, from a generator with a fixed seed.</p>
-      <ul><li>Neither changes with the strength setting</li><li>Greedy is deterministic; random repeats its choices for the same position</li></ul>
-    </article>
-  </div>
+  <p class="hiw-lede">The checkers agents search the <b>game tree</b>: the current position is the root, each legal move is a branch, and each reply branches again. A search scores the positions at the bottom of the tree with a hand-written <b>heuristic evaluation</b>, a fast estimate of how good a position is for the side to move. Five agents choose moves from the game tree or at random (alpha-beta search, plain minimax, Monte Carlo tree search, greedy and random). A sixth, chance, samples a move from fixed weights with no search. Each agent can be played against, or watched in a match against another agent.</p>
+
   <h3 class="hiw-sub">Rules and board sizes</h3>
-  <p class="hiw-note">Every board uses the same American rules. Men move and capture forward only, kings move and capture one step in any direction (no flying kings), a man that reaches the far row is crowned and its move ends there, and a side with no legal move loses. Boards are 8×8 (12 men each), 10×10 (20 men each) and 12×12 (30 men each); a game is drawn after 80 plies with no capture and no man moving.</p>
-  <p class="hiw-note"><b>Forced or optional captures.</b> With forced captures (the default, standard rules) you must capture when you can. With optional captures you may make a simple move even when a capture is available. Either way, a capture chain is played to its end: once a piece starts jumping, it must keep jumping while it can, so no move stops partway through a chain. Where a player declines to capture, the search scores the position as it stands rather than in the middle of a capture.</p>
+  <p class="hiw-note">The rules are American checkers on three board sizes: 8×8 with 12 men per side, 10×10 with 20 and 12×12 with 30. Each side starts with three, four or five rows of men (three on 8×8, four on 10×10, five on 12×12), and Red starts at the bottom and moves first. The board is stored as its dark squares only, numbered row by row from the top<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py#L3-L4" target="_blank" rel="noopener" title="checkers/board.py, lines 3–4" aria-label="Code on GitHub: checkers/board.py, lines 3 to 4">1</a>. Men move and capture forward only. Kings move and capture one step in any direction, with no flying kings. A man that reaches the far row is crowned, and crowning ends its move. A side with no legal move loses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py#L14-L20" target="_blank" rel="noopener" title="checkers/board.py, lines 14–20" aria-label="Code on GitHub: checkers/board.py, lines 14 to 20">2</a>.</p>
+  <p class="hiw-note"><b>Forced or optional captures.</b> With forced captures (the default, standard rules) a capture must be played whenever one exists. With optional captures a simple move is legal even when a capture exists. In both cases a capture chain is played to its end: once a piece starts jumping, it must keep jumping while a jump is available. A captured piece stays on the board until the move ends, so it cannot be jumped twice. Where a player declines to capture, which only optional captures allow, the search scores the position as it stands rather than in the middle of a capture.</p>
+  <p class="hiw-note"><b>Draws.</b> A game is drawn after 80 plies (one move by either side) with no capture and no man moving. A king's move does not reset the count.</p>
+
+  <h3 class="hiw-sub">Game tree and negamax</h3>
+  <p class="hiw-note"><b>Minimax</b> is a decision rule for two-player, zero-sum games, where one player's gain is exactly the other's loss. Each side is assumed to choose the reply that is worst for the other. The code uses <b>negamax</b>, a compact form of minimax in which every score is from the point of view of the side to move, so a child's score is negated for its parent.</p>
+  <!-- checkers/search.py:165,169-170,236-238 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{NEGAMAX}(s, \sigma, d) = \max\Bigl(\text{stand},\ \max_{m \in M(s,\sigma)} \bigl(-\text{NEGAMAX}(s_m, -\sigma, d-1)\bigr)\Bigr)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L165" target="_blank" rel="noopener" title="checkers/search.py, lines 165, 169–170, 236–238" aria-label="Code on GitHub: checkers/search.py, lines 165, 169 to 170, 236 to 238">3</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">s</span> is the position, <span class="math">\sigma \in \{+1, -1\}</span> is the side to move (+1 for Red, −1 for White), <span class="math">d</span> is the remaining depth in plies, <span class="math">M(s,\sigma)</span> is the set of legal moves, and <span class="math">s_m</span> is the position after move <span class="math">m</span>. The maximum is over the legal moves, and each is scored by the negated value of the reply position. The starting value <span class="math">\text{stand}</span> is the score for declining to capture, described under quiescence below. When declining is not allowed, the starting value is <span class="math">-2\,\text{WIN}</span>, lower than any real score.</p>
+  <!-- checkers/search.py:31,145,230 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{score} = -\text{WIN} + p, \qquad \text{WIN} = 100\,000</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L31" target="_blank" rel="noopener" title="checkers/search.py, lines 31, 145, 230" aria-label="Code on GitHub: checkers/search.py, lines 31, 145, 230">4</a></span>
+  </div>
+  <p class="hiw-note">A side with no legal move has lost, and it is scored <span class="math">-\text{WIN} + p</span>, where <span class="math">p</span> is the ply at which that position is reached. The ply term makes a sooner loss score lower than a later one, so the search avoids the losses that come sooner and prefers the wins that come sooner. <span class="math">\text{WIN}</span> is far larger than any heuristic score, so a forced result is always separated from an estimate.</p>
+
+  <h3 class="hiw-sub">Heuristic evaluation</h3>
+  <p class="hiw-note">The <b>heuristic evaluation</b> scores a position from the side to move's point of view, without searching further. It counts <b>material</b>: a man is worth 100 points and a <b>king</b>, a crowned man, 165 points. A man is also worth 3 points for each row it has advanced toward the crowning row, and 8 more points while it stays on its own back row, where it stops the opponent from crowning there. A king gets no advancement term. A piece on one of the eight central squares, the middle 4×4 block of the board, gets 6 more points. The evaluation has no mobility term. The constants were set by hand, and no tuning run or results file is committed for them.</p>
+  <!-- checkers/search.py:47-55 -->
+  <div class="math-fig">
+    <div class="math math-block">v(q) = \begin{cases} \text{KING} = 165 &amp; \text{if } |p_q| = 2 \\ \text{MAN} + 3\,a(q) + 8\,h(q) = 100 + 3\,a(q) + 8\,h(q) &amp; \text{if } |p_q| = 1 \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L47-L55" target="_blank" rel="noopener" title="checkers/search.py, lines 47–55" aria-label="Code on GitHub: checkers/search.py, lines 47 to 55">5</a></span>
+  </div>
+  <!-- checkers/search.py:54-55 -->
+  <div class="math-fig">
+    <div class="math math-block">v(q) \leftarrow v(q) + 6 \quad \text{if } q \in C</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L54-L55" target="_blank" rel="noopener" title="checkers/search.py, lines 54–55" aria-label="Code on GitHub: checkers/search.py, lines 54 to 55">6</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">q</span> is a square and <span class="math">p_q</span> the piece on it (+1 red man, +2 red king, −1 white man, −2 white king). <span class="math">v(q)</span> is the value of that piece on that square. The advancement term <span class="math">a(q)</span> is the number of rows the man has moved from its home row: <span class="math">a(q) = (n-1) - r(q)</span> for a red man and <span class="math">a(q) = r(q)</span> for a white man, where <span class="math">r(q)</span> is the row of <span class="math">q</span> counted from the top (row 0) and <span class="math">n</span> is the board size. The home-row term <span class="math">h(q)</span> is 1 when a red man stands on row <span class="math">n-1</span> or a white man on row 0, and 0 otherwise. <span class="math">C</span> is the set of central squares, which has 8 squares on every board size. So the advancement bonus runs from 0 on a man's home row to <span class="math">3(n-1)</span> on the crowning row, which is 21 on 8×8.</p>
+  <!-- checkers/search.py:43-57 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{EVAL}(s, \sigma) = \sigma \sum_{q} \epsilon_q\, v(q), \qquad \epsilon_q = \begin{cases} +1 &amp; \text{red piece on } q \\ -1 &amp; \text{white piece on } q \\ 0 &amp; \text{empty} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L43-L57" target="_blank" rel="noopener" title="checkers/search.py, lines 43–57" aria-label="Code on GitHub: checkers/search.py, lines 43 to 57">7</a></span>
+  </div>
+  <p class="hiw-note">The sum runs over all squares. Each red piece adds its value and each white piece subtracts its value, so the total is from Red's point of view. Multiplying by <span class="math">\sigma</span> turns it into the side to move's point of view, which is what negamax needs. The same weights apply on every board size. The advancement and centre terms are measured on the board's own rows and columns.</p>
+  <p class="hiw-note"><b>Example.</b> On 8×8, a red man on square 14 has advanced four rows from its home row (row 7 to row 3), so it is worth <span class="math">100 + 3 \times 4 = 112</span>. Square 14 is central, so the man is worth 118. A red king on the same square is worth <span class="math">165 + 6 = 171</span>. A white man on square 1 is on its home row, so it is worth <span class="math">100 + 8 = 108</span>, and it counts as <span class="math">-108</span> for Red.</p>
+
+  <h3 class="hiw-sub">Alpha-beta search</h3>
+  <p class="hiw-note"><b>Alpha-beta pruning</b> is a refinement of negamax that keeps a window of two bounds. <span class="math">\alpha</span> is the best score the side to move has already secured on the current line, and <span class="math">\beta</span> is the bound that the opponent has already secured. When a reply shows that the opponent would never allow this line, the score reaches <span class="math">\beta</span>, the remaining replies are skipped, and the search records a <b>cutoff</b>. The score returned is the same as minimax gives at the same depth, found with fewer positions.</p>
+  <p class="hiw-note">The agent does not search one fixed depth. It uses <b>iterative deepening</b>: it searches depth 1 completely, then depth 2, and so on, and plays the best move from the deepest depth that finished. The time budget is 0.2 s, 0.8 s or 2.0 s at Fast, Normal and Strong, on every board size. A search that runs out of time in the middle of a depth discards that depth and keeps the answer of the previous one. A forced win or loss found at any depth ends the search early. Match runs use node budgets of 3,000, 12,000 and 40,000 nodes instead of time, so a match replays the same way on any machine.</p>
+  <p class="hiw-note">Each depth also helps the next one. The best move found at one depth is tried first at the next, so cutoffs come early. The search keeps a <b>transposition table</b>, explained after the full version below.</p>
+  <!-- checkers/search.py:182-216 AlphaBeta.search; 141-180 AlphaBeta._negamax; 72-84 quiet_leaf; 192-198 single-move shortcut; 94-116 to_table and from_table -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L182-L216" target="_blank" rel="noopener" title="checkers/search.py, lines 182–216, 141–180, 72–84, 192–198, 94–116" aria-label="Code on GitHub: checkers/search.py, lines 182 to 216, 141 to 180, 72 to 84, 192 to 198, 94 to 116">8</a></span>
+    <pre class="pseudo-simple">function ALPHA-BETA(position, depth, α, β):
+    if depth = 0 or LEGAL-MOVES(position) is empty:
+        return EVALUATE(position)                # score for the side to move
+    best ← −infinity
+    for each move m in LEGAL-MOVES(position):
+        score ← −ALPHA-BETA(RESULT(position, m), depth − 1, −β, −α)
+        best ← max(best, score)
+        α ← max(α, score)
+        if α ≥ β:
+            break                                # prune: the opponent will avoid this line</pre>
+    <pre class="pseudo-full" hidden>constants: WIN = 100000, MAX-DEPTH = 30, FORCED-DEPTH = 4, MATE-BOUND = WIN − 1000
+
+function SEARCH(position, side, time-budget):
+    moves ← LEGAL-MOVES(position, side)
+    if moves is empty: raise error "no legal moves"
+    if moves has exactly one move:                       # no choice: play it
+        score ← −NEGAMAX(RESULT(position, moves[1]), −side, FORCED-DEPTH − 1, −2·WIN, 2·WIN, 1)
+        return moves[1], score                           # this search has no time limit
+    best ← moves[1]                                      # kept if depth 1 does not finish
+    TABLE ← empty                                        # transposition table, one per search
+    deadline ← now + time-budget
+    try:
+        for depth ← 1 to MAX-DEPTH:                      # iterative deepening
+            order ← moves with the previous best move first
+            results ← empty;  α ← −2·WIN
+            for each m in order:
+                s ← −NEGAMAX(RESULT(position, m), −side, depth − 1, −2·WIN, −α, 1)
+                add (m, s) to results;  α ← max(α, s)
+            best ← the move in results with the highest score
+            if |score(best)| > WIN − 100: break          # forced win or loss found
+    on time-limit reached:
+        stop                                             # keep the answer of the last full depth
+    return best
+
+function NEGAMAX(position, side, depth, α, β, ply):
+    count one node
+    if the time limit is reached:                        # checked every 512 nodes
+        raise time-limit reached                         # unwinds to the try in SEARCH
+    moves ← LEGAL-MOVES(position, side)
+    if moves is empty:
+        return −WIN + ply                                # the side to move has lost
+    stand ← none
+    if depth ≤ 0:                                        # quiescence at the depth limit
+        moves, stand ← QUIET-LEAF(position, side, moves)
+        if moves is empty: return stand
+    α0 ← α
+    entry ← TABLE[(position, side)]
+    best-path ← none
+    if entry exists:
+        (d, flag, value, best-path) ← entry
+        value ← FROM-TABLE(value, ply)               # back to a score from the root
+        if d ≥ depth and (flag = EXACT or (flag = LOWER and value ≥ β) or (flag = UPPER and value ≤ α)):
+            return value
+    sort moves: best-path first, then the most pieces captured first     # move ordering
+    best ← −2·WIN if stand is none, else stand           # stand pat
+    α ← max(α, best)
+    if α ≥ β: return best
+    for each m in moves:
+        score ← −NEGAMAX(RESULT(position, m), −side, depth − 1, −β, −α, ply + 1)
+        if score > best:  best ← score;  best-path ← m.path
+        α ← max(α, best)
+        if α ≥ β:  break                                 # cut off the remaining replies
+    flag ← UPPER if best ≤ α0;  LOWER if best ≥ β;  EXACT otherwise
+    TABLE[(position, side)] ← (depth, flag, TO-TABLE(best, ply), best-path)    # wins and losses stored relative to this node
+    return best
+
+function QUIET-LEAF(position, side, moves):
+    captures ← the moves in moves that capture
+    if captures is empty:
+        return (empty list, EVALUATE(position, side))    # quiet: score it statically
+    stand ← none if captures are forced or every move captures, else EVALUATE(position, side)
+    return (captures, stand)
+
+function TO-TABLE(score, ply):                       # a win or loss becomes its distance from this node
+    if score > MATE-BOUND: return score + ply
+    if score < −MATE-BOUND: return score − ply
+    return score                                     # an ordinary evaluation is stored unchanged
+
+function FROM-TABLE(score, ply):                     # the reverse, applied when an entry is read
+    if score > MATE-BOUND: return score − ply
+    if score < −MATE-BOUND: return score + ply
+    return score</pre>
+  </div>
+  <p class="hiw-note"><b>Transposition table.</b> Different move orders can reach the same position, so the search keeps a <b>transposition table</b>, a dictionary keyed by the position and the side to move. Each entry stores the depth searched, a score, the best move found and a <b>flag</b>. The flag is needed because a score found inside a window may be only a bound, not the exact value. The flag is <b>EXACT</b> when the score lies inside the window, <b>LOWER</b> when the true score is at least the stored value (a fail-high result, where the score reached <span class="math">\beta</span>), and <b>UPPER</b> when the true score is at most the stored value (a fail-low result, where no move reached <span class="math">\alpha_0</span>). The flag is set by the rule below.</p>
+  <!-- checkers/search.py:178 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{flag} = \begin{cases} \text{UPPER} &amp; \text{if } \text{best} \le \alpha_0 \\ \text{LOWER} &amp; \text{if } \text{best} \ge \beta \\ \text{EXACT} &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L178" target="_blank" rel="noopener" title="checkers/search.py, line 178" aria-label="Code on GitHub: checkers/search.py, line 178">9</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\alpha_0</span> is the value of <span class="math">\alpha</span> on entry to the node, before the stand pat step, and <span class="math">\beta</span> is the upper bound of the window. An entry is reused only when it was searched at least as deep as the current depth and its flag fits the current window (the lookup in the full version). The table is cleared at the start of each search and kept across the depths of one search. Wins and losses are stored by their distance from the node, not by their score from the root, and are converted back on lookup, so an entry reached at another ply gives the right distance (see the next paragraph).</p>
+  <p class="hiw-note"><b>Mate distance in the table.</b> A forced win or loss scores <span class="math">\text{WIN}</span> minus or plus the ply where it happens, counted from the root. The table is shared by every node of one search, and the same position is reached at different plies. A win found at one ply is a shorter win from a shallower node and a longer win from a deeper one. So a win or loss must be stored relative to the node: the table keeps its distance from the node, and the current ply is added back on lookup. Without this, a stored win could be reported with the wrong number of moves.</p>
+  <!-- checkers/search.py:94,97-107 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{TO-TABLE}(v, p) = \begin{cases} v + p & \text{if } v > \text{WIN} - 1000 \\ v - p & \text{if } v < -(\text{WIN} - 1000) \\ v & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L94" target="_blank" rel="noopener" title="checkers/search.py, lines 94, 97–107" aria-label="Code on GitHub: checkers/search.py, lines 94, 97 to 107">10</a></span>
+  </div>
+  <!-- checkers/search.py:110-116 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{FROM-TABLE}(v, p) = \begin{cases} v - p & \text{if } v > \text{WIN} - 1000 \\ v + p & \text{if } v < -(\text{WIN} - 1000) \\ v & \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L110-L116" target="_blank" rel="noopener" title="checkers/search.py, lines 110–116" aria-label="Code on GitHub: checkers/search.py, lines 110 to 116">11</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">v</span> is a score from the root, <span class="math">p</span> is the ply of the node, and <span class="math">\text{WIN} - 1000</span> (<code>MATE-BOUND</code>) is the threshold above which a score is a win or loss rather than an evaluation. An evaluation never reaches that size, so evaluations are stored unchanged. <b>Example.</b> A win scored <span class="math">\text{WIN} - 7</span> at a node reached at ply 3 is stored as <span class="math">\text{WIN} - 4</span>, its distance from that node. Read back at ply 5, it gives <span class="math">\text{WIN} - 4 - 5 = \text{WIN} - 9</span>: the same win is four plies below that node, so it happens at ply 9 from the root. The code names are <code>to_table</code> and <code>from_table</code>.</p>
+  <p class="hiw-note"><b>Move ordering.</b> Good ordering makes cutoffs come early. Moves are sorted with the table's best move first, then captures by the number of pieces taken, largest first. The sort is stable, so equal moves keep their legal-move order.</p>
+  <p class="hiw-note"><b>Quiescence and stand pat.</b> At the depth limit, a position with a capture pending is not scored in the middle of an exchange. Only the captures are kept and searched further, until a quiet position is reached. The side to move may also decline to capture and keep the static evaluation, which is the <b>stand pat</b> score. Stand pat is allowed only when captures are optional and some legal move is not a capture. With forced captures, or when every legal move is a capture, the side must capture, so the starting value is <span class="math">-2\,\text{WIN}</span>.</p>
+  <p class="hiw-note"><b>Mate distance.</b> A side with no legal move is scored <span class="math">-\text{WIN} + \text{ply}</span>. The ply term means a forced loss found sooner scores lower, so the search avoids it, and a forced win found sooner is preferred. The page reports any score within 200 of WIN as a win or loss, with the number of moves to it.</p>
+  <p class="hiw-note"><b>Single-move shortcut.</b> When only one legal move exists, there is nothing to choose. The agent plays that move without iterative deepening, and scores it with a fixed search of four plies that has no time limit, so the analysis still shows a score.</p>
+  <p class="hiw-note"><b>Example.</b> On the seed 1 position in the results below, depth 4 minimax visits 2,962 positions and alpha-beta visits 618. Both choose the same move with the same score.</p>
+
+  <h3 class="hiw-sub">Plain minimax</h3>
+  <p class="hiw-note"><b>Plain minimax</b> searches every legal move to a fixed depth, with no cutoffs and no transposition table. It has no time budget, so its depth depends only on the board size and the capture rule. At the same depth it returns the same score as alpha-beta search, which is why it is the reference that alpha-beta is measured against. Quiescence applies at the depth limit here too, so a pending capture is searched through.</p>
+  <p class="hiw-note">Depth is fixed because, without pruning, each extra ply multiplies the work by the number of legal moves, and optional captures add more moves per position. The depths were chosen on the machine the code was written on, so that the slowest of three midgame positions takes about 3 s or less<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py#L25-L29" target="_blank" rel="noopener" title="checkers/agents.py, lines 25–29" aria-label="Code on GitHub: checkers/agents.py, lines 25 to 29">12</a>. The depths for each strength are in the strength table below.</p>
+  <!-- checkers/search.py:241-250 Minimax.search; 226-239 Minimax._negamax -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L241-L250" target="_blank" rel="noopener" title="checkers/search.py, lines 241–250, 226–239" aria-label="Code on GitHub: checkers/search.py, lines 241 to 250, 226 to 239">13</a></span>
+    <pre class="pseudo-simple">function MINIMAX(position, depth):
+    if depth = 0 or LEGAL-MOVES(position) is empty:
+        return EVALUATE(position)                # score for the side to move
+    best ← −infinity
+    for each move m in LEGAL-MOVES(position):    # every move is searched; none is pruned
+        best ← max(best, −MINIMAX(RESULT(position, m), depth − 1))
+    return best</pre>
+    <pre class="pseudo-full" hidden>function SEARCH(position, side, depth):
+    for each move m in LEGAL-MOVES(position, side):
+        score[m] ← −MINIMAX(RESULT(position, m), −side, depth − 1, 1)
+    return the move with the highest score
+
+function MINIMAX(position, side, depth, ply):
+    count one node
+    moves ← LEGAL-MOVES(position, side)
+    if moves is empty:
+        return −WIN + ply                                # the side to move has lost
+    stand ← none
+    if depth ≤ 0:                                        # quiescence, as in alpha-beta
+        moves, stand ← QUIET-LEAF(position, side, moves)
+        if moves is empty: return stand
+    best ← −2·WIN if stand is none, else stand           # stand pat, when allowed
+    for each m in moves:
+        best ← max(best, −MINIMAX(RESULT(position, m), −side, depth − 1, ply + 1))
+    return best</pre>
+  </div>
+  <p class="hiw-note">The full version has no table, no ordering and no cutoff. Its node count is the number of calls to the search function, which is why the counts in the results below grow so quickly with depth. The leaf rule is the same <code>QUIET-LEAF</code> as in alpha-beta.</p>
+
+  <h3 class="hiw-sub">Monte Carlo tree search</h3>
+  <p class="hiw-note"><b>Monte Carlo tree search</b> (MCTS) values a move by playing random games from the positions after it, instead of scoring a fixed-depth tree with the heuristic. The version here is <b>UCT</b>, upper confidence bounds applied to trees. Each iteration has four steps. <b>Selection</b> walks down the tree and, at each node, chooses the child with the highest <b>upper confidence bound 1</b> (UCB1). <b>Expansion</b> adds one untried move as a new child. <b>Simulation</b> plays a <b>rollout</b>, a random game from that child, to a result. <b>Backpropagation</b> adds the result to every node on the path back to the root.</p>
+  <p class="hiw-note">The UCB1 score of a child is its average result plus an exploration bonus that is large for children with few visits. Children that have been tried rarely keep being tried, and the best-looking children are tried most.</p>
+  <!-- checkers/mcts.py:27,89-91 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{UCB}(c) = \frac{w_c}{n_c} + C\sqrt{\frac{\ln N}{n_c}}, \qquad C = \sqrt{2}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L27" target="_blank" rel="noopener" title="checkers/mcts.py, lines 27, 89–91" aria-label="Code on GitHub: checkers/mcts.py, lines 27, 89 to 91">14</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">w_c</span> is the number of wins credited to child <span class="math">c</span>, <span class="math">n_c</span> is its visit count, and <span class="math">N</span> is the visit count of its parent. <span class="math">C</span> is the standard UCB1 constant. Wins are credited to the side that moved into the child, so <span class="math">w_c / n_c</span> is the win rate of that move for the mover. The <span class="math">\ln N</span> term grows slowly as the parent is visited more.</p>
+  <p class="hiw-note">A rollout stops after 40 plies. Random play is noisy, and long games are slow to finish, so the position reached at the cutoff is scored with the same evaluation the tree searches use. Rollouts prefer captures: when a capture exists one is chosen at random, otherwise any legal move is chosen at random. A rollout that reaches a position where the side to move has no legal move ends there. Its value is then 0 if the stuck side is the side the rollout started from, and 1 if it is the opponent, because every rollout value is the chance that the starting side wins.</p>
+  <!-- checkers/mcts.py:78-79 -->
+  <div class="math-fig">
+    <div class="math math-block">V = \begin{cases} 0 &amp; \text{if the side with no legal move is } \sigma_0 \\ 1 &amp; \text{if it is the opponent of } \sigma_0 \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L78-L79" target="_blank" rel="noopener" title="checkers/mcts.py, lines 78–79" aria-label="Code on GitHub: checkers/mcts.py, lines 78 to 79">15</a></span>
+  </div>
+  <!-- checkers/mcts.py:28-29,85 -->
+  <div class="math-fig">
+    <div class="math math-block">V = \tfrac12 + \tfrac12 \tanh\!\left(\frac{\text{EVAL}(s_{\text{end}}, \sigma_0)}{300}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L28-L29" target="_blank" rel="noopener" title="checkers/mcts.py, lines 28–29, 85" aria-label="Code on GitHub: checkers/mcts.py, lines 28 to 29, 85">16</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">V</span> is the rollout value: the chance that the side that started the rollout wins. <span class="math">\sigma_0</span> is that side, and <span class="math">s_{\text{end}}</span> is the position after 40 plies. The evaluation is taken from <span class="math">\sigma_0</span>'s point of view, so the value is always for the starting side, even when the other side is to move at the end. A side with no legal move ends the rollout early, and the value is then 0 or 1 as the first formula gives. <span class="math">\text{EVAL}</span> is the evaluation above, and the divisor 300 is the scale in points (<code>EVAL_SCALE</code>). <span class="math">\tanh</span> is the hyperbolic tangent, which maps any real number into the interval from −1 to 1, so the cut-off value lies strictly between 0 and 1. <b>Example.</b> One man of material, 100 points, gives <span class="math">\tfrac12 + \tfrac12\tanh(1/3) \approx 0.66</span>, and 300 points gives about 0.88.</p>
+  <!-- checkers/mcts.py:28-29,65-85 MCTS._rollout; 78-79 side with no legal move -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L28-L29" target="_blank" rel="noopener" title="checkers/mcts.py, lines 28–29, 65–85, 78–79" aria-label="Code on GitHub: checkers/mcts.py, lines 28 to 29, 65 to 85, 78 to 79">16</a></span>
+    <pre class="pseudo-simple">function ROLLOUT(board, side):
+    start ← side
+    repeat 40 times:                              # rollouts stop after 40 plies
+        if LEGAL-MOVES(board, side) is empty:
+            return 0 if side = start else 1       # the side to move has lost
+        board ← RESULT(board, a random move, a capture if one exists)
+        side ← −side
+    return 0.5 + 0.5 · tanh(EVALUATE(board, start) / 300)     # from the starting side's view</pre>
+    <pre class="pseudo-full" hidden>constants: ROLLOUT-PLIES = 40, EVAL-SCALE = 300
+
+function ROLLOUT(board, side):
+    start ← side                                         # the side the value is for
+    repeat ROLLOUT-PLIES times:
+        moves ← LEGAL-MOVES(board, side)
+        if moves is empty:
+            return 0 if side = start else 1              # the side to move has lost
+        pool ← the captures in moves, or all of moves if there are none
+        m ← a uniform random element of pool
+        board ← RESULT(board, m);  side ← −side
+    return 0.5 + 0.5 · tanh(EVALUATE(board, start) / EVAL-SCALE)   # squashed into (0, 1)</pre>
+  </div>
+  <p class="hiw-note"><b>Why the sign flips.</b> A rollout is played from the child's position by alternating sides, so after an odd number of plies the side to move is the opponent. The code keeps the starting side in <span class="math">\sigma_0</span> and evaluates from its view, so the value can always be read as the starting side's chance of winning. The full version shows the same rule line by line.</p>
+  <!-- checkers/mcts.py:120,122-126 -->
+  <div class="math-fig">
+    <div class="math math-block">w \leftarrow w + (1 - V), \qquad V \leftarrow 1 - V \quad \text{for each node from the leaf up to the root}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L120" target="_blank" rel="noopener" title="checkers/mcts.py, lines 120, 122–126" aria-label="Code on GitHub: checkers/mcts.py, lines 120, 122 to 126">17</a></span>
+  </div>
+  <p class="hiw-note">Backpropagation adds <span class="math">1 - V</span> to each node's wins, because the wins at a node belong to the side that moved into it, which is the opponent of the side to move there. The value is then flipped for the parent, one level up. Each node's visit count goes up by 1 on the same walk.</p>
+  <!-- checkers/mcts.py:136 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{move played} = \arg\max_{c \in \text{children of root}} \left(n_c,\ \frac{w_c}{n_c}\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L136" target="_blank" rel="noopener" title="checkers/mcts.py, line 136" aria-label="Code on GitHub: checkers/mcts.py, line 136">18</a></span>
+  </div>
+  <p class="hiw-note">The move played is the child with the most visits, ordered first by the visit count, with the higher win rate breaking ties. The page reports the win rate of each root move, not a score, and the same ordering decides which moves are shown as best.</p>
+  <p class="hiw-note">The search runs a fixed number of iterations, not a time limit. The strength table below gives the counts. The random generator is seeded from the position (the code uses <code>zlib.crc32</code> of the board and the side to move), so the same position always gets the same answer on any machine.</p>
+  <!-- checkers/mcts.py:93-138 MCTS.search; 89-91 and 102-104 selection; 107-116 expansion; 120 simulation; 122-126 backpropagation -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py#L93-L138" target="_blank" rel="noopener" title="checkers/mcts.py, lines 93–138, 89–91, 102–104, 107–116, 120, 122–126" aria-label="Code on GitHub: checkers/mcts.py, lines 93 to 138, 89 to 91, 102 to 104, 107 to 116, 120, 122 to 126">19</a></span>
+    <pre class="pseudo-simple">function MCTS(position, side, iterations):
+    root ← a node for position, with every legal move untried
+    repeat iterations times:
+        node ← root
+        while node has no untried moves and node has children:      # selection
+            node ← the child with the highest UCB1 score
+        if node has untried moves:                                  # expansion
+            node ← a child made by one random untried move
+        value ← ROLLOUT(node)                                       # simulation
+        for each node from node up to the root:                     # backpropagation
+            add (1 − value) to the node's wins;  value ← 1 − value
+    return the move of the most visited child of root</pre>
+    <pre class="pseudo-full" hidden>constants: C = √2, ROLLOUT-PLIES = 40, EVAL-SCALE = 300
+
+function MCTS(position, side, iterations, seed):
+    rng ← SEEDED-GENERATOR(seed)
+    root ← NODE(position, side, move = none, parent = none)     # every legal move untried
+    repeat iterations times:
+        node ← root
+        while node.untried is empty and node.children is not empty:          # selection
+            node ← the child c with the highest  c.wins / c.visits + C · √(ln node.visits / c.visits)
+        if node.untried is not empty:                                         # expansion
+            k ← random index in node.untried
+            swap node.untried[k] with the last entry;  m ← remove the last entry
+            child ← NODE(RESULT(node.board, m), −node.side, m, node)
+            add child to node.children;  node ← child
+        value ← ROLLOUT(node.board, node.side)                                # simulation
+        while node is not none:                                               # backpropagation
+            node.visits ← node.visits + 1
+            node.wins ← node.wins + (1 − value)
+            value ← 1 − value
+            node ← node.parent
+    return the child of root with the highest (visits, wins / visits)</pre>
+  </div>
+  <p class="hiw-note"><b>Untried moves.</b> Each node holds all its legal moves as untried. Expansion removes one at random by swapping it to the end of the list and popping it, so removal is cheap. A node with no legal moves at all is simulated, and its rollout returns 0 for its side, so the tree learns that the position is lost.</p>
+  <p class="hiw-note"><b>Win rate for the root.</b> A child's win rate is its wins over its visits, counted for the side at the root, so the figures in the analysis panel compare the root's moves directly.</p>
+
+  <h3 class="hiw-sub">Greedy and random</h3>
+  <p class="hiw-note"><b>Greedy</b> scores each legal move with the evaluation of the position that move leaves, one ply deep, and plays the best. It does not look at the reply. A move that leaves the opponent with no legal move is scored as a win, <span class="math">\text{WIN} - 1</span>, so it is preferred to any evaluated move. Ties go to the earlier move in the legal-move order, so greedy is deterministic.</p>
+  <!-- checkers/search.py:270-275 -->
+  <div class="math-fig">
+    <div class="math math-block">\text{score}(m) = \begin{cases} \text{WIN} - 1 &amp; \text{if the opponent has no legal move after } m \\ -\text{EVAL}(s_m, -\sigma) &amp; \text{otherwise} \end{cases}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L270-L275" target="_blank" rel="noopener" title="checkers/search.py, lines 270–275" aria-label="Code on GitHub: checkers/search.py, lines 270 to 275">20</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">s_m</span> is the position after move <span class="math">m</span>, and <span class="math">\sigma</span> is the side to move. <span class="math">\text{EVAL}(s_m, -\sigma)</span> is the evaluation from the opponent's point of view, so the minus sign turns it into the mover's point of view. The agent plays the move with the highest score.</p>
+  <!-- checkers/search.py:270-275 Greedy.search -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py#L270-L275" target="_blank" rel="noopener" title="checkers/search.py, lines 270–275" aria-label="Code on GitHub: checkers/search.py, lines 270 to 275">20</a></span>
+    <pre class="pseudo-simple">function GREEDY(position, side):
+    for each move m in LEGAL-MOVES(position, side):
+        if LEGAL-MOVES(RESULT(position, m), −side) is empty:
+            score[m] ← WIN − 1                       # the opponent has no reply: a win
+        else:
+            score[m] ← −EVALUATE(RESULT(position, m), −side)
+    return the move with the highest score</pre>
+  </div>
+  <p class="hiw-note"><b>Random</b> chooses uniformly from the legal moves, from a generator seeded from the position, so the same position always gets the same move. Random and greedy are the baselines: a search agent should beat both.</p>
+
   <h3 class="hiw-sub">Chance (fixed odds)</h3>
-  <p class="hiw-note">The chance opponent does no search and no reasoning, like the 2048 tile spawner, which places a 2 with 90% and a 4 with 10%. Each legal move gets a fixed weight by its type. The weights are renormalised over the legal moves and one move is sampled. It is seeded from the position, so the same position always gets the same move.</p>
+  <p class="hiw-note"><b>Chance</b> does no search and no reasoning about the position beyond the type of each move. It works like the 2048 tile spawner, which places a 2 with probability 90% and a 4 with 10%. Each legal move gets a fixed weight by its type, the weights are renormalised over the legal moves, and one move is sampled. It is seeded from the position, so the same position always gets the same move.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Move type</th><th>Example</th><th class="num">Weight</th></tr></thead><tbody>
     <tr><td>Capture</td><td>Any move that jumps a piece (a chain counts once).</td><td class="num">5</td></tr>
     <tr><td>Man into the centre</td><td>A man that moves onto one of the central 4×4 squares.</td><td class="num">3</td></tr>
     <tr><td>Other man move</td><td>Any other step by a man.</td><td class="num">2</td></tr>
     <tr><td>King move</td><td>A king stepping one square.</td><td class="num">1</td></tr>
   </tbody></table></div>
-  <h3 class="hiw-sub">Heuristics and their values</h3>
-  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Heuristic</th><th>What it measures</th><th class="num">Value / weight</th></tr></thead><tbody>
-    <tr><td>Man</td><td>A regular piece on the board.</td><td class="num">100 points</td></tr>
-    <tr><td>Advancement</td><td>How far a man has moved toward the crowning row.</td><td class="num">+3 per row: 0 on its home row, 3 × (rows − 1) on the crowning row (21 on 8x8)</td></tr>
-    <tr><td>Home-row guard</td><td>A man still on its own back row, which keeps the opponent from crowning there.</td><td class="num">+8</td></tr>
-    <tr><td>King</td><td>A crowned piece. No position term.</td><td class="num">165 points</td></tr>
-    <tr><td>Centre</td><td>A man or king on one of the eight central squares, the middle 4×4 block of the board.</td><td class="num">+6</td></tr>
-    <tr><td>Win</td><td>Terminal position for either side.</td><td class="num">100,000</td></tr>
-  </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> hand-set. The constants are fixed in <code>checkers/search.py</code>, and no tuning run or results file is committed for them. The evaluation has no mobility term. The score is always from the side to move's point of view, with each side's pieces summed. The same weights apply on every board size; the advancement and centre terms are measured on the board's own rows and columns.</p>
+  <!-- checkers/chance.py:19,52-54 -->
+  <div class="math-fig">
+    <div class="math math-block">P(m) = \frac{W(\kappa(m))}{\sum_{m' \in \text{LEGAL-MOVES}} W(\kappa(m'))}, \qquad W = \{\text{capture}: 5,\ \text{centre man}: 3,\ \text{man}: 2,\ \text{king}: 1\}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/chance.py#L19" target="_blank" rel="noopener" title="checkers/chance.py, lines 19, 52–54" aria-label="Code on GitHub: checkers/chance.py, lines 19, 52 to 54">21</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">m</span> is a legal move, <span class="math">\kappa(m)</span> is its type from the table, and <span class="math">W(\kappa)</span> is that type's weight. The denominator is the total weight of the legal moves, which is the renormalisation. <b>Example.</b> At the start position Red has seven legal moves. Four move into the centre (weight 3 each) and three do not (weight 2 each), so the total is 18. Each centre move has probability <span class="math">3/18 \approx 0.17</span>, and each other move has <span class="math">2/18 \approx 0.11</span>.</p>
+  <!-- checkers/chance.py:22-32, 49-54 -->
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/chance.py#L22-L32" target="_blank" rel="noopener" title="checkers/chance.py, lines 22–32, 49–54" aria-label="Code on GitHub: checkers/chance.py, lines 22 to 32, 49 to 54">22</a></span>
+    <pre class="pseudo-simple">function CHANCE(position, side):
+    moves ← LEGAL-MOVES(position, side)
+    for each move m in moves:
+        weight[m] ← CHANCE-WEIGHTS[KIND(position, m)]   # capture 5, centre man 3, man 2, king 1
+    return a move sampled with probability weight[m] / sum of all weights</pre>
+  </div>
 
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/search.py">checkers/search.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/mcts.py">checkers/mcts.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py">checkers/agents.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/board.py">checkers/board.py</a></p>
+  <h3 class="hiw-sub">Strength settings</h3>
+  <p class="hiw-note">Strength sets each agent's budget. Alpha-beta search is limited by time, and the other searches by a fixed depth or iteration count, so their answers do not depend on the machine.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Budget</th><th class="num">Fast</th><th class="num">Normal</th><th class="num">Strong</th></tr></thead><tbody>
+    <tr><td>Alpha-beta, time (every board size)</td><td class="num">0.2 s</td><td class="num">0.8 s</td><td class="num">2.0 s</td></tr>
+    <tr><td>MCTS iterations, 8×8</td><td class="num">300</td><td class="num">1,000</td><td class="num">2,000</td></tr>
+    <tr><td>MCTS iterations, 10×10</td><td class="num">200</td><td class="num">500</td><td class="num">1,000</td></tr>
+    <tr><td>MCTS iterations, 12×12</td><td class="num">150</td><td class="num">350</td><td class="num">500</td></tr>
+    <tr><td>Minimax depth, 8×8 forced / optional</td><td class="num">2 / 2</td><td class="num">4 / 3</td><td class="num">5 / 4</td></tr>
+    <tr><td>Minimax depth, 10×10 forced / optional</td><td class="num">2 / 2</td><td class="num">3 / 2</td><td class="num">4 / 3</td></tr>
+    <tr><td>Minimax depth, 12×12 forced / optional</td><td class="num">2 / 1</td><td class="num">3 / 2</td><td class="num">3 / 2</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Minimax depths are in plies (half-moves). The match runner uses a node budget of 3,000, 12,000 and 40,000 nodes for alpha-beta at Fast, Normal and Strong, instead of time<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/checkers/agents.py#L24" target="_blank" rel="noopener" title="checkers/agents.py, line 24" aria-label="Code on GitHub: checkers/agents.py, line 24">23</a>.</p>
+
+  <h3 class="hiw-sub">Results</h3>
+  <p class="hiw-note"><b>Search cost.</b> Ten positions were built by playing 8 random legal plies from the opening (seeds 1 to 10), with Red to move. Each was searched by minimax and by alpha-beta search to depths 4, 5 and 6. The alpha-beta counts are summed over the iterative-deepening passes 1 to d, as the agent runs it. The scores match at every depth on all eight non-forced positions, and the moves match on seven of them, with the mismatches being ties<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/checkers_search_nodes.md" target="_blank" rel="noopener" title="results/checkers_search_nodes.md" aria-label="Code on GitHub: results/checkers_search_nodes.md">24</a>.</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Depth (plies)</th><th class="num">Minimax positions, median</th><th class="num">Alpha-beta positions, median</th><th>Same score / same move</th></tr></thead><tbody>
+    <tr><td>4</td><td class="num">3,373</td><td class="num">498</td><td>8 of 8 / 7 of 8</td></tr>
+    <tr><td>5</td><td class="num">15,541</td><td class="num">1,287</td><td>8 of 8 / 7 of 8</td></tr>
+    <tr><td>6</td><td class="num">90,072</td><td class="num">2,676</td><td>8 of 8 / 7 of 8</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Positions with a single legal move are left out of the agreement columns. The move generator matches the published perft counts from the opening (7, 49, 302, 1,469 and 7,361 positions at depths 1 to 5)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/checkers_search_nodes.md" target="_blank" rel="noopener" title="results/checkers_search_nodes.md" aria-label="Code on GitHub: results/checkers_search_nodes.md">24</a>. <b>Match play.</b> In the 8×8 round robin at level 1 (10 games per pair, forced captures, games paired from seeded 4-ply openings), each agent played the other four, so each total covers 40 games. Over those games, alpha-beta won 32, drew 8 and lost none; MCTS won 22, drew 12 and lost 6; minimax won 21, drew 9 and lost 10; greedy won 7, drew 4 and lost 29; random won none, drew 3 and lost 37<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/checkers_match_8x8_level1.txt" target="_blank" rel="noopener" title="results/checkers_match_8x8_level1.txt" aria-label="Code on GitHub: results/checkers_match_8x8_level1.txt">25</a>. Head to head, alpha-beta won 7 of 10 against minimax (3 draws) and 5 of 10 against MCTS (5 draws), and won all 10 against greedy and random. MCTS won 3 of 10 against minimax (6 draws, 1 loss), 9 of 10 against greedy (1 draw), and all 10 against random. Minimax won all 10 against greedy and random. Against chance, alpha-beta won all 10 games<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/checkers_match_alphabeta_chance_8x8_level1.txt" target="_blank" rel="noopener" title="results/checkers_match_alphabeta_chance_8x8_level1.txt" aria-label="Code on GitHub: results/checkers_match_alphabeta_chance_8x8_level1.txt">26</a>. Ten games per pair is a small sample, so read these as a rough ordering at this strength.</p>
+
 </section>
 </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/checkers.js"></script>
 </body>

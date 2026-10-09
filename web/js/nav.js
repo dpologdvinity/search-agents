@@ -64,6 +64,10 @@ if (list) {
     + dropdown('GAMES', GAMES)
     + dropdown('LABS', LABS)
     + (current ? item(current.href, current.label, true) : '');
+  // On phones the links scroll sideways, so bring the current page into view. It waits for the web fonts, because
+  // the link widths change when they load. On desktop the links all fit, so nothing moves.
+  const showCurrent = () => list.querySelector(':scope > li > a.act')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  document.fonts.ready.then(showCurrent);
 
   // Escape closes the open menu and returns focus to its summary; a click anywhere else closes every open menu.
   const menus = [...list.querySelectorAll('.games-menu')].map((menu) => ({ menu, details: menu.querySelector('details') }));

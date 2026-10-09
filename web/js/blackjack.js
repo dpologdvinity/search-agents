@@ -253,8 +253,7 @@ function renderAdvice(res, hand) {
   }
   $('advice-best').textContent = res.blackjack ? 'Blackjack: take the 3:2 payout.'
     : `Basic strategy: ${LABEL[res.best]}.`;
-  $('advice-note').textContent = `Expected chips for this hand (${res.total}${res.soft ? ', soft' : ''}) `
-    + 'from the exact table. Values include the dealer blackjack check for an ace or ten upcard.';
+  $('advice-note').textContent = `Expected chips for this hand (${res.total}${res.soft ? ', soft' : ''}).`;
 }
 
 /** Ask the server for the expected value of each legal move for the hand in front of the player. */
@@ -353,8 +352,7 @@ function buildTables() {
   const data = state.strategy;
   buildGrid($('strategy-grid'), data.rows, data.upcards, 'strategy');
   buildGrid($('learn-grid'), data.rows, data.upcards, 'learn');
-  $('strategy-note').textContent = 'Exact infinite-deck solution. With perfect basic strategy the house keeps '
-    + `${(100 * data.house_edge).toFixed(3)}% of each bet.`;
+  $('strategy-note').textContent = 'Exact solution for an infinite deck. Hover a cell for its expected value.';
   $('chip-edge').textContent = `${(100 * data.house_edge).toFixed(2)}%`;
 }
 
@@ -579,6 +577,8 @@ function onKey(e) {
   else if (k === 'p') act('split');
   else if (k === 'h' && state.round && current(state.round) && !state.busy) refreshAdvice();
   else if (k === 'enter' || k === 'n') {
+    // Enter on a focused button only presses that button, so a focused toggle or bet chip does not also deal.
+    if (k === 'enter' && ['BUTTON', 'A'].includes(e.target.tagName)) return;
     if (!$('btn-deal').disabled) dealOrReset();
   }
 }

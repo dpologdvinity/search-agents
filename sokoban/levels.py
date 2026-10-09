@@ -1,11 +1,8 @@
 """The built-in levels, in order of difficulty (fewest pushes in the optimal solution).
 
-Levels 1 to 7 are drawn by hand. Levels 8 to 12 are generated: the generator starts from a goal
-layout, applies random reverse pushes (each undoes a forward push, so the scramble is solvable by
-construction), and keeps the scramble with the most optimal pushes among 40 seeds that A* with the
-matching heuristic solves. Every level here is solved by the test suite, so none can be unsolvable.
-
-The push counts below are the optimal ones (A* with the matching heuristic); the tests check them.
+All twelve levels are fixed in this file: the boards are written out below, not generated at run time.
+Each optimal push count is what the solver finds (A* with the matching heuristic), and the tests check
+that the solver still reaches it. The tests also solve every level, so none can be unsolvable.
 """
 
 from __future__ import annotations

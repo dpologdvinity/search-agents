@@ -100,7 +100,7 @@ class Reservations:
         return cell not in self.parked and self.last_vertex.get(cell, -1) < t
 
     def max_time(self) -> int:
-        """Last time step at which anything is forbidden. Beyond it, only distance matters."""
+        """Last time step at which a vertex or edge block is set. Parked cells stay blocked after it."""
         return self._max_t
 
 
@@ -117,8 +117,8 @@ def space_time_astar(grid: Grid, start: int, goal: int, res: Reservations,
     state popped therefore has the smallest arrival time. A goal state with a later block
     is not valid, so the search continues past it.
 
-    Why ``horizon`` is enough by default: after ``res.max_time()`` nothing is forbidden, so a robot
-    that is still alive then can walk the rest of the way in at most ``grid.size`` steps.
+    Why ``horizon`` is enough by default: after ``res.max_time()`` no vertex or edge block is left, but
+    parked cells stay blocked for good, so a robot still alive then routes around them in at most ``grid.size`` steps.
     """
     dist = grid.distances_to(goal)
     if dist[start] < 0:

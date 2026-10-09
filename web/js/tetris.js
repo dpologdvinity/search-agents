@@ -3,8 +3,15 @@
 // One animation loop drives everything. Each piece gets a decision from the placement search
 // (tetris_engine.js, the same algorithm as tetris/search.py), using the weights from the sliders. The
 // decision has two phases: THINK reveals every candidate placement as a heat-coloured ghost, then the
-// agent moves: it rotates and slides the piece to its chosen spot and drops it. Human mode uses the same
-// decisions as a hint ("show agent"), so the sliders always show what the agent would do right now.
+// agent moves: it turns and slides the piece to its chosen spot. The piece always locks at exactly the
+// placement the search chose. When turning and sliding cannot reach that placement, the piece locks there
+// at once without animation, so the move the agent panel describes is the move that happens. Human mode
+// uses the same decisions as a hint ("show agent"), so the sliders always show what the agent would do now.
+//
+// Game over depends on the mode. In AI PLAYS a game ends when the search finds no legal placement for a
+// piece, the rule of tetris/game.py, so the page's AI plays under the same rule as the benchmark.
+// In human mode a game ends when a piece cannot spawn at the top centre, because a person cannot place a
+// piece by search.
 //
 // The weights come from /api/tetris/meta (the tuned v3 weights). Nothing else touches the server.
 
@@ -12,6 +19,7 @@ import { getJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
 import {
   FEATURES, H, HAND_WEIGHTS, PIECES, ROTATIONS, W, Game, bestMove, boardFeatures, fits, placementFeatures,
+  reachesByMoves, stepToward,
 } from './tetris_engine.js';
 
 const $ = (id) => document.getElementById(id);
@@ -73,8 +81,7 @@ function buildSliders() {
         <span class="tt-tuned" id="tt-t${i}" title="the tuned value"></span>
         <output id="tt-v${i}"></output>
       </div>
-      <input id="tt-w${i}" type="range" min="-10" max="10" step="0.05">
-      <div class="tt-slider-hint">${FEATURE_HINTS[name]}</div>`;
+      <input id="tt-w${i}" type="range" min="-10" max="10" step="0.05" title="${FEATURE_HINTS[name]}">`;
     box.appendChild(row);
     const input = row.querySelector('input');
     input.addEventListener('input', () => {
@@ -138,8 +145,8 @@ function drawFitness() {
     ctx.beginPath(); ctx.moveTo(pad.l, y(v)); ctx.lineTo(w - pad.r, y(v)); ctx.stroke();
     ctx.fillText(Math.round(v), 4, y(v) + 3);
   }
-  ctx.fillText('gen 0', pad.l, h - 6);
-  ctx.textAlign = 'right'; ctx.fillText(`gen ${hist.length - 1}`, w - pad.r, h - 6); ctx.textAlign = 'left';
+  ctx.fillText('iter 0', pad.l, h - 6);
+  ctx.textAlign = 'right'; ctx.fillText(`iter ${hist.length - 1}`, w - pad.r, h - 6); ctx.textAlign = 'left';
   const line = (key, color, glow) => {
     ctx.beginPath();
     hist.forEach((r, g) => (g ? ctx.lineTo(x(g), y(r[key])) : ctx.moveTo(x(g), y(r[key]))));
@@ -153,15 +160,20 @@ function drawFitness() {
 // ── Decisions ─────────────────────────────────────────────────────────────
 
 // Work out the agent's choice for the falling piece with the current weights. Called when a piece spawns,
-// and again when the weights or lookahead change (throttled in the loop).
+// and again when the weights or lookahead change (throttled in the loop). target is the placement the AI
+// locks at; reachable says whether the AI can animate its way there (see reachesByMoves).
 function decide() {
   const g = state.game;
   if (!g || g.over) { state.decision = null; return; }
   const preview = state.lookahead ? g.bag.peek() : null;
   const { move, moves } = bestMove(g.board, g.piece, state.weights, preview, 6);
-  state.decision = { move, moves, phase: 'think', shown: 0, acc: 0, target: move ? { rot: move.rot, x: move.x } : null };
+  const target = move ? { rot: move.rot, x: move.x, y: move.y } : null;
+  state.decision = {
+    move, moves, phase: 'think', shown: 0, acc: 0, target, reachable: target !== null && reachesByMoves(g, target),
+  };
   state.dirty = true;
-  // The AI has no legal placement for this piece: the same game over as tetris/game.py.
+  // No legal placement for this piece is the AI's game over, the rule of tetris/game.py. In human mode it
+  // never gets here: a piece with no placement has a blocked spawn, and Game already ended that game.
   if (!move && state.mode === 'ai') { g.over = true; onGameOver(); }
 }
 
@@ -178,20 +190,22 @@ function heatColour(t) {
 // ── Game flow ─────────────────────────────────────────────────────────────
 
 function newGame() {
-  state.game = new Game(Math.floor(Math.random() * 1e9));
+  state.game = new Game(Math.floor(Math.random() * 1e9), { endOnBlockedSpawn: state.mode === 'human' });
   state.fallAcc = 0; state.actAcc = 0; state.paused = false;
   decide();
-  setStatus('PLAYING');
+  setStatus(state.mode === 'ai' ? 'AI PLAYING' : 'PLAYING');
   $('tt-over').hidden = true;
   state.dirty = true;
 }
 
 function setStatus(text) { $('chip-status').textContent = text; }
 
-function lockPiece() {
+// Lock the falling piece at `at` (rotation, column, bottom row). By default it locks where it is. The AI
+// passes the placement its search chose, so the lock is that placement and not wherever the piece ended up.
+function lockPiece(at = { rot: state.game.rot, x: state.game.x, y: state.game.y }) {
   const g = state.game;
   const before = g.lines;
-  const res = g.place(g.rot, g.x, g.y);
+  const res = g.place(at.rot, at.x, at.y);
   state.decision = null;
   if (res.lines) {
     const cells = res.lines * W;
@@ -218,14 +232,13 @@ function onGameOver() {
   if (state.mode === 'ai') setTimeout(() => { if (state.mode === 'ai') newGame(); }, 2600);
 }
 
-// One AI action per interval: rotate toward the target, slide to its column, then hard drop.
-// Each rotate or slide is one action, so the piece visibly turns and walks to its spot.
+// One AI action per interval: turn toward the target, slide to its column, then lock. Each turn or slide is
+// one action, so the piece visibly turns and walks to its spot. A placement that turning and sliding cannot
+// reach (a blocked slide near the top, say) gets no animation: the piece locks at the chosen placement at once.
 function aiAct() {
-  const g = state.game, d = state.decision;
-  if (!d || !d.target) { hardDrop(); return; }
-  if (g.rot !== d.target.rot && g.rotate()) return;
-  if (g.x !== d.target.x && g.move(Math.sign(d.target.x - g.x))) return;
-  hardDrop();
+  const d = state.decision;
+  if (!d || !d.target) return;
+  if (!d.reachable || !stepToward(state.game, d.target)) lockPiece(d.target);
 }
 
 function hardDrop() {
@@ -405,8 +418,6 @@ function renderPanels() {
   $('chip-lines').textContent = g.lines;
   $('chip-pieces').textContent = g.pieces;
   $('chip-best').textContent = state.bestLines;
-  $('chip-mode').textContent = state.mode === 'ai' ? 'AI' : 'HUMAN';
-  $('tt-speed-wrap').hidden = state.mode !== 'ai';
   const human = state.mode === 'human';
   document.querySelectorAll('[data-human]').forEach((b) => { b.disabled = !human || g.over; });
   $('tt-mode-human').setAttribute('aria-pressed', String(human));
@@ -486,6 +497,9 @@ function humanKey(key) {
 function bindControls() {
   document.addEventListener('keydown', (e) => {
     if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return; // let sliders and menus take keys
+    // Keys pressed while focus is in the explanation (its toggles and open-all button) belong to those controls,
+    // so Space toggles a box instead of dropping a piece.
+    if (e.target && e.target.closest && e.target.closest('.hiw, .howto, .pseudo')) return;
     const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '];
     if (e.key === 'p' || e.key === 'P') { togglePause(); e.preventDefault(); return; }
     if (e.key === 'h' || e.key === 'H') { toggleAgent(); return; }

@@ -408,6 +408,7 @@ def hint(puzzle: Puzzle, grid) -> dict:
                 continue
             r, c = (idx, i) if axis == "rows" else (i, idx)
             reason, span = _reason(axis, idx, i, v, clue, info)
+            reason = reason[:1].upper() + reason[1:]  # it follows a full stop in the hint text, so it opens a sentence
             state = "filled" if v == FILLED else "empty"
             return {
                 "contradiction": False,
@@ -447,5 +448,5 @@ def _reason(axis: str, idx: int, i: int, v: int, clue, info):
             length, (a, b) = best
             return (f"{name} has clue {clue_text(clue)}. Its run of {length} covers {along} {a + 1} to {b + 1} "
                     "in every arrangement, so this cell is filled."), (a, b)
-        return f"every arrangement of {name} (clue {clue_text(clue)}) fills this cell.", None
-    return f"no arrangement of {name} (clue {clue_text(clue)}) puts a run on this cell, so it is empty.", None
+        return f"Every arrangement of {name} (clue {clue_text(clue)}) fills this cell.", None
+    return f"No arrangement of {name} (clue {clue_text(clue)}) puts a run on this cell, so it is empty.", None

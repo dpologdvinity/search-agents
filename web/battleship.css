@@ -72,8 +72,8 @@
 .bs-toggle input { accent-color: var(--pink); width: 16px; height: 16px; }
 
 @media (max-width: 600px) {
-  .bs-board { grid-template-columns: 20px repeat(10, 28px); grid-template-rows: 20px repeat(10, 28px); }
-  .bs-cell { width: 28px; height: 28px; }
+  .bs-board { grid-template-columns: 22px repeat(10, 32px); grid-template-rows: 22px repeat(10, 32px); }
+  .bs-cell { width: 32px; height: 32px; }
   .bs-cell.hit::after, .bs-cell.sunk::after { font-size: 0.75rem; }
   .bs-stage { gap: 1.2rem; }
 }

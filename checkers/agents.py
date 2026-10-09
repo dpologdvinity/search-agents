@@ -57,7 +57,7 @@ DESCRIPTIONS = {
     ),
     "mcts": (
         "Monte Carlo tree search (UCT): plays random games from the positions it considers, cut short after "
-        "a few plies and scored by the evaluation, and favours the moves that win the most of them. It "
+        "at most 40 plies and scored by the evaluation, and favours the moves that win the most of them. It "
         "reports a win rate rather than a score, and it is seeded, so the same position always gets the same answer."
     ),
     "greedy": (
@@ -102,7 +102,7 @@ SIDE_NAMES = {RED: "Red", WHITE: "White"}
 
 
 def agent_label(agent: str, level: int, size: int = 8, *, forced: bool = True, by_nodes: bool = False) -> str:
-    """Name the algorithm and its budget, e.g. "MCTS (1,000 playouts)" or "minimax, depth 4".
+    """Name the algorithm and its budget, e.g. "MCTS (1,000 playouts)" or "minimax (depth 4)".
 
     Alpha-beta is named by its time budget, because the depth it reaches changes from one position to
     the next (the analysis shows the depth of each move). by_nodes names its node budget instead, as the
@@ -110,25 +110,25 @@ def agent_label(agent: str, level: int, size: int = 8, *, forced: bool = True, b
     """
     if agent == "alphabeta":
         budget = f"{ALPHABETA_NODES[level]:,} nodes" if by_nodes else f"{ALPHABETA_SECONDS[level]:.1f} s"
-        return f"alpha-beta search, iterative deepening, {budget}"
+        return f"alpha-beta search (iterative deepening, {budget})"
     if agent == "minimax":
-        return f"minimax, depth {MINIMAX_DEPTH[(size, forced)][level]}"
+        return f"minimax (depth {MINIMAX_DEPTH[(size, forced)][level]})"
     if agent == "mcts":
         return f"MCTS ({MCTS_ITERATIONS[size][level]:,} playouts)"
     if agent == "greedy":
-        return "greedy, one ply"
+        return "greedy (one ply)"
     if agent == "random":
         return "random"
     if agent == "chance":
-        return "chance (fixed odds)"
+        return "Chance (fixed odds)"
     raise ValueError(f"unknown agent {agent!r}")
 
 
 def matchup_text(players: dict, levels: dict, size: int = 8, *, forced: bool = True, by_nodes: bool = False) -> str:
     """The line that says who plays, shared by the page and the CLI.
 
-    One AI against a human: "White: alpha-beta search, iterative deepening, 0.8 s".
-    Two AIs: "Red: MCTS (1,000 playouts) vs White: alpha-beta search, iterative deepening, 0.8 s".
+    One AI against a human: "White: alpha-beta search (iterative deepening, 0.8 s)".
+    Two AIs: "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.8 s)".
     players maps RED and WHITE to an agent name or "human"; levels maps them to a strength.
     """
     parts = [f"{SIDE_NAMES[side]}: {agent_label(players[side], levels[side], size, forced=forced, by_nodes=by_nodes)}"

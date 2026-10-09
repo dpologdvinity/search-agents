@@ -2,7 +2,7 @@
 
 Why an explicit tree: CFR needs, at every decision, the regret of each action summed over all
 histories in the same information set, weighted by the other player's and the chance reach.
-Kuhn (about 30 nodes) and Leduc (a few thousand nodes) are small enough to build once and walk
+Kuhn (55 nodes) and Leduc (9,451 nodes) are small enough to build once and walk
 with plain arrays, which is much faster in Python than re-simulating states each iteration.
 
 Node kinds: TERMINAL (payoff for seat 0), CHANCE (deal or public card, with probabilities), and

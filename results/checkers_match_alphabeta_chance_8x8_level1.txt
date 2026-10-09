@@ -1,5 +1,5 @@
 Match: alphabeta vs chance, 10 games at level 1 on 8x8, forced captures, paired from 4-ply random openings
-Red: alpha-beta search, iterative deepening, 3,000 nodes vs White: chance (fixed odds)
+Red: alpha-beta search (iterative deepening, 3,000 nodes) vs White: Chance (fixed odds)
 Game  Red         White       Result
    1  alphabeta   chance      alphabeta wins (red)
    2  chance      alphabeta   alphabeta wins (white)

@@ -12,6 +12,7 @@
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="markov.css">
 </head>
@@ -33,19 +34,22 @@
       <a class="back-btn" href="index.html">← MAIN</a>
       <div class="proj-pg-tag">10 // MARKOV CHAINS</div>
       <h1 class="proj-pg-title neon-green glitch" data-text="MARKOV TEXT">MARKOV TEXT</h1>
-      <div class="proj-pg-sub">The next word depends only on the few words before it. Count what follows each phrase in a public-domain book, then roll the dice one token at a time.</div>
+      <div class="proj-pg-sub">A chain that writes one token at a time, drawn from counts of what followed each phrase in a book.</div>
     </div>
     <div class="proj-header-right">
       <div class="stat-chips">
-        <span class="stat-chip green">VOCAB <span class="val" id="chip-vocab">—</span></span>
-        <span class="stat-chip">CONTEXTS <span class="val" id="chip-contexts">—</span></span>
-        <span class="stat-chip">N-GRAMS <span class="val" id="chip-ngrams">—</span></span>
-        <span class="stat-chip pink">COPIED <span class="val" id="chip-copied">—</span></span>
-        <span class="stat-chip">LONGEST RUN <span class="val" id="chip-run">—</span></span>
+        <span class="stat-chip pink" title="Share of picks copied: each lies in a verbatim run of 8 words (20 characters) or more from the corpus">COPIED <span class="val" id="chip-copied">—</span></span>
+        <span class="stat-chip" title="Longest verbatim run ending at a pick, capped at 20 tokens">LONGEST RUN <span class="val" id="chip-run">—</span></span>
       </div>
     </div>
   </div>
 
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO USE</h2>
+    <p>The goal is to watch a Markov chain write text one token at a time, using only counts of what followed each short run of words in a public-domain book. Press GENERATE to run the chain, or STEP to advance it one token at a time.</p>
+    <p style="margin-top:0.5rem">Choose a corpus and a token level in SOURCE, then set ORDER and TEMPERATURE in THE DIALS. Space starts and pauses the chain, and n takes one step.</p>
+    <p style="margin-top:0.5rem">The next-token panel shows the candidates after the current context, with the sampled one flashing. The copy meter shows the share of picks that sit in a verbatim run of 8 words (20 characters) or more, and the longest run shows the longest stretch that occurs in the book.</p>
+  </section>
   <div class="proj-body">
     <div class="proj-game-col">
 
@@ -61,9 +65,9 @@
         <span><i class="mk-key mk-key-copied"></i>copied verbatim</span>
       </div>
       <div class="mk-actions">
-        <button class="cyber-btn green" id="btn-run" type="button" aria-pressed="false"><span class="btn-txt">▶ GENERATE</span></button>
-        <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">▸ STEP</span></button>
-        <button class="cyber-btn pink" id="btn-reset" type="button"><span class="btn-txt">↺ RESET</span></button>
+        <button class="cyber-btn green" id="btn-run" type="button" aria-pressed="false" title="Run the chain, one token per tick. Space also pauses it."><span class="btn-txt">▶ GENERATE</span></button>
+        <button class="cyber-btn" id="btn-step" type="button" title="Pick one token. The n key does the same."><span class="btn-txt">▸ STEP</span></button>
+        <button class="cyber-btn pink" id="btn-reset" type="button" title="Start again from the seeded starting window."><span class="btn-txt">↺ RESET</span></button>
       </div>
 
       <div style="margin-top:1.6rem">
@@ -71,25 +75,25 @@
         <div class="viz-panel mk-panel">
           <div class="viz-title" id="ctx-title">Context window</div>
           <div class="mk-ctx-line" id="ctx-line"></div>
-          <div class="mk-bars" id="bars" role="list" aria-label="Candidate next tokens and their probabilities"></div>
-          <div class="field-hint" id="pick-line">Bars show the chance of each candidate after the current context at this temperature. The chain samples one; the sampled bar flashes.</div>
+          <div class="mk-bars" id="bars" role="list" aria-label="Candidate next tokens and their probabilities" title="The chance of each candidate after the current context, at this temperature. The chain samples one, and its bar flashes."></div>
+          <div class="field-hint" id="pick-line">The sampled candidate flashes.</div>
         </div>
       </div>
 
       <div style="margin-top:1.6rem">
         <div class="section-title pink-ttl">COPY METER</div>
         <div class="viz-panel">
-          <div class="viz-title">Share of generated n-grams that appear verbatim in the corpus</div>
-          <div class="mk-meter" aria-hidden="true"><div class="mk-meter-fill" id="meter-fill"></div></div>
-          <div class="field-hint" id="meter-note">Order 5 copies: a 5-word phrase that the chain writes almost always already exists in the book. The longer the order, the more of the book it repeats.</div>
+          <div class="viz-title">Share of picks copied verbatim</div>
+          <div class="mk-meter" aria-hidden="true" title="Share of picks that lie in a verbatim run of 8 words (20 characters) or more that the corpus contains."><div class="mk-meter-fill" id="meter-fill"></div></div>
+          <div class="field-hint" id="meter-note">No picks yet.</div>
         </div>
       </div>
 
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">TRANSCRIPT</div>
+      <details class="log-fold">
+        <summary>Transcript and source</summary>
         <div class="field-hint" id="source-note" style="margin-bottom:0.4rem"></div>
         <div class="agent-log mk-log" id="log" aria-live="off"></div>
-      </div>
+      </details>
     </div>
 
     <div class="proj-ctrl-col">
@@ -98,13 +102,14 @@
         <div class="stack">
           <div>
             <div class="field-lbl">CORPUS</div>
-            <select class="cyber-select" id="corpus" style="width:100%" aria-label="Corpus"></select>
+            <select class="cyber-select" id="corpus" style="width:100%" aria-label="Corpus" title="The public-domain text the counts come from. Its source is under Transcript and source."></select>
+            <div class="field-hint">VOCAB <span class="val" id="chip-vocab">—</span> · CONTEXTS <span class="val" id="chip-contexts">—</span> · N-GRAMS <span class="val" id="chip-ngrams">—</span></div>
           </div>
           <div>
             <div class="field-lbl">TOKENS ARE</div>
             <div class="mk-toggle" role="group" aria-label="Token level">
-              <button class="cyber-btn green" id="lvl-word" type="button" aria-pressed="true"><span class="btn-txt">WORDS</span></button>
-              <button class="cyber-btn" id="lvl-char" type="button" aria-pressed="false"><span class="btn-txt">CHARACTERS</span></button>
+              <button class="cyber-btn green" id="lvl-word" type="button" aria-pressed="true" title="Each token is a word or a punctuation mark."><span class="btn-txt">WORDS</span></button>
+              <button class="cyber-btn" id="lvl-char" type="button" aria-pressed="false" title="Each token is one character."><span class="btn-txt">CHARACTERS</span></button>
             </div>
           </div>
         </div>
@@ -115,113 +120,293 @@
         <div class="stack">
           <div>
             <div class="field-lbl">ORDER n: <span id="order-val">3</span></div>
-            <input class="mk-range" id="order" type="range" min="1" max="5" step="1" value="3" aria-label="Order n, 1 to 5">
+            <input class="mk-range" id="order" type="range" min="1" max="5" step="1" value="3" aria-label="Order n, 1 to 5" title="Order n: the chain reads the last n-1 tokens and picks the next. Applies on release.">
             <div class="field-hint" id="order-note"></div>
           </div>
           <div>
             <div class="field-lbl">TEMPERATURE: <span id="temp-val">1.00</span></div>
-            <input class="mk-range" id="temp" type="range" min="0.1" max="2" step="0.05" value="1" aria-label="Temperature">
-            <div class="field-hint">Counts become count^(1/T). Low T repeats the favourite; high T wanders. Changes apply on the next token.</div>
+            <input class="mk-range" id="temp" type="range" min="0.1" max="2" step="0.05" value="1" aria-label="Temperature" title="Each count becomes count^(1/T). Low T repeats the favourite; high T wanders. Applies on the next token.">
           </div>
-          <div>
-            <div class="field-lbl">SEED</div>
-            <div class="mk-seed">
-              <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" inputmode="numeric" aria-label="Seed">
-              <button class="cyber-btn" id="btn-seed" type="button"><span class="btn-txt">⟲ RANDOM</span></button>
+        </div>
+        <details class="more-settings">
+          <summary>More settings</summary>
+          <div class="stack">
+            <div>
+              <div class="field-lbl">SEED</div>
+              <div class="mk-seed">
+                <input class="cyber-input" id="seed" type="number" min="0" max="2147483647" inputmode="numeric" aria-label="Seed" title="The seed picks the starting window and every draw, so a run can be replayed.">
+                <button class="cyber-btn" id="btn-seed" type="button" title="Pick a new seed at random and start a run."><span class="btn-txt">⟲ RANDOM</span></button>
+              </div>
             </div>
-            <div class="field-hint">The seed picks the starting window and every draw, so a run can be replayed.</div>
+            <div>
+              <div class="field-lbl">SPEED: <span id="speed-val">6</span> TOKENS PER SECOND</div>
+              <input class="mk-range" id="speed" type="range" min="1" max="20" step="1" value="6" aria-label="Tokens per second">
+            </div>
+            <div>
+              <div class="field-lbl">LENGTH</div>
+              <select class="cyber-select" id="length" style="width:100%" aria-label="Maximum tokens" title="How many tokens a run writes before it stops.">
+                <option value="60">60 tokens</option>
+                <option value="120" selected>120 tokens</option>
+                <option value="240">240 tokens</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <div class="field-lbl">SPEED: <span id="speed-val">6</span> TOKENS PER SECOND</div>
-            <input class="mk-range" id="speed" type="range" min="1" max="20" step="1" value="6" aria-label="Tokens per second">
-          </div>
-          <div>
-            <div class="field-lbl">LENGTH</div>
-            <select class="cyber-select" id="length" style="width:100%" aria-label="Maximum tokens">
-              <option value="60">60 tokens</option>
-              <option value="120" selected>120 tokens</option>
-              <option value="240">240 tokens</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title green-ttl">WHAT ORDER DOES</div>
-        <div class="stack">
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--green);margin-bottom:0.3rem">ORDER 1</div>
-            <div class="field-hint">Each word is drawn by its frequency alone. The text is word soup with the right vocabulary.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--cyan);margin-bottom:0.3rem">ORDER 2 TO 3</div>
-            <div class="field-hint">Each word depends on the one or two before it. Phrases start to sound like the book, and new sentences form.</div>
-          </div>
-          <div class="heuristic-card" style="padding:0.7rem">
-            <div style="font-family:var(--orb);font-size:0.65rem;color:var(--pink);margin-bottom:0.3rem">ORDER 4 TO 5</div>
-            <div class="field-hint">Most four-word contexts were seen once, so the chain replays the book. Watch the copy meter.</div>
-          </div>
-        </div>
+        </details>
       </div>
     </div>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
-  <p class="hiw-lede">A Markov chain writes text by looking only at the last few tokens. Here the model is nothing but counts: for every run of n-1 words in a corpus, how often each word followed it. Generating means reading the current context, drawing the next word in proportion to those counts, and repeating. The page runs a JavaScript port of the Python package <code>markov</code>, which reproduces the same tokens for a corpus, order, temperature and seed.</p>
-  <div class="hiw-grid">
-    <article class="hiw-card">
-      <h3>Counting what follows</h3>
-      <p class="hiw-plain"><b>New to this?</b> Read a book and put a finger on a phrase. Write down the word that comes next. Do it for every phrase. The table you end up with is the whole model: each phrase, and a tally of its followers.</p>
-      <p>An n-gram is n consecutive tokens. For order n, the corpus is cut into every window of n tokens. The first n-1 tokens are the context and the last is the successor, and the model keeps count[context][successor]. With the tiny text "a b a b a c", the order-2 table is a → {b: 2, c: 1} and b → {a: 2}.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>The Markov assumption</h3>
-      <p class="hiw-plain"><b>New to this?</b> Pretend the next word only cares about the last few words, and forgets everything before. That is a lie, but a useful one: it makes the table small enough to store and the sentences still look plausible.</p>
-      <p>Formally, P(next | everything so far) is replaced by P(next | last n-1 tokens). The order n is the size of the memory. Order 1 remembers nothing, and order 5 remembers four words. Character-level chains do the same with letters, so the memory is four characters, not four words.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Sampling and temperature</h3>
-      <p class="hiw-plain"><b>New to this?</b> Rolling dice weighted by the table. A phrase followed by "the" nine times and "a" once gives "the" nine chances in ten. Temperature turns the knob on that weighting: cold makes the favourite almost certain, hot makes every follower about as likely.</p>
-      <p>Each count c becomes c^(1/T) before normalising, so T = 1 uses the raw counts, T below 1 sharpens the distribution and T above 1 flattens it. Each token uses one uniform draw from a seeded generator (mulberry32, the same one as the bandits lab), so a seed replays a run exactly.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Order and copying</h3>
-      <p class="hiw-plain"><b>New to this?</b> At order 5 each four-word phrase in the output almost always occurs in the book already. The chain is not writing new sentences; it is stitching together passages it has seen, with the seams hidden. The copy meter measures how often that happens.</p>
-      <p>A generated window of n tokens is a copy if it occurs in the corpus. The meter reports the share of copied windows at the current order, and the longest verbatim run: the longest stretch that occurs in the corpus, capped at 20 words. A run can only be a copy if every shorter window ending at the same place is a copy too, which lets the check stop early.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>Perplexity and overfitting</h3>
-      <p class="hiw-plain"><b>New to this?</b> Perplexity is how surprised a model is by text, as an effective number of choices per word: lower is better. Score a model on the text it learned from and the number falls as the order grows, because the table memorises it. Score it on text it never saw and the number falls, then climbs again: a phrase the book never had leaves the model guessing, and high orders only repeat the book. On the Alice excerpt the held-out score is lowest at order 2 (209) and is 291 at order 3 and 380 at order 5. The gap between the two numbers is the overfitting.</p>
-      <p>Perplexity is exp of the mean negative log probability per token. Unseen phrases get add-alpha smoothing (alpha 0.01 here, so train scores are not drowned out). The command <code>python -m markov perplexity --corpus alice --order 1..5</code> prints train and held-out scores side by side. The held-out tail is the last 10% of tokens.</p>
-    </article>
-    <article class="hiw-card">
-      <h3>From counts to language models</h3>
-      <p class="hiw-plain"><b>New to this?</b> Chatbots and other large language models also predict the next token, one at a time, and they also sample it with a temperature. The difference is the memory: they do not store a table of phrases. They learn a function that turns the whole context into a distribution over tokens, so they can use a context they have never seen word for word.</p>
-      <p>A Markov chain is a language model whose context is limited to n-1 tokens and whose probabilities are counts. A modern model uses a much longer context (thousands of tokens) and computes the probabilities with a neural network, trained to lower the same negative log probability that perplexity measures. The sampling loop is the same: score the candidates, draw one, append it, repeat.</p>
-    </article>
+  <p class="hiw-lede">A <b>Markov chain</b> writes text by looking only at the last few tokens. A <b>token</b> is one unit of text: a word or punctuation mark at word level, or a single character at character level. The model is nothing but counts. For every run of n − 1 tokens in a <b>corpus</b>, the body of text the model is built from, it stores how often each token followed that run. Generating means reading the current context, drawing the next token in proportion to those counts, appending it, and repeating. The page runs a JavaScript port of the Python package <code>markov</code>, which produces the same tokens for the same corpus, order, temperature and seed.</p>
+
+  <h3 class="hiw-sub">Corpora and tokens</h3>
+  <p class="hiw-note">The four bundled corpora are public-domain texts: chapter 1 of <i>Alice's Adventures in Wonderland</i> (1865), chapter 1 of <i>Pride and Prejudice</i> (1813), Shakespeare's sonnets I to XV, and the Preamble and Article I of the US Constitution<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/corpus.py#L13-L14" target="_blank" rel="noopener" title="markov/corpus.py, lines 13–14" aria-label="Code on GitHub: markov/corpus.py, lines 13 to 14">1</a>. Each file begins with a source header, which the model skips. Only the text after the separator line is used<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/corpus.py#L24-L30" target="_blank" rel="noopener" title="markov/corpus.py, lines 24–30" aria-label="Code on GitHub: markov/corpus.py, lines 24 to 30">2</a>.</p>
+  <p class="hiw-note"><b>Tokenization</b> splits the text into tokens. Every run of whitespace first collapses to one space. At word level a token is either a run of ASCII letters, with inner apostrophes allowed, straight or curly, as in <code>Don't</code>, or a single other non-space character such as a comma or a digit<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L23-L25" target="_blank" rel="noopener" title="markov/model.py, lines 23–25" aria-label="Code on GitHub: markov/model.py, lines 23 to 25">3</a>. At character level every character is a token, including the space<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L42-L46" target="_blank" rel="noopener" title="markov/model.py, lines 42–46" aria-label="Code on GitHub: markov/model.py, lines 42 to 46">4</a>. The JavaScript port uses the same pattern<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L12" target="_blank" rel="noopener" title="web/js/markov-core.js, line 12" aria-label="Code on GitHub: web/js/markov-core.js, line 12">5</a>.</p>
+  <p class="hiw-note"><b>Example.</b> The text <code>Don't stop.</code> becomes three word tokens: <code>Don't</code>, <code>stop</code> and <code>.</code>. At character level it becomes eleven tokens, one for each character and one for the space.</p>
+
+  <h3 class="hiw-sub">Counting n-grams</h3>
+  <p class="hiw-note">An <b>n-gram</b> is a run of n consecutive tokens. The <b>order</b> n is the length of the window the model counts. For order n the corpus is cut into every window of n tokens. The first n − 1 tokens of a window form the <b>context</b>, and the last token is its <b>successor</b>. The model keeps the count <span class="math">c(\mathrm{ctx}, w)</span> of how often the token <span class="math">w</span> followed the context <span class="math">\mathrm{ctx}</span><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L69-L84" target="_blank" rel="noopener" title="markov/model.py, lines 69–84" aria-label="Code on GitHub: markov/model.py, lines 69 to 84">6</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">C(\mathrm{ctx}) = \sum_{w} c(\mathrm{ctx}, w)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L246-L247" target="_blank" rel="noopener" title="markov/model.py, lines 246–247" aria-label="Code on GitHub: markov/model.py, lines 246 to 247">7</a></span>
   </div>
+  <p class="hiw-note">Here <span class="math">c(\mathrm{ctx}, w)</span> is the count of one n-gram, and <span class="math">C(\mathrm{ctx})</span> is the total count of a context: how many times it was followed by any token. Both are whole numbers of zero or more. The header chips count distinct things rather than occurrences. VOCAB is the number of distinct tokens, CONTEXTS is the number of distinct contexts, and N-GRAMS is the number of distinct (context, successor) pairs<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L86-L98" target="_blank" rel="noopener" title="markov/model.py, lines 86–98" aria-label="Code on GitHub: markov/model.py, lines 86 to 98">8</a>.</p>
+  <p class="hiw-note">The table is stored as a dictionary from each context to its successor counts. Dictionaries keep insertion order, so the candidates appear in the order they first occur in the corpus. The JavaScript port uses a Map, which keeps the same order, so the sampler walks the candidates in the same order in both languages<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L65-L89" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 65–89" aria-label="Code on GitHub: web/js/markov-core.js, lines 65 to 89">9</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L69-L84" target="_blank" rel="noopener" title="markov/model.py, lines 69–84" aria-label="Code on GitHub: markov/model.py, lines 69 to 84">6</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L65-L89" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 65–89" aria-label="Code on GitHub: web/js/markov-core.js, lines 65 to 89">9</a></span>
+    <pre class="pseudo-simple">function COUNT-NGRAMS(tokens, n):
+    k ← n − 1                                   # context length
+    for i from 0 to len(tokens) − k − 1:
+        ctx ← tokens[i .. i + k − 1]            # the k tokens before the successor
+        w ← tokens[i + k]                       # the token that follows them
+        count[ctx][w] ← count[ctx][w] + 1
+    return count</pre>
+    <pre class="pseudo-full" hidden>function COUNT-NGRAMS(tokens, n):
+    if n &lt; 1:
+        raise error "order must be at least 1"
+    if len(tokens) &lt; n:
+        raise error "need at least n tokens"
+    count ← empty map                           # keys keep first-seen order
+    k ← n − 1                                   # context length
+    for i from 0 to len(tokens) − k − 1:        # the last k tokens have no successor
+        ctx ← tokens[i .. i + k − 1]            # a tuple of k tokens (a joined key in JavaScript)
+        if ctx is not in count:
+            count[ctx] ← empty map
+        w ← tokens[i + k]
+        count[ctx][w] ← count[ctx][w] + 1       # a successor not seen before counts as 0
+    return count</pre>
+  </div>
+  <p class="hiw-note">The <b>simple</b> version is the core loop. The <b>full</b> version adds the two checks on the order and the length of the text, and creates the entry for a context the first time it appears.</p>
+  <p class="hiw-note"><b>Example.</b> For the text <code>a b a b a c</code> at order 2 the context is one token, and the windows are <code>a b</code>, <code>b a</code>, <code>a b</code>, <code>b a</code> and <code>a c</code>. The table is a → {b: 2, c: 1} and b → {a: 2}. So <span class="math">C(a) = 2 + 1 = 3</span>.</p>
+
+  <h3 class="hiw-sub">The Markov assumption</h3>
+  <p class="hiw-note">A <b>Markov assumption</b> is a simplification: the next token is taken to depend only on a fixed number of the tokens before it. Here that number is n − 1, so the model reads the last n − 1 tokens and ignores everything earlier. The order is the size of the model's memory. Order 1 remembers nothing, and order 5 remembers four tokens. At character level the memory is n − 1 characters.</p>
+  <div class="math-fig">
+    <div class="math math-block">P(w_t \mid w_1, \dots, w_{t-1}) \approx P(w_t \mid w_{t-n+1}, \dots, w_{t-1})</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L155-L156" target="_blank" rel="noopener" title="markov/model.py, lines 155–156" aria-label="Code on GitHub: markov/model.py, lines 155 to 156">10</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">w_t</span> is the token at position <span class="math">t</span> of the text. The left side conditions on everything before it. The right side conditions only on the last n − 1 tokens. The code uses the right side directly: the lookup key is the tuple of the last n − 1 tokens<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L78-L84" target="_blank" rel="noopener" title="markov/model.py, lines 78–84" aria-label="Code on GitHub: markov/model.py, lines 78 to 84">11</a>.</p>
+
+  <h3 class="hiw-sub">Sampling with temperature</h3>
+  <p class="hiw-note"><b>Sampling</b> draws the next token at random, with each candidate's chance equal to its share of the weights. <b>Temperature</b> T reweights the counts before they are normalised. Each count c becomes c<sup>1/T</sup>, and each weight is divided by the sum of all the weights<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L100-L111" target="_blank" rel="noopener" title="markov/model.py, lines 100–111" aria-label="Code on GitHub: markov/model.py, lines 100 to 111">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L92-L99" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 92–99" aria-label="Code on GitHub: web/js/markov-core.js, lines 92 to 99">13</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">p_T(w \mid \mathrm{ctx}) = \frac{c(\mathrm{ctx}, w)^{1/T}}{\sum_{w'} c(\mathrm{ctx}, w')^{1/T}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L100-L111" target="_blank" rel="noopener" title="markov/model.py, lines 100–111" aria-label="Code on GitHub: markov/model.py, lines 100 to 111">12</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L92-L99" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 92–99" aria-label="Code on GitHub: web/js/markov-core.js, lines 92 to 99">13</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">T</span> is the temperature: the page allows 0.1 to 2, with 1 as the default. The sum runs over every successor <span class="math">w'</span> of the context. At <span class="math">T = 1</span> the weights are the raw counts. Below 1 the most common successor gains weight, and above 1 the successors become more even. The chances sum to 1.</p>
+  <p class="hiw-note"><b>Example.</b> After <code>a</code> the counts are b: 2 and c: 1. At T = 1 the weights are 2 and 1, so p(b) = 2/3. At T = 0.5 the weights are 2<sup>2</sup> = 4 and 1<sup>2</sup> = 1, so p(b) = 4/5 = 0.8.</p>
+  <p class="hiw-note">Each draw uses one uniform number u in [0, 1) from a seeded generator, mulberry32<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py#L22-L35" target="_blank" rel="noopener" title="bandits/rng.py, lines 22–35" aria-label="Code on GitHub: bandits/rng.py, lines 22 to 35">14</a>. It keeps a 32-bit state, adds a fixed constant on each step, and mixes the result with multiplies and shifts. Both languages keep only the low 32 bits of each product, so the same seed gives the same stream. The chain multiplies u by the total weight, walks the successors in order, and returns the first one whose running sum passes that value. This is the <b>inverse CDF</b> method: each successor owns a slice of the interval whose width is its weight<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L114-L123" target="_blank" rel="noopener" title="markov/model.py, lines 114–123" aria-label="Code on GitHub: markov/model.py, lines 114 to 123">15</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L102-L111" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 102–111" aria-label="Code on GitHub: web/js/markov-core.js, lines 102 to 111">16</a>.</p>
+
+  <h3 class="hiw-sub">Generating text</h3>
+  <p class="hiw-note"><b>Generation</b> starts from a <b>prompt</b>: a window of n − 1 tokens taken from a seeded position in the corpus, so the first pick already has a context. Each pick reads the last n − 1 tokens of the output, samples a successor, and appends it. The LENGTH setting sets how many picks a run makes<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L141-L168" target="_blank" rel="noopener" title="markov/model.py, lines 141–168" aria-label="Code on GitHub: markov/model.py, lines 141 to 168">17</a>.</p>
+  <p class="hiw-note">A context with no successor can occur only at the very end of the corpus, where the last n − 1 tokens are not followed by anything. The chain then jumps to another seeded window. The jump adds that window's tokens to the output without a pick, and it is counted as a <b>restart</b>. The page marks the jumped tokens in the output, and tags the pick after the jump as JUMP in the transcript<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L158-L161" target="_blank" rel="noopener" title="markov/model.py, lines 158–161" aria-label="Code on GitHub: markov/model.py, lines 158 to 161">18</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov.js#L290-L293" target="_blank" rel="noopener" title="web/js/markov.js, lines 290–293" aria-label="Code on GitHub: web/js/markov.js, lines 290 to 293">19</a>.</p>
+  <p class="hiw-note">The Python and JavaScript versions produce the same tokens, picks, probabilities, restarts and copy marks. The parity test checks 15 cases, including 2 that reach a restart, token for token and copy mark for copy mark<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_markov_parity.py#L99-L116" target="_blank" rel="noopener" title="tests/test_markov_parity.py, lines 99–116" aria-label="Code on GitHub: tests/test_markov_parity.py, lines 99 to 116">20</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L141-L168" target="_blank" rel="noopener" title="markov/model.py, lines 141–168" aria-label="Code on GitHub: markov/model.py, lines 141 to 168">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L129-L167" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 129–167" aria-label="Code on GitHub: web/js/markov-core.js, lines 129 to 167">21</a></span>
+    <pre class="pseudo-simple">function GENERATE(model, count, T):
+    out ← a seeded window of n − 1 corpus tokens    # the prompt
+    picks ← empty list
+    while length of picks &lt; count:
+        ctx ← the last n − 1 tokens of out
+        if ctx has no successors:
+            append a seeded corpus window to out     # restart: no token is picked
+            continue
+        weights ← count(ctx, w)^(1/T) for each successor w
+        append PICK(weights) to out and to picks
+    return out, picks</pre>
+    <pre class="pseudo-full" hidden>function GENERATE(model, rng, count, T):
+    k ← order − 1                                    # context length
+    N ← number of corpus tokens
+    i ← INDEX(rng, N − k)                            # seeded start, windows 0 .. N − k − 1
+    out ← tokens[i .. i + k − 1]                     # the prompt; empty when k = 0
+    picks ← empty list
+    restarts ← 0
+    while length of picks &lt; count:
+        ctx ← the last k tokens of out               # the empty context when k = 0
+        succ ← successors[ctx], or nothing if ctx is unseen
+        if succ is missing or empty:
+            j ← INDEX(rng, N − k)
+            append tokens[j .. j + k − 1] to out
+            restarts ← restarts + 1
+            continue                                 # the jump emits no pick
+        weights ← [c^(1/T) for each (w, c) in succ]  # in insertion order
+        idx ← PICK(weights, rng)
+        append (length of out, succ[idx]) to picks
+        append succ[idx] to out
+    return out, picks, restarts
+
+function PICK(weights, rng):
+    total ← sum of weights
+    u ← UNIFORM(rng) · total                         # one draw in [0, total)
+    cum ← 0
+    for idx from 0 to len(weights) − 1:
+        cum ← cum + weights[idx]
+        if u &lt; cum:
+            return idx
+    return len(weights) − 1                          # only rounding at the top of the range
+
+function INDEX(rng, k):
+    return min(k − 1, trunc(UNIFORM(rng) · k))       # a whole number in [0, k)</pre>
+  </div>
+  <p class="hiw-note">The full version is the loop that <code>generate()</code> runs<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L141-L168" target="_blank" rel="noopener" title="markov/model.py, lines 141–168" aria-label="Code on GitHub: markov/model.py, lines 141 to 168">17</a>. The <b>restart</b> is the only branch that emits no token, and the restart's window is drawn with the same seeded generator, so a jump is replayed exactly as well. PICK is the inverse CDF step above, and INDEX draws a whole number from the same stream<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L33-L36" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 33–36" aria-label="Code on GitHub: web/js/markov-core.js, lines 33 to 36">22</a>.</p>
+
+  <h3 class="hiw-sub">Copy meter and longest run</h3>
+  <p class="hiw-note">The <b>copy meter</b> asks how much of the output is repeated word for word from the corpus. A <b>verbatim run</b> is a stretch of consecutive tokens that occurs unchanged in the corpus. A token is <b>copied</b> when it lies in a verbatim run of at least K tokens, where K is 8 words at word level and 20 characters at character level<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L33" target="_blank" rel="noopener" title="markov/model.py, line 33" aria-label="Code on GitHub: markov/model.py, line 33">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L11" target="_blank" rel="noopener" title="web/js/markov-core.js, line 11" aria-label="Code on GitHub: web/js/markov-core.js, line 11">24</a>. Both values were set by hand, not tuned on any text: 8 words is a short phrase, and 20 characters is about three words of English. The meter shows the share of picks that are copied.</p>
+  <p class="hiw-note">A token is copied exactly when some window of K consecutive output tokens that contains it occurs in the corpus. Every verbatim run of at least K tokens contains such a window, and every such window is itself a run. The code slides a window of K tokens along the output and marks every token inside each window that occurs in the corpus<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L188-L204" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 188–204" aria-label="Code on GitHub: web/js/markov-core.js, lines 188 to 204">25</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{copied} = 100 \cdot \frac{\#\{\, p \in \mathrm{picks} : \exists\, q \in [\,p,\; p + K - 1\,] \text{ with } \mathrm{out}[q - K + 1 \ldots q] \text{ in the corpus} \,\}}{\#\{\mathrm{picks}\}}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L198-L217" target="_blank" rel="noopener" title="markov/model.py, lines 198–217" aria-label="Code on GitHub: markov/model.py, lines 198 to 217">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L206-L215" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 206–215" aria-label="Code on GitHub: web/js/markov-core.js, lines 206 to 215">27</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\mathrm{copied}</span> is the percentage the meter shows, and <span class="math">K</span> is the threshold above. The set <span class="math">\mathrm{picks}</span> holds the generated tokens, and <span class="math">\mathrm{out}</span> is the whole output, including the starting window and any restart windows, so a window can cover them. The window <span class="math">\mathrm{out}[q - K + 1 \ldots q]</span> is the K tokens that end at position q. A window ending at q covers position p exactly when <span class="math">p \le q \le p + K - 1</span>. The count is over picks only, so the prompt and the restart tokens are not counted.</p>
+  <p class="hiw-note">On the page the marks are set while the chain writes. A mark is set once and never cleared, so when a window completes, a pick inside it changes from new to copied, up to K − 1 tokens after it was written. The meter and the transcript change at that moment<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov.js#L296-L303" target="_blank" rel="noopener" title="web/js/markov.js, lines 296–303" aria-label="Code on GitHub: web/js/markov.js, lines 296 to 303">28</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov.js#L240-L249" target="_blank" rel="noopener" title="web/js/markov.js, lines 240–249" aria-label="Code on GitHub: web/js/markov.js, lines 240 to 249">29</a>.</p>
+  <p class="hiw-note">The table gives the measured meter for Alice at word level, with the page's defaults: seed 1, temperature 1 and 120 picks. The command below prints the same copied share and longest run on its last line<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/__main__.py#L67-L83" target="_blank" rel="noopener" title="markov/__main__.py, lines 67–83" aria-label="Code on GitHub: markov/__main__.py, lines 67 to 83">30</a>.</p>
+  <p class="hiw-note"><code>python -m markov generate --corpus alice --order n --words 120 --seed 1</code>, for each order n</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Order</th><th>Copied picks</th><th>Copied share</th><th>Longest run</th></tr></thead><tbody>
+    <tr><td>1</td><td>0 of 120</td><td>0.0%</td><td>2</td></tr>
+    <tr><td>2</td><td>0 of 120</td><td>0.0%</td><td>7</td></tr>
+    <tr><td>3</td><td>103 of 120</td><td>85.8%</td><td>14</td></tr>
+    <tr><td>4</td><td>118 of 120</td><td>98.3%</td><td>20</td></tr>
+    <tr><td>5</td><td>120 of 120</td><td>100.0%</td><td>20</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">The share rises with order. At order 1 the chain draws each word from corpus frequencies alone, and no eight-word stretch of this run occurs in the book. At order 5 almost every context has exactly one successor (on the training text of Alice, 2,329 contexts for 2,357 distinct n-grams), so the walk follows the book word for word. At character level, with K = 20 and the same seed, the share is 0.0% at orders 1 to 4 and 32.5% (39 of 120 picks) at order 5.</p>
+  <p class="hiw-note">The <b>longest run</b> is the longest verbatim run that ends at a pick, capped at 20 tokens. The suffix that ends at the pick grows one token at a time while it occurs in the corpus, and the search stops at the first miss, because a suffix can occur only if every shorter suffix ending at the same token occurs too<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L186-L195" target="_blank" rel="noopener" title="markov/model.py, lines 186–195" aria-label="Code on GitHub: markov/model.py, lines 186 to 195">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L180-L186" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 180–186" aria-label="Code on GitHub: web/js/markov-core.js, lines 180 to 186">32</a>. The corpus windows of length l are every run of l consecutive corpus tokens, stored as a set, so each membership test is one lookup<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L171-L176" target="_blank" rel="noopener" title="markov/model.py, lines 171–176" aria-label="Code on GitHub: markov/model.py, lines 171 to 176">33</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L33" target="_blank" rel="noopener" title="markov/model.py, line 33" aria-label="Code on GitHub: markov/model.py, line 33">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L11" target="_blank" rel="noopener" title="web/js/markov-core.js, line 11" aria-label="Code on GitHub: web/js/markov-core.js, line 11">24</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L188-L204" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 188–204" aria-label="Code on GitHub: web/js/markov-core.js, lines 188 to 204">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L198-L217" target="_blank" rel="noopener" title="markov/model.py, lines 198–217" aria-label="Code on GitHub: markov/model.py, lines 198 to 217">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L206-L215" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 206–215" aria-label="Code on GitHub: web/js/markov-core.js, lines 206 to 215">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L186-L195" target="_blank" rel="noopener" title="markov/model.py, lines 186–195" aria-label="Code on GitHub: markov/model.py, lines 186 to 195">31</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js#L180-L186" target="_blank" rel="noopener" title="web/js/markov-core.js, lines 180–186" aria-label="Code on GitHub: web/js/markov-core.js, lines 180 to 186">32</a></span>
+    <pre class="pseudo-simple">function COPY-METER(out, picks, K):
+    marked ← no token marked
+    for each window of K consecutive tokens in out:
+        if the window occurs in the corpus:
+            mark every token in the window
+    copied ← for each pick, whether its token is marked
+    return 100 · (number of copied picks) / (number of picks)</pre>
+    <pre class="pseudo-full" hidden>constants: K = 8 for words, K = 20 for characters; MAX-RUN = 20
+function COPY-CHECK(out, picks, K):
+    marked ← a list of False, one entry per token of out
+    for q from K − 1 to len(out) − 1:                 # the window of K tokens ending at q
+        if out[q − K + 1 .. q] occurs among the corpus windows of length K:
+            for t from q − K + 1 to q:
+                marked[t] ← True                      # every token in a copied window
+    copied ← [marked[p] for each pick at position p in picks]
+    pct ← 0 if copied is empty, else 100 · (number of True in copied) / (length of copied)
+    longest ← 0
+    for each pick at position p in picks:
+        longest ← max(longest, RUN-ENDING-AT(out, p))
+    return copied, pct, longest
+
+function RUN-ENDING-AT(out, p):
+    length ← 0
+    while length &lt; min(MAX-RUN, p + 1) and out[p − length .. p] occurs among the corpus windows of length length + 1:
+        length ← length + 1
+    return length</pre>
+  </div>
+  <p class="hiw-note">The full version is the loop that <code>copy_report()</code> runs. Its first loop marks every window that is in the corpus, and a mark is never cleared, so a token counted as copied stays copied. RUN-ENDING-AT is the suffix search for the longest run, with the same cap as the page.</p>
+
+  <h3 class="hiw-sub">Add-alpha smoothing</h3>
+  <p class="hiw-note">A model that counts only what it saw gives probability 0 to a token that never followed its context, and the logarithm of 0 is undefined. <b>Add-alpha smoothing</b> adds a small pseudo-count <span class="math">\alpha</span> to every count, so every token gets a positive probability. The denominator gains <span class="math">\alpha (V + 1)</span>. The <span class="math">V</span> counts the training tokens that are distinct, and the extra 1 is an <b>unknown-token bucket</b>. It reserves mass for a token the training text never had, so the probabilities over the vocabulary and the bucket sum to 1<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L228-L233" target="_blank" rel="noopener" title="markov/model.py, lines 228–233" aria-label="Code on GitHub: markov/model.py, lines 228 to 233">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L246-L248" target="_blank" rel="noopener" title="markov/model.py, lines 246–248" aria-label="Code on GitHub: markov/model.py, lines 246 to 248">35</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">P_\alpha(w \mid \mathrm{ctx}) = \frac{c(\mathrm{ctx}, w) + \alpha}{C(\mathrm{ctx}) + \alpha\,(V + 1)}</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L228-L233" target="_blank" rel="noopener" title="markov/model.py, lines 228–233" aria-label="Code on GitHub: markov/model.py, lines 228 to 233">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L246-L248" target="_blank" rel="noopener" title="markov/model.py, lines 246–248" aria-label="Code on GitHub: markov/model.py, lines 246 to 248">35</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">\alpha</span> is the smoothing constant, 0.01 by default and always above 0, and <span class="math">V</span> is the number of distinct training tokens. The counts <span class="math">c</span> and <span class="math">C</span> are the ones defined above. A context the training text never had has <span class="math">C = 0</span>, so each token gets <span class="math">1/(V + 1)</span> after it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L225" target="_blank" rel="noopener" title="markov/model.py, line 225" aria-label="Code on GitHub: markov/model.py, line 225">36</a>.</p>
+  <p class="hiw-note"><b>Example.</b> For <code>a b a b a c</code> at order 2, <span class="math">V = 3</span> and <span class="math">C(a) = 3</span>. With <span class="math">\alpha = 0.01</span>, <span class="math">P_\alpha(c \mid a) = (1 + 0.01) / (3 + 0.01 \times 4) = 1.01 / 3.04 \approx 0.332</span>. A token the text never had after <code>a</code> gets <span class="math">0.01 / 3.04 \approx 0.003</span>.</p>
+  <p class="hiw-note">The constant is small on purpose. With <span class="math">\alpha = 1</span> (Laplace smoothing) the training perplexity on Alice is 230.54 at order 1, 232.89 at order 2 and 291.03 at order 3, so the smoothing mass hides the fit. With 0.01 it falls from 223.58 to 7.37 over the same orders.</p>
+
+  <h3 class="hiw-sub">Perplexity</h3>
+  <p class="hiw-note"><b>Perplexity</b> measures how well the model predicts a text. It is the exponential of the average <b>negative log probability</b> per token, where the log is the natural logarithm. A model that gives every token probability 1/8 has perplexity 8, which is the number of equally likely choices it is effectively making. Lower is better. The page does not compute perplexity; the command line does<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/__main__.py#L86-L99" target="_blank" rel="noopener" title="markov/__main__.py, lines 86–99" aria-label="Code on GitHub: markov/__main__.py, lines 86 to 99">37</a>.</p>
+  <div class="math-fig">
+    <div class="math math-block">\mathrm{PP} = \exp\!\left(-\frac{1}{N} \sum_{t=t_0}^{L-1} \log P_\alpha(w_t \mid \mathrm{ctx}_t)\right)</div>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L238-L253" target="_blank" rel="noopener" title="markov/model.py, lines 238–253" aria-label="Code on GitHub: markov/model.py, lines 238 to 253">38</a></span>
+  </div>
+  <p class="hiw-note">Here <span class="math">L</span> is the number of tokens, <span class="math">w_t</span> is the token at position <span class="math">t</span>, and <span class="math">\mathrm{ctx}_t</span> is the n − 1 tokens before it. The scored positions start at <span class="math">t_0 = \max(\mathrm{start}, n - 1)</span>, the first position with a full context at or after the start, and <span class="math">N = L - t_0</span> is their number. Tokens before the start are not scored. The train score starts at 0, and the held-out score starts at the first held-out token<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L243-L244" target="_blank" rel="noopener" title="markov/model.py, lines 243–244" aria-label="Code on GitHub: markov/model.py, lines 243 to 244">39</a>.</p>
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L228-L253" target="_blank" rel="noopener" title="markov/model.py, lines 228–253" aria-label="Code on GitHub: markov/model.py, lines 228 to 253">40</a></span>
+    <pre class="pseudo-simple">function PERPLEXITY(model, tokens, start, α):
+    total ← 0
+    count ← 0
+    for each position t from max(start, n − 1) to len(tokens) − 1:
+        ctx ← the n − 1 tokens before t
+        p ← (count of tokens[t] after ctx + α) / (total count after ctx + α · (V + 1))
+        total ← total + log(p)
+        count ← count + 1
+    return exp(−total / count)</pre>
+    <pre class="pseudo-full" hidden>function PERPLEXITY(model, tokens, start, α):
+    k ← n − 1                                        # context length
+    V ← number of distinct training tokens
+    totals ← empty map                               # C(ctx), summed once per context
+    log-sum ← 0
+    count ← 0
+    for t from max(start, k) to len(tokens) − 1:
+        ctx ← tokens[t − k .. t − 1]
+        succ ← model.successors[ctx], or nothing if ctx was never seen
+        if ctx is not in totals:
+            totals[ctx] ← sum of the counts in succ  # 0 when ctx was never seen
+        p ← (succ[tokens[t]] + α) / (totals[ctx] + α · (V + 1))   # a missing successor counts as 0
+        log-sum ← log-sum + log(p)
+        count ← count + 1
+    if count = 0:
+        raise error "no tokens to score"
+    return exp(−log-sum / count)</pre>
+  </div>
+  <p class="hiw-note">The <b>running sum</b> of logs is kept instead of a product of probabilities, because a product of thousands of numbers below 1 shrinks toward zero and cannot be stored in a float. The <b>memo</b> <code>totals</code> stores each context's total count the first time it is needed. The probability in the loop is the add-alpha formula above<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L238-L250" target="_blank" rel="noopener" title="markov/model.py, lines 238–250" aria-label="Code on GitHub: markov/model.py, lines 238 to 250">41</a>.</p>
+
+  <h3 class="hiw-sub">Train and held-out perplexity</h3>
+  <p class="hiw-note">A model can be scored on the text it was counted from, which gives its <b>train</b> perplexity, or on text it never counted, which gives its <b>held-out</b> perplexity. The held-out tail is the last 10% of tokens, rounded, so 266 of Alice's 2,658 tokens are held out and 2,392 train the model<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py#L220-L222" target="_blank" rel="noopener" title="markov/model.py, lines 220–222" aria-label="Code on GitHub: markov/model.py, lines 220 to 222">42</a>. The command below prints both scores for each order. The contexts and N-grams columns come from the training tokens<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/markov/__main__.py#L86-L99" target="_blank" rel="noopener" title="markov/__main__.py, lines 86–99" aria-label="Code on GitHub: markov/__main__.py, lines 86 to 99">37</a>.</p>
+  <p class="hiw-note"><code>python -m markov perplexity --corpus alice --order 1..5</code> (add-alpha smoothing with alpha 0.01):</p>
+  <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Order</th><th>Contexts</th><th>N-grams</th><th>Train perplexity</th><th>Held-out perplexity</th></tr></thead><tbody>
+    <tr><td>1</td><td>1</td><td>622</td><td>223.58</td><td>494.24</td></tr>
+    <tr><td>2</td><td>622</td><td>1,787</td><td>13.18</td><td>208.72</td></tr>
+    <tr><td>3</td><td>1,787</td><td>2,229</td><td>7.37</td><td>290.87</td></tr>
+    <tr><td>4</td><td>2,229</td><td>2,329</td><td>7.03</td><td>348.83</td></tr>
+    <tr><td>5</td><td>2,329</td><td>2,357</td><td>7.06</td><td>379.69</td></tr>
+  </tbody></table></div>
+  <p class="hiw-note">Train perplexity falls from 223.58 at order 1 to 7.37 at order 3 and then levels off. Held-out perplexity is lowest at order 2, at 208.72, and rises to 290.87 at order 3 and 379.69 at order 5. That rise is <b>overfitting</b>: the table fits the training text more closely as the order grows, and the fit does not carry over to new text. At order 5 the training text has 2,329 contexts and 2,357 distinct n-grams, so almost every context has exactly one successor, and the model puts nearly all its probability on that one token.</p>
+
+  <h3 class="hiw-sub">From counts to language models</h3>
+  <p class="hiw-note">Large language models also predict the next token, one at a time, and they also sample it with a temperature. The difference is the memory. A model of this kind is a <b>neural network</b>, a function with adjustable numbers called <b>weights</b>. It turns a context of thousands of tokens into a distribution over the vocabulary, so it can use a context it has never seen word for word. It stores no table of phrases. A Markov chain is the same loop, with a context limited to n − 1 tokens and probabilities read directly from counts. Training a large model lowers the same negative log probability that perplexity measures.</p>
 
   <h3 class="hiw-sub">Parameters and their values</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Parameter</th><th>Value</th><th>Used by</th></tr></thead><tbody>
-    <tr><td>Corpus</td><td>Four public-domain excerpts, exact text, 5 to 14 KB each: Alice in Wonderland chapter 1, Pride and Prejudice chapter 1, Shakespeare's sonnets I to XV, and the Constitution's Preamble and Article I (Project Gutenberg eBooks #11, #1342 and #1041; the National Archives transcript for the Constitution)</td><td>all</td></tr>
-    <tr><td>Token level</td><td>Words: letter runs with inner apostrophes (straight or curly), plus each punctuation mark. Characters: every character, with whitespace runs collapsed to one space</td><td>tokeniser</td></tr>
+    <tr><td>Corpus</td><td>Four public-domain texts, 5 to 14 KB each: Alice in Wonderland chapter 1, Pride and Prejudice chapter 1, Shakespeare's sonnets I to XV, and the Constitution's Preamble and Article I (Project Gutenberg eBooks #11, #1342 and #1041; the National Archives transcript for the Constitution)</td><td>all</td></tr>
+    <tr><td>Token level</td><td>Words: runs of ASCII letters with inner apostrophes (straight or curly), plus each other non-space character. Characters: every character, with whitespace runs collapsed to one space</td><td>tokenizer</td></tr>
     <tr><td>Order n</td><td>1 to 5. The model reads the last n-1 tokens and predicts the next</td><td>counts, sampling, copy meter</td></tr>
     <tr><td>Temperature T</td><td>0.1 to 2 (default 1). Weights are count^(1/T)</td><td>sampling</td></tr>
     <tr><td>Seed</td><td>0 to 2147483647. Picks the starting window and every draw</td><td>sampling</td></tr>
+    <tr><td>Length</td><td>60, 120 or 240 picks</td><td>generation</td></tr>
     <tr><td>Restart</td><td>At a context with no successor (only at the corpus end), jump to another seeded window</td><td>sampling</td></tr>
-    <tr><td>Longest copied run</td><td>Capped at 20 tokens</td><td>copy meter</td></tr>
-    <tr><td>Held-out split</td><td>Last 10% of tokens</td><td>perplexity</td></tr>
-    <tr><td>Smoothing alpha</td><td>0.01 (add-alpha with an unknown-token bucket)</td><td>perplexity</td></tr>
+    <tr><td>Copied run K</td><td>8 words, or 20 characters: a token is copied when it lies in a verbatim corpus run of at least K tokens</td><td>copy meter</td></tr>
+    <tr><td>Longest run cap</td><td>20 tokens</td><td>longest run</td></tr>
+    <tr><td>Held-out split</td><td>Last 10% of tokens, rounded</td><td>perplexity</td></tr>
+    <tr><td>Smoothing alpha</td><td>0.01 by default; must be above 0 (add-alpha with an unknown-token bucket)</td><td>perplexity</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen:</b> The corpora are short so that a page can hold one in memory and the copy meter is easy to read. The order range stops at 5 because order 5 already copies almost everything from a corpus this size. The temperature range keeps 0 out of the formula, since c^(1/0) is undefined. The smoothing alpha is small on purpose: Laplace smoothing (alpha 1) spreads so much mass over the vocabulary that train perplexity rises again at order 3, which hides the overfitting the table is meant to show. None of these values was tuned on held-out text.</p>
-
-  <p class="hiw-src">Source: <a href="https://github.com/dpologdvinity/search-agents/blob/master/markov/model.py">markov/model.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/markov/corpus.py">markov/corpus.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/markov/__main__.py">markov/__main__.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/markov-core.js">web/js/markov-core.js</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/bandits/rng.py">bandits/rng.py</a> <a href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_markov_parity.py">tests/test_markov_parity.py</a></p>
+  <p class="hiw-note"><b>How these were chosen:</b> The corpora are short so that the page can hold one in memory. The order range stops at 5. At order 5 on Alice the longest run reaches the 20-token cap and the copy meter reaches 100%. The temperature range keeps 0 out of the formula, since c<sup>1/0</sup> is undefined. The smoothing alpha is small on purpose: with Laplace smoothing (alpha 1) the training perplexity rises from 232.89 at order 2 to 291.03 at order 3, which hides the fit that the table is meant to show. None of these values was tuned on held-out text.</p>
 </section>
   </div>
 </div>
 
+<script defer src="vendor/katex/katex.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/markov.js"></script>
+<script type="module" src="js/explain.js"></script>
 </body>
 </html>

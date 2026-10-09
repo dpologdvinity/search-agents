@@ -100,3 +100,27 @@ def test_annealing_result_is_two_opt_optimal():
     result = SOLVERS["simulated_annealing"](cities, iterations=3000, seed=2)
     n = len(result.tour)
     assert all(two_opt_delta(result.tour, i, j, dist) >= -1e-9 for i in range(1, n - 1) for j in range(i + 1, n))
+
+
+def test_annealing_rejects_settings_that_break_the_schedule():
+    cities = random_cities(8, 0)
+    with pytest.raises(ValueError, match="at least one iteration"):
+        SOLVERS["simulated_annealing"](cities, iterations=0)
+    for cooling in (0.0, -0.5, 1.5):  # zero would divide by zero; above 1 would heat instead of cool
+        with pytest.raises(ValueError, match="cooling"):
+            SOLVERS["simulated_annealing"](cities, iterations=10, cooling=cooling)
+
+
+def test_genetic_rejects_an_empty_population_or_no_generations():
+    cities = random_cities(8, 0)
+    with pytest.raises(ValueError, match="one tour and one generation"):
+        SOLVERS["genetic_algorithm"](cities, population_size=0)
+    with pytest.raises(ValueError, match="one tour and one generation"):
+        SOLVERS["genetic_algorithm"](cities, generations=0)  # used to return a tour of infinite length
+
+
+def test_genetic_needs_more_tours_than_the_elite():
+    cities = random_cities(8, 0)
+    with pytest.raises(ValueError, match="more tours than the 4 elite"):
+        SOLVERS["genetic_algorithm"](cities, population_size=4, elite=4)  # every tour would be copied, none bred
+    SOLVERS["genetic_algorithm"](cities, population_size=5, generations=2, elite=4)

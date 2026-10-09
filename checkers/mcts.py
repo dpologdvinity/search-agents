@@ -26,7 +26,7 @@ from .search import SearchInfo, evaluate
 
 EXPLORATION = math.sqrt(2)  # the standard UCB1 constant
 ROLLOUT_PLIES = 40  # rollouts stop here and score the position instead
-EVAL_SCALE = 300  # evaluation points at which the cut-off score is about 0.38 or 0.62
+EVAL_SCALE = 300  # evaluation points at which the cut-off score is about 0.12 or 0.88
 POLICIES = ("random", "capture")
 
 
@@ -65,20 +65,24 @@ class MCTS:
     def _rollout(self, board, side) -> float:
         """Play from this position and return the chance that side to move wins (0 to 1).
 
-        A side with no legal move has lost (0). Otherwise play runs for at most
-        rollout_plies plies, and then the evaluation at that position is squashed into
-        (0, 1). The squash is a tanh, so a man's worth moves the value about 0.2.
+        The value is always from the point of view of the side to move at the start of the
+        rollout. A side with no legal move has lost: 0 if that is the starting side, 1 if
+        it is the opponent. Otherwise play runs for at most rollout_plies plies, and then
+        the evaluation at that position, taken from the starting side's view, is squashed
+        into (0, 1). The squash is a tanh, so a man's worth (100 points) moves the value
+        from 0.5 to about 0.66.
         """
+        start = side
         for _ in range(self.rollout_plies):
             moves = legal_moves(board, side, self.forced)
             if not moves:
-                return 0.0
+                return 0.0 if side == start else 1.0
             pool = moves
             if self.policy == "capture":
                 pool = [m for m in moves if m.captured] or moves
             move = pool[self.rng.randrange(len(pool))]
             board, side = move.result, -side
-        return 0.5 + 0.5 * math.tanh(evaluate(board, side) / EVAL_SCALE)
+        return 0.5 + 0.5 * math.tanh(evaluate(board, start) / EVAL_SCALE)
 
     def _select(self, node):
         """The child with the best UCB1 score. Children always have at least one visit."""

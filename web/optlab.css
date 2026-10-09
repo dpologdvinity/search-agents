@@ -89,7 +89,7 @@
 /* Stacks the controls and the frame on phones; the stats chips wrap. */
 @media (max-width: 600px) {
   .ol-frame { padding: 5px; }
-  .ol-controls .cyber-btn { min-width: 0; flex: 1 1 30%; }
+  .ol-controls .cyber-btn { min-width: 0; flex: 1 1 30%; padding-left: 0.6rem; padding-right: 0.6rem; white-space: nowrap; }
   .ol-readout { font-size: 0.58rem; left: 8px; bottom: 8px; }
   #ol-chart { height: 150px; }
   .ol-hint { font-size: 0.78rem; }

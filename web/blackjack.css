@@ -127,6 +127,7 @@
 
 /* Phones: smaller cards and cells so the table and grids fit a 360 px viewport. */
 @media (max-width: 600px) {
+  .bj-shoe { position: static; align-self: flex-end; }
   .bj-card { width: 56px; height: 82px; }
   .bj-card .rk { font-size: 1.05rem; }
   .bj-bet { width: 44px; height: 44px; }

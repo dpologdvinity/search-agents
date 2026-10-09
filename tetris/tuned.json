@@ -70,5 +70,5 @@
    "mean": 1539.983
   }
  ],
- "summary": "noisy cross-entropy: 6 iterations run of 20 planned (stopped for time), 20 samples per iteration, 3 fresh games per sample, 10-row board, game-over cap 100000. Fitness is the last elite mean."
+ "summary": "noisy cross-entropy: 6 iterations, 20 samples per iteration, 3 fresh games per sample, 10-row board, game-over cap 100000. Fitness is the last elite mean."
 }

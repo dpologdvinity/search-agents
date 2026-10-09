@@ -3,7 +3,7 @@
 There are 17 agent and casino pairs in the lineups (5 for bernoulli, 5 for gaussian, 7 for drifting). For each
 pair and seeds 0 to 4, Python plays the casino, and node plays the same casino through the JavaScript core
 (tests/js/bandits_parity.mjs). Arms, optimal flags and reasons must agree exactly; rewards and cumulative regret
-must agree to 1e-9, since the Gaussian draws go through log and cos, which can differ in the last bit between
+must agree to 1e-9, since the polar-method Gaussian draws go through log, which can differ in the last bit between
 libm and V8. The horizon is 1,200 pulls, so the drifting casino changes schedule twice. The node test is skipped
 when node is not installed.
 """

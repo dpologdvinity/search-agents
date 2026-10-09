@@ -5,7 +5,8 @@ to sample the motion model and evaluate the sonar. It is the approximation you u
 large to enumerate, so the benchmark measures how fast it approaches the exact belief as N grows.
 
 Each turn:
-  predict  every particle moves by sampling one successor from the motion model (one uniform per particle);
+  predict  every particle moves by sampling one successor from the motion model (one uniform per particle with
+           more than one successor; a forced move draws nothing);
   update   each particle's weight is multiplied by the sonar likelihood of its distance to the player;
   resample when the effective sample size (1 / sum of squared normalised weights) falls below N/2, so
            particles with negligible weight are replaced by copies of likely ones. Systematic resampling uses
