@@ -744,9 +744,7 @@ def simulate(genomes: list, world: dict | None = None, sample_every: int = 0) ->
     speed_bonus = np.where(
         exploded | fallen | (steps <= half), 0.0, (SPEED_BONUS * (com - com_mid)) / ((steps - half) * DT)
     )
-    fitness = np.where(
-        exploded, 0.0, distance - SPIN_PENALTY * np.maximum(0.0, spin_used - SPIN_FREE) + speed_bonus
-    )
+    fitness = np.where(exploded, 0.0, distance - SPIN_PENALTY * np.maximum(0.0, spin_used - SPIN_FREE) + speed_bonus)
     out = []
     for p, b in enumerate(bodies):
         N = b["N"]

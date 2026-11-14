@@ -58,8 +58,9 @@ def test_drifting_machines_redraw_every_period():
 
 def test_outcomes_are_fixed_for_a_seed():
     env = Environment("bernoulli", 3, 50, 4)
-    assert [env.reward(t, a) for t in range(50) for a in range(3)] == \
-        [Environment("bernoulli", 3, 50, 4).reward(t, a) for t in range(50) for a in range(3)]
+    assert [env.reward(t, a) for t in range(50) for a in range(3)] == [
+        Environment("bernoulli", 3, 50, 4).reward(t, a) for t in range(50) for a in range(3)
+    ]
     assert {env.reward(t, a) for t in range(50) for a in range(3)} <= {0.0, 1.0}
 
 

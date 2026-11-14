@@ -37,8 +37,7 @@ RAVE_K = 300.0  # the equivalence parameter k; beta = sqrt(k / (3n + k)) is 1/2 
 class _Node:
     """One position in the tree. `mover` made the move that reached it; `to_move` chooses the next move."""
 
-    __slots__ = ("cell", "mover", "to_move", "children", "untried", "visits", "wins",
-                 "rave_n", "rave_w", "terminal")
+    __slots__ = ("cell", "mover", "to_move", "children", "untried", "visits", "wins", "rave_n", "rave_w", "terminal")
 
     def __init__(self, n2: int, cell: int, mover: int, to_move: int, untried: list[int], terminal: bool):
         self.cell = cell
@@ -47,7 +46,7 @@ class _Node:
         self.children: list[_Node] = []
         self.untried = untried
         self.visits = 0
-        self.wins = 0          # wins for `mover`
+        self.wins = 0  # wins for `mover`
         self.rave_n = [0] * n2  # AMAF: times `to_move` played each cell in a simulation through this node
         self.rave_w = [0] * n2  # ...and how often `to_move` then won
         self.terminal = terminal
@@ -83,8 +82,18 @@ def _pick_untried(node: _Node, rave: bool, rng: random.Random) -> int:
     return best_i
 
 
-def search(n: int, cells, to_move: int, *, sims: int = 1000, seconds: float | None = None,
-           rave: bool = True, seed: int | None = None, c: float = EXPLORE, k: float = RAVE_K) -> dict:
+def search(
+    n: int,
+    cells,
+    to_move: int,
+    *,
+    sims: int = 1000,
+    seconds: float | None = None,
+    rave: bool = True,
+    seed: int | None = None,
+    c: float = EXPLORE,
+    k: float = RAVE_K,
+) -> dict:
     """Search the position `cells` (0/1/2 per cell, 1 = DOWN) for `to_move`.
 
     Stops after `sims` simulations or `seconds` of wall time, whichever comes first. Returns the
@@ -102,8 +111,8 @@ def search(n: int, cells, to_move: int, *, sims: int = 1000, seconds: float | No
         if seconds is not None and done % 32 == 0 and time.perf_counter() - start > seconds:
             break
         node = root
-        path = [root]   # the nodes from the root to the leaf of this simulation
-        moves = []      # the cells played along the tree part of this simulation
+        path = [root]  # the nodes from the root to the leaf of this simulation
+        moves = []  # the cells played along the tree part of this simulation
         # 1. Selection: descend while the node has no untried moves and does have children.
         while not node.untried and node.children:
             node = _select(node, c, k, rave)

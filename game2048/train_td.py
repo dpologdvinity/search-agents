@@ -82,9 +82,12 @@ def main(argv=None):
         """Append the statistics of the recent finished games to the log and print them."""
         s = np.array([x[0] for x in recent])
         m = np.array([x[1] for x in recent])
-        record = {"minutes": round((time.time() - start) / 60, 2), "games": finished,
-                  "mean_score": float(s.mean()),
-                  **{f"reach_{1 << k}": float((m >= k).mean()) for k in (10, 11, 12, 13)}}
+        record = {
+            "minutes": round((time.time() - start) / 60, 2),
+            "games": finished,
+            "mean_score": float(s.mean()),
+            **{f"reach_{1 << k}": float((m >= k).mean()) for k in (10, 11, 12, 13)},
+        }
         log.write(json.dumps(record) + "\n")
         log.flush()
         print(json.dumps(record), flush=True)

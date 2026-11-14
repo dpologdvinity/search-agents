@@ -164,7 +164,7 @@ def _simple_moves(board, side, geo):
         piece = board[sq]
         if piece * side <= 0:
             continue
-        for d in (ALL_DIRS if abs(piece) == 2 else FORWARD[side]):
+        for d in ALL_DIRS if abs(piece) == 2 else FORWARD[side]:
             to = ADJ[sq][d]
             if to < 0 or board[to] != 0:
                 continue

@@ -29,8 +29,14 @@ TABLE_AT = (1000, HORIZON)  # the table reports regret at these pull counts
 LAST = 1000  # "% best machine" is measured over the last LAST pulls, after the agents have settled
 
 
-def run_benchmark(seeds: int = SEEDS, horizon: int = HORIZON, k: int = K, kinds: tuple[str, ...] = KINDS,
-                  checkpoints: tuple[int, ...] | None = None, progress=None) -> dict:
+def run_benchmark(
+    seeds: int = SEEDS,
+    horizon: int = HORIZON,
+    k: int = K,
+    kinds: tuple[str, ...] = KINDS,
+    checkpoints: tuple[int, ...] | None = None,
+    progress=None,
+) -> dict:
     """Run every lineup on every kind for seeds 0..seeds-1. Returns the JSON-ready result dict."""
     # The lai-robbins floor is averaged over the seeds, so zero seeds would divide by zero.
     if seeds < 1:
@@ -55,9 +61,7 @@ def run_benchmark(seeds: int = SEEDS, horizon: int = HORIZON, k: int = K, kinds:
     }
     for kind in kinds:
         # Per agent, per seed: checkpoint regrets, regret at the table pull counts, and share of best pulls.
-        per_agent: dict[str, dict[str, list]] = {
-            key: {"curve": [], "at": [], "share": []} for key in LINEUP[kind]
-        }
+        per_agent: dict[str, dict[str, list]] = {key: {"curve": [], "at": [], "share": []} for key in LINEUP[kind]}
         rates = []
         for seed in range(seeds):
             env = Environment(kind, k, horizon, seed)
@@ -83,8 +87,7 @@ def run_benchmark(seeds: int = SEEDS, horizon: int = HORIZON, k: int = K, kinds:
             mean, lo, hi = band(data["curve"])  # one band per checkpoint, over the seeds
             setting["agents"][key] = {
                 "regret_at": {
-                    str(t): _rounded(interval([row[j] for row in data["at"]]))
-                    for j, t in enumerate(table_at)
+                    str(t): _rounded(interval([row[j] for row in data["at"]])) for j, t in enumerate(table_at)
                 },
                 "share_best_last": _rounded(interval(data["share"])),
                 "curve": {
@@ -110,25 +113,35 @@ def to_markdown(result: dict) -> str:
         f"with a 95% band, {result['machines']} machines. Lower is better.",
         "",
     ]
-    names = {"bernoulli": "Bernoulli machines", "gaussian": "Gaussian machines (sigma 0.2)",
-             "drifting": f"Drifting Bernoulli machines (redrawn every {result['drift_period']} pulls)"}
+    names = {
+        "bernoulli": "Bernoulli machines",
+        "gaussian": "Gaussian machines (sigma 0.2)",
+        "drifting": f"Drifting Bernoulli machines (redrawn every {result['drift_period']} pulls)",
+    }
     for kind, setting in result["settings"].items():
-        lines += [f"### {names[kind]}", "",
-                  f"| Agent | Regret at T={t_lo:,} | Regret at T={t_hi:,} | % best machine, pulls "
-                  f"{t_hi - result['last_pulls'] + 1:,}-{t_hi:,} |",
-                  "| --- | ---: | ---: | ---: |"]
+        lines += [
+            f"### {names[kind]}",
+            "",
+            f"| Agent | Regret at T={t_lo:,} | Regret at T={t_hi:,} | % best machine, pulls "
+            f"{t_hi - result['last_pulls'] + 1:,}-{t_hi:,} |",
+            "| --- | ---: | ---: | ---: |",
+        ]
         for key, agent in setting["agents"].items():
             a = agent["regret_at"][str(t_lo)]
             b = agent["regret_at"][str(t_hi)]
             s = agent["share_best_last"]
-            lines.append(f"| {result['agents'][key]['label']} | {_fmt(a)} | {_fmt(b)} | "
-                         f"{100 * s['mean']:.1f}% ± {50 * (s['hi'] - s['lo']):.1f} |")
+            lines.append(
+                f"| {result['agents'][key]['label']} | {_fmt(a)} | {_fmt(b)} | "
+                f"{100 * s['mean']:.1f}% ± {50 * (s['hi'] - s['lo']):.1f} |"
+            )
         if "lai_robbins" in setting:
             lr = setting["lai_robbins"]
             floor = lr["curve"][result["checkpoints"].index(t_hi)] if t_hi in result["checkpoints"] else None
             if floor is not None:
-                lines += ["", f"Lai-Robbins floor: {lr['rate']} ln(t) (mean over machine sets), "
-                          f"so {floor:.1f} at T={t_hi:,}."]
+                lines += [
+                    "",
+                    f"Lai-Robbins floor: {lr['rate']} ln(t) (mean over machine sets), so {floor:.1f} at T={t_hi:,}.",
+                ]
         lines.append("")
     return "\n".join(lines)
 

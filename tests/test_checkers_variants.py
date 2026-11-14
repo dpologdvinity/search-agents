@@ -39,6 +39,7 @@ def midgame(n, plies, seed):
 
 # ── Geometry and start positions ─────────────────────────────────────────
 
+
 def test_square_counts_and_start_rows():
     assert [geometry(start_position(n)).cells for n in SIZES] == [32, 50, 72]
     assert [start_position(n).count(RED) for n in SIZES] == [12, 20, 30]
@@ -69,6 +70,7 @@ def test_parse_board_checks_the_size():
 
 # ── Move generation ──────────────────────────────────────────────────────
 
+
 # Perft pinned from this implementation. Depth 1 is checked by hand: on 10x10 only the front
 # red row (row 6) can move, with 5 men giving 2+2+2+2+1 moves = 9; on 12x12 the front row
 # (row 7) has 1+2+2+2+2+2 = 11. Depth 2 is 9 x 9 and 11 x 11 because every reply leaves
@@ -91,8 +93,9 @@ def test_optional_captures_add_simple_moves_when_a_capture_exists():
     assert len(forced) == 1 and forced[0].captured  # only the capture is legal
     optional = legal_moves(b, RED, forced=False)
     assert sum(1 for m in optional if m.captured) == 1
-    assert sorted(m.path for m in optional if not m.captured) == sorted([
-        (index(6, 1), index(5, 0)), (index(6, 5), index(5, 4)), (index(6, 5), index(5, 6))])
+    assert sorted(m.path for m in optional if not m.captured) == sorted(
+        [(index(6, 1), index(5, 0)), (index(6, 5), index(5, 4)), (index(6, 5), index(5, 6))]
+    )
 
 
 def test_optional_captures_still_finish_a_chain():
@@ -119,6 +122,7 @@ def test_kings_move_one_step_on_every_size(n):
 
 
 # ── Agents on every size, both capture rules ─────────────────────────────
+
 
 @pytest.mark.parametrize("agent", AGENTS)
 @pytest.mark.parametrize("forced", [True, False])
@@ -200,6 +204,7 @@ def test_every_agent_has_a_description():
 
 # ── Command line ─────────────────────────────────────────────────────────
 
+
 def test_players_from_covers_the_flag_combinations():
     class Args:
         agent, red, white, watch = "minimax", None, None, None
@@ -247,8 +252,12 @@ def test_match_pairs_share_an_opening_and_pairs_differ(monkeypatch):
 
     monkeypatch.setattr(cli, "play", spy)
     cli.match("greedy", "random", 4, 1, out=lambda *a, **k: None)
-    assert starts == [cli.opening_position(8, 0), cli.opening_position(8, 0),
-                      cli.opening_position(8, 1), cli.opening_position(8, 1)]
+    assert starts == [
+        cli.opening_position(8, 0),
+        cli.opening_position(8, 0),
+        cli.opening_position(8, 1),
+        cli.opening_position(8, 1),
+    ]
     assert cli.opening_position(8, 0) != cli.opening_position(8, 1)
     assert cli.opening_position(8, 0) != start_position(8)
 
@@ -267,6 +276,7 @@ def test_render_numbers_every_square_of_a_12x12_board():
 
 
 # ── Chance agent and the matchup line ────────────────────────────────────
+
 
 def test_chance_weight_by_move_type():
     from checkers.chance import CHANCE_WEIGHTS, move_kind
@@ -316,7 +326,8 @@ def test_agent_labels_name_the_algorithm_and_budget():
     assert agent_label("minimax", 2, 8) == "minimax (depth 4)"
     assert agent_label("chance", 1) == "Chance (fixed odds)"
     assert matchup_text({RED: "mcts", WHITE: "alphabeta"}, {RED: 2, WHITE: 2}) == (
-        "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.8 s)")
+        "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.8 s)"
+    )
     assert matchup_text({RED: "human", WHITE: "minimax"}, {RED: 2, WHITE: 2}) == "White: minimax (depth 4)"
 
 
@@ -337,6 +348,7 @@ def test_match_runs_alphabeta_against_chance(capsys):
 def _lone_capture_board():
     """Red man on (5, 2) with one white man on (4, 3): red's only move captures white's last piece."""
     from checkers.board import index
+
     b = [0] * 32
     b[index(5, 2)] = 1
     b[index(4, 3)] = -1
@@ -346,6 +358,7 @@ def _lone_capture_board():
 def test_mcts_rollout_counts_an_opponent_with_no_moves_as_a_win():
     """After red captures white's last man, white cannot move, so the rollout is a win for red (1.0)."""
     from checkers.mcts import MCTS
+
     assert MCTS(seed=0, rollout_plies=2)._rollout(_lone_capture_board(), 1) == 1.0
 
 
@@ -353,6 +366,7 @@ def test_mcts_rollout_scores_a_cut_off_from_the_starting_sides_view():
     """An odd-length rollout ends with the opponent to move; the score must still be the starting side's."""
     from checkers.board import index
     from checkers.mcts import MCTS
+
     b = [0] * 32
     for r, c in ((5, 0), (5, 2), (6, 1)):  # three red men
         b[index(r, c)] = 1

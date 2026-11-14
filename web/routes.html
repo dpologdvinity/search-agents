@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -25,7 +26,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -52,42 +53,9 @@
   <p style="margin-top:0.5rem">Choose an agent and press RUN AGENT to watch its route shorten, or RACE ALL THREE to run all three side by side.</p>
 </section>
 
-  <div class="proj-body">
-    <div class="proj-game-col">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.9rem">
-        <canvas id="map" class="rt-map" width="640" height="640" aria-label="City map"></canvas>
-        <div class="field-hint" id="map-hint">Click the map to add a city.</div>
-        <div class="inline" style="justify-content:center">
-          <button class="cyber-btn green" id="btn-run" type="button" title="Run the chosen agent on this map and animate the route it finds. Every agent uses 2-opt moves: reversing the stretch between two crossing roads always shortens a route."><span class="btn-txt">▶ RUN AGENT</span></button>
-          <button class="cyber-btn pink" id="btn-race" type="button" title="Run all three agents on this map at once and compare their routes."><span class="btn-txt">⇶ RACE ALL THREE</span></button>
-          <button class="cyber-btn" id="btn-draw" type="button" aria-pressed="false" title="Trace your own route: click every city once, in the order you would visit them."><span class="btn-txt">✎ DRAW YOUR ROUTE</span></button>
-        </div>
-      </div>
-
-      <div style="margin-top:1.6rem">
-        <div class="section-title green-ttl">HOW THE SEARCH PROGRESSED</div>
-        <div class="viz-panel">
-          <div class="viz-title" id="chart-title">Run an agent to chart its progress.</div>
-          <canvas id="chart" class="rt-chart"></canvas>
-          <div class="inline" id="chart-legend" style="gap:1.2rem"></div>
-        </div>
-      </div>
-
-      <div style="margin-top:1.6rem">
-        <div class="section-title pink-ttl">RACE</div>
-        <div class="rt-race" id="race">
-          <figure><canvas data-alg="nearest_neighbor_2opt"></canvas><figcaption>Greedy + 2-opt</figcaption></figure>
-          <figure><canvas data-alg="simulated_annealing"></canvas><figcaption>Simulated annealing</figcaption></figure>
-          <figure><canvas data-alg="genetic_algorithm"></canvas><figcaption>Genetic algorithm</figcaption></figure>
-        </div>
-        <table class="cmp-table" style="margin-top:0.7rem">
-          <thead><tr><th>Agent</th><th class="num">Route length</th><th class="num">vs best possible</th><th class="num">Steps</th><th class="num">Time</th></tr></thead>
-          <tbody id="race-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="proj-ctrl-col">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
       <div>
         <div class="section-title green-ttl">MAP</div>
         <div class="stack">
@@ -101,6 +69,7 @@
           </div>
         </div>
       </div>
+
       <div>
         <div class="section-title green-ttl">AGENT</div>
         <div class="stack">
@@ -139,6 +108,44 @@
         </div>
       </div>
     </div>
+  </details>
+
+  <div class="proj-body play-layout">
+    <div class="proj-game-col">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.9rem">
+        <canvas id="map" class="rt-map" width="640" height="640" aria-label="City map"></canvas>
+        <div class="field-hint" id="map-hint">Click the map to add a city.</div>
+        <div class="inline" style="justify-content:center">
+          <button class="cyber-btn green" id="btn-run" type="button" title="Run the chosen agent on this map and animate the route it finds. Every agent uses 2-opt moves: reversing the stretch between two crossing roads always shortens a route."><span class="btn-txt">▶ RUN AGENT</span></button>
+          <button class="cyber-btn pink" id="btn-race" type="button" title="Run all three agents on this map at once and compare their routes."><span class="btn-txt">⇶ RACE ALL THREE</span></button>
+          <button class="cyber-btn" id="btn-draw" type="button" aria-pressed="false" title="Trace your own route: click every city once, in the order you would visit them."><span class="btn-txt">✎ DRAW YOUR ROUTE</span></button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">HOW THE SEARCH PROGRESSED</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="chart-title">Run an agent to chart its progress.</div>
+          <canvas id="chart" class="rt-chart"></canvas>
+          <div class="inline" id="chart-legend" style="gap:1.2rem"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.6rem">
+        <div class="section-title pink-ttl">RACE</div>
+        <div class="rt-race" id="race">
+          <figure><canvas data-alg="nearest_neighbor_2opt"></canvas><figcaption>Greedy + 2-opt</figcaption></figure>
+          <figure><canvas data-alg="simulated_annealing"></canvas><figcaption>Simulated annealing</figcaption></figure>
+          <figure><canvas data-alg="genetic_algorithm"></canvas><figcaption>Genetic algorithm</figcaption></figure>
+        </div>
+        <table class="cmp-table" style="margin-top:0.7rem">
+          <thead><tr><th>Agent</th><th class="num">Route length</th><th class="num">vs best possible</th><th class="num">Steps</th><th class="num">Time</th></tr></thead>
+          <tbody id="race-body"></tbody>
+        </table>
+      </div>
+    </aside>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
@@ -175,10 +182,10 @@
   </div>
 
   <h3 class="hiw-sub">Greedy + 2-opt</h3>
-  <p class="hiw-note">This is the baseline. A <b>greedy</b> method makes the locally best choice at each step. The <b>nearest-neighbour</b> tour starts at city 0 and always moves to the closest city not yet visited, then closes the loop.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L102-L115" target="_blank" rel="noopener" title="routes/tsp.py, lines 102–115, 148–159" aria-label="Code on GitHub: routes/tsp.py, lines 102 to 115, 148 to 159">5</a> It is quick, but it tends to leave a few long edges at the end, when the cities that remain are far apart.</p>
+  <p class="hiw-note">This is the baseline. A <b>greedy</b> method makes the locally best choice at each step. The <b>nearest-neighbour</b> tour starts at city 0 and always moves to the closest city not yet visited, then closes the loop.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L102-L115" target="_blank" rel="noopener" title="routes/tsp.py, lines 102–115" aria-label="Code on GitHub: routes/tsp.py, lines 102 to 115">5</a> It is quick, but it tends to leave a few long edges at the end, when the cities that remain are far apart.</p>
   <p class="hiw-note">The tour is then improved by <b>2-opt descent</b>. Each pass tries every pair of positions and applies each 2-opt move that shortens the tour. Passes repeat until one makes no improvement, or until 50 passes have run.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L118-L145" target="_blank" rel="noopener" title="routes/tsp.py, lines 118–145" aria-label="Code on GitHub: routes/tsp.py, lines 118 to 145">6</a> On the committed 12-city run this agent finished 1.53% above the exact optimum.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/routes_compare_12.md#L8" target="_blank" rel="noopener" title="results/routes_compare_12.md, line 8" aria-label="Code on GitHub: results/routes_compare_12.md, line 8">7</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L148-L159" target="_blank" rel="noopener" title="routes/tsp.py, lines 148–159, 102–115, 118–145" aria-label="Code on GitHub: routes/tsp.py, lines 148 to 159, 102 to 115, 118 to 145">8</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L148-L163" target="_blank" rel="noopener" title="routes/tsp.py, lines 148–163" aria-label="Code on GitHub: routes/tsp.py, lines 148 to 163">8</a></span>
     <pre class="pseudo-simple">function NEAREST-NEIGHBOR-2OPT(cities):
     tour ← NEAREST-NEIGHBOR(cities, start = city 0)
     repeat:
@@ -239,31 +246,31 @@ function TWO-OPT-DESCENT(tour, dist, max-passes, on-improve):
 
   <h3 class="hiw-sub">Simulated annealing</h3>
   <p class="hiw-note"><b>Simulated annealing</b> is a local search that sometimes accepts a worse tour, so that it can leave a local optimum. The name comes from annealing in metallurgy, where a metal is heated and then cooled slowly so that it settles into a strong structure.</p>
-  <p class="hiw-note">The search starts from a random tour, a random ordering of the cities.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L208-L209" target="_blank" rel="noopener" title="routes/tsp.py, lines 208–209" aria-label="Code on GitHub: routes/tsp.py, lines 208 to 209">9</a> Each iteration picks two positions <span class="math">i &lt; j</span> from 1 to <span class="math">n-1</span>, so the city at position 0 never moves, and proposes the 2-opt move between them. The move is judged by the <b>Metropolis acceptance rule</b>. It always accepts a shorter tour, and it accepts a longer one with a probability that shrinks as the tour gets worse.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L219-L222" target="_blank" rel="noopener" title="routes/tsp.py, lines 219–222" aria-label="Code on GitHub: routes/tsp.py, lines 219 to 222">10</a></p>
+  <p class="hiw-note">The search starts from a random tour, a random ordering of the cities.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L217-L218" target="_blank" rel="noopener" title="routes/tsp.py, lines 217–218" aria-label="Code on GitHub: routes/tsp.py, lines 217 to 218">9</a> Each iteration picks two positions <span class="math">i &lt; j</span> from 1 to <span class="math">n-1</span>, so the city at position 0 never moves, and proposes the 2-opt move between them. The move is judged by the <b>Metropolis acceptance rule</b>. It always accepts a shorter tour, and it accepts a longer one with a probability that shrinks as the tour gets worse.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L228-L231" target="_blank" rel="noopener" title="routes/tsp.py, lines 228–231" aria-label="Code on GitHub: routes/tsp.py, lines 228 to 231">10</a></p>
   <div class="math-fig">
-    <!-- routes/tsp.py:222 -->
+    <!-- routes/tsp.py:231 -->
     <div class="math math-block">\text{accept if } \Delta &lt; 0 \text{ or } u &lt; e^{-\Delta / T}, \qquad u \sim \text{Uniform}[0, 1)</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L222" target="_blank" rel="noopener" title="routes/tsp.py, line 222" aria-label="Code on GitHub: routes/tsp.py, line 222">11</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L231" target="_blank" rel="noopener" title="routes/tsp.py, line 231" aria-label="Code on GitHub: routes/tsp.py, line 231">11</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">T</span> is the current <b>temperature</b> and <span class="math">u</span> is a fresh random number between 0 and 1. Accepting a longer tour is what lets the search climb out of a local optimum. A small increase is accepted more often than a large one, and every increase is accepted less often as <span class="math">T</span> falls. A move with <span class="math">\Delta &lt; 0</span> is accepted without drawing <span class="math">u</span>.</p>
-  <p class="hiw-note">The temperature starts at <span class="math">T_0</span> and is multiplied by a <b>cooling rate</b> <span class="math">r</span> after every iteration, so after <span class="math">k</span> iterations <span class="math">T_k = T_0 r^k</span>. Early on the search wanders freely, and later it becomes greedy.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L193-L196" target="_blank" rel="noopener" title="routes/tsp.py, lines 193–196" aria-label="Code on GitHub: routes/tsp.py, lines 193 to 196">12</a></p>
+  <p class="hiw-note">The temperature starts at <span class="math">T_0</span> and is multiplied by a <b>cooling rate</b> <span class="math">r</span> after every iteration, so after <span class="math">k</span> iterations <span class="math">T_k = T_0 r^k</span>. Early on the search wanders freely, and later it becomes greedy.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L202-L205" target="_blank" rel="noopener" title="routes/tsp.py, lines 202–205" aria-label="Code on GitHub: routes/tsp.py, lines 202 to 205">12</a></p>
   <div class="math-fig">
-    <!-- routes/tsp.py:214, 231 -->
+    <!-- routes/tsp.py:223, 241 -->
     <div class="math math-block">r = 0.001^{1/N}, \qquad T_k = T_0\, r^{k}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L214" target="_blank" rel="noopener" title="routes/tsp.py, lines 214, 231" aria-label="Code on GitHub: routes/tsp.py, lines 214, 231">13</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L223" target="_blank" rel="noopener" title="routes/tsp.py, line 223" aria-label="Code on GitHub: routes/tsp.py, line 223">13</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">N</span> is the number of iterations. With this default rate the temperature has fallen to 0.1% of <span class="math">T_0</span> after the last iteration. The page's COOLING slider replaces the default with a rate between 0.99901 and 0.99999, through a mapping onto that range.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/routes.js#L216-L217" target="_blank" rel="noopener" title="web/js/routes.js, lines 216–217" aria-label="Code on GitHub: web/js/routes.js, lines 216 to 217">14</a></p>
-  <p class="hiw-note">The start temperature <span class="math">T_0</span> is set from the map, so it adapts to the scale of the distances. The code samples 200 random moves from the starting tour, averages the uphill ones (moves with <span class="math">\Delta &gt; 0</span>), and chooses <span class="math">T_0</span> so that a move as costly as that average is accepted with probability <span class="math">\alpha = 0.8</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L165" target="_blank" rel="noopener" title="routes/tsp.py, line 165" aria-label="Code on GitHub: routes/tsp.py, line 165">15</a></p>
+  <p class="hiw-note">The start temperature <span class="math">T_0</span> is set from the map, so it adapts to the scale of the distances. The code samples 200 random moves from the starting tour, averages the uphill ones (moves with <span class="math">\Delta &gt; 0</span>), and chooses <span class="math">T_0</span> so that a move as costly as that average is accepted with probability <span class="math">\alpha = 0.8</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L169" target="_blank" rel="noopener" title="routes/tsp.py, line 169" aria-label="Code on GitHub: routes/tsp.py, line 169">15</a></p>
   <div class="math-fig">
-    <!-- routes/tsp.py:181-182 -->
+    <!-- routes/tsp.py:185-186 -->
     <div class="math math-block">T_0 = -\frac{\bar{\Delta}}{\ln \alpha}, \qquad \alpha = 0.8</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L181-L182" target="_blank" rel="noopener" title="routes/tsp.py, lines 181–182" aria-label="Code on GitHub: routes/tsp.py, lines 181 to 182">16</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L185-L186" target="_blank" rel="noopener" title="routes/tsp.py, lines 185–186" aria-label="Code on GitHub: routes/tsp.py, lines 185 to 186">16</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">\bar{\Delta}</span> is that average uphill move, and <span class="math">\ln</span> is the natural logarithm. Solving <span class="math">e^{-\bar{\Delta}/T_0} = \alpha</span> for <span class="math">T_0</span> gives this formula. If none of the sampled moves is uphill, <span class="math">\bar{\Delta}</span> is set to 1.</p>
-  <p class="hiw-note">The default run is 60,000 iterations, and the page slider offers 5,000 to 150,000. The best tour seen is kept, because the current tour may have wandered away from it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L227-L228" target="_blank" rel="noopener" title="routes/tsp.py, lines 227–228" aria-label="Code on GitHub: routes/tsp.py, lines 227 to 228">17</a> At the end, a 2-opt descent polishes the best tour, applying any improving move that the random proposals missed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L233-L239" target="_blank" rel="noopener" title="routes/tsp.py, lines 233–239" aria-label="Code on GitHub: routes/tsp.py, lines 233 to 239">18</a></p>
+  <p class="hiw-note">The default run is 60,000 iterations, and the page slider offers 5,000 to 150,000. The best tour seen is kept, because the current tour may have wandered away from it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L236-L237" target="_blank" rel="noopener" title="routes/tsp.py, lines 236–237" aria-label="Code on GitHub: routes/tsp.py, lines 236 to 237">17</a> At the end, a 2-opt descent polishes the best tour, applying any improving move that the random proposals missed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L243-L249" target="_blank" rel="noopener" title="routes/tsp.py, lines 243–249" aria-label="Code on GitHub: routes/tsp.py, lines 243 to 249">18</a></p>
   <p class="hiw-note">The page animates each run from snapshots. The recorder stores about 150 evenly spaced snapshots, one every <code>iterations // 150</code> steps, so a small budget stores a few more.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L84-L96" target="_blank" rel="noopener" title="routes/tsp.py, lines 84–96" aria-label="Code on GitHub: routes/tsp.py, lines 84 to 96">19</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L185-L241" target="_blank" rel="noopener" title="routes/tsp.py, lines 185–241, 165–182, 84–96" aria-label="Code on GitHub: routes/tsp.py, lines 185 to 241, 165 to 182, 84 to 96">20</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L189-L251" target="_blank" rel="noopener" title="routes/tsp.py, lines 189–251" aria-label="Code on GitHub: routes/tsp.py, lines 189 to 251">20</a></span>
     <pre class="pseudo-simple">function SIMULATED-ANNEALING(cities, iterations):
     tour ← a random ordering of the cities
     best ← COPY(tour)
@@ -324,25 +331,25 @@ function INITIAL-TEMPERATURE(tour, dist, samples = 200, accept = 0.8):
     avg ← mean of uphill, or 1 if uphill is empty
     return −avg / log(accept)                        # log is the natural logarithm</pre>
   </div>
-  <p class="hiw-note"><b>Validation.</b> Settings outside the allowed range are rejected before the run starts. A cooling rate of 0 would drive the temperature to 0 and divide by it in the acceptance test, and a rate above 1 would heat the search instead of cooling it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L201-L204" target="_blank" rel="noopener" title="routes/tsp.py, lines 201–204" aria-label="Code on GitHub: routes/tsp.py, lines 201 to 204">21</a></p>
+  <p class="hiw-note"><b>Validation.</b> Settings outside the allowed range are rejected before the run starts. A cooling rate of 0 would drive the temperature to 0 and divide by it in the acceptance test, and a rate above 1 would heat the search instead of cooling it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L210-L213" target="_blank" rel="noopener" title="routes/tsp.py, lines 210–213" aria-label="Code on GitHub: routes/tsp.py, lines 210 to 213">21</a></p>
   <p class="hiw-note"><b>Finishing pass.</b> The descent stops at the first pass without an improvement, or after 50 passes.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L118-L145" target="_blank" rel="noopener" title="routes/tsp.py, lines 118–145" aria-label="Code on GitHub: routes/tsp.py, lines 118 to 145">6</a> The extra frame it may add carries the step number of the last iteration.</p>
 
   <h3 class="hiw-sub">Genetic algorithm</h3>
   <p class="hiw-note">A <b>genetic algorithm</b> keeps a <b>population</b> of candidate solutions and improves it over a series of <b>generations</b>. The method is inspired by natural selection: good candidates are more likely to become parents, and each child combines parts of two parents. Here a candidate is a tour, and its <b>fitness</b> is its length, so a shorter tour is fitter.</p>
-  <p class="hiw-note">The population starts as random tours.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L307-L311" target="_blank" rel="noopener" title="routes/tsp.py, lines 307–311" aria-label="Code on GitHub: routes/tsp.py, lines 307 to 311">22</a> Each generation first copies the <b>elite</b>, the 4 shortest tours, unchanged into the next generation, so the best tour found is never lost. This rule is called <b>elitism</b>. Children then fill the rest of the population.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L288-L298" target="_blank" rel="noopener" title="routes/tsp.py, lines 288–298" aria-label="Code on GitHub: routes/tsp.py, lines 288 to 298">23</a></p>
-  <p class="hiw-note"><b>Selection.</b> A <b>tournament</b> picks 3 random tours and keeps the shortest. Two tournaments choose the two parents of each child.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L277-L284" target="_blank" rel="noopener" title="routes/tsp.py, lines 277–284" aria-label="Code on GitHub: routes/tsp.py, lines 277 to 284">24</a></p>
+  <p class="hiw-note">The population starts as random tours.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L323-L327" target="_blank" rel="noopener" title="routes/tsp.py, lines 323–327" aria-label="Code on GitHub: routes/tsp.py, lines 323 to 327">22</a> Each generation first copies the <b>elite</b>, the 4 shortest tours, unchanged into the next generation, so the best tour found is never lost. This rule is called <b>elitism</b>. Children then fill the rest of the population.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L301-L314" target="_blank" rel="noopener" title="routes/tsp.py, lines 301–314" aria-label="Code on GitHub: routes/tsp.py, lines 301 to 314">23</a></p>
+  <p class="hiw-note"><b>Selection.</b> A <b>tournament</b> picks 3 random tours and keeps the shortest. Two tournaments choose the two parents of each child.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L287-L294" target="_blank" rel="noopener" title="routes/tsp.py, lines 287–294" aria-label="Code on GitHub: routes/tsp.py, lines 287 to 294">24</a></p>
   <div class="math-fig">
-    <!-- routes/tsp.py:277-284 -->
+    <!-- routes/tsp.py:287-294 -->
     <div class="math math-block">\text{winner} = \arg\min_{t \in C} L(t), \qquad |C| = 3</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L277-L284" target="_blank" rel="noopener" title="routes/tsp.py, lines 277–284" aria-label="Code on GitHub: routes/tsp.py, lines 277 to 284">24</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L287-L294" target="_blank" rel="noopener" title="routes/tsp.py, lines 287–294" aria-label="Code on GitHub: routes/tsp.py, lines 287 to 294">24</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">C</span> is the set of contenders, drawn at random from the population, and <span class="math">L(t)</span> is the length of tour <span class="math">t</span>. A larger tournament favours the best tours more strongly, and a smaller one keeps more variety.</p>
-  <p class="hiw-note"><b>Crossover.</b> <b>Order crossover</b> (OX1) builds a child that is always a valid tour, with each city exactly once. It copies a random slice of parent A into the same positions of the child. It then fills the other positions with the cities missing from the slice, in the order they appear in parent B, starting after the slice and wrapping around.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L247-L268" target="_blank" rel="noopener" title="routes/tsp.py, lines 247–268" aria-label="Code on GitHub: routes/tsp.py, lines 247 to 268">25</a></p>
-  <p class="hiw-note"><b>Example.</b> The docstring example labels the cities 1 to 7. With parent A = 1 2 3 4 5 6 7 and parent B = 5 7 1 6 2 4 3, the slice 3 4 5 is copied from A. The missing cities, in B's order from after the slice, are 7, 1, 6, 2, so the child is 6 2 3 4 5 7 1.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_routes.py#L51-L58" target="_blank" rel="noopener" title="tests/test_routes.py, lines 51–58" aria-label="Code on GitHub: tests/test_routes.py, lines 51 to 58">26</a></p>
-  <p class="hiw-note"><b>Mutation.</b> With probability equal to the mutation rate, 0.3 by default, a child has a random stretch reversed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L326-L327" target="_blank" rel="noopener" title="routes/tsp.py, lines 326–327" aria-label="Code on GitHub: routes/tsp.py, lines 326 to 327">27</a> It is the same reversal that 2-opt uses, except that the stretch may start at the first city.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L271-L274" target="_blank" rel="noopener" title="routes/tsp.py, lines 271–274" aria-label="Code on GitHub: routes/tsp.py, lines 271 to 274">28</a></p>
-  <p class="hiw-note">The defaults are a population of 120, 300 generations, a mutation rate of 0.3, 4 elite tours and tournaments of 3.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L287-L288" target="_blank" rel="noopener" title="routes/tsp.py, lines 287–288" aria-label="Code on GitHub: routes/tsp.py, lines 287 to 288">29</a></p>
+  <p class="hiw-note"><b>Crossover.</b> <b>Order crossover</b> (OX1) builds a child that is always a valid tour, with each city exactly once. It copies a random slice of parent A into the same positions of the child. It then fills the other positions with the cities missing from the slice, in the order they appear in parent B, starting after the slice and wrapping around.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L257-L278" target="_blank" rel="noopener" title="routes/tsp.py, lines 257–278" aria-label="Code on GitHub: routes/tsp.py, lines 257 to 278">25</a></p>
+  <p class="hiw-note"><b>Example.</b> The docstring example labels the cities 1 to 7. With parent A = 1 2 3 4 5 6 7 and parent B = 5 7 1 6 2 4 3, the slice 3 4 5 is copied from A. The missing cities, in B's order from after the slice, are 7, 1, 6, 2, so the child is 6 2 3 4 5 7 1.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_routes.py#L51-L57" target="_blank" rel="noopener" title="tests/test_routes.py, lines 51–57" aria-label="Code on GitHub: tests/test_routes.py, lines 51 to 57">26</a></p>
+  <p class="hiw-note"><b>Mutation.</b> With probability equal to the mutation rate, 0.3 by default, a child has a random stretch reversed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L342-L343" target="_blank" rel="noopener" title="routes/tsp.py, lines 342–343" aria-label="Code on GitHub: routes/tsp.py, lines 342 to 343">27</a> It is the same reversal that 2-opt uses, except that the stretch may start at the first city.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L281-L284" target="_blank" rel="noopener" title="routes/tsp.py, lines 281–284" aria-label="Code on GitHub: routes/tsp.py, lines 281 to 284">28</a></p>
+  <p class="hiw-note">The defaults are a population of 120, 300 generations, a mutation rate of 0.3, 4 elite tours and tournaments of 3.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L297-L304" target="_blank" rel="noopener" title="routes/tsp.py, lines 297–304" aria-label="Code on GitHub: routes/tsp.py, lines 297 to 304">29</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L287-L331" target="_blank" rel="noopener" title="routes/tsp.py, lines 287–331, 247–268, 277–284, 271–274" aria-label="Code on GitHub: routes/tsp.py, lines 287 to 331, 247 to 268, 277 to 284, 271 to 274">30</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L297-L347" target="_blank" rel="noopener" title="routes/tsp.py, lines 297–347" aria-label="Code on GitHub: routes/tsp.py, lines 297 to 347">30</a></span>
     <pre class="pseudo-simple">function GENETIC-ALGORITHM(cities, generations):
     population ← random tours of the cities
     repeat generations times:
@@ -398,25 +405,25 @@ function INVERSION-MUTATION(tour):
     REVERSE(tour, i, j)</pre>
   </div>
   <p class="hiw-note"><b>Last generation.</b> Each population is scored before it is bred, so the children bred in the final pass are never scored. They cannot be returned, and the answer is always a tour that was scored.</p>
-  <p class="hiw-note"><b>Frames.</b> The recorder keeps about 150 frames. Each one shows the best tour so far and the mean length of the population.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L313-L321" target="_blank" rel="noopener" title="routes/tsp.py, lines 313–321" aria-label="Code on GitHub: routes/tsp.py, lines 313 to 321">31</a></p>
+  <p class="hiw-note"><b>Frames.</b> The recorder keeps about 150 frames. Each one shows the best tour so far and the mean length of the population.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L329-L337" target="_blank" rel="noopener" title="routes/tsp.py, lines 329–337" aria-label="Code on GitHub: routes/tsp.py, lines 329 to 337">31</a></p>
 
   <h3 class="hiw-sub">Held-Karp (exact, up to 12 cities)</h3>
-  <p class="hiw-note"><b>Dynamic programming</b> solves a problem by storing the answers to smaller subproblems and reusing them. <b>Held-Karp</b> applies this to the traveling salesman problem. For each set <span class="math">S</span> of cities, city 0 excluded, and each city <span class="math">j</span> in <span class="math">S</span>, the table stores the length of the shortest path that starts at city 0, visits every city of <span class="math">S</span> exactly once, and ends at <span class="math">j</span>. Each set is stored as a <b>bitmask</b>, an integer whose bit <span class="math">k-1</span> is set when city <span class="math">k</span> is in the set.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L340-L351" target="_blank" rel="noopener" title="routes/tsp.py, lines 340–351" aria-label="Code on GitHub: routes/tsp.py, lines 340 to 351">32</a></p>
+  <p class="hiw-note"><b>Dynamic programming</b> solves a problem by storing the answers to smaller subproblems and reusing them. <b>Held-Karp</b> applies this to the traveling salesman problem. For each set <span class="math">S</span> of cities, city 0 excluded, and each city <span class="math">j</span> in <span class="math">S</span>, the table stores the length of the shortest path that starts at city 0, visits every city of <span class="math">S</span> exactly once, and ends at <span class="math">j</span>. Each set is stored as a <b>bitmask</b>, an integer whose bit <span class="math">k-1</span> is set when city <span class="math">k</span> is in the set.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L356-L367" target="_blank" rel="noopener" title="routes/tsp.py, lines 356–367" aria-label="Code on GitHub: routes/tsp.py, lines 356 to 367">32</a></p>
   <div class="math-fig">
-    <!-- routes/tsp.py:346, 361, 370-374 -->
+    <!-- routes/tsp.py:362, 377, 386-389 -->
     <div class="math math-block">\text{cost}(S, j) = \begin{cases} \text{dist}(0, j) &amp; \text{if } S = \{j\} \\ \min_{k \in S \setminus \{j\}} \bigl(\text{cost}(S \setminus \{j\}, k) + \text{dist}(k, j)\bigr) &amp; \text{otherwise} \end{cases}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L346" target="_blank" rel="noopener" title="routes/tsp.py, lines 346, 361, 370–374" aria-label="Code on GitHub: routes/tsp.py, lines 346, 361, 370 to 374">33</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L362" target="_blank" rel="noopener" title="routes/tsp.py, line 362" aria-label="Code on GitHub: routes/tsp.py, line 362">33</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">S \setminus \{j\}</span> is the set <span class="math">S</span> without city <span class="math">j</span>. The base case covers the path from city 0 straight to a single city. The code stores each entry as a pair: the length, and the city <span class="math">k</span> that gave the minimum, so the tour can be rebuilt afterwards. Ties in length go to the smaller <span class="math">k</span>, because the minimum is taken over pairs.</p>
   <div class="math-fig">
-    <!-- routes/tsp.py:376-377 -->
+    <!-- routes/tsp.py:391-392 -->
     <div class="math math-block">L^{*} = \min_{j \in \{1,\dots,n-1\}} \bigl(\text{cost}(\{1,\dots,n-1\}, j) + \text{dist}(j, 0)\bigr)</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L376-L377" target="_blank" rel="noopener" title="routes/tsp.py, lines 376–377" aria-label="Code on GitHub: routes/tsp.py, lines 376 to 377">34</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L391-L392" target="_blank" rel="noopener" title="routes/tsp.py, lines 391–392" aria-label="Code on GitHub: routes/tsp.py, lines 391 to 392">34</a></span>
   </div>
-  <p class="hiw-note">Here <span class="math">L^{*}</span> is the length of the shortest closed tour. The best tour returns from the last city <span class="math">j</span> to city 0. The tour itself is then rebuilt by following the stored predecessors back from <span class="math">j</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L378-L384" target="_blank" rel="noopener" title="routes/tsp.py, lines 378–384" aria-label="Code on GitHub: routes/tsp.py, lines 378 to 384">35</a></p>
-  <p class="hiw-note">The table has <span class="math">(n-1)\,2^{n-2}</span> entries, and each is computed from up to <span class="math">n-1</span> others. The time is therefore <span class="math">O(n^2 2^n)</span> and the memory <span class="math">O(n 2^n)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L349-L350" target="_blank" rel="noopener" title="routes/tsp.py, lines 349–350" aria-label="Code on GitHub: routes/tsp.py, lines 349 to 350">36</a> That beats trying all <span class="math">(n-1)!</span> orders, but the method is practical only for about a dozen cities. The code refuses more than 12 cities,<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L336" target="_blank" rel="noopener" title="routes/tsp.py, lines 336, 353–354" aria-label="Code on GitHub: routes/tsp.py, lines 336, 353 to 354">37</a> and the server computes the exact optimum only for maps of 12 cities or fewer.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/routes_api.py#L74" target="_blank" rel="noopener" title="server/routes_api.py, line 74" aria-label="Code on GitHub: server/routes_api.py, line 74">38</a></p>
+  <p class="hiw-note">Here <span class="math">L^{*}</span> is the length of the shortest closed tour. The best tour returns from the last city <span class="math">j</span> to city 0. The tour itself is then rebuilt by following the stored predecessors back from <span class="math">j</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L393-L399" target="_blank" rel="noopener" title="routes/tsp.py, lines 393–399" aria-label="Code on GitHub: routes/tsp.py, lines 393 to 399">35</a></p>
+  <p class="hiw-note">The table has <span class="math">(n-1)\,2^{n-2}</span> entries, and each is computed from up to <span class="math">n-1</span> others. The time is therefore <span class="math">O(n^2 2^n)</span> and the memory <span class="math">O(n 2^n)</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L365-L366" target="_blank" rel="noopener" title="routes/tsp.py, lines 365–366" aria-label="Code on GitHub: routes/tsp.py, lines 365 to 366">36</a> That beats trying all <span class="math">(n-1)!</span> orders, but the method is practical only for about a dozen cities. The code refuses more than 12 cities,<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L352" target="_blank" rel="noopener" title="routes/tsp.py, line 352" aria-label="Code on GitHub: routes/tsp.py, line 352">37</a> and the server computes the exact optimum only for maps of 12 cities or fewer.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/routes_api.py#L78" target="_blank" rel="noopener" title="server/routes_api.py, line 78" aria-label="Code on GitHub: server/routes_api.py, line 78">38</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L339-L385" target="_blank" rel="noopener" title="routes/tsp.py, lines 339–385" aria-label="Code on GitHub: routes/tsp.py, lines 339 to 385">39</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L355-L400" target="_blank" rel="noopener" title="routes/tsp.py, lines 355–400" aria-label="Code on GitHub: routes/tsp.py, lines 355 to 400">39</a></span>
     <pre class="pseudo-simple">function HELD-KARP(cities):
     cost[({j}, j)] ← dist(0, j) for each city j          # the path straight from city 0
     for each set s of cities, from small to large, and each j in s:
@@ -460,7 +467,7 @@ function HELD-KARP(cities):
     <tr><td>Held-Karp (exact)</td><td class="num">3.627</td><td class="num">0.00%</td></tr>
   </tbody></table></div>
   <p class="hiw-note"><b>Tests.</b> The heuristics are also checked on a 10-city map, where each must come within 5% of the exact optimum.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_routes.py#L77-L86" target="_blank" rel="noopener" title="tests/test_routes.py, lines 77–86" aria-label="Code on GitHub: tests/test_routes.py, lines 77 to 86">42</a></p>
-  <p class="hiw-note"><b>How these were chosen.</b> The defaults (60,000 iterations, population 120, 300 generations, mutation rate 0.3, 4 elite tours, tournament size 3) are fixed in the code, and no tuning run is committed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L185" target="_blank" rel="noopener" title="routes/tsp.py, lines 185, 287–288" aria-label="Code on GitHub: routes/tsp.py, lines 185, 287 to 288">43</a> The start temperature is not a constant: it is computed from the average uphill move on the current map, so it adapts to the scale of the distances. The 0.1% end temperature and the 80% acceptance target are design choices in the code.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L165" target="_blank" rel="noopener" title="routes/tsp.py, lines 165, 214" aria-label="Code on GitHub: routes/tsp.py, lines 165, 214">15</a></p>
+  <p class="hiw-note"><b>How these were chosen.</b> The defaults (60,000 iterations, population 120, 300 generations, mutation rate 0.3, 4 elite tours, tournament size 3) are fixed in the code, and no tuning run is committed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L189-L195" target="_blank" rel="noopener" title="routes/tsp.py, lines 189–195" aria-label="Code on GitHub: routes/tsp.py, lines 189 to 195">43</a> The start temperature is not a constant: it is computed from the average uphill move on the current map, so it adapts to the scale of the distances. The 0.1% end temperature and the 80% acceptance target are design choices in the code.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/routes/tsp.py#L169" target="_blank" rel="noopener" title="routes/tsp.py, line 169" aria-label="Code on GitHub: routes/tsp.py, line 169">15</a></p>
 
 </section>
 </div>

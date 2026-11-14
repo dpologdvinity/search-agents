@@ -82,16 +82,26 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--momentum", type=decay, default=Hyper.momentum, help="beta for momentum and Nesterov, in [0, 1)")
     r.add_argument("--beta1", type=decay, default=Hyper.beta1, help="Adam first-moment decay, in [0, 1)")
     r.add_argument("--beta2", type=decay, default=Hyper.beta2, help="Adam second-moment decay, in [0, 1)")
-    r.add_argument("--eps", type=_bounded(0, float("inf"), low_open=True), default=Hyper.eps,
-                   help="epsilon under the square root, above 0")
+    r.add_argument(
+        "--eps",
+        type=_bounded(0, float("inf"), low_open=True),
+        default=Hyper.eps,
+        help="epsilon under the square root, above 0",
+    )
     r.add_argument("--rho", type=decay, default=Hyper.rho, help="RMSProp squared-gradient decay, in [0, 1)")
-    r.add_argument("--noise", type=_bounded(0, float("inf")), default=0.0,
-                   help="std of the gradient noise (0 = exact gradients)")
+    r.add_argument(
+        "--noise", type=_bounded(0, float("inf")), default=0.0, help="std of the gradient noise (0 = exact gradients)"
+    )
     r.add_argument("--seed", type=int, default=0, help="seed for the gradient noise")
-    r.add_argument("--tol", type=_bounded(0, float("inf")), default=GTOL,
-                   help="gradient norm below which a track has reached a minimum")
-    r.add_argument("--width", type=_bounded(1, float("inf"), integer=True), default=64,
-                   help="columns in the ASCII map, at least 1")
+    r.add_argument(
+        "--tol",
+        type=_bounded(0, float("inf")),
+        default=GTOL,
+        help="gradient norm below which a track has reached a minimum",
+    )
+    r.add_argument(
+        "--width", type=_bounded(1, float("inf"), integer=True), default=64, help="columns in the ASCII map, at least 1"
+    )
     r.add_argument("--no-map", action="store_true", help="print the table only")
 
     sub.add_parser("surfaces", help="list the built-in landscapes")

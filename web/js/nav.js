@@ -20,20 +20,32 @@ export const GAMES = [
   { href: 'battleship.html', label: 'BATTLESHIP' },
   { href: 'pacman.html', label: 'PAC-MAN' },
   { href: 'warehouse.html', label: 'WAREHOUSE' },
-  { href: 'endgame.html', label: 'ENDGAME' },
-  { href: 'sokoban.html', label: 'SOKOBAN' },
   { href: 'wordle.html', label: 'WORDLE' },
-  { href: 'poker.html', label: 'POKER' },
   { href: 'minesweeper.html', label: 'MINESWEEPER' },
   { href: 'hexgame.html', label: 'HEX' },
-  { href: 'bandits.html', label: 'BANDITS' },
-  { href: 'cartpole.html', label: 'CART POLE' },
   { href: 'queens.html', label: 'N-QUEENS' },
   { href: 'snake.html', label: 'SNAKE' },
-  { href: 'rover.html', label: 'ROVER' },
-  { href: 'ghosthunt.html', label: 'GHOST HUNT' },
   { href: 'tetris.html', label: 'TETRIS' },
   { href: 'nonogram.html', label: 'NONOGRAM' },
+  { href: 'tictactoe.html', label: 'TIC-TAC-TOE' },
+];
+
+// Games hidden from the menus for now. Their pages, APIs and landing sims still exist and their URLs still work;
+// this list only gives a hidden page its own name in the nav when someone opens it directly. It is not exported,
+// so the 404 page's game links stay limited to GAMES. To bring a game back:
+// 1. move its line from HIDDEN to GAMES;
+// 2. restore its cabinet in web/index.html and its row in the README game table, from the parent of the commit
+//    "chore(web): hide eight games from the menus and landing page for now";
+// 3. add its algorithm back to the two meta descriptions in web/index.html, and update the game counts there and
+//    in the README.
+const HIDDEN = [
+  { href: 'endgame.html', label: 'ENDGAME' },
+  { href: 'sokoban.html', label: 'SOKOBAN' },
+  { href: 'poker.html', label: 'POKER' },
+  { href: 'bandits.html', label: 'BANDITS' },
+  { href: 'cartpole.html', label: 'CART POLE' },
+  { href: 'rover.html', label: 'ROVER' },
+  { href: 'ghosthunt.html', label: 'GHOST HUNT' },
   { href: 'localize.html', label: 'LOST ROBOT' },
 ];
 
@@ -59,7 +71,7 @@ if (list) {
   const dropdown = (title, entries) =>
     `<li class="games-menu"><details><summary>${title} <span aria-hidden="true">▾</span></summary></details>`
     + `<ul class="games-panel">${entries.map((g) => item(g.href, g.label, g.href === here)).join('')}</ul></li>`;
-  const current = [...GAMES, ...LABS].find((g) => g.href === here);
+  const current = [...GAMES, ...LABS, ...HIDDEN].find((g) => g.href === here);
   list.innerHTML = item('index.html', 'MAIN', here === 'index.html')
     + dropdown('GAMES', GAMES)
     + dropdown('LABS', LABS)

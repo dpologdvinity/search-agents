@@ -75,8 +75,15 @@ def solve(name: str, cities, args) -> tuple[Result, float]:
     elif name == "simulated_annealing":
         result = simulated_annealing(cities, **given(iterations=args.iterations, cooling=args.cooling, seed=args.seed))
     elif name == "genetic_algorithm":
-        result = genetic_algorithm(cities, **given(population_size=args.population, generations=args.generations,
-                                                   mutation_rate=args.mutation, seed=args.seed))
+        result = genetic_algorithm(
+            cities,
+            **given(
+                population_size=args.population,
+                generations=args.generations,
+                mutation_rate=args.mutation,
+                seed=args.seed,
+            ),
+        )
     else:  # nearest_neighbor_2opt is the only solver left, and it takes no settings
         result = nearest_neighbor_2opt(cities)
     return result, time.perf_counter() - start
@@ -130,14 +137,18 @@ def plot(cities, tour, width: int = 60, height: int = 30) -> str:
 
 def main(argv=None) -> int:
     """Parse the options, build or load the map, and run the solvers. Returns the exit status."""
-    parser = argparse.ArgumentParser(prog="python -m routes", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m routes", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--cities", type=int, default=20, help="random map size (default 20)")
     parser.add_argument("--file", help="load cities from a CSV of x,y lines instead of a random map")
     parser.add_argument("--seed", type=int, default=1, help="random seed for the map and the solvers (default 1)")
     parser.add_argument("--solver", choices=[*SOLVERS, "held_karp"], help="run one solver instead of comparing all")
-    parser.add_argument("--compare", action="store_true",
-                        help="run every solver and print a table (the default when --solver is not given)")
+    parser.add_argument(
+        "--compare",
+        action="store_true",
+        help="run every solver and print a table (the default when --solver is not given)",
+    )
     parser.add_argument("--iterations", type=int, help="simulated annealing: 2-opt moves to try")
     parser.add_argument("--cooling", type=float, help="simulated annealing: temperature multiplier per move")
     parser.add_argument("--population", type=int, help="genetic algorithm: tours per generation")

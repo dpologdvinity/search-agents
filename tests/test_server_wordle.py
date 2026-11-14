@@ -138,8 +138,9 @@ def test_concurrent_guesses_cannot_pass_the_six_guess_limit(monkeypatch):
     async def race():
         transport = httpx.ASGITransport(app=app_)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
-            return await asyncio.gather(*(ac.post("/api/wordle/guess", json={"game_id": game_id, "word": w})
-                                          for w in words))
+            return await asyncio.gather(
+                *(ac.post("/api/wordle/guess", json={"game_id": game_id, "word": w}) for w in words)
+            )
 
     responses = asyncio.run(race())
     assert all(r.status_code in (200, 409) for r in responses)

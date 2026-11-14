@@ -33,7 +33,7 @@ def swap_body(**extra):
 
 def test_meta_lists_layouts_planners_and_limits(client):
     body = client.get("/api/warehouse/meta").json()
-    assert len(body["layouts"]) == 3
+    assert len(body["layouts"]) == 6
     assert [p["name"] for p in body["planners"]] == ["cbs", "prioritized", "independent"]
     layout = body["layouts"][0]
     assert layout["height"] == len(layout["rows"]) and layout["width"] == len(layout["rows"][0])
@@ -79,11 +79,14 @@ def test_prioritized_fails_on_swap_corridor(client):
     assert body["stats"]["sum_of_costs"] is None
 
 
-@pytest.mark.parametrize("rows, status", [
-    (["..", "..", ".."], 422),  # rows shorter than the 3-cell minimum fail the pattern
-    (["...", "...", "...", "...", "..."] * 4, 422),  # 20 rows exceed the 16-row maximum
-    (["##.##", "...", "....."], 400),  # ragged rows pass the pattern but the core rejects them
-])
+@pytest.mark.parametrize(
+    "rows, status",
+    [
+        (["..", "..", ".."], 422),  # rows shorter than the 3-cell minimum fail the pattern
+        (["...", "...", "...", "...", "..."] * 4, 422),  # 20 rows exceed the 16-row maximum
+        (["##.##", "...", "....."], 400),  # ragged rows pass the pattern but the core rejects them
+    ],
+)
 def test_map_shapes_are_checked(client, rows, status):
     body = {"rows": rows, "starts": [[0, 1]], "goals": [[4, 1]]}
     assert client.post("/api/warehouse/solve", json=body).status_code == status
@@ -121,8 +124,9 @@ def test_random_instance_is_solvable(client):
     body = client.post("/api/warehouse/random", json={"rows": rows, "robots": 3, "seed": 2}).json()
     assert len(body["starts"]) == 3 and len(body["goals"]) == 3
     assert len({tuple(p) for p in body["starts"] + body["goals"]}) == 6  # all distinct
-    solved = client.post("/api/warehouse/solve", json={"rows": rows, "starts": body["starts"],
-                                                       "goals": body["goals"]}).json()
+    solved = client.post(
+        "/api/warehouse/solve", json={"rows": rows, "starts": body["starts"], "goals": body["goals"]}
+    ).json()
     assert solved["status"] == "solved"
 
 

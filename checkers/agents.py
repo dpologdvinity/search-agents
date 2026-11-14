@@ -73,8 +73,7 @@ DESCRIPTIONS = {
 }
 
 
-def make_agent(agent: str, level: int, size: int = 8, *, forced: bool = True, seed: int = 0,
-               by_nodes: bool = False):
+def make_agent(agent: str, level: int, size: int = 8, *, forced: bool = True, seed: int = 0, by_nodes: bool = False):
     """A searcher for this agent at this level on a size x size board.
 
     by_nodes swaps alpha-beta's time limit for a node budget, so the match runner gets
@@ -131,8 +130,11 @@ def matchup_text(players: dict, levels: dict, size: int = 8, *, forced: bool = T
     Two AIs: "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.8 s)".
     players maps RED and WHITE to an agent name or "human"; levels maps them to a strength.
     """
-    parts = [f"{SIDE_NAMES[side]}: {agent_label(players[side], levels[side], size, forced=forced, by_nodes=by_nodes)}"
-             for side in (RED, WHITE) if players[side] != "human"]
+    parts = [
+        f"{SIDE_NAMES[side]}: {agent_label(players[side], levels[side], size, forced=forced, by_nodes=by_nodes)}"
+        for side in (RED, WHITE)
+        if players[side] != "human"
+    ]
     return " vs ".join(parts) if parts else "human vs human"
 
 
@@ -164,8 +166,16 @@ def _position_seed(board, turn: int) -> int:
     return zlib.crc32(repr((board, turn)).encode())
 
 
-def choose(board, turn: int, agent: str = "alphabeta", level: int = 2, *, forced: bool = True,
-           seed: int | None = None, by_nodes: bool = False) -> dict:
+def choose(
+    board,
+    turn: int,
+    agent: str = "alphabeta",
+    level: int = 2,
+    *,
+    forced: bool = True,
+    seed: int | None = None,
+    by_nodes: bool = False,
+) -> dict:
     """Pick a move for `turn` (+1 red, -1 white) with the named agent at the given level.
 
     The board size comes from the board itself. Returns {"move", "analysis", "reply"}:
@@ -188,8 +198,10 @@ def choose(board, turn: int, agent: str = "alphabeta", level: int = 2, *, forced
             "rollouts": info.rollouts,
             "best": describe(info.score),
             # Root moves best-first; unscored moves go last.
-            "root": [{"notation": notation(m), "path": list(m.path), "score": describe(sc)}
-                     for m, sc in sorted(info.root, key=lambda x: -(x[1] if x[1] is not None else -WIN))],
+            "root": [
+                {"notation": notation(m), "path": list(m.path), "score": describe(sc)}
+                for m, sc in sorted(info.root, key=lambda x: -(x[1] if x[1] is not None else -WIN))
+            ],
             "seconds": round(time.perf_counter() - start, 3),
         },
         "reply": [move_json(m) for m in reply_moves],

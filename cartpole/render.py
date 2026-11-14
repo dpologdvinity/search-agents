@@ -21,8 +21,14 @@ CENTRE = (WIDTH - 1) / 2
 CLEAR = "\033[H\033[J"  # move the cursor home and clear the screen
 
 
-def render_frame(x: float, theta: float, steps: int, action: int | None = None,
-                 probs: tuple[float, float] | None = None, value: float | None = None) -> str:
+def render_frame(
+    x: float,
+    theta: float,
+    steps: int,
+    action: int | None = None,
+    probs: tuple[float, float] | None = None,
+    value: float | None = None,
+) -> str:
     """One frame as text. probs and value are optional readouts from a learned agent."""
     grid = [[" "] * WIDTH for _ in range(HEIGHT)]
     ground, cart_row = HEIGHT - 1, HEIGHT - 2
@@ -54,7 +60,9 @@ def render_frame(x: float, theta: float, steps: int, action: int | None = None,
         status += "   FALLEN"
     lines.append(status)
     if action is not None:
-        lines.append(f"push {'LEFT ' if action == 0 else 'RIGHT'}"
-                     + (f"   P(left) {probs[0]:.2f}  P(right) {probs[1]:.2f}" if probs else "")
-                     + (f"   V {value:.1f}" if value is not None else ""))
+        lines.append(
+            f"push {'LEFT ' if action == 0 else 'RIGHT'}"
+            + (f"   P(left) {probs[0]:.2f}  P(right) {probs[1]:.2f}" if probs else "")
+            + (f"   V {value:.1f}" if value is not None else "")
+        )
     return "\n".join(lines)

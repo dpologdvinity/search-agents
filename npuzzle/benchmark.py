@@ -60,7 +60,8 @@ def configs_15puzzle():
         for size in (100, 1000):
             for w in (0.8, 0.6):
                 configs[f"bwas+{h} b={size} w={w}"] = partial(
-                    batch_weighted_a_star, batch_heuristic=batch_heuristic(h, 4), batch_size=size, g_weight=w)
+                    batch_weighted_a_star, batch_heuristic=batch_heuristic(h, 4), batch_size=size, g_weight=w
+                )
     return configs
 
 

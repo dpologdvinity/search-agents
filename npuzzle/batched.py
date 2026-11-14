@@ -24,8 +24,9 @@ from .board import Node, goal, is_solvable, neighbors
 from .search import _start
 
 
-def batch_weighted_a_star(board, batch_heuristic, batch_size=100, g_weight=1.0,
-                          limits=None, on_expand=None, name="bwas"):
+def batch_weighted_a_star(
+    board, batch_heuristic, batch_size=100, g_weight=1.0, limits=None, on_expand=None, name="bwas"
+):
     """Search with batch_heuristic: (B, n*n) int8 array -> (B,) estimates."""
     start, n, run = _start(board, name, limits, on_expand)
     if not is_solvable(start, n):

@@ -18,36 +18,36 @@
       "label": "AI ghosts (A* routes)",
       "overall": {
         "games": 400,
-        "win_rate": 0.6425,
-        "mean_score": 1350.3,
-        "mean_turns": 193.9,
+        "win_rate": 0.5975,
+        "mean_score": 1324.2,
+        "mean_turns": 208.3,
         "outcomes": {
-          "won": 257,
-          "lost": 47,
-          "timeout": 96
+          "won": 239,
+          "lost": 69,
+          "timeout": 92
         }
       },
       "mazes": {
         "lanes": {
           "games": 200,
-          "win_rate": 0.435,
-          "mean_score": 1218.0,
-          "mean_turns": 235.8,
+          "win_rate": 0.375,
+          "mean_score": 1144.0,
+          "mean_turns": 232.4,
           "outcomes": {
-            "won": 87,
-            "lost": 19,
-            "timeout": 94
+            "won": 75,
+            "lost": 44,
+            "timeout": 81
           }
         },
         "vault": {
           "games": 200,
-          "win_rate": 0.85,
-          "mean_score": 1482.5,
-          "mean_turns": 152.1,
+          "win_rate": 0.82,
+          "mean_score": 1504.5,
+          "mean_turns": 184.1,
           "outcomes": {
-            "won": 170,
-            "lost": 28,
-            "timeout": 2
+            "won": 164,
+            "lost": 25,
+            "timeout": 11
           }
         }
       }
@@ -56,35 +56,35 @@
       "label": "Chance (fixed odds)",
       "overall": {
         "games": 400,
-        "win_rate": 0.4625,
-        "mean_score": 1513.7,
-        "mean_turns": 110.8,
+        "win_rate": 0.38,
+        "mean_score": 1320.5,
+        "mean_turns": 106.1,
         "outcomes": {
-          "won": 185,
-          "lost": 215,
+          "won": 152,
+          "lost": 248,
           "timeout": 0
         }
       },
       "mazes": {
         "lanes": {
           "games": 200,
-          "win_rate": 0.325,
-          "mean_score": 1302.2,
-          "mean_turns": 94.7,
+          "win_rate": 0.41,
+          "mean_score": 1347.7,
+          "mean_turns": 104.2,
           "outcomes": {
-            "won": 65,
-            "lost": 135,
+            "won": 82,
+            "lost": 118,
             "timeout": 0
           }
         },
         "vault": {
           "games": 200,
-          "win_rate": 0.6,
-          "mean_score": 1725.2,
-          "mean_turns": 126.9,
+          "win_rate": 0.35,
+          "mean_score": 1293.3,
+          "mean_turns": 108.0,
           "outcomes": {
-            "won": 120,
-            "lost": 80,
+            "won": 70,
+            "lost": 130,
             "timeout": 0
           }
         }

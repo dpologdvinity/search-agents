@@ -14,16 +14,19 @@ from .agents import AGENT_LABELS, DESCRIPTIONS, make_agent
 from .benchmark import BENCH_SEED_BASE, summarize
 from .episode import run_episode
 from .ghosts import CHANCE_ODDS, GHOST_LABELS, GHOST_POLICIES
-from .mazes import get, names
+from .mazes import get
+from .qlearning import DEFAULT_MAZES
 
 
-def run_match(games: int, agent_name: str = "q", mazes: tuple[str, ...] | None = None) -> dict:
-    """Play the agent on every maze, `games` seeds each, against every ghost policy.
+def run_match(games: int, agent_name: str = "q", mazes: tuple[str, ...] = DEFAULT_MAZES) -> dict:
+    """Play the agent on each maze, `games` seeds each, against every ghost policy.
+
+    The default is the training maze set, the one results/pacman_chance_match.json was measured on; the newer
+    mazes differ in size, and the learned agent can not play them.
 
     Returns the nested results: one block per ghost policy, with an overall summary and one
     summary per maze. Nothing here is random beyond the seeds, so a rerun gives the same numbers.
     """
-    mazes = mazes or names()
     seeds = [BENCH_SEED_BASE + i for i in range(games)]
     agent = make_agent(agent_name)
     result = {

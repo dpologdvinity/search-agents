@@ -112,10 +112,7 @@ def lookup(config, n) -> int:
     position = [0] * CELLS
     for i, tile in enumerate(config):
         position[tile] = i
-    return sum(
-        table[_key(position[t] for t in group)]
-        for table, group in zip(_tables(), GROUPS)
-    )
+    return sum(table[_key(position[t] for t in group)] for table, group in zip(_tables(), GROUPS))
 
 
 if __name__ == "__main__":

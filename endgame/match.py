@@ -84,17 +84,19 @@ def run_match(piece: str, games: int, seed: int = 0, seats: tuple[str, ...] = ("
                 win_plies.append(plies)
             elif result == "loss":
                 loss_plies.append(plies)
-        report["seats"].append({
-            "seat": seat,
-            "tablebase_side": _SIDE[tb_side],
-            "chance_side": _SIDE[1 - tb_side],
-            "wins": tally["win"],
-            "draws": tally["draw"],
-            "losses": tally["loss"],
-            "unfinished": tally["unfinished"],
-            "mean_win_moves": _mean_moves(win_plies),
-            "mean_loss_moves": _mean_moves(loss_plies),
-        })
+        report["seats"].append(
+            {
+                "seat": seat,
+                "tablebase_side": _SIDE[tb_side],
+                "chance_side": _SIDE[1 - tb_side],
+                "wins": tally["win"],
+                "draws": tally["draw"],
+                "losses": tally["loss"],
+                "unfinished": tally["unfinished"],
+                "mean_win_moves": _mean_moves(win_plies),
+                "mean_loss_moves": _mean_moves(loss_plies),
+            }
+        )
     return report
 
 

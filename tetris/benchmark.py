@@ -37,9 +37,38 @@ STRATEGIES = ("random", "hand", "ga", "ga_lookahead")
 LOOKAHEAD_TOP_K = 6
 
 # Two-sided 95% Student's t critical values for 1..30 degrees of freedom; beyond 30 the normal value is used.
-_T95 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145,
-        2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048,
-        2.045, 2.042]
+_T95 = [
+    12.706,
+    4.303,
+    3.182,
+    2.776,
+    2.571,
+    2.447,
+    2.365,
+    2.306,
+    2.262,
+    2.228,
+    2.201,
+    2.179,
+    2.160,
+    2.145,
+    2.131,
+    2.120,
+    2.110,
+    2.101,
+    2.093,
+    2.086,
+    2.080,
+    2.074,
+    2.069,
+    2.064,
+    2.060,
+    2.056,
+    2.052,
+    2.048,
+    2.045,
+    2.042,
+]
 
 
 def t95(df: int) -> float:
@@ -62,8 +91,15 @@ def _run(task) -> dict:
     name, seed, cap, height, ga_weights = task
     t0 = time.time()
     r = play(_policy_for(name, seed, ga_weights), seed, cap, height=height)
-    return {"strategy": name, "seed": seed, "lines": r.lines, "pieces": r.pieces,
-            "topped_out": r.topped_out, "capped": r.capped, "seconds": time.time() - t0}
+    return {
+        "strategy": name,
+        "seed": seed,
+        "lines": r.lines,
+        "pieces": r.pieces,
+        "topped_out": r.topped_out,
+        "capped": r.capped,
+        "seconds": time.time() - t0,
+    }
 
 
 @dataclass(frozen=True)
@@ -103,8 +139,9 @@ def summarise(rows: list[dict]) -> Summary:
     )
 
 
-def run_benchmark(games: int = 30, cap: int = 2000, workers: int = 1, strategies=STRATEGIES,
-                  ga_weights=None, height: int = H) -> dict:
+def run_benchmark(
+    games: int = 30, cap: int = 2000, workers: int = 1, strategies=STRATEGIES, ga_weights=None, height: int = H
+) -> dict:
     """Play every strategy on the same `games` seeds and return the per-game rows and the summaries."""
     if ga_weights is None:
         ga_weights = load_tuned()["weights"]
@@ -114,27 +151,45 @@ def run_benchmark(games: int = 30, cap: int = 2000, workers: int = 1, strategies
         rows = pool.map(_run, tasks, chunksize=1)
     by = {name: [r for r in rows if r["strategy"] == name] for name in strategies}
     summaries = [summarise(by[name]) for name in strategies]
-    return {"games": games, "piece_cap": cap, "board_height": height, "seeds": seeds,
-            "ga_weights": list(ga_weights), "lookahead_top_k": LOOKAHEAD_TOP_K,
-            "summaries": [s.__dict__ for s in summaries], "rows": rows}
+    return {
+        "games": games,
+        "piece_cap": cap,
+        "board_height": height,
+        "seeds": seeds,
+        "ga_weights": list(ga_weights),
+        "lookahead_top_k": LOOKAHEAD_TOP_K,
+        "summaries": [s.__dict__ for s in summaries],
+        "rows": rows,
+    }
 
 
-LABELS = {"random": "random placement", "hand": "hand-picked weights", "ga": "GA-tuned weights",
-          "ga_lookahead": "GA-tuned + 1-piece lookahead"}
+LABELS = {
+    "random": "random placement",
+    "hand": "hand-picked weights",
+    "ga": "GA-tuned weights",
+    "ga_lookahead": "GA-tuned + 1-piece lookahead",
+}
 
 
 def to_markdown(result: dict) -> str:
     """The summary table for results/*.md and the README."""
-    head = ("| Strategy | Games | Mean lines | 95% CI | Median | Min-max | Hit cap | Topped out | "
-            "Mean pieces | s per game |")
+    head = (
+        "| Strategy | Games | Mean lines | 95% CI | Median | Min-max | Hit cap | Topped out | "
+        "Mean pieces | s per game |"
+    )
     source = f" The 'ga' row uses the weights in {result['ga_source']}." if result.get("ga_source") else ""
-    lines = [f"Board {result.get('board_height', H)} rows, piece cap {result['piece_cap']}.{source}", "", head,
-             "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    lines = [
+        f"Board {result.get('board_height', H)} rows, piece cap {result['piece_cap']}.{source}",
+        "",
+        head,
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
     for s in result["summaries"]:
         lines.append(
             f"| {LABELS[s['strategy']]} | {s['games']} | {s['mean_lines']:.1f} | ± {s['ci95']:.1f} | "
             f"{s['median_lines']:.0f} | {s['min_lines']}-{s['max_lines']} | {s['capped']} / {s['games']} | "
-            f"{s['topped_out']} | {s['mean_pieces']:.0f} | {s['seconds_per_game']:.2f} |")
+            f"{s['topped_out']} | {s['mean_pieces']:.0f} | {s['seconds_per_game']:.2f} |"
+        )
     return "\n".join(lines) + "\n"
 
 

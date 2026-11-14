@@ -6,6 +6,8 @@ expected score and collision can be worked out by hand from the layout.
 
 import json
 import random
+from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -21,12 +23,14 @@ from pacman.engine import (
     POWER_POINTS,
     SCARED_TURNS,
     STEP_COST,
+    WAIT,
     WIN_POINTS,
     WON,
     Game,
     initial_state,
     learning_reward,
     legal_actions,
+    turn_limit,
 )
 from pacman.episode import run_episode
 from pacman.features import FEATURE_NAMES, state_features, successor
@@ -34,7 +38,7 @@ from pacman.ghosts import CHANCE_ODDS, NO_HEADING, Ghost, chance_move, choose_mo
 from pacman.lookahead import SURVIVAL_HORIZON, survival_depths
 from pacman.match import match_markdown, run_match
 from pacman.mazes import ACTIONS, LAYOUTS, parse
-from pacman.qlearning import td_update, train
+from pacman.qlearning import DEFAULT_MAZES, td_update, train
 from pacman.search import astar, distances
 from pacman.terminal import play_human, render, watch
 
@@ -49,14 +53,33 @@ def tiny(monkeypatch, name, rows):
 
 # ── layouts ──────────────────────────────────────────────────────────────
 
+
 @pytest.mark.parametrize("name", mazes.names())
 def test_layouts_parse_with_valid_starts(name):
     m = mazes.get(name)
-    assert m.width == 15 and m.height == 11
+    assert m.width == len(m.rows[0]) and m.height == len(m.rows)
     assert m.pac_start not in m.pellets
     assert all(g not in m.pellets for g in m.ghost_starts)
     assert 2 <= len(m.ghost_starts) <= 4
-    assert len(m.powers) == 4 and m.powers <= m.pellets
+    assert 4 <= len(m.powers) <= 5 and m.powers <= m.pellets
+
+
+def test_maps_have_different_sizes_and_google_tunnel_wraps():
+    assert len({(mazes.get(n).width, mazes.get(n).height) for n in mazes.names()}) >= 4
+    m = mazes.get("google")
+    west, east = 8 * m.width, 9 * m.width - 1
+    assert m.nbr[west][W] == east and m.nbr[east][E] == west
+    assert distances(m, west)[east] == 1
+    assert astar(m, west, east) == [west, east]
+    for target in m.pellets:
+        assert len(astar(m, west, target)) - 1 == distances(m, west)[target]
+
+
+def test_larger_maps_get_enough_turns_and_original_limits_are_preserved():
+    assert Game("lanes").max_turns == Game("vault").max_turns == 300
+    for name in ("arcade", "google"):
+        maze = mazes.get(name)
+        assert Game(maze).max_turns == turn_limit(maze) == 3 * len(maze.pellets)
 
 
 def test_parse_rejects_unreachable_cells(monkeypatch):
@@ -76,14 +99,19 @@ def test_parse_rejects_ragged_rows_and_missing_markers(monkeypatch):
 
 # ── A* and BFS ───────────────────────────────────────────────────────────
 
+
 def test_astar_finds_the_shortest_route_on_a_small_maze(monkeypatch):
-    m = tiny(monkeypatch, "route", [
-        "#######",
-        "#P....#",
-        "#.###.#",
-        "#...#G#",
-        "#######",
-    ])
+    m = tiny(
+        monkeypatch,
+        "route",
+        [
+            "#######",
+            "#P....#",
+            "#.###.#",
+            "#...#G#",
+            "#######",
+        ],
+    )
     start, goal = m.pac_start, m.ghost_starts[0]
     path = astar(m, start, goal)
     assert path[0] == start and path[-1] == goal
@@ -107,6 +135,51 @@ def test_astar_to_self_is_a_single_cell():
 
 
 # ── turn rules ───────────────────────────────────────────────────────────
+
+
+def test_empty_power_cell_still_refreshes_fright(monkeypatch):
+    # The power cell scares the ghosts on every visit, eaten or not; only the first visit scores.
+    m = tiny(monkeypatch, "spent", ["##########", "#Po....G.#", "##########"])
+    game = Game(m)
+    game.step(E)
+    game.step(W)
+    turn = game.step(E)
+    assert "power" not in turn.events and turn.points == 0
+    assert game.state.ghosts[0].scared == SCARED_TURNS - 1
+
+
+def test_waiting_on_a_power_cell_does_not_keep_the_ghosts_scared(monkeypatch):
+    # Only arriving on the cell scares them; standing on it would make Pac-Man uncatchable.
+    m = tiny(monkeypatch, "camp", ["##########", "#Po....G.#", "##########"])
+    game = Game(m)
+    game.step(E)
+    game.step(WAIT)
+    assert game.state.ghosts[0].scared == SCARED_TURNS - 2
+
+
+def test_wait_advances_ghosts_without_moving_pacman():
+    game = Game("lanes")
+    before = game.state
+    turn = game.step(4)
+    assert turn.after.pac == before.pac
+    assert turn.after.facing == before.facing
+    assert turn.after.turn == 1
+    assert turn.after.ghosts != before.ghosts
+    assert turn.after.pellets == before.pellets
+
+
+def test_blue_ghosts_slow_pacman_and_features_match_rules(monkeypatch):
+    m = tiny(monkeypatch, "slow", ["###############", "#P..........G.#", "###############"])
+    game = Game(m)
+    game.state = replace(game.state, turn=3, ghosts=tuple(replace(g, scared=5) for g in game.state.ghosts))
+    before = game.state
+    assert successor(before, E).pac == before.pac
+    turn = game.step(E)
+    assert turn.after.pac == before.pac
+    assert turn.after.ghosts[0].pos != before.ghosts[0].pos
+    assert turn.after.ghosts[0].scared == 4
+    assert game.step(E).after.pac == before.pac + 1
+
 
 def test_walls_are_not_legal_and_refused_by_step():
     g = Game("lanes", seed=0)
@@ -140,9 +213,10 @@ def test_power_pellet_scares_ghosts_and_eating_a_scared_ghost_scores(monkeypatch
     assert "power" in turn.events and turn.points == POWER_POINTS
     assert g.state.ghosts[0].scared == SCARED_TURNS - 1  # the timer ticks down at the end of the turn
     g.step(E)  # pellet at col 4; the scared ghost flees east to col 5, then col 6
-    g.step(E)  # col 5 is empty; the ghost is cornered at col 6 and steps back onto Pac-Man
+    g.step(E)  # slowed this turn; the ghost leaves the corner
+    g.step(E)  # catch the scared ghost at col 5
     assert g.state.points == PELLET_POINTS + POWER_POINTS + PELLET_POINTS + GHOST_POINTS
-    assert g.state.ghosts[0].pos == m.ghost_starts[0]  # the eaten ghost returns home
+    assert g.state.ghosts[0].pos == m.ghost_starts[0] - 1  # returned home before its normal move
     assert g.state.ghosts[0].scared == 0
 
 
@@ -203,6 +277,7 @@ def test_states_are_immutable_snapshots(monkeypatch):
 
 # ── ghost AI ─────────────────────────────────────────────────────────────
 
+
 def test_ambusher_aims_four_steps_ahead_and_stops_at_walls(monkeypatch):
     m = tiny(monkeypatch, "ambush", ["##########", "#P......G#", "##########"])
     ghost = Ghost(pos=m.ghost_starts[0], personality="ambusher", home=m.ghost_starts[0])
@@ -233,6 +308,7 @@ def test_scared_ghost_flees_to_the_farthest_neighbour():
 
 
 # ── features ─────────────────────────────────────────────────────────────
+
 
 def test_feature_vector_has_one_entry_per_name_and_sane_ranges():
     state = initial_state(mazes.get("lanes"))
@@ -312,6 +388,7 @@ def test_successor_reports_pellet_eating_and_food_distance():
 
 # ── Q-learning math ──────────────────────────────────────────────────────
 
+
 def test_td_update_terminal_case_moves_weight_toward_reward():
     w = [0.0, 0.0]
     error = td_update(w, [1.0, 0.0], reward=10.0, next_feats=[], alpha=0.1, gamma=0.9)
@@ -329,6 +406,7 @@ def test_td_update_bootstraps_from_the_best_next_action():
 
 
 # ── agents and training ──────────────────────────────────────────────────
+
 
 def test_trained_agent_beats_random_on_fixed_seeds():
     q = QAgent(load_weights().weights)
@@ -476,8 +554,7 @@ def test_ai_ghosts_never_record_a_heading():
 
 def test_chance_episode_is_recorded_and_watchable(monkeypatch):
     lines = []
-    status = watch("random", "lanes", 4, delay=0, out=lines.append, sleep=lambda _: None,
-                   clear=False, ghosts="chance")
+    status = watch("random", "lanes", 4, delay=0, out=lines.append, sleep=lambda _: None, clear=False, ghosts="chance")
     assert status in ("won", "lost", "timeout")
     assert lines[-1].startswith("random vs Chance (fixed odds): ")
     ep = run_episode(make_agent("random"), mazes.get("lanes"), 4, "random", ghosts="chance")
@@ -508,3 +585,49 @@ def test_match_command_writes_results_quickly(tmp_path):
     doc = json.loads(out.read_text())
     assert set(doc["ghosts"]) == {"ai", "chance"}
     assert out.with_suffix(".md").read_text().startswith("Pac-Man agent: Random")
+
+
+def test_learned_agent_refuses_boards_other_than_its_training_size():
+    # The Q-agent's features were learned on 15x11 boards; the episode runner must not feed it another size,
+    # whichever caller (server, CLI watch, benchmark) asks.
+    from pacman.qlearning import TRAINED_SIZE
+
+    pocket = mazes.get("pocket")
+    assert (pocket.width, pocket.height) != TRAINED_SIZE
+    with pytest.raises(ValueError, match="15x11"):
+        run_episode(make_agent("q"), pocket, seed=1, name="q")
+    lanes = mazes.get("lanes")
+    assert (lanes.width, lanes.height) == TRAINED_SIZE
+    run_episode(make_agent("q"), lanes, seed=1, name="q", max_turns=5)
+
+
+def test_benchmark_defaults_to_the_published_maze_set():
+    # results/pacman_benchmark.json was measured on the training mazes; a rerun must not fold in the newer ones.
+    import inspect
+
+    from pacman.benchmark import run_benchmark
+    from pacman.qlearning import DEFAULT_MAZES
+
+    published = json.loads(Path("results/pacman_benchmark.json").read_text())
+    assert tuple(next(iter(published["agents"].values()))["mazes"]) == DEFAULT_MAZES
+    assert inspect.signature(run_benchmark).parameters["mazes"].default == DEFAULT_MAZES
+
+
+def test_cli_rejects_learned_agent_on_untrained_board_size(capsys):
+    """Watching the Q-agent on a maze of another size prints one line, not a traceback."""
+    assert cli_main(["--watch", "q", "--maze", "pocket", "--seed", "1", "--delay", "0"]) == 1
+    assert "trained" in capsys.readouterr().err
+
+
+def test_match_defaults_to_the_published_training_mazes():
+    # The newer mazes are another size, which the learned agent refuses; a default rerun must not crash on them.
+    result = run_match(1, "random")
+    assert set(result["ghosts"]["ai"]["mazes"]) == set(DEFAULT_MAZES)
+
+
+def test_shipped_weights_still_win_on_vault():
+    # Guards the shipped weights against rule changes they were not trained for: they win about 80% on Vault,
+    # and a change to the power-cell rule once dropped that to 0% with no failing test.
+    agent = make_agent("q")
+    wins = sum(run_episode(agent, mazes.get("vault"), BENCH_SEED_BASE + i, "q").won for i in range(10))
+    assert wins >= 7

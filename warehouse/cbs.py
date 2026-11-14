@@ -135,14 +135,16 @@ def cbs(problem: Problem, *, max_nodes: int = 2000, max_seconds: float = 5.0, tr
                 child_info["cost"] = child.cost
             children.append(child_info)
         if len(stats.trace) < trace_limit:
-            stats.trace.append({
-                "id": node.id,
-                "parent": node.parent,
-                "cost": node.cost,
-                "added": node.added.to_dict() if node.added else None,
-                "conflict": _conflict_dict(conflict),
-                "children": children,
-            })
+            stats.trace.append(
+                {
+                    "id": node.id,
+                    "parent": node.parent,
+                    "cost": node.cost,
+                    "added": node.added.to_dict() if node.added else None,
+                    "conflict": _conflict_dict(conflict),
+                    "children": children,
+                }
+            )
     return _result("no_solution", None, stats, started)
 
 

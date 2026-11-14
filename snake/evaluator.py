@@ -31,7 +31,14 @@ import numpy as np
 from .board import DIRS, LEFT, RIGHT, STRAIGHT, Game
 
 FEATURE_NAMES = (
-    "apple", "food near", "food reachable", "area", "room for body", "tail reachable", "exits", "length",
+    "apple",
+    "food near",
+    "food reachable",
+    "area",
+    "room for body",
+    "tail reachable",
+    "exits",
+    "length",
 )
 N_FEATURES = len(FEATURE_NAMES)
 # Candidate order matters only for ties: straight first, as in the greedy baseline.
@@ -86,8 +93,7 @@ def move_features(game: Game, action: int) -> list[float]:
 
     hx, hy = head
     exits = sum(
-        1 for dx, dy in DIRS
-        if 0 <= hx + dx < size and 0 <= hy + dy < size and (hx + dx, hy + dy) not in occupied
+        1 for dx, dy in DIRS if 0 <= hx + dx < size and 0 <= hy + dy < size and (hx + dx, hy + dy) not in occupied
     )
     length = len(body2)
     return [

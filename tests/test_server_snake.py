@@ -66,8 +66,9 @@ def test_hint_returns_the_planner_move_and_route():
 
 def test_hint_rejects_bad_positions():
     with TestClient(make_app()) as client:
-        off_board = client.post("/api/snake/hint",
-                                json={"body": [[12, 0], [11, 0], [10, 0]], "heading": 1, "food": None})
+        off_board = client.post(
+            "/api/snake/hint", json={"body": [[12, 0], [11, 0], [10, 0]], "heading": 1, "food": None}
+        )
         broken = client.post("/api/snake/hint", json={"body": [[6, 6], [4, 6], [3, 6]], "heading": 1, "food": [0, 0]})
         on_body = client.post("/api/snake/hint", json={"body": [[6, 6], [5, 6], [4, 6]], "heading": 1, "food": [5, 6]})
         short = client.post("/api/snake/hint", json={"body": [[6, 6]], "heading": 1, "food": None})

@@ -138,4 +138,3 @@ def write_weights(path: Path, weights, meta: dict) -> None:
     """Write the weight file: the named features and weights, then the training metadata."""
     data = {"features": list(FEATURE_NAMES), "weights": [float(v) for v in weights], **meta}
     path.write_text(json.dumps(data, indent=1) + "\n")
-

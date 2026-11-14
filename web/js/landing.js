@@ -4,6 +4,7 @@
 
 import { play } from './sfx.js';
 import { makeMaze, run } from './pathfind-core.js';
+import { EMPTY_BOARD, LEVELS, LINES, legalMoves, other, place, search, winner } from './tictactoe-core.js';
 // Overdrive (overdrive.js): sims tick faster, and the hero search gets a BFS race beside it while it is on.
 import { speedFactor, subscribe as onOverdrive } from './overdrive.js';
 
@@ -614,6 +615,74 @@ function lightsoutSim(ctx, S) {
     if ((hold += speed) < 16) return;
     hold = 0;
     board ^= toggles[plan.shift()]; // one press: its cell and neighbours flip
+  };
+}
+
+function tictactoeSim(ctx, S) {
+  // Two alpha-beta agents from tictactoe-core.js. X opens on a random square, then searches 2 plies (EASY);
+  // O searches the whole game (PERFECT). Before each move the agent's candidate squares light up in search
+  // order with their values from its side (green wins, yellow draws, pink loses, a dim ≤/≥ is only a bound).
+  // O never loses, and EASY walks into forks past its horizon.
+  const cell = S / 3;
+  let board, turn, result, shown, hold, line;
+  function reset() { board = EMPTY_BOARD; turn = 'X'; result = null; shown = 0; hold = 0; line = null; }
+  reset();
+  const mark = (m, i) => {
+    const cx = (i % 3 + 0.5) * cell, cy = (((i / 3) | 0) + 0.5) * cell, r = cell * 0.28;
+    ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.strokeStyle = ctx.shadowColor = m === 'X' ? C.pink : C.cyan;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    if (m === 'X') { ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r); ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r); }
+    else ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  };
+  return (speed) => {
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = 'rgba(0,245,255,0.35)'; ctx.lineWidth = 2;
+    for (let k = 1; k < 3; k++) {
+      ctx.beginPath(); ctx.moveTo(k * cell, 10); ctx.lineTo(k * cell, S - 10); ctx.moveTo(10, k * cell); ctx.lineTo(S - 10, k * cell); ctx.stroke();
+    }
+    for (let i = 0; i < 9; i++) if (board[i] !== '.') mark(board[i], i);
+    // The candidates searched so far, each with its value from the mover's side (records hold X's value).
+    if (result) {
+      ctx.font = `700 ${cell * 0.2}px "JetBrains Mono", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const rec of result.tree.slice(0, shown)) {
+        if (rec.pruned) continue;
+        const v = turn === 'X' ? rec.v : -rec.v;
+        const x = (rec.m % 3 + 0.5) * cell, y = (((rec.m / 3) | 0) + 0.5) * cell;
+        ctx.fillStyle = rec.b ? C.dim : v > 0 ? C.green : v < 0 ? C.pink : C.yellow;
+        // A bound flips with the sign: X's "at most" ('hi') is O's "at least".
+        const bound = !rec.b ? '' : (rec.b === 'hi') === (turn === 'X') ? '≤' : '≥';
+        ctx.fillText(bound + (v > 0 ? '+1' : v < 0 ? '-1' : '0'), x, y);
+      }
+    }
+    if (line) {
+      if (line.length) {
+        const at = (i) => [(i % 3 + 0.5) * cell, (((i / 3) | 0) + 0.5) * cell];
+        ctx.strokeStyle = ctx.shadowColor = C.yellow; ctx.lineWidth = 5; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.moveTo(...at(line[0])); ctx.lineTo(...at(line[2])); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      if ((hold += speed) > 110) reset();
+      return;
+    }
+    hold += speed;
+    if (!result) {
+      // X's opening is random so the games differ; every other move is the agent's search.
+      result = board === EMPTY_BOARD ? { move: rand(9), tree: [] } : search(board, turn, turn === 'X' ? LEVELS.easy : LEVELS.perfect);
+      shown = 0; hold = 0;
+      return;
+    }
+    if (shown < result.tree.length) { if (hold > 7) { shown++; hold = 0; } return; }
+    if (hold < 20) return;
+    board = place(board, result.move, turn);
+    turn = other(turn); result = null; hold = 0;
+    const w = winner(board);
+    if (w) line = LINES.find(([a, b, c]) => board[a] === w && board[b] === w && board[c] === w);
+    else if (!legalMoves(board).length) line = [];
   };
 }
 
@@ -1339,9 +1408,9 @@ function cartpoleSim(ctx, S) {
   const push = (a) => {
     const [x, xd, th, thd] = s, f = a ? F : -F, c = Math.cos(th), sn = Math.sin(th);
     const temp = (f + PML * thd * thd * sn) / TM;
-    const tha = (G * sn - c * temp) / (HL * (4 / 3 - MP * c * c / TM));
-    const xa = temp - PML * tha * c / TM;
-    s = [x + TAU * xd, xd + TAU * xa, th + TAU * thd, thd + TAU * tha];
+    const thetaAcc = (G * sn - c * temp) / (HL * (4 / 3 - MP * c * c / TM));
+    const xa = temp - PML * thetaAcc * c / TM;
+    s = [x + TAU * xd, xd + TAU * xa, th + TAU * thd, thd + TAU * thetaAcc];
   };
   reset();
   const ppm = S / 6, track = S * 0.72;
@@ -2640,7 +2709,7 @@ function ghosthuntSim(ctx, S) {
 }
 
 function cabinets() {
-  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim, nonogram: nonogramSim, clusters: clustersSim, nnlab: nnlabSim, pathfind: pathfindSim, mdplab: mdplabSim, optlab: optlabSim, treelab: treelabSim, ghosthunt: ghosthuntSim, markov: markovSim, regression: regressionSim, localize: localizeSim, walkers: walkersSim };
+  const sims = { npuzzle: npuzzleSim, connect4: connect4Sim, checkers: checkersSim, routes: routesSim, g2048: g2048Sim, sudoku: sudokuSim, lightsout: lightsoutSim, blackjack: blackjackSim, battleship: battleshipSim, pacman: pacmanSim, warehouse: warehouseSim, endgame: endgameSim, sokoban: sokobanSim, wordle: wordleSim, poker: pokerSim, minesweeper: minesweeperSim, hexgame: hexgameSim, bandits: banditsSim, cartpole: cartpoleSim, queens: queensSim, snake: snakeSim, rover: roverSim, tetris: tetrisSim, nonogram: nonogramSim, clusters: clustersSim, nnlab: nnlabSim, pathfind: pathfindSim, mdplab: mdplabSim, optlab: optlabSim, treelab: treelabSim, ghosthunt: ghosthuntSim, markov: markovSim, regression: regressionSim, localize: localizeSim, walkers: walkersSim, tictactoe: tictactoeSim };
   document.querySelectorAll('.cab-screen').forEach((canvas) => {
     const S = 240, ctx = sizeCanvas(canvas, S, S), tick = sims[canvas.dataset.sim](ctx, S);
     const cab = canvas.closest('.cabinet');

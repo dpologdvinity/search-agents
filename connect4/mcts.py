@@ -45,8 +45,9 @@ def _rollout(board: Board, rng: random.Random) -> float:
 
 
 class MCTS:
-    def __init__(self, simulations: int = 2000, c: float = 1.4,
-                 max_seconds: float | None = None, seed: int | None = None):
+    def __init__(
+        self, simulations: int = 2000, c: float = 1.4, max_seconds: float | None = None, seed: int | None = None
+    ):
         self.simulations = simulations
         self.c = c
         self.max_seconds = max_seconds
@@ -67,8 +68,7 @@ class MCTS:
             # Selection
             while not node.untried and node.children:
                 log_n = math.log(node.visits)
-                node = max(node.children, key=lambda ch: ch.value / ch.visits
-                           + self.c * math.sqrt(log_n / ch.visits))
+                node = max(node.children, key=lambda ch: ch.value / ch.visits + self.c * math.sqrt(log_n / ch.visits))
             # Expansion
             if node.untried:
                 col = node.untried.pop(self.rng.randrange(len(node.untried)))
@@ -86,6 +86,9 @@ class MCTS:
             sims += 1
 
         best = max(root.children, key=lambda ch: ch.visits)
-        return {"move": best.move, "simulations": sims,
-                "visits": {ch.move: ch.visits for ch in root.children},
-                "seconds": time.perf_counter() - start}
+        return {
+            "move": best.move,
+            "simulations": sims,
+            "visits": {ch.move: ch.visits for ch in root.children},
+            "seconds": time.perf_counter() - start,
+        }

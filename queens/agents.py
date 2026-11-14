@@ -108,8 +108,10 @@ def _deadline(time_limit: float | None) -> float:
 
 # ── backtracking ─────────────────────────────────────────────────────────────
 
-def backtrack(n: int, *, max_steps: int | None = None, time_limit: float | None = None,
-              record_frames: bool = False) -> Result:
+
+def backtrack(
+    n: int, *, max_steps: int | None = None, time_limit: float | None = None, record_frames: bool = False
+) -> Result:
     """Row-by-row depth-first search with column and diagonal bitmasks.
 
     For row r the search keeps three n-bit masks built from the queens above:
@@ -175,15 +177,36 @@ def backtrack(n: int, *, max_steps: int | None = None, time_limit: float | None 
             break
     solved = row == n and reason == "solved"
     rec.finish(steps, 0 if solved else n - row, placed)
-    return Result("backtrack", n, solved, reason, steps, nodes, time.perf_counter() - t0, 0,
-                  list(placed), 0, rec.trace, rec.frames,
-                  rec.trace_steps, rec.frame_steps)
+    return Result(
+        "backtrack",
+        n,
+        solved,
+        reason,
+        steps,
+        nodes,
+        time.perf_counter() - t0,
+        0,
+        list(placed),
+        0,
+        rec.trace,
+        rec.frames,
+        rec.trace_steps,
+        rec.frame_steps,
+    )
 
 
 # ── steepest-ascent hill climbing ────────────────────────────────────────────
 
-def hill_climb(n: int, rng: random.Random, *, max_steps: int | None = None, max_restarts: int | None = None,
-               time_limit: float | None = None, record_frames: bool = False) -> Result:
+
+def hill_climb(
+    n: int,
+    rng: random.Random,
+    *,
+    max_steps: int | None = None,
+    max_restarts: int | None = None,
+    time_limit: float | None = None,
+    record_frames: bool = False,
+) -> Result:
     """Steepest-ascent hill climbing on the conflict count, with random restarts.
 
     A step scores every move (row, column) and plays the one that lowers the conflict count the most,
@@ -236,16 +259,38 @@ def hill_climb(n: int, rng: random.Random, *, max_steps: int | None = None, max_
     if board.conflicts == 0:
         reason = "solved"
     rec.finish(steps, board.conflicts, board.cols)
-    return Result("hill", n, board.conflicts == 0, reason, steps, evals, time.perf_counter() - t0,
-                  board.conflicts, list(board.cols), restarts, rec.trace, rec.frames,
-                  rec.trace_steps, rec.frame_steps)
+    return Result(
+        "hill",
+        n,
+        board.conflicts == 0,
+        reason,
+        steps,
+        evals,
+        time.perf_counter() - t0,
+        board.conflicts,
+        list(board.cols),
+        restarts,
+        rec.trace,
+        rec.frames,
+        rec.trace_steps,
+        rec.frame_steps,
+    )
 
 
 # ── simulated annealing ──────────────────────────────────────────────────────
 
-def anneal(n: int, rng: random.Random, *, max_steps: int = DEFAULT_MAX_STEPS, run_length: int | None = None,
-           t0: float = 2.0, t1: float = 0.05, time_limit: float | None = None,
-           record_frames: bool = False) -> Result:
+
+def anneal(
+    n: int,
+    rng: random.Random,
+    *,
+    max_steps: int = DEFAULT_MAX_STEPS,
+    run_length: int | None = None,
+    t0: float = 2.0,
+    t1: float = 0.05,
+    time_limit: float | None = None,
+    record_frames: bool = False,
+) -> Result:
     """Simulated annealing on the conflict count, one proposed move at a time.
 
     A proposal moves a random queen to a random other column. Its cost change d is
@@ -293,12 +338,26 @@ def anneal(n: int, rng: random.Random, *, max_steps: int = DEFAULT_MAX_STEPS, ru
     if board.conflicts == 0:
         reason = "solved"
     rec.finish(steps, board.conflicts, board.cols)
-    return Result("anneal", n, board.conflicts == 0, reason, steps, evals, time.perf_counter() - t_start,
-                  board.conflicts, list(board.cols), restarts, rec.trace, rec.frames,
-                  rec.trace_steps, rec.frame_steps)
+    return Result(
+        "anneal",
+        n,
+        board.conflicts == 0,
+        reason,
+        steps,
+        evals,
+        time.perf_counter() - t_start,
+        board.conflicts,
+        list(board.cols),
+        restarts,
+        rec.trace,
+        rec.frames,
+        rec.trace_steps,
+        rec.frame_steps,
+    )
 
 
 # ── min-conflicts ────────────────────────────────────────────────────────────
+
 
 class _Lines:
     """Queen counts per column and diagonal, kept twice: as lists for scalar work, and as numpy arrays
@@ -360,7 +419,7 @@ class _Lines:
         other way, so the slice is reversed. Both are views, so the scan costs one pass over n.
         """
         n = self.n
-        return self.col_np + self.d1_np[r:r + n] + self.d2_np[r:r + n][::-1]
+        return self.col_np + self.d1_np[r : r + n] + self.d2_np[r : r + n][::-1]
 
 
 def _start(n: int, rng: random.Random) -> tuple[_Lines, list[int], int, int]:
@@ -416,8 +475,14 @@ def _start(n: int, rng: random.Random) -> tuple[_Lines, list[int], int, int]:
     return lines, cols, conflicts, evals
 
 
-def min_conflicts(n: int, rng: random.Random, *, max_steps: int | None = None, time_limit: float | None = None,
-                  record_frames: bool = False) -> Result:
+def min_conflicts(
+    n: int,
+    rng: random.Random,
+    *,
+    max_steps: int | None = None,
+    time_limit: float | None = None,
+    record_frames: bool = False,
+) -> Result:
     """Min-conflicts repair (Minton, Johnston, Philips and Laird, 1992), started from a greedy placement.
 
     Start. The greedy placement described in _start.
@@ -492,9 +557,22 @@ def min_conflicts(n: int, rng: random.Random, *, max_steps: int | None = None, t
             stall += 1
         rec.tick(steps, conflicts, cols)
     rec.finish(steps, conflicts, cols)
-    return Result("minconf", n, conflicts == 0, reason, steps, evals, time.perf_counter() - t0,
-                  conflicts, cols, restarts, rec.trace, rec.frames,
-                  rec.trace_steps, rec.frame_steps)
+    return Result(
+        "minconf",
+        n,
+        conflicts == 0,
+        reason,
+        steps,
+        evals,
+        time.perf_counter() - t0,
+        conflicts,
+        cols,
+        restarts,
+        rec.trace,
+        rec.frames,
+        rec.trace_steps,
+        rec.frame_steps,
+    )
 
 
 # ── dispatch ─────────────────────────────────────────────────────────────────

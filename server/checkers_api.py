@@ -73,12 +73,22 @@ async def meta():
         "agents": [{"name": k, "description": v} for k, v in DESCRIPTIONS.items()],
         "forced": True,  # the default capture rule; requests may send "forced": false
         "start": list(for_size(8).START),
-        "sizes": [{"size": n, "squares": for_size(n).cells, "rows_per_side": ROWS_PER_SIDE[n],
-                   "start": list(for_size(n).START)} for n in SIZES],
-        "levels": {"alphabeta_seconds": ALPHABETA_SECONDS,
-                   "minimax_depth": {f"{n}x{n}": {"forced": MINIMAX_DEPTH[(n, True)],
-                                                  "optional": MINIMAX_DEPTH[(n, False)]} for n in SIZES},
-                   "mcts_iterations": {f"{n}x{n}": MCTS_ITERATIONS[n] for n in SIZES}},
+        "sizes": [
+            {
+                "size": n,
+                "squares": for_size(n).cells,
+                "rows_per_side": ROWS_PER_SIDE[n],
+                "start": list(for_size(n).START),
+            }
+            for n in SIZES
+        ],
+        "levels": {
+            "alphabeta_seconds": ALPHABETA_SECONDS,
+            "minimax_depth": {
+                f"{n}x{n}": {"forced": MINIMAX_DEPTH[(n, True)], "optional": MINIMAX_DEPTH[(n, False)]} for n in SIZES
+            },
+            "mcts_iterations": {f"{n}x{n}": MCTS_ITERATIONS[n] for n in SIZES},
+        },
         "chance_weights": CHANCE_WEIGHTS,
     }
 
@@ -87,8 +97,14 @@ PLAYER = Literal["alphabeta", "minimax", "mcts", "greedy", "random", "chance", "
 
 
 @router.get("/api/checkers/describe")
-async def describe(red: PLAYER = "human", red_level: int = Query(2, ge=1, le=3), white: PLAYER = "alphabeta",
-                   white_level: int = Query(2, ge=1, le=3), size: int = 8, forced: bool = True):
+async def describe(
+    red: PLAYER = "human",
+    red_level: int = Query(2, ge=1, le=3),
+    white: PLAYER = "alphabeta",
+    white_level: int = Query(2, ge=1, le=3),
+    size: int = 8,
+    forced: bool = True,
+):
     """Who plays, named with its algorithm and budget. The page and the CLI both show this text."""
     if size not in SIZES:  # a query string is not coerced to a Literal, so check the size here
         raise HTTPException(422, "size must be 8, 10 or 12")

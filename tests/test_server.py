@@ -28,12 +28,36 @@ def test_health_and_meta(client):
     meta = client.get("/api/npuzzle/meta").json()
     assert {a["name"] for a in meta["algorithms"]} >= {"bfs", "astar", "idastar", "bwas"}
     assert {h["name"] for h in meta["heuristics"]} >= {"manhattan", "pdb"}
+    # The cap for searches that store boards shrinks with the board: 250K up to 4x4, 40K at 10x10.
+    caps = meta["limits"]["max_nodes_by_size"]
+    assert caps["3"] == caps["4"] == 250_000 and caps["5"] == 160_000 and caps["10"] == 40_000
 
 
 def test_scramble(client):
     board = client.get("/api/npuzzle/scramble", params={"n": 4, "moves": 20, "seed": 1}).json()["board"]
     assert sorted(board) == list(range(16))
-    assert client.get("/api/npuzzle/scramble", params={"n": 5}).status_code == 400
+    assert client.get("/api/npuzzle/scramble", params={"n": 11}).status_code == 400
+
+
+@pytest.mark.parametrize("n", [2, 5, 6, 7, 8, 9, 10])
+@pytest.mark.parametrize("algorithm", ["astar", "idastar", "bwas"])
+def test_extra_npuzzle_sizes_scramble_and_solve(client, n, algorithm):
+    board = client.get("/api/npuzzle/scramble", params={"n": n, "moves": 1, "seed": 1}).json()["board"]
+    assert sorted(board) == list(range(n * n))
+    with client.websocket_connect("/ws/npuzzle") as ws:
+        result = solve(ws, {"board": board, "algorithm": algorithm})[-1]
+    assert result["status"] == "solved" and result["cost"] == 1
+    heuristics = client.get("/api/npuzzle/meta").json()["heuristics"]
+    assert n in next(h["sizes"] for h in heuristics if h["name"] == "manhattan")
+    assert n not in next(h["sizes"] for h in heuristics if h["name"] == "neural")
+
+
+def test_large_npuzzle_node_budgets_scale_with_board_memory():
+    from server.npuzzle_api import MAX_NODES, MAX_NODES_LINEAR_MEMORY, node_limit
+
+    assert node_limit("astar", 4) == MAX_NODES
+    assert node_limit("astar", 10) == MAX_NODES * 16 // 100
+    assert node_limit("idastar", 10) == MAX_NODES_LINEAR_MEMORY
 
 
 @pytest.mark.parametrize("algorithm", ["bfs", "astar", "idastar", "bibfs"])
@@ -58,11 +82,14 @@ def test_bwas_with_pdb_on_4x4(client):
     assert solves(tuple(board), result["path"])
 
 
-@pytest.mark.parametrize("request_body, fragment", [
-    ({"board": [1, 2, 3], "algorithm": "bfs"}, "9 or 16"),
-    ({"board": [0, 1, 2, 3, 4, 5, 6, 7, 8], "algorithm": "nope"}, "Input should be"),
-    ({"board": [0, 1, 2, 3, 4, 5, 6, 7, 8], "algorithm": "astar", "heuristic": "pdb"}, "4x4"),
-])
+@pytest.mark.parametrize(
+    "request_body, fragment",
+    [
+        ({"board": [1, 2, 3], "algorithm": "bfs"}, "2x2 to 10x10"),
+        ({"board": [0, 1, 2, 3, 4, 5, 6, 7, 8], "algorithm": "nope"}, "Input should be"),
+        ({"board": [0, 1, 2, 3, 4, 5, 6, 7, 8], "algorithm": "astar", "heuristic": "pdb"}, "4x4"),
+    ],
+)
 def test_rejects_bad_requests(client, request_body, fragment):
     with client.websocket_connect("/ws/npuzzle") as ws:
         msg = solve(ws, request_body)[-1]

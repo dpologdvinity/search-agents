@@ -4,7 +4,7 @@ GET  /api/pacman/meta
     Mazes, agents, feature names with their learned weights, ghost personalities, the two ghost
     policies with the chance odds, and the rule constants.
 
-POST /api/pacman/episode  {"agent": "q" | "reflex" | "random", "maze": "lanes" | "vault", "seed": int,
+POST /api/pacman/episode  {"agent": "q" | "reflex" | "random", "maze": name, "seed": int,
                            "ghosts": "ai" | "chance"}
     Plays a whole game on the server and returns every turn: positions before and after, each
     ghost's target and planned route, the events, and for the Q-agent the Q-value and feature
@@ -12,13 +12,13 @@ POST /api/pacman/episode  {"agent": "q" | "reflex" | "random", "maze": "lanes" |
     "ghosts" picks the opponent: "ai" (A* routes, the default) or "chance" (fixed odds). The
     chance moves are drawn on the server from the game's seed, so the page never needs the odds.
 
-POST /api/pacman/play  {"maze": ..., "seed": int, "actions": ["N" | "E" | "S" | "W", ...],
+POST /api/pacman/play  {"maze": ..., "seed": int, "actions": ["N" | "E" | "S" | "W" | "WAIT", ...],
                         "ghosts": "ai" | "chance"}
     Human play. The game is deterministic given the seed and the moves, so the browser sends
     the whole move history and gets back the state after it, plus the legal moves next. The
     server does no per-session bookkeeping.
 
-Limits: episodes are capped at MAX_TURNS turns, and both endpoints are rate limited per client
+Limits: episodes and histories are bounded by maze size, and both endpoints are rate limited per client
 and share the search-slot semaphore with the other solvers.
 """
 
@@ -44,11 +44,13 @@ from pacman.engine import (
     Turn,
     initial_state,
     legal_actions,
+    turn_limit,
 )
 from pacman.episode import Episode, run_episode
 from pacman.features import FEATURE_DOCS, FEATURE_NAMES
 from pacman.ghosts import CHANCE_ODDS, GHOST_DOCS, GHOST_LABELS, GHOST_POLICIES, PERSONALITY_DOCS
 from pacman.mazes import ACTIONS, Maze, get, names
+from pacman.qlearning import TRAINED_SIZE
 
 from .limits import Busy, RateLimiter, client_key
 
@@ -58,20 +60,21 @@ EPISODES_PER_MIN = int(os.environ.get("PACMAN_EPISODES_PER_MIN", "30"))
 PLAYS_PER_MIN = int(os.environ.get("PACMAN_PLAYS_PER_MIN", "300"))
 _episode_rate = RateLimiter(EPISODES_PER_MIN, per=60.0)
 _play_rate = RateLimiter(PLAYS_PER_MIN, per=60.0)
+MAX_GAME_TURNS = max(turn_limit(get(n)) for n in names())
 
 
 class EpisodeRequest(BaseModel):
     agent: str = Field("q", pattern="^(q|reflex|random)$")
     maze: str = Field("lanes", max_length=20)
     seed: int = Field(0, ge=0, le=2**31 - 1)
-    max_turns: int = Field(MAX_TURNS, ge=10, le=MAX_TURNS)
+    max_turns: int | None = Field(None, ge=10, le=MAX_GAME_TURNS)
     ghosts: str = Field("ai", pattern="^(ai|chance)$")
 
 
 class PlayRequest(BaseModel):
     maze: str = Field("lanes", max_length=20)
     seed: int = Field(0, ge=0, le=2**31 - 1)
-    actions: list[Literal["N", "E", "S", "W"]] = Field(default_factory=list, max_length=MAX_TURNS)
+    actions: list[Literal["N", "E", "S", "W", "WAIT"]] = Field(default_factory=list, max_length=MAX_GAME_TURNS)
     ghosts: str = Field("ai", pattern="^(ai|chance)$")
 
 
@@ -80,17 +83,20 @@ def _xy(maze: Maze, cell: int) -> list[int]:
 
 
 def _maze_json(maze: Maze, rows: bool = True) -> dict:
-    out = {"name": maze.name, "title": maze.title, "width": maze.width, "height": maze.height}
+    out = {
+        "name": maze.name,
+        "title": maze.title,
+        "width": maze.width,
+        "height": maze.height,
+        "max_turns": turn_limit(maze),
+    }
     if rows:
         out["rows"] = list(maze.rows)
     return out
 
 
 def _ghosts_json(maze: Maze, state: State) -> list[dict]:
-    return [
-        {"pos": _xy(maze, g.pos), "personality": g.personality, "scared": g.scared}
-        for g in state.ghosts
-    ]
+    return [{"pos": _xy(maze, g.pos), "personality": g.personality, "scared": g.scared} for g in state.ghosts]
 
 
 def _state_json(state: State) -> dict:
@@ -159,7 +165,7 @@ def _check_maze(name: str) -> Maze:
     return get(name)
 
 
-def _episode(agent_name: str, maze: Maze, seed: int, max_turns: int, ghosts: str) -> dict:
+def _episode(agent_name: str, maze: Maze, seed: int, max_turns: int | None, ghosts: str) -> dict:
     """Runs in a worker thread: the whole game is pure Python and can take a few hundred milliseconds."""
     ep = run_episode(make_agent(agent_name), maze, seed, agent_name, max_turns=max_turns, ghosts=ghosts)
     payload = _episode_json(ep)
@@ -199,9 +205,7 @@ async def meta():
     return {
         "mazes": [_maze_json(get(n)) for n in names()],
         "agents": [{"name": a, "description": DESCRIPTIONS[a]} for a in AGENTS],
-        "ghost_policies": [
-            {"name": p, "label": GHOST_LABELS[p], "description": GHOST_DOCS[p]} for p in GHOST_POLICIES
-        ],
+        "ghost_policies": [{"name": p, "label": GHOST_LABELS[p], "description": GHOST_DOCS[p]} for p in GHOST_POLICIES],
         "chance_odds": CHANCE_ODDS,
         "features": [{"name": n, "description": FEATURE_DOCS[n]} for n in FEATURE_NAMES],
         "weights": weights,
@@ -222,6 +226,8 @@ async def episode(req: EpisodeRequest, request: Request):
     if not _episode_rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     maze = _check_maze(req.maze)
+    if req.agent == "q" and (maze.width, maze.height) != TRAINED_SIZE:
+        raise HTTPException(400, "the learned agent supports its trained 15x11 board dimensions only")
     try:
         async with request.app.state.slots.acquire():
             return await asyncio.to_thread(_episode, req.agent, maze, req.seed, req.max_turns, req.ghosts)

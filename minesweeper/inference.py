@@ -206,8 +206,12 @@ class ComponentStats:
     with_mine: dict[int, list[int]]
 
 
-def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int, ...], int]],
-                   budget: Budget, fixed: tuple[int, int] | None = None) -> list[int]:
+def _count_layouts(
+    order: tuple[int, ...],
+    constraints: Sequence[tuple[tuple[int, ...], int]],
+    budget: Budget,
+    fixed: tuple[int, int] | None = None,
+) -> list[int]:
     """Count the layouts of `order` (cells in search order) that satisfy every constraint.
 
     Backtracking assigns cells one at a time, in `order`. After each assignment every constraint
@@ -232,9 +236,7 @@ def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int
         needs.append(need)
     # open_at[i]: constraints that have started before cell i and still have cells at or after i.
     # Only their residual needs carry information forward, so they are the memo key.
-    open_at = [
-        tuple(j for j, mem in enumerate(members) if mem[0] < i <= mem[-1]) for i in range(m + 1)
-    ]
+    open_at = [tuple(j for j, mem in enumerate(members) if mem[0] < i <= mem[-1]) for i in range(m + 1)]
     # touch[i]: (constraint, members after i) for every constraint that contains cell i.
     touch: list[list[tuple[int, int]]] = [[] for _ in range(m)]
     for j, mem in enumerate(members):
@@ -278,8 +280,9 @@ def _count_layouts(order: tuple[int, ...], constraints: Sequence[tuple[tuple[int
     return solve(0, ())
 
 
-def component_stats(order: tuple[int, ...], constraints: tuple[tuple[tuple[int, ...], int], ...],
-                    budget: Budget) -> ComponentStats:
+def component_stats(
+    order: tuple[int, ...], constraints: tuple[tuple[tuple[int, ...], int], ...], budget: Budget
+) -> ComponentStats:
     """Layout counts for one component: the total, and the count with each covered cell forced to a mine.
 
     Results are cached on the exact component (cells and constraints), so a component that did not
@@ -343,21 +346,28 @@ def analyse(view: View, level: int = LEVEL_PROBABILITY, budget: int = WORK_BUDGE
     rule_pass(view, known_mine, known_safe, why)
     if level <= LEVEL_RULES:
         covered = tuple(i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine)
-        return Analysis(view, level, tuple(sorted(known_safe)), tuple(sorted(known_mine)), why, covered,
-                        view.mines - len(known_mine))
+        return Analysis(
+            view,
+            level,
+            tuple(sorted(known_safe)),
+            tuple(sorted(known_mine)),
+            why,
+            covered,
+            view.mines - len(known_mine),
+        )
     try:
         return _exact(view, level, known_mine, known_safe, why, Budget(budget))
     except BudgetExceeded:
         return _estimate(view, level, known_mine, known_safe, why)
 
 
-def _exact(view: View, level: int, known_mine: set[int], known_safe: set[int], why: dict[int, str],
-           bud: Budget) -> Analysis:
+def _exact(
+    view: View, level: int, known_mine: set[int], known_safe: set[int], why: dict[int, str], bud: Budget
+) -> Analysis:
     """Levels 2 and 3: count the layouts of every component, then weight them by the mine count."""
     constraints = build_constraints(view, known_mine, known_safe)
     frontier = {c for con in constraints for c in con.cells}
-    covered_all = [i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine
-                   and i not in known_safe]
+    covered_all = [i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine and i not in known_safe]
     interior = tuple(i for i in covered_all if i not in frontier)
     remaining = view.mines - len(known_mine)
 
@@ -416,14 +426,21 @@ def _exact(view: View, level: int, known_mine: set[int], known_safe: set[int], w
             why.setdefault(c, "every layout that fits the numbers and the mine count has a mine here")
     covered = tuple(sorted(c for c in covered_all if c not in mines))
     return Analysis(
-        view=view, level=level, safe=tuple(sorted(safe)), mines=tuple(sorted(mines)), why=why,
-        covered=covered, remaining=remaining, interior=interior, components=tuple(components),
-        numerator=numerator, total=total,
+        view=view,
+        level=level,
+        safe=tuple(sorted(safe)),
+        mines=tuple(sorted(mines)),
+        why=why,
+        covered=covered,
+        remaining=remaining,
+        interior=interior,
+        components=tuple(components),
+        numerator=numerator,
+        total=total,
     )
 
 
-def _estimate(view: View, level: int, known_mine: set[int], known_safe: set[int],
-              why: dict[int, str]) -> Analysis:
+def _estimate(view: View, level: int, known_mine: set[int], known_safe: set[int], why: dict[int, str]) -> Analysis:
     """The fallback when the exact count is over budget: the rule proofs stand, and every other covered
     cell gets an estimated mine probability instead of an exact one.
 
@@ -433,8 +450,9 @@ def _estimate(view: View, level: int, known_mine: set[int], known_safe: set[int]
     """
     constraints = build_constraints(view, known_mine, known_safe)
     frontier = {c for con in constraints for c in con.cells}
-    covered_all = tuple(i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine
-                        and i not in known_safe)
+    covered_all = tuple(
+        i for i, v in enumerate(view.cells) if v == UNKNOWN and i not in known_mine and i not in known_safe
+    )
     interior = tuple(i for i in covered_all if i not in frontier)
     remaining = view.mines - len(known_mine)
 
@@ -450,6 +468,14 @@ def _estimate(view: View, level: int, known_mine: set[int], known_safe: set[int]
         for c in interior:
             estimate[c] = share
     return Analysis(
-        view=view, level=level, safe=tuple(sorted(known_safe)), mines=tuple(sorted(known_mine)), why=why,
-        covered=covered_all, remaining=remaining, interior=interior, exact=False, estimate=estimate,
+        view=view,
+        level=level,
+        safe=tuple(sorted(known_safe)),
+        mines=tuple(sorted(known_mine)),
+        why=why,
+        covered=covered_all,
+        remaining=remaining,
+        interior=interior,
+        exact=False,
+        estimate=estimate,
     )

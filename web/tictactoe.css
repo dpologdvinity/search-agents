@@ -1,0 +1,53 @@
+/* Tic-tac-toe board and the agent's search tree, shared by tictactoe.html and 404.html. The tree is an
+   SVG drawn by tictactoe-view.js: t-node classes colour each value from the agent's side. */
+
+/* Board */
+.ttt-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: min(270px, 72vw);
+  padding: 6px; border: 2px solid var(--pink); box-shadow: 0 0 28px rgba(255,0,160,0.3), inset 0 0 30px rgba(0,0,0,0.6); }
+.ttt-cell { aspect-ratio: 1; font-family: var(--orb); font-weight: 900; font-size: clamp(1.6rem, 6vw, 2.4rem); line-height: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  background: rgba(0,245,255,0.04); border: 1px solid var(--border); color: var(--text); cursor: pointer; }
+.ttt-cell:hover:not(:disabled) { background: rgba(0,245,255,0.14); box-shadow: 0 0 14px rgba(0,245,255,0.35); }
+.ttt-cell:disabled { cursor: default; }
+.ttt-cell:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.ttt-cell.is-x { color: var(--pink); text-shadow: 0 0 12px var(--pink); }
+.ttt-cell.is-o { color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+.ttt-cell.just { animation: cellPop 0.35s ease-out; }
+@keyframes cellPop { 0% { transform: scale(0.6); opacity: 0.4; } 65% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Search tree */
+.ttt-tree-wrap { width: 100%; min-width: 0; }
+.ttt-tree { display: block; width: 100%; height: auto; overflow: visible; }
+.t-root { font-family: var(--mono); font-size: 11px; fill: var(--cyan); letter-spacing: 0.08em; }
+.t-edge { stroke: rgba(0,245,255,0.35); stroke-width: 1; fill: none; }
+.t-node rect { fill: rgba(2,6,16,0.9); stroke-width: 1.2; }
+.t-node text { font-family: var(--mono); font-size: 11px; fill: var(--text); }
+.t-node.win rect { stroke: var(--green); filter: drop-shadow(0 0 3px var(--green)); }
+.t-node.draw rect { stroke: var(--yellow); }
+.t-node.loss rect { stroke: var(--pink); }
+.t-node.win text { fill: var(--green); }
+.t-node.draw text { fill: var(--yellow); }
+.t-node.loss text { fill: var(--pink); }
+.t-node.refuted { opacity: 0.5; }
+.t-node.refuted rect { stroke: var(--dim); stroke-dasharray: 3 2; }
+.t-node.refuted text { fill: var(--dim); }
+.t-node.pruned rect { stroke: rgba(74,122,155,0.45); fill: rgba(2,6,16,0.6); }
+.t-node.pruned text { fill: rgba(74,122,155,0.7); }
+.t-strike { stroke: rgba(255,59,59,0.7); stroke-width: 1.2; }
+.t-node.move.chosen rect { stroke-width: 2; filter: drop-shadow(0 0 6px var(--green)); }
+.t-node.move.chosen text { font-weight: 700; }
+
+.ttt-readout { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; margin-top: 0.6rem;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; }
+.ttt-readout b { font-family: var(--orb); font-size: 0.95rem; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); margin-left: 0.25rem; }
+
+@media (max-width: 420px) {
+  .ttt-readout { gap: 0.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttt-cell.just { animation: none; }
+}
+
+/* The board centred in its column (both pages); the game page's board is a little larger. */
+.ttt-stage { display: flex; justify-content: center; margin: 0.4rem 0 0.8rem; }
+.proj-game-col .ttt-stage .ttt-board { width: min(300px, 76vw); }

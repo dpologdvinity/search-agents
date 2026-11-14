@@ -3,6 +3,7 @@
 python -m tictactoe              play X against the minimax agent (O); squares are 1-9, keypad layout
 python -m tictactoe stats        count the positions and show that perfect play is a draw
 python -m tictactoe positions    JSON for every reachable position (used by the JS parity test)
+python -m tictactoe positions 4  the same with the search capped at 4 plies
 """
 
 from __future__ import annotations
@@ -77,11 +78,11 @@ def stats() -> None:
     print(f"alpha-beta from the empty board: searched {result.searched:,}, pruned {result.pruned:,}")
 
 
-def positions() -> None:
+def positions(depth: int | None = None) -> None:
     out = []
     for board in reachable_positions():
         turn = "X" if board.count("X") == board.count("O") else "O"
-        r = search(board, turn)
+        r = search(board, turn, depth)
         out.append(
             {
                 "board": board,
@@ -104,6 +105,11 @@ def main(argv: list[str]) -> None:
     commands = {"play": play, "stats": stats, "positions": positions}
     if command not in commands:
         raise SystemExit(f"unknown command {command!r}: use play, stats or positions")
+    if command == "positions" and len(argv) > 2:
+        if not argv[2].isdigit() or int(argv[2]) < 1:
+            raise SystemExit(f"depth must be a whole number of plies, at least 1, got {argv[2]!r}")
+        positions(int(argv[2]))
+        return
     commands[command]()
 
 

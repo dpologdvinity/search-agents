@@ -122,8 +122,10 @@ def evolve(cfg: GAConfig, workers: int = 2, log_path: Path | None = None, out=pr
                 "seconds": round(time.time() - t0, 2),
             }
             history.append({k: row[k] for k in ("gen", "best", "mean", "worst")})
-            out(f"gen {gen:3d}  best {row['best']:8.2f}  mean {row['mean']:8.2f}  worst {row['worst']:8.2f}  "
-                f"({row['seconds']:.1f} s)")
+            out(
+                f"gen {gen:3d}  best {row['best']:8.2f}  mean {row['mean']:8.2f}  worst {row['worst']:8.2f}  "
+                f"({row['seconds']:.1f} s)"
+            )
             if log_path is not None:
                 with log_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
@@ -139,8 +141,12 @@ def evolve(cfg: GAConfig, workers: int = 2, log_path: Path | None = None, out=pr
                 nxt.append(_mutate(child, rng, cfg.mutation_rate, cfg.sigma))
             pop = nxt
 
-    return {"weights": [round(w, 4) for w in best_w], "fitness": round(best_f, 3), "history": history,
-            "config": asdict(cfg)}
+    return {
+        "weights": [round(w, 4) for w in best_w],
+        "fitness": round(best_f, 3),
+        "history": history,
+        "config": asdict(cfg),
+    }
 
 
 def save_tuned(result: dict, path: Path) -> None:

@@ -88,8 +88,10 @@ def cmd_perplexity(args: argparse.Namespace) -> int:
     tokens = tokenize(corpus.body, args.level)
     cut = split_index(tokens)
     train = tokens[:cut]
-    print(f"{corpus.name} ({args.level}): {len(train)} train tokens, {len(tokens) - cut} held out, "
-          f"add-alpha smoothing with alpha {args.alpha:g}")
+    print(
+        f"{corpus.name} ({args.level}): {len(train)} train tokens, {len(tokens) - cut} held out, "
+        f"add-alpha smoothing with alpha {args.alpha:g}"
+    )
     print(f"{'order':>5}  {'contexts':>8}  {'n-grams':>7}  {'train ppl':>10}  {'held-out ppl':>13}")
     for order in args.order:
         model = NGramModel(train, order)
@@ -116,8 +118,9 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--corpus", default="alice", help=f"one of {', '.join(CORPORA)}, or a text file")
     pp.add_argument("--level", choices=("word", "char"), default="word")
     pp.add_argument("--order", type=parse_orders, default=parse_orders("1..5"), help="e.g. 1..5 or 2,3")
-    pp.add_argument("--alpha", type=_positive_float, default=DEFAULT_ALPHA,
-                    help="add-alpha smoothing constant, above 0")
+    pp.add_argument(
+        "--alpha", type=_positive_float, default=DEFAULT_ALPHA, help="add-alpha smoothing constant, above 0"
+    )
     pp.set_defaults(func=cmd_perplexity)
     return p
 

@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="minesweeper.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -53,39 +54,9 @@
     <p style="margin-top:0.5rem">Press AI STEP to let the agent reveal every cell it can prove safe, or one guess when nothing is certain. AI PLAY repeats those steps until the board is decided.</p>
   </section>
 
-  <div class="proj-body">
-    <div class="proj-game-col">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
-        <div class="ms-wrap">
-          <div id="ms" class="ms-board" role="grid" aria-label="Minesweeper board"></div>
-        </div>
-        <div class="inline" style="justify-content:center;flex-wrap:wrap">
-          <button class="cyber-btn green" id="btn-step" type="button" title="Reveal every cell the agent can prove safe. If nothing is proven, reveal its lowest-odds guess."><span class="btn-txt">▶ AI STEP</span></button>
-          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false" title="Repeat AI STEP until the board is decided. Press again to stop."><span class="btn-txt">▶▶ AI PLAY</span></button>
-          <button class="cyber-btn" id="btn-flag" type="button" aria-pressed="false" title="While on, a click flags or unflags a cell instead of revealing it. Right-click always flags."><span class="btn-txt">⚑ FLAG MODE</span></button>
-          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new board. The mines are placed after the first click."><span class="btn-txt">↺ NEW BOARD</span></button>
-        </div>
-      </div>
-
-      <div style="margin-top:1.6rem">
-        <div class="section-title green-ttl">WHAT THE AGENT SAYS</div>
-        <div class="viz-panel">
-          <div class="viz-title" id="think-title">Press AI STEP. The agent reads the numbers, proves what it can, and only then guesses.</div>
-          <div class="ms-legend">
-            <span class="ms-key ms-key-safe">certain safe</span>
-            <span class="ms-key ms-key-mine">certain mine</span>
-            <span class="ms-key ms-key-guess">guess, with its odds</span>
-          </div>
-        </div>
-      </div>
-
-      <details class="log-fold">
-        <summary>Move log</summary>
-        <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)"></div>
-      </details>
-    </div>
-
-    <div class="proj-ctrl-col">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
       <div>
         <div class="section-title pink-ttl">BOARD</div>
         <div class="stack">
@@ -108,6 +79,41 @@
           <div class="field-hint" id="ms-analysis">No analysis yet.</div>
         </div>
       </div>
+    </div>
+  </details>
+
+  <div class="proj-body play-layout">
+    <div class="proj-game-col">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
+        <div class="ms-wrap">
+          <div id="ms" class="ms-board" role="grid" aria-label="Minesweeper board"></div>
+        </div>
+        <div class="inline" style="justify-content:center;flex-wrap:wrap">
+          <button class="cyber-btn green" id="btn-step" type="button" title="Reveal every cell the agent can prove safe. If nothing is proven, reveal its lowest-odds guess."><span class="btn-txt">▶ AI STEP</span></button>
+          <button class="cyber-btn pink" id="btn-play" type="button" aria-pressed="false" title="Repeat AI STEP until the board is decided. Press again to stop."><span class="btn-txt">▶▶ AI PLAY</span></button>
+          <button class="cyber-btn" id="btn-flag" type="button" aria-pressed="false" title="While on, a click flags or unflags a cell instead of revealing it. Right-click always flags."><span class="btn-txt">⚑ FLAG MODE</span></button>
+          <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new board. The mines are placed after the first click."><span class="btn-txt">↺ NEW BOARD</span></button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
+      <div style="margin-top:1.6rem">
+        <div class="section-title green-ttl">WHAT THE AGENT SAYS</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Press AI STEP. The agent reads the numbers, proves what it can, and only then guesses.</div>
+          <div class="ms-legend">
+            <span class="ms-key ms-key-safe">certain safe</span>
+            <span class="ms-key ms-key-mine">certain mine</span>
+            <span class="ms-key ms-key-guess">guess, with its odds</span>
+          </div>
+        </div>
+      </div>
+
+      <details class="log-fold">
+        <summary>Move log</summary>
+        <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)"></div>
+      </details>
 
       <div>
         <div class="section-title green-ttl">COMPONENTS</div>
@@ -116,7 +122,7 @@
           <div id="comp-list" class="ms-comp-list"></div>
         </div>
       </div>
-    </div>
+    </aside>
   </div>
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
   <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
@@ -187,7 +193,7 @@
   <p class="hiw-note">The <b>random</b> agent chooses one covered cell uniformly at random, with no reasoning. It is the floor that the other agents are measured against.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/agents.py#L77-L79" target="_blank" rel="noopener" title="minesweeper/agents.py, lines 77–79" aria-label="Code on GitHub: minesweeper/agents.py, lines 77 to 79">6</a> On beginner boards it wins 0.0% of 1,000 seeded games (0 wins) and needs 3.36 guesses per game.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/minesweeper_benchmark.md" target="_blank" rel="noopener" title="results/minesweeper_benchmark.md" aria-label="Code on GitHub: results/minesweeper_benchmark.md">7</a></p>
 
   <h3 class="hiw-sub">Single-cell rules (level 1)</h3>
-  <p class="hiw-note">The agent works at one of three <b>levels</b>. Level 1 uses single cells. Level 2 adds the constraint groups and the mine count. Level 3 adds exact probabilities. The page's AI STEP and AI PLAY run at level 3.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/minesweeper_api.py#L116-L128" target="_blank" rel="noopener" title="server/minesweeper_api.py, lines 116–128" aria-label="Code on GitHub: server/minesweeper_api.py, lines 116 to 128">8</a></p>
+  <p class="hiw-note">The agent works at one of three <b>levels</b>. Level 1 uses single cells. Level 2 adds the constraint groups and the mine count. Level 3 adds exact probabilities. The page's AI STEP and AI PLAY run at level 3.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/minesweeper_api.py#L114-L126" target="_blank" rel="noopener" title="server/minesweeper_api.py, lines 114–126" aria-label="Code on GitHub: server/minesweeper_api.py, lines 114 to 126">8</a></p>
   <p class="hiw-note">For a revealed number at cell <span class="math">i</span>, the <b>need</b> is the number of mines still missing around it. A <b>known mine</b> is a covered cell that has been proven to hold a mine, and a <b>known-safe</b> cell is one that has been proven clear. The <b>open</b> neighbours of <span class="math">i</span> are its covered neighbours that are neither.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L180-L185" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 180–185" aria-label="Code on GitHub: minesweeper/inference.py, lines 180 to 185">9</a></p>
   <!-- minesweeper/inference.py:180-185 -->
   <div class="math-fig">
@@ -232,8 +238,8 @@
     <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L147-L167" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 147–167" aria-label="Code on GitHub: minesweeper/inference.py, lines 147 to 167">13</a></span>
     <div class="math math-block">\sum_{n \in O_i} x_n = \text{need}_i, \qquad x_n \in \{0, 1\}</div>
   </div>
-  <p class="hiw-note">Here <span class="math">O_i</span> is the set of open cells of number <span class="math">i</span>. Two constraints that share an open cell are <b>linked</b>, and a set of linked constraints forms a <b>component</b>, a group that has to be solved together. Components with no shared cell are independent. Once the total number of mines is fixed, each component can be counted on its own.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L301-L321" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 301–321" aria-label="Code on GitHub: minesweeper/inference.py, lines 301 to 321">14</a></p>
-  <p class="hiw-note">A component is counted by <b>backtracking</b>, a depth-first search that assigns one cell at a time and abandons a branch as soon as a constraint cannot be met. The cells are visited in row-major order. Each search state is the index of the next cell together with the <b>residual need</b> of every open constraint, the number of mines it still requires. Two partial layouts that reach the same state have the same future, so the count is stored under that state and reused. This is <b>memoization</b>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L278" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–278" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 278">15</a></p>
+  <p class="hiw-note">Here <span class="math">O_i</span> is the set of open cells of number <span class="math">i</span>. Two constraints that share an open cell are <b>linked</b>, and a set of linked constraints forms a <b>component</b>, a group that has to be solved together. Components with no shared cell are independent. Once the total number of mines is fixed, each component can be counted on its own.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L304-L324" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 304–324" aria-label="Code on GitHub: minesweeper/inference.py, lines 304 to 324">14</a></p>
+  <p class="hiw-note">A component is counted by <b>backtracking</b>, a depth-first search that assigns one cell at a time and abandons a branch as soon as a constraint cannot be met. The cells are visited in row-major order. Each search state is the index of the next cell together with the <b>residual need</b> of every open constraint, the number of mines it still requires. Two partial layouts that reach the same state have the same future, so the count is stored under that state and reused. This is <b>memoization</b>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L280" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–280" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 280">15</a></p>
   <p class="hiw-note">The count is kept by mine total. <span class="math">A[k]</span> is the number of layouts that use exactly <span class="math">k</span> mines. Independent components are combined by <b>convolution</b>, a sum of products over all ways of splitting the total:</p>
   <!-- minesweeper/inference.py:136-144 -->
   <div class="math-fig">
@@ -242,7 +248,7 @@
   </div>
   <p class="hiw-note">Here <span class="math">A</span> and <span class="math">B</span> are layout-count tables of two independent components, and <span class="math">(A \ast B)[k]</span> is the number of layouts of both together that use <span class="math">k</span> mines.</p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L278" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–278" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 278">15</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L209-L280" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 209–280" aria-label="Code on GitHub: minesweeper/inference.py, lines 209 to 280">15</a></span>
     <pre class="pseudo-simple">function COUNT(i, needs):                # cells i onward; needs = mines each open constraint still wants
     if i is past the last cell: return [1]
     if (i, needs) was seen: return its stored counts
@@ -290,23 +296,23 @@ function SOLVE(i, state):                # state: the residual need of each cons
   <h3 class="hiw-sub">Exact mine probability (level 3, default)</h3>
   <p class="hiw-note">A <b>layout</b> is a full assignment of mines to the covered cells that satisfies every constraint and uses the board's mine count. Every layout is treated as equally likely, so a cell's probability is the share of layouts that put a mine on it. The <b>weight</b> of a set of layouts is simply how many there are. All weights are integers, so comparisons are exact, and the one division is done at the end.</p>
   <p class="hiw-note">The <b>frontier</b> is the set of cells that appear in some constraint. The <b>interior</b> is the rest of the covered cells, which touch no number. Let <span class="math">R</span> be the mines not yet proven, and let <span class="math">t</span> be the number of mines on the frontier. The other <span class="math">R - t</span> mines fall among the interior's cells in <span class="math">\binom{|I|}{R-t}</span> ways. <span class="math">\binom{n}{k}</span> is the <b>binomial coefficient</b>, the number of ways to choose <span class="math">k</span> of <span class="math">n</span> cells. It is 0 when <span class="math">k</span> is negative or larger than <span class="math">n</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L131-L133" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 131–133" aria-label="Code on GitHub: minesweeper/inference.py, lines 131 to 133">17</a></p>
-  <!-- minesweeper/inference.py:375-385 -->
+  <!-- minesweeper/inference.py:385-395 -->
   <div class="math-fig">
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L375-L385" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 375–385" aria-label="Code on GitHub: minesweeper/inference.py, lines 375 to 385">18</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L385-L395" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 385–395" aria-label="Code on GitHub: minesweeper/inference.py, lines 385 to 395">18</a></span>
     <div class="math math-block">W = \sum_{t} G[t]\, \binom{|I|}{R - t}, \qquad G = A_1 \ast A_2 \ast \cdots \ast A_c</div>
   </div>
   <p class="hiw-note">Here <span class="math">W</span> is the weight of all layouts, <span class="math">A_1 \ldots A_c</span> are the layout-count tables of the <span class="math">c</span> components, <span class="math">G[t]</span> is the number of ways the frontier can hold <span class="math">t</span> mines, and <span class="math">I</span> is the interior.</p>
   <p class="hiw-note">For a cell <span class="math">c</span> on the frontier of component <span class="math">K</span>, the weight of the layouts in which <span class="math">c</span> is a mine is built from that component's with-mine counts and from the other components, combined:</p>
-  <!-- minesweeper/inference.py:387-397 -->
+  <!-- minesweeper/inference.py:397-407 -->
   <div class="math-fig">
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L387-L397" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 387–397" aria-label="Code on GitHub: minesweeper/inference.py, lines 387 to 397">19</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L397-L407" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 397–407" aria-label="Code on GitHub: minesweeper/inference.py, lines 397 to 407">19</a></span>
     <div class="math math-block">N_c = \sum_{j} A^{(c)}_K[j]\, R_K[j], \qquad R_K[j] = \sum_{s} B_K[s]\, \binom{|I|}{R - j - s}</div>
   </div>
   <p class="hiw-note">Here <span class="math">A^{(c)}_K[j]</span> is the number of layouts of <span class="math">K</span> that have <span class="math">c</span> as a mine and <span class="math">j</span> mines in total. <span class="math">B_K</span> is the convolution of the layout tables of all the other components. <span class="math">R_K[j]</span> is the weight of the full layouts in which <span class="math">K</span> uses <span class="math">j</span> mines.</p>
   <p class="hiw-note">Interior cells are interchangeable, so each has the same weight. For a fixed count <span class="math">k</span> of interior mines, a given interior cell is a mine in <span class="math">\binom{|I|-1}{k-1}</span> of the <span class="math">\binom{|I|}{k}</span> placements. Summing over the possible values of <span class="math">k</span>, weighted by <span class="math">G[t]</span>, gives:</p>
-  <!-- minesweeper/inference.py:398-403 -->
+  <!-- minesweeper/inference.py:408-413 -->
   <div class="math-fig">
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L398-L403" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 398–403" aria-label="Code on GitHub: minesweeper/inference.py, lines 398 to 403">20</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L408-L413" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 408–413" aria-label="Code on GitHub: minesweeper/inference.py, lines 408 to 413">20</a></span>
     <div class="math math-block">N_c = \sum_{t} G[t]\, \binom{|I| - 1}{R - t - 1}</div>
   </div>
   <p class="hiw-note">Finally, the probability of a covered cell <span class="math">c</span> is its weight divided by the total weight:</p>
@@ -315,10 +321,10 @@ function SOLVE(i, state):                # state: the residual need of each cons
     <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L117-L123" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 117–123" aria-label="Code on GitHub: minesweeper/inference.py, lines 117 to 123">21</a></span>
     <div class="math math-block">p_c = \frac{N_c}{W}</div>
   </div>
-  <p class="hiw-note">Here <span class="math">N_c</span> is the weight of the layouts in which <span class="math">c</span> is a mine, and <span class="math">W</span> is the weight of all layouts. If <span class="math">N_c = 0</span>, no layout puts a mine on <span class="math">c</span>, so <span class="math">c</span> is proven safe. If <span class="math">N_c = W</span>, every layout does, so <span class="math">c</span> is proven a mine. These are the proofs that AI STEP plays.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L405-L416" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 405–416" aria-label="Code on GitHub: minesweeper/inference.py, lines 405 to 416">22</a></p>
+  <p class="hiw-note">Here <span class="math">N_c</span> is the weight of the layouts in which <span class="math">c</span> is a mine, and <span class="math">W</span> is the weight of all layouts. If <span class="math">N_c = 0</span>, no layout puts a mine on <span class="math">c</span>, so <span class="math">c</span> is proven safe. If <span class="math">N_c = W</span>, every layout does, so <span class="math">c</span> is proven a mine. These are the proofs that AI STEP plays.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L415-L426" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 415–426" aria-label="Code on GitHub: minesweeper/inference.py, lines 415 to 426">22</a></p>
   <p class="hiw-note"><b>Example.</b> Suppose three interior cells remain and one mine is left among them. Then <span class="math">\binom{3}{1} = 3</span> layouts exist. Each cell is a mine in <span class="math">\binom{2}{0} = 1</span> of them, so its probability is <span class="math">1/3</span>.</p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L329-L351" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 329–351" aria-label="Code on GitHub: minesweeper/inference.py, lines 329 to 351">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L354-L422" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 354–422" aria-label="Code on GitHub: minesweeper/inference.py, lines 354 to 422">24</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L332-L361" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 332–361" aria-label="Code on GitHub: minesweeper/inference.py, lines 332 to 361">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L364-L440" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 364–440" aria-label="Code on GitHub: minesweeper/inference.py, lines 364 to 440">24</a></span>
     <pre class="pseudo-simple">function ANALYSE(view):
     prove every cell that the single-cell rules settle
     group the numbers into components that share covered cells
@@ -384,14 +390,14 @@ function EXACT(view, level, KNOWN-MINES, KNOWN-SAFE):
 
   <h3 class="hiw-sub">Work budget and estimates</h3>
   <p class="hiw-note">The exact count can grow quickly on a wide frontier with long chains of numbers. Every new memo state and every convolution is charged to a <b>work budget</b> of 2,000,000 units, where a unit is roughly one Python operation. The budget is set by <code>WORK_BUDGET</code>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L53" target="_blank" rel="noopener" title="minesweeper/inference.py, line 53" aria-label="Code on GitHub: minesweeper/inference.py, line 53">26</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L60-L69" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 60–69" aria-label="Code on GitHub: minesweeper/inference.py, lines 60 to 69">27</a> When it runs out, the analysis keeps the single-cell proofs, which were found before counting, and reports estimated probabilities instead. The reply carries <code>exact: false</code>, and the page says so. An estimate never proves a cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/minesweeper_api.py#L91" target="_blank" rel="noopener" title="server/minesweeper_api.py, line 91" aria-label="Code on GitHub: server/minesweeper_api.py, line 91">28</a></p>
-  <!-- minesweeper/inference.py:441-451 -->
+  <!-- minesweeper/inference.py:459-469 -->
   <div class="math-fig">
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L441-L451" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 441–451" aria-label="Code on GitHub: minesweeper/inference.py, lines 441 to 451">29</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L459-L469" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 459–469" aria-label="Code on GitHub: minesweeper/inference.py, lines 459 to 469">29</a></span>
     <div class="math math-block">\hat{p}_c = \min\Bigl(1,\ \frac{1}{|K_c|} \sum_{k \in K_c} \frac{\text{need}_k}{|O_k|}\Bigr) \quad (c \in \text{frontier}), \qquad \hat{p}_c = \min\bigl(1, \max\bigl(0, \tfrac{R - \sum_{f \in \text{frontier}} \hat{p}_f}{|I|}\bigr)\bigr) \quad (c \in I)</div>
   </div>
   <p class="hiw-note">Here <span class="math">K_c</span> is the set of constraints that contain frontier cell <span class="math">c</span>, <span class="math">O_k</span> is the open cells of constraint <span class="math">k</span>, and <span class="math">\hat{p}_c</span> is the estimated mine probability of <span class="math">c</span>. A frontier cell gets the average density, the need over the number of open cells, of the constraints it sits in. The interior cells share the mines that the frontier estimates do not account for, spread evenly.</p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L425-L455" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 425–455" aria-label="Code on GitHub: minesweeper/inference.py, lines 425 to 455">30</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/minesweeper/inference.py#L443-L481" target="_blank" rel="noopener" title="minesweeper/inference.py, lines 443–481" aria-label="Code on GitHub: minesweeper/inference.py, lines 443 to 481">30</a></span>
     <pre class="pseudo-simple">function ESTIMATE(view, KNOWN-MINES, KNOWN-SAFE):
     keep the single-cell proofs
     for each covered cell next to a number:

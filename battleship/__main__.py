@@ -125,8 +125,10 @@ def play(agent_name: str, rng: Random, read=input, write=print, heatmap: bool = 
     agent = make_agent(agent_name, rng)
     seen = Knowledge()  # what the agent has learned about your fleet
     mine_k = Knowledge()  # what you have learned about the enemy's
-    write(f"Battleship. Your fleet is placed; the agent ({agent_name}) has its own. Ships: "
-          + ", ".join(f"{n} ({len(s)})" for n, s in zip(FLEET_NAMES, mine.ships)))
+    write(
+        f"Battleship. Your fleet is placed; the agent ({agent_name}) has its own. Ships: "
+        + ", ".join(f"{n} ({len(s)})" for n, s in zip(FLEET_NAMES, mine.ships))
+    )
     message = ""
     shots = 0
     while True:
@@ -172,8 +174,9 @@ def play(agent_name: str, rng: Random, read=input, write=print, heatmap: bool = 
             return "lose"
 
 
-def watch(agent_name: str, rng: Random, write=print, delay: float = 0.0, heatmap: bool = False,
-          sleep=time.sleep) -> int:
+def watch(
+    agent_name: str, rng: Random, write=print, delay: float = 0.0, heatmap: bool = False, sleep=time.sleep
+) -> int:
     """The agent sinks a random fleet while you watch. Returns the number of shots it needed."""
     fleet = Fleet(random_fleet(rng))
     agent = make_agent(agent_name, rng)
@@ -197,10 +200,15 @@ def main(argv=None) -> int:
         return benchmark.main(argv[1:])
     if argv and argv[0] == "match":
         return match.main(argv[1:])
-    parser = argparse.ArgumentParser(prog="python -m battleship", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--agent", choices=sorted(AGENTS), default="probability",
-                        help="opponent or watched agent: probability, hunt, random or chance (default probability)")
+    parser = argparse.ArgumentParser(
+        prog="python -m battleship", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--agent",
+        choices=sorted(AGENTS),
+        default="probability",
+        help="opponent or watched agent: probability, hunt, random or chance (default probability)",
+    )
     parser.add_argument("--heatmap", action="store_true", help="show the agent's odds map from the start")
     parser.add_argument("--watch", action="store_true", help="watch the agent sink a random fleet")
     parser.add_argument("--delay", type=float, default=0.0, help="seconds between shots when watching")

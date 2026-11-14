@@ -70,8 +70,10 @@ def solve_json(n: int, board: list[int]) -> dict:
         reason = None
     else:
         press_grid = None
-        reason = (f"no press sequence clears this board: rank {sol.rank} of {n * n}, and the board is outside "
-                  "the reachable set")
+        reason = (
+            f"no press sequence clears this board: rank {sol.rank} of {n * n}, and the board is outside "
+            "the reachable set"
+        )
     return {
         "n": n,
         "solvable": sol.solvable,

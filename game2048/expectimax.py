@@ -74,8 +74,9 @@ def features(board: int) -> tuple[float, ...]:
     t = transpose(board)
     cols = [(t >> s) & ROW_MASK for s in (0, 16, 32, 48)]
     empty = sum(empty_t[r] for r in rows)
-    monotonic = (max(sum(up_t[r] for r in rows), sum(down_t[r] for r in rows))
-                 + max(sum(up_t[c] for c in cols), sum(down_t[c] for c in cols)))
+    monotonic = max(sum(up_t[r] for r in rows), sum(down_t[r] for r in rows)) + max(
+        sum(up_t[c] for c in cols), sum(down_t[c] for c in cols)
+    )
     smooth = sum(rough_t[r] for r in rows) + sum(rough_t[c] for c in cols)
     merges = sum(equal_t[r] for r in rows) + sum(equal_t[c] for c in cols)
     peak = max((board >> (4 * i)) & 0xF for i in range(16))
@@ -92,8 +93,9 @@ def features_batch(boards: np.ndarray) -> np.ndarray:
     t = transpose_batch(boards)
     cols = [((t >> np.uint64(s)) & m).astype(np.int64) for s in (0, 16, 32, 48)]
     empty = sum(EMPTY[r] for r in rows)
-    monotonic = (np.maximum(sum(UP[r] for r in rows), sum(DOWN[r] for r in rows))
-                 + np.maximum(sum(UP[c] for c in cols), sum(DOWN[c] for c in cols)))
+    monotonic = np.maximum(sum(UP[r] for r in rows), sum(DOWN[r] for r in rows)) + np.maximum(
+        sum(UP[c] for c in cols), sum(DOWN[c] for c in cols)
+    )
     smooth = sum(ROUGH[r] for r in rows) + sum(ROUGH[c] for c in cols)
     merges = sum(EQUAL[r] for r in rows) + sum(EQUAL[c] for c in cols)
     cells = np.stack([(boards >> np.uint64(4 * i)) & np.uint64(0xF) for i in range(16)], axis=1).astype(np.int64)
@@ -136,8 +138,15 @@ class MoveInfo:
 
 
 class Expectimax:
-    def __init__(self, budget: float = 0.1, cache: bool = True, prob_cutoff: float = 1e-4,
-                 max_depth: int = 20, evaluator=None, rewards: bool = False):
+    def __init__(
+        self,
+        budget: float = 0.1,
+        cache: bool = True,
+        prob_cutoff: float = 1e-4,
+        max_depth: int = 20,
+        evaluator=None,
+        rewards: bool = False,
+    ):
         """rewards=True adds the points scored by merges along each line of
         play, for evaluators that estimate future points (the n-tuple network).
         The hand-crafted evaluation scores board shape and ignores points."""
@@ -195,12 +204,12 @@ class Expectimax:
         for depth in range(1, self.max_depth + 1):
             self.table = {}
             try:
-                values = {d: (gained if self.rewards else 0) + self._chance(new, depth - 1, 1.0)
-                          for d, new, gained in moves}
+                values = {
+                    d: (gained if self.rewards else 0) + self._chance(new, depth - 1, 1.0) for d, new, gained in moves
+                }
             except _TimesUp:
                 break
-            best = MoveInfo(max(values, key=values.get), depth, self.nodes,
-                            time.perf_counter() - start, values)
+            best = MoveInfo(max(values, key=values.get), depth, self.nodes, time.perf_counter() - start, values)
             if time.perf_counter() >= self.deadline:
                 break
         best.nodes = self.nodes

@@ -143,9 +143,9 @@ def test_encoding_models_are_exactly_the_solutions():
 # -- library and methods --------------------------------------------------------------------------
 
 
-def test_library_has_twelve_uniquely_solvable_pictures_in_range():
+def test_library_has_at_least_twenty_four_uniquely_solvable_pictures_in_range():
     puzzles = library()
-    assert 10 <= len(puzzles) <= 20
+    assert len(puzzles) >= 24
     assert len({p.id for p in puzzles}) == len(puzzles)
     for p in puzzles:
         assert 5 <= p.rows <= 20 and 5 <= p.cols <= 20
@@ -333,3 +333,16 @@ def test_render_shows_column_clues_above_the_grid():
     assert len(lines) == 1 + 1 + 5
     assert lines[0].split() == ["2", "4", "4", "4", "2"]
     assert lines[1].split() == ["a", "b", "c", "d", "e"]
+
+
+def test_benchmark_set_keeps_the_published_twelve_pictures():
+    # results/nonogram_benchmark.json covers the first 12 library pictures; later pictures stay out of reruns.
+    import json
+    from pathlib import Path
+
+    from nonogram.benchmark import puzzle_set
+
+    rows = json.loads(Path("results/nonogram_benchmark.json").read_text())["rows"]
+    published = [r["puzzle"] for r in rows if r["group"] == "library"]
+    library_part = [p for group, p in puzzle_set(random_sizes=(), seeds=0) if group == "library"]
+    assert len(library_part) == len(published) == 12

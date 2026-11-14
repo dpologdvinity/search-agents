@@ -20,10 +20,11 @@ import time
 from dataclasses import dataclass, field
 
 # Each cell's 20 peers: the other cells in its row, column, and 3x3 box.
-UNITS = ([[9 * r + c for c in range(9)] for r in range(9)]
-         + [[9 * r + c for r in range(9)] for c in range(9)]
-         + [[9 * (br + r) + bc + c for r in range(3) for c in range(3)]
-            for br in (0, 3, 6) for bc in (0, 3, 6)])
+UNITS = (
+    [[9 * r + c for c in range(9)] for r in range(9)]
+    + [[9 * r + c for r in range(9)] for c in range(9)]
+    + [[9 * (br + r) + bc + c for r in range(3) for c in range(3)] for br in (0, 3, 6) for bc in (0, 3, 6)]
+)
 CELL_UNITS = [[u for u in UNITS if i in u] for i in range(81)]
 PEERS = [sorted({j for u in CELL_UNITS[i] for j in u} - {i}) for i in range(81)]
 ALL = 0x3FE  # bits 1..9
@@ -58,8 +59,8 @@ class SolveResult:
     solver: str
     status: str  # "solved", "unsolvable", or "limit"
     solution: str | None = None
-    nodes: int = 0          # assignments tried
-    backtracks: int = 0     # assignments undone
+    nodes: int = 0  # assignments tried
+    backtracks: int = 0  # assignments undone
     seconds: float = 0.0
     # (kind, cell, value): kind is "assign", "undo", or "propagate"
     trace: list = field(default_factory=list)
@@ -92,8 +93,15 @@ class _Run:
             self.trace.append(("undo", cell, 0))
 
     def result(self, status, cells=None):
-        return SolveResult(self.name, status, to_string(cells) if cells else None,
-                           self.nodes, self.backtracks, time.perf_counter() - self.start, self.trace)
+        return SolveResult(
+            self.name,
+            status,
+            to_string(cells) if cells else None,
+            self.nodes,
+            self.backtracks,
+            time.perf_counter() - self.start,
+            self.trace,
+        )
 
 
 def _legal(cells, i):
@@ -104,6 +112,7 @@ def _legal(cells, i):
 
 
 # ── plain backtracking ──────────────────────────────────────────────────
+
 
 def solve_plain(puzzle: str, max_nodes=None, trace_limit=0) -> SolveResult:
     cells = parse(puzzle)
@@ -132,6 +141,7 @@ def solve_plain(puzzle: str, max_nodes=None, trace_limit=0) -> SolveResult:
 
 
 # ── MRV + forward checking ──────────────────────────────────────────────
+
 
 def solve_mrv_fc(puzzle: str, max_nodes=None, trace_limit=0) -> SolveResult:
     """Choose the empty cell with the fewest legal values; after each
@@ -175,6 +185,7 @@ def solve_mrv_fc(puzzle: str, max_nodes=None, trace_limit=0) -> SolveResult:
 
 
 # ── bitmask domains + propagation + MRV ─────────────────────────────────
+
 
 def solve_propagate(puzzle: str, max_nodes=None, trace_limit=0) -> SolveResult:
     cells = parse(puzzle)

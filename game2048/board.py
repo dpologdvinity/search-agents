@@ -48,8 +48,8 @@ def _build_tables():
         cells = _row_cells(row)
         moved, gained = _slide_left(cells)
         left[row] = _cells_row(moved)
-        rmoved, _ = _slide_left(cells[::-1])
-        right[row] = _cells_row(rmoved[::-1])
+        rev_moved, _ = _slide_left(cells[::-1])
+        right[row] = _cells_row(rev_moved[::-1])
         score[row] = gained  # merges score the same in either direction
     return left, right, score
 
@@ -70,15 +70,21 @@ def transpose(x: int) -> int:
 
 
 def _apply_rows(x: int, table) -> int:
-    return (table[x & ROW_MASK]
-            | table[(x >> 16) & ROW_MASK] << 16
-            | table[(x >> 32) & ROW_MASK] << 32
-            | table[(x >> 48) & ROW_MASK] << 48)
+    return (
+        table[x & ROW_MASK]
+        | table[(x >> 16) & ROW_MASK] << 16
+        | table[(x >> 32) & ROW_MASK] << 32
+        | table[(x >> 48) & ROW_MASK] << 48
+    )
 
 
 def _row_score(x: int) -> int:
-    return (SCORE_TABLE[x & ROW_MASK] + SCORE_TABLE[(x >> 16) & ROW_MASK]
-            + SCORE_TABLE[(x >> 32) & ROW_MASK] + SCORE_TABLE[(x >> 48) & ROW_MASK])
+    return (
+        SCORE_TABLE[x & ROW_MASK]
+        + SCORE_TABLE[(x >> 16) & ROW_MASK]
+        + SCORE_TABLE[(x >> 32) & ROW_MASK]
+        + SCORE_TABLE[(x >> 48) & ROW_MASK]
+    )
 
 
 def move(board: int, direction: int) -> tuple[int, int]:

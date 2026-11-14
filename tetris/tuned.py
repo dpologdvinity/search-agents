@@ -20,8 +20,14 @@ TUNED_PATH = Path(__file__).with_name("tuned.json")
 def load_tuned() -> dict:
     """The tuned document, or the hand-picked fallback. Treat the result as read-only."""
     if not TUNED_PATH.exists():
-        return {"features": list(FEATURES), "weights": list(HAND_WEIGHTS), "train_fitness": None,
-                "config": None, "history": [], "source": "hand-picked fallback"}
+        return {
+            "features": list(FEATURES),
+            "weights": list(HAND_WEIGHTS),
+            "train_fitness": None,
+            "config": None,
+            "history": [],
+            "source": "hand-picked fallback",
+        }
     doc = json.loads(TUNED_PATH.read_text())
     assert doc["features"] == list(FEATURES), "tuned.json was written for a different feature set"
     return doc

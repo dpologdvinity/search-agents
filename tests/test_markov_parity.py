@@ -85,8 +85,9 @@ def py_case(body, name, level, order, temperature, seed, count):
 
 def node_results(cases, bodies):
     env = dict(os.environ, MARKOV_CORE=str(CORE), MARKOV_BODIES=json.dumps(bodies), MARKOV_CASES=json.dumps(cases))
-    proc = subprocess.run([NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True,
-                          text=True, timeout=120)
+    proc = subprocess.run(
+        [NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True, text=True, timeout=120
+    )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout)
 

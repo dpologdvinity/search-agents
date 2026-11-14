@@ -28,7 +28,7 @@ def _mix(state: np.ndarray) -> np.ndarray:
     t = state
     # Products of two 32-bit values fit in 64 bits, so uint64 arithmetic keeps every bit we need.
     t = ((t ^ (t >> np.uint64(15))) * (one | t)) & _M64
-    t = (((t + (((t ^ (t >> np.uint64(7))) * (sixtyone | t)) & _M64)) & _M64) ^ t)
+    t = ((t + (((t ^ (t >> np.uint64(7))) * (sixtyone | t)) & _M64)) & _M64) ^ t
     return (t ^ (t >> np.uint64(14))) & _M64
 
 
@@ -65,7 +65,7 @@ class Stream:
             u = 2.0 * self._at(self.pos, 2 * pairs).reshape(pairs, 2) - 1.0
             s = u[:, 0] * u[:, 0] + u[:, 1] * u[:, 1]
             take = np.nonzero((s > 0.0) & (s < 1.0))[0][: n - got]
-            out[got:got + len(take)] = u[take, 0] * np.sqrt(-2.0 * np.log(s[take]) / s[take])
+            out[got : got + len(take)] = u[take, 0] * np.sqrt(-2.0 * np.log(s[take]) / s[take])
             got += len(take)
             if got == n:
                 # Only the pairs up to the last accepted one were consumed; rewind past the rest.

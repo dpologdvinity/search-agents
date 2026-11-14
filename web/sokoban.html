@@ -135,7 +135,7 @@
         <div class="stack">
           <div>
             <div class="field-lbl">WAREHOUSE</div>
-            <select class="cyber-select" id="sel-level" style="width:100%" aria-label="Level" title="Choose one of the 12 warehouses"></select>
+            <select class="cyber-select" id="sel-level" style="width:100%" aria-label="Level" title="Choose a warehouse puzzle"></select>
           </div>
           <div class="field-hint" id="level-note"></div>
         </div>
@@ -172,7 +172,7 @@
   <!-- sokoban/search.py:113,176 -->
   <div class="math-fig">
     <div class="math math-block">s = \bigl(\min R(p, B),\ B\bigr)</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L113" target="_blank" rel="noopener" title="sokoban/search.py, lines 113, 176" aria-label="Code on GitHub: sokoban/search.py, lines 113, 176">1</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L113" target="_blank" rel="noopener" title="sokoban/search.py, line 113" aria-label="Code on GitHub: sokoban/search.py, line 113">1</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">p</span> is the player's square, <span class="math">B</span> is the set of box squares, and <span class="math">\min R(p, B)</span> is the smallest square in the walk region. The first state is built from the level's start. Each successor is made by a push: for each square <span class="math">p</span> in the walk region and each direction, if a box sits on the next square <span class="math">b</span> and the square beyond it is open and empty, the box moves there. The player then stands on <span class="math">b</span>. Each push costs one unit, so the depth of the search is the number of pushes.</p>
 
@@ -187,7 +187,7 @@
   <p class="hiw-note">The priority is a pair. The first number is compared first, and the second breaks ties. For A*, the tie goes to the state with the smaller <span class="math">h</span>, which is the state closer to the goal by the estimate.</p>
   <!-- sokoban/search.py:137-198, 201-225 -->
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L86-L198" target="_blank" rel="noopener" title="sokoban/search.py, lines 86–198, 201–225" aria-label="Code on GitHub: sokoban/search.py, lines 86 to 198, 201 to 225">3</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/search.py#L86-L198" target="_blank" rel="noopener" title="sokoban/search.py, lines 86–198" aria-label="Code on GitHub: sokoban/search.py, lines 86 to 198">3</a></span>
     <pre class="pseudo-simple">function SEARCH(level, rule):                   # rule is BFS, GREEDY or A*
     OPEN ← {start state};  best-g[start] ← 0
     while OPEN is not empty:
@@ -274,7 +274,7 @@ function PLAN(final-key):
   <h3 class="hiw-sub">Greedy best-first search</h3>
   <p class="hiw-note"><b>Greedy best-first search</b> uses the same loop with the priority <span class="math">(h, g)</span>: it always expands the state that looks closest to the goal by the heuristic, and g only breaks ties. The loop expands few states, but a state that looks close can lead to a dead end, so the plan it returns can be longer than the shortest one. The benchmark pairs it with the matching bound.</p>
   <ul>
-    <li>It solves all 12 levels with pruning on and off, and 11 of the 12 plans are optimal in both runs.</li>
+    <li>It solves the first 12 levels with pruning on and off, and 11 of the 12 plans are optimal in both runs.</li>
     <li>On the Aisle level it returns a 20-push plan where the optimum is 18.</li>
   </ul>
 
@@ -340,7 +340,7 @@ function PLAN(final-key):
   </div>
   <p class="hiw-note"><b>Potentials.</b> The vectors <span class="math">u</span> (rows) and <span class="math">v</span> (columns) are dual potentials. The <b>reduced cost</b> <span class="math">\text{cost} - u - v</span> is never negative, and it is zero on the edges the tree has made tight. Each step finds the smallest reduced cost <span class="math">\delta</span> to an unused column and shifts the potentials by it, which makes one more edge tight.</p>
   <p class="hiw-note"><b>Augmenting path.</b> When the tree reaches a free column, the flip along <code>way</code> adds one matched pair and keeps all the others, so after row <span class="math">i</span> rows 1 to <span class="math">i</span> are matched. The costs are integers, so the total is exact.</p>
-  <p class="hiw-note">In a solvable position the matching bound never exceeds the pushes really left. A real solution gives each box its own goal, and the pushes a box makes are at least its push distance to that goal, so the solution's total is one of the pairings the minimum ranges over. A* therefore stays optimal. The algorithm is checked against a brute force over every permutation of random cost matrices up to 5 by 5. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L121-L130" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 121–130" aria-label="Code on GitHub: tests/test_sokoban.py, lines 121 to 130">6</a></p>
+  <p class="hiw-note">In a solvable position the matching bound never exceeds the pushes really left. A real solution gives each box its own goal, and the pushes a box makes are at least its push distance to that goal, so the solution's total is one of the pairings the minimum ranges over. A* therefore stays optimal. The algorithm is checked against a brute force over every permutation of random cost matrices up to 5 by 5. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L124-L133" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 124–133" aria-label="Code on GitHub: tests/test_sokoban.py, lines 124 to 133">6</a></p>
 
   <h3 class="hiw-sub">Simple bound (nearest goal)</h3>
   <p class="hiw-note">The <b>simple bound</b> sums, over the boxes, the cost of the nearest goal for each box. It needs one minimum per box and no pairing, so two boxes may choose the same goal. Dropping the one-goal-per-box rule makes it a relaxation of the matching bound, so it is never larger.</p>
@@ -364,7 +364,7 @@ function PLAN(final-key):
         total ← total + min(row)
     return total</pre>
   </div>
-  <p class="hiw-note">The simple bound is never larger than the matching bound, since every pairing's total is at least the sum of each box's cheapest cost. It is weaker when boxes compete for the same goal, and the benchmark shows the effect: A* with it expands 10,907 nodes across all 12 levels with pruning on, against 154 with the matching bound.</p>
+  <p class="hiw-note">The simple bound is never larger than the matching bound, since every pairing's total is at least the sum of each box's cheapest cost. It is weaker when boxes compete for the same goal, and the benchmark shows the effect: A* with it expands 10,907 nodes across the first 12 levels with pruning on, against 154 with the matching bound.</p>
 
   <h3 class="hiw-sub">Push distances and dead squares</h3>
   <p class="hiw-note">The <b>push distance</b> from a square <span class="math">x</span> to a goal <span class="math">g</span> is the fewest pushes that move a single box from <span class="math">x</span> to <span class="math">g</span>, with the other boxes ignored. It is computed by a backward breadth-first search from each goal, which runs the push rule in reverse: a box on <span class="math">y</span> could have been pushed there from <span class="math">x = y - \delta</span> if <span class="math">x</span> and the square <span class="math">x - \delta</span> behind it are floor.</p>
@@ -436,7 +436,7 @@ function BUILD-TABLES(level):
     return dead, cost, nearest</pre>
   </div>
   <p class="hiw-note"><b>Cost table.</b> BUILD-TABLES runs PUSH-DISTANCES once per goal. The tables depend only on the walls and goals, so they are computed once per level layout and cached, and every starting position of that level reuses them. The Manhattan fallback keeps the cost finite for a pair that no push path joins, so the matching bound is defined when deadlock pruning is off. It stays a lower bound, because a real solution never pairs a box with a goal it cannot reach.</p>
-  <p class="hiw-note"><b>Example.</b> In a test row <code>#.  $ #</code>, the goal is in column 1. A box in column 4 needs 3 pushes, and a box in column 3 needs 2. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L98-L103" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 98–103" aria-label="Code on GitHub: tests/test_sokoban.py, lines 98 to 103">12</a></p>
+  <p class="hiw-note"><b>Example.</b> In a test row <code>#.  $ #</code>, the goal is in column 1. A box in column 4 needs 3 pushes, and a box in column 3 needs 2. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L101-L106" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 101–106" aria-label="Code on GitHub: tests/test_sokoban.py, lines 101 to 106">12</a></p>
 
   <h3 class="hiw-sub">Frozen boxes and deadlock pruning</h3>
   <p class="hiw-note">A <b>frozen box</b> is a box that no push can ever move again. A box can move along an axis only when both of its neighbours on that axis are free: one to stand on and one to slide into. A neighbour is <b>blocked</b> when it is a wall or a frozen box. A box is frozen when one of its two horizontal neighbours is blocked and one of its two vertical neighbours is blocked. The frozen set is the greatest set with this property. The code finds it by starting from every box and removing any box that is not blocked on both axes, until nothing changes.</p>
@@ -484,7 +484,7 @@ function IS-DEADLOCK(level, boxes):
     return false</pre>
   </div>
   <p class="hiw-note"><b>Why a removed box can move.</b> A box with a free side on some axis can move there if the player reaches the other side, so dropping it from the set is always justified. The boxes left in the set are stuck: each one's first move would need a blocking neighbour to move first, and none of them ever does.</p>
-  <p class="hiw-note"><b>Example.</b> Four boxes in a 2 by 2 block, with the goals outside it, are all frozen and none is on a goal, so the position is a deadlock. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L108-L113" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 108–113" aria-label="Code on GitHub: tests/test_sokoban.py, lines 108 to 113">16</a></p>
+  <p class="hiw-note"><b>Example.</b> Four boxes in a 2 by 2 block, with the goals outside it, are all frozen and none is on a goal, so the position is a deadlock. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L111-L116" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 111–116" aria-label="Code on GitHub: tests/test_sokoban.py, lines 111 to 116">16</a></p>
 
   <h3 class="hiw-sub">Parameters</h3>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>What it controls</th><th class="num">Value</th></tr></thead><tbody>
@@ -500,11 +500,11 @@ function IS-DEADLOCK(level, boxes):
   <p class="hiw-note">The 20,000-node and 5 s caps bound CPU per request on the shared server. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/sokoban_api.py#L33-L34" target="_blank" rel="noopener" title="server/sokoban_api.py, lines 33–34" aria-label="Code on GitHub: server/sokoban_api.py, lines 33 to 34">17</a> None of these values is tuned or learned. The push distances, dead squares and frozen-box test follow from the push rule, and the matching total is the exact minimum for its relaxation. The Manhattan fallback is a deliberate choice that keeps the bound finite when pruning is off. Levels 1 to 7 are hand-drawn. Levels 8 to 12 were generated, keeping the scramble with the most optimal pushes among 40 seeds. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/levels.py#L3-L6" target="_blank" rel="noopener" title="sokoban/levels.py, lines 3–6" aria-label="Code on GitHub: sokoban/levels.py, lines 3 to 6">18</a></p>
 
   <h3 class="hiw-sub">Results</h3>
-  <p class="hiw-note">The benchmark runs four configurations on all 12 levels, each with pruning off and on, under a 20,000-node budget and a 10 s limit per run. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/benchmark.py#L27-L32" target="_blank" rel="noopener" title="sokoban/benchmark.py, lines 27–32" aria-label="Code on GitHub: sokoban/benchmark.py, lines 27 to 32">19</a> The numbers below come from the committed results. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/sokoban_benchmark.md" target="_blank" rel="noopener" title="results/sokoban_benchmark.md" aria-label="Code on GitHub: results/sokoban_benchmark.md">20</a></p>
+  <p class="hiw-note">The benchmark runs four configurations on the first 12 levels, each with pruning off and on, under a 20,000-node budget and a 10 s limit per run. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/sokoban/benchmark.py#L27-L32" target="_blank" rel="noopener" title="sokoban/benchmark.py, lines 27–32" aria-label="Code on GitHub: sokoban/benchmark.py, lines 27 to 32">19</a> The numbers below come from the committed results. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/sokoban_benchmark.md" target="_blank" rel="noopener" title="results/sokoban_benchmark.md" aria-label="Code on GitHub: results/sokoban_benchmark.md">20</a></p>
   <ul>
-    <li>A* with the matching bound expands 154 nodes across all 12 levels with pruning on, against 269 with it off. Both runs find the optimal push count on every level.</li>
-    <li>A* with the simple bound expands 10,907 nodes across all 12 levels with pruning on, and solves 10 of 12 levels with pruning off within the budget.</li>
-    <li>Pruning never removes a solvable state. On the first eight levels the optimal push count is the same with pruning on and off. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L143-L148" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 143–148" aria-label="Code on GitHub: tests/test_sokoban.py, lines 143 to 148">21</a></li>
+    <li>A* with the matching bound expands 154 nodes across the first 12 levels with pruning on, against 269 with it off. Both runs find the optimal push count on every level.</li>
+    <li>A* with the simple bound expands 10,907 nodes across the first 12 levels with pruning on, and solves 10 of 12 levels with pruning off within the budget.</li>
+    <li>Pruning never removes a solvable state. On the first eight levels the optimal push count is the same with pruning on and off. <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_sokoban.py#L146-L151" target="_blank" rel="noopener" title="tests/test_sokoban.py, lines 146–151" aria-label="Code on GitHub: tests/test_sokoban.py, lines 146 to 151">21</a></li>
   </ul>
 </section>
 </div>

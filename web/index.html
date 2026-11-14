@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEARCH AGENTS // KB</title>
-<meta name="description" content="Twenty-six puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, DPLL SAT solving, and hidden Markov model filtering with Viterbi.">
+<meta name="description" content="Nineteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, Conflict-Based Search, information-theoretic guessing, exact model counting, Monte Carlo tree search, min-conflicts local search, genetic algorithms, placement search, DPLL SAT solving, and depth-limited minimax.">
 <meta property="og:title" content="SEARCH AGENTS // KB">
-<meta property="og:description" content="Twenty-six puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, retrograde analysis, Conflict-Based Search, push search with deadlock pruning, information-theoretic guessing, counterfactual regret minimization, exact model counting, Monte Carlo tree search, Thompson sampling, policy gradients, min-conflicts local search, genetic algorithms, D* Lite, placement search, DPLL SAT solving, and hidden Markov model filtering with Viterbi.">
+<meta property="og:description" content="Nineteen puzzles and games played or solved live by classic AI algorithms: A* with a learned heuristic, AlphaZero-style self-play, alpha-beta, expectimax, simulated annealing, constraint propagation, Bayesian targeting, Q-learning, Conflict-Based Search, information-theoretic guessing, exact model counting, Monte Carlo tree search, min-conflicts local search, genetic algorithms, placement search, DPLL SAT solving, and depth-limited minimax.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kb-search-agents.fly.dev/">
 <meta name="twitter:card" content="summary">
@@ -31,7 +31,7 @@
     <div class="hero-copy">
       <pre class="boot" id="boot" aria-hidden="true"></pre>
       <h1 id="hero-title" class="glitch" data-text="SEARCH AGENTS">SEARCH AGENTS</h1>
-      <p class="hero-sub">Twenty-six games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
+      <p class="hero-sub">Nineteen games, each played or solved by a different classic algorithm: search, exact solvers, and agents sharpened by what they learned. The grid behind this text is A* finding its way to your cursor. Click a block to raise or flatten a building.</p>
       <div class="hud" role="status" aria-live="off">
         <span class="hud-item"><b id="hud-expanded">0</b> nodes expanded</span>
         <span class="hud-item"><b id="hud-frontier">0</b> on the frontier</span>
@@ -140,32 +140,11 @@
         <span class="cab-desc">Three solvers race on generated puzzles with unique solutions. Replay every guess and every backtrack.</span>
         <span class="cab-coin">Play</span>
       </a>
-      <a class="cabinet c-purple" href="endgame.html">
-        <span class="cab-marquee">Endgame</span>
-        <canvas class="cab-screen" data-sim="endgame" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>368,452</b> king-and-queen positions, every one solved</span>
-        <span class="cab-desc">Retrograde analysis builds the tables backwards from checkmate, so every distance to mate is exact.</span>
-        <span class="cab-coin">Play</span>
-      </a>
-      <a class="cabinet c-orange" href="sokoban.html">
-        <span class="cab-marquee">Sokoban</span>
-        <canvas class="cab-screen" data-sim="sokoban" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>154</b> states A* expands to solve all 12 levels</span>
-        <span class="cab-desc">Push boxes onto goals. Some pushes freeze a box for good, so the search skips those dead ends and bounds the rest by matching boxes to goals.</span>
-        <span class="cab-coin">Play</span>
-      </a>
       <a class="cabinet c-purple" href="wordle.html">
         <span class="cab-marquee">Wordle</span>
         <canvas class="cab-screen" data-sim="wordle" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>3.63</b> mean guesses for the entropy solver, with no failures over 3,568 answers</span>
         <span class="cab-desc">Each guess is the one whose five-colour feedback is most surprising on average, which splits the remaining words most evenly.</span>
-        <span class="cab-coin">Play</span>
-      </a>
-      <a class="cabinet c-pink" href="poker.html">
-        <span class="cab-marquee">Poker</span>
-        <canvas class="cab-screen" data-sim="poker" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>0.05 mbb</b> exploitability of the trained bot, from counterfactual regret minimization</span>
-        <span class="cab-desc">Counterfactual regret minimization on Leduc hold'em. The bot bluffs at the frequency that makes it unexploitable, and the page shows its mix.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-purple" href="minesweeper.html">
@@ -182,20 +161,6 @@
         <span class="cab-desc">Monte Carlo tree search with RAVE: random playouts whose stone statistics are shared between moves. Watch the agent's visit heat map.</span>
         <span class="cab-coin">Play</span>
       </a>
-      <a class="cabinet c-pink" href="bandits.html">
-        <span class="cab-marquee">Bandits</span>
-        <canvas class="cab-screen" data-sim="bandits" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>c ln T</b> the regret no agent can beat on fixed machines</span>
-        <span class="cab-desc">Slot machines with hidden payouts. Greedy locks on early, while UCB1 and Thompson sampling explore just long enough. Play the casino, then race the agents on the same machines.</span>
-        <span class="cab-coin">Play</span>
-      </a>
-      <a class="cabinet c-yellow" href="cartpole.html">
-        <span class="cab-marquee">Cart Pole</span>
-        <canvas class="cab-screen" data-sim="cartpole" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>500</b> steps balanced by every learned policy, the episode cap</span>
-        <span class="cab-desc">Policy gradients in NumPy, learned from reward alone. Random pushes last about 22 steps; the learned policies hold the pole to the 500-step cap, so the race is about how fast they learn.</span>
-        <span class="cab-coin">Play</span>
-      </a>
       <a class="cabinet c-green" href="queens.html">
         <span class="cab-marquee">N-Queens</span>
         <canvas class="cab-screen" data-sim="queens" width="240" height="240" aria-hidden="true"></canvas>
@@ -208,20 +173,6 @@
         <canvas class="cab-screen" data-sim="snake" width="240" height="240" aria-hidden="true"></canvas>
         <span class="cab-stat"><b>90.1</b> apples per game, against 20.1 for greedy and 56.1 for the BFS planner</span>
         <span class="cab-desc">Eight weights score each move, tuned by the cross-entropy method. The score wins on apples, but every game ends with the snake stalled, not dead.</span>
-        <span class="cab-coin">Play</span>
-      </a>
-      <a class="cabinet c-yellow" href="rover.html">
-        <span class="cab-marquee">Rover</span>
-        <canvas class="cab-screen" data-sim="rover" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>0.53x</b> the expansions of A* replanning on 61x61 maps at 30% walls</span>
-        <span class="cab-desc">The rover learns walls as its sensor sees them. D* Lite repairs its route after each one; A* starts over.</span>
-        <span class="cab-coin">Play</span>
-      </a>
-      <a class="cabinet c-cyan" href="ghosthunt.html">
-        <span class="cab-marquee">Ghost Hunt</span>
-        <canvas class="cab-screen" data-sim="ghosthunt" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>95</b> turns to bust both ghosts with the exact belief at medium sonar noise (12 games)</span>
-        <span class="cab-desc">Invisible ghosts drift through a maze. Noisy sonar reports only distances, and a hidden Markov model keeps a belief about each ghost.</span>
         <span class="cab-coin">Play</span>
       </a>
       <a class="cabinet c-purple" href="tetris.html">
@@ -238,11 +189,11 @@
         <span class="cab-desc">Each clue is a regular language. Line solving proves cells row by row, and the whole grid goes to DPLL when the lines stall.</span>
         <span class="cab-coin">Play</span>
       </a>
-      <a class="cabinet c-pink" href="localize.html">
-        <span class="cab-marquee">Lost Robot</span>
-        <canvas class="cab-screen" data-sim="localize" width="240" height="240" aria-hidden="true"></canvas>
-        <span class="cab-stat"><b>15 of 16</b> seeded trials hold within 0.5 m with 2000 particles</span>
-        <span class="cab-desc">A robot on a known floor plan does not know where it is. Its beams and wheels narrow the belief until the particles collapse onto it.</span>
+      <a class="cabinet c-yellow" href="tictactoe.html">
+        <span class="cab-marquee">Tic-Tac-Toe</span>
+        <canvas class="cab-screen" data-sim="tictactoe" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="cab-stat"><b>18,297</b> positions searched to prove a draw, not 549,946</span>
+        <span class="cab-desc">Minimax with alpha-beta at three depths. The shallow levels walk into forks past their horizon; the full search never loses.</span>
         <span class="cab-coin">Play</span>
       </a>
     </div>

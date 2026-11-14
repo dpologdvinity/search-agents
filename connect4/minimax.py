@@ -70,8 +70,7 @@ EXACT, LOWER, UPPER = 0, 1, 2
 
 
 class Minimax:
-    def __init__(self, max_depth: int = 8, max_seconds: float | None = None,
-                 max_nodes: int | None = None):
+    def __init__(self, max_depth: int = 8, max_seconds: float | None = None, max_nodes: int | None = None):
         self.max_depth = max_depth
         self.max_seconds = max_seconds
         self.max_nodes = max_nodes
@@ -157,8 +156,9 @@ class Minimax:
             except _Timeout:
                 break
             move = max(scores, key=lambda c: (scores[c], -CENTER_ORDER.index(c)))
-            best = SearchInfo(move, scores[move], depth, self.nodes, time.perf_counter() - start,
-                              [scores.get(c) for c in range(COLS)])
+            best = SearchInfo(
+                move, scores[move], depth, self.nodes, time.perf_counter() - start, [scores.get(c) for c in range(COLS)]
+            )
             if abs(scores[move]) >= WIN - 64:
                 break  # forced result found; deeper search cannot change it
         best.nodes = self.nodes

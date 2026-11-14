@@ -9,7 +9,7 @@
 .pm-frame {
   position: relative;
   /* The canvas's pixel size would otherwise stretch the frame across the whole column. */
-  width: min(100%, 620px);
+  width: min(100%, 1100px);
   padding: 10px;
   max-width: 100%;
   border: 1px solid var(--cyan);
@@ -28,9 +28,8 @@
 }
 #pm-canvas {
   display: block;
-  width: min(100%, 600px);
+  width: 100%;
   height: auto;
-  aspect-ratio: 15 / 11;
 }
 .pm-controls .cyber-btn { min-width: 9.5rem; }
 .pm-stage .field-hint { padding: 0 0.6rem; text-align: center; }
@@ -47,6 +46,7 @@
 #dpad-w { grid-column: 1; grid-row: 2; }
 #dpad-e { grid-column: 3; grid-row: 2; }
 #dpad-s { grid-column: 2; grid-row: 3; }
+#dpad-stop { grid-column: 2; grid-row: 2; }
 
 /* Brain panel: one bar per legal move, then the feature table for the chosen move. */
 .pm-brain .viz-title { font-size: 0.95rem; }

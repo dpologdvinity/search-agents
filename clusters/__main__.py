@@ -90,8 +90,10 @@ def _run(args: argparse.Namespace) -> int:
         labels, core = dbscan(X, args.eps, args.min_pts)
         ids = sorted(set(labels.tolist()) - {NOISE})
         print(f"algorithm dbscan eps={args.eps} min_pts={args.min_pts}")
-        print(f"clusters {len(ids)}  core {int(core.sum())}  border {int((~core & (labels >= 0)).sum())}"
-              f"  noise {int((labels == NOISE).sum())}")
+        print(
+            f"clusters {len(ids)}  core {int(core.sum())}  border {int((~core & (labels >= 0)).sum())}"
+            f"  noise {int((labels == NOISE).sum())}"
+        )
     else:
         res = gmm_em(X, args.k, seed=args.seed, init=args.init, max_iter=args.max_iter)
         labels = res.labels

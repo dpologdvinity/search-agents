@@ -154,8 +154,10 @@ class UCB1(Agent):
         self.scores = idx
         arm = argmax(idx)
         bonus = idx[arm] - m[arm]
-        self.reason = (f"highest optimistic bound: machine {machine_name(arm)} has mean {m[arm]:.2f} "
-                       f"plus a bonus of {bonus:.2f} for its {self.counts[arm]} pulls")
+        self.reason = (
+            f"highest optimistic bound: machine {machine_name(arm)} has mean {m[arm]:.2f} "
+            f"plus a bonus of {bonus:.2f} for its {self.counts[arm]} pulls"
+        )
         return arm
 
 
@@ -192,11 +194,15 @@ class Thompson(Agent):
         arm = argmax(samples)
         a, b = post[arm]
         if self.bernoulli:
-            self.reason = (f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s Beta({a:.0f}, {b:.0f}) "
-                           "posterior, the best sample this round")
+            self.reason = (
+                f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s Beta({a:.0f}, {b:.0f}) "
+                "posterior, the best sample this round"
+            )
         else:
-            self.reason = (f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s posterior "
-                           f"(mean {a:.2f}, sd {b:.2f}), the best sample this round")
+            self.reason = (
+                f"sampled {samples[arm]:.2f} from machine {machine_name(arm)}'s posterior "
+                f"(mean {a:.2f}, sd {b:.2f}), the best sample this round"
+            )
         return arm
 
 
@@ -205,8 +211,9 @@ class EXP3(Agent):
     label = "EXP3"
     blurb = "Exponential weights with forced exploration. Assumes nothing about the payouts."
 
-    def __init__(self, k: int, horizon: int, rng: Rng, sigma: float = 1.0, bernoulli: bool = True,
-                 gamma: float | None = None):
+    def __init__(
+        self, k: int, horizon: int, rng: Rng, sigma: float = 1.0, bernoulli: bool = True, gamma: float | None = None
+    ):
         super().__init__(k, horizon, rng, sigma, bernoulli)
         # Auer et al.'s tuning for a known horizon: gamma = sqrt(K ln K / ((e - 1) T)), capped at 1.
         self.gamma = gamma if gamma is not None else min(1.0, math.sqrt(k * math.log(k) / ((math.e - 1) * horizon)))
@@ -250,8 +257,9 @@ class SlidingWindowUCB(Agent):
     window = 200
     xi = 0.6
 
-    def __init__(self, k: int, horizon: int, rng: Rng, sigma: float = 1.0, bernoulli: bool = True,
-                 window: int | None = None):
+    def __init__(
+        self, k: int, horizon: int, rng: Rng, sigma: float = 1.0, bernoulli: bool = True, window: int | None = None
+    ):
         super().__init__(k, horizon, rng, sigma, bernoulli)
         self.window = window if window is not None else self.window
         self._recent: deque[tuple[int, float]] = deque()
@@ -277,13 +285,17 @@ class SlidingWindowUCB(Agent):
         # Inside the window: mean + sigma * sqrt(xi * ln(min(t, W)) / n). xi is smaller than UCB1's 2,
         # because the window already caps how long evidence lasts; xi = 0.6 is a fixed choice, not tuned.
         log_t = math.log(min(self.t, self.window))
-        idx = [self.wsums[i] / self.wcounts[i] + self.sigma * math.sqrt(self.xi * log_t / self.wcounts[i])
-               for i in range(self.k)]
+        idx = [
+            self.wsums[i] / self.wcounts[i] + self.sigma * math.sqrt(self.xi * log_t / self.wcounts[i])
+            for i in range(self.k)
+        ]
         self.scores = idx
         arm = argmax(idx)
         mean, n = self.wsums[arm] / self.wcounts[arm], self.wcounts[arm]
-        self.reason = (f"highest window index: machine {machine_name(arm)} averages {mean:.2f} "
-                       f"over its last {n} pulls in the window")
+        self.reason = (
+            f"highest window index: machine {machine_name(arm)} averages {mean:.2f} "
+            f"over its last {n} pulls in the window"
+        )
         return arm
 
 

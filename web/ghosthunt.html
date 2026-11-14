@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="ghosthunt.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -52,59 +53,9 @@
     <p style="margin-top:0.5rem">Press AUTOPILOT to let the hunter play. It follows the fog and busts when it is sure. After a bust, VITERBI REPLAY shows the most likely path the busted ghost took.</p>
   </section>
 
-  <div class="proj-body">
-    <div class="proj-game-col">
-      <div class="gh-stage">
-        <canvas id="gh-map" class="gh-map" role="img" aria-label="Ghost Hunt maze: belief fog for each ghost, your position, sonar rings, busted ghosts" title="Brighter fog means more probability that the ghost is there."></canvas>
-        <div class="gh-readout field-hint" id="gh-info" aria-live="polite">Hover or click a cell next to you to move or bust.</div>
-      </div>
-      <div class="field-hint" id="gh-matchup" style="text-align:center"></div>
-
-      <div class="gh-legend">
-        <span><i class="gh-sw gh-sw-fog"></i>belief fog (one colour per ghost)</span>
-        <span><i class="gh-sw gh-sw-dot"></i>particles</span>
-        <span><i class="gh-sw gh-sw-ring"></i>sonar ring (reading in cells)</span>
-        <span><i class="gh-sw gh-sw-ghost"></i>busted ghost</span>
-        <span><i class="gh-sw gh-sw-true"></i>true path</span>
-        <span><i class="gh-sw gh-sw-vit"></i>Viterbi path</span>
-      </div>
-
-      <div class="gh-pad" role="group" aria-label="Move or bust">
-        <span></span>
-        <button class="cyber-btn" id="mv-N" type="button" aria-label="North"><span class="btn-txt">▲ N</span></button>
-        <span></span>
-        <button class="cyber-btn" id="mv-W" type="button" aria-label="West"><span class="btn-txt">◀ W</span></button>
-        <button class="cyber-btn" id="mv-stay" type="button" aria-label="Wait"><span class="btn-txt">· WAIT</span></button>
-        <button class="cyber-btn" id="mv-E" type="button" aria-label="East"><span class="btn-txt">E ▶</span></button>
-        <span></span>
-        <button class="cyber-btn" id="mv-S" type="button" aria-label="South"><span class="btn-txt">▼ S</span></button>
-        <span></span>
-      </div>
-
-      <div class="gh-controls">
-        <button class="cyber-btn pink" id="btn-bust" type="button" aria-pressed="false" title="While on, a click fires the trap at that neighbouring cell or your own cell."><span class="btn-txt">◉ BUST MODE: OFF</span></button>
-        <button class="cyber-btn green" id="btn-auto" type="button" aria-pressed="false" title="The autopilot fires at its most likely cell once that cell holds more than half of the ghost's probability and sits next to it. Otherwise it walks toward it."><span class="btn-txt">▶ AUTOPILOT</span></button>
-        <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">STEP ›</span></button>
-        <button class="cyber-btn" id="btn-replay" type="button" disabled title="Replays the Viterbi path of each busted ghost, against its true path."><span class="btn-txt">⟲ VITERBI REPLAY</span></button>
-        <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW HUNT</span></button>
-      </div>
-      <div class="field-hint gh-keys">Keys: arrows or WASD move, . waits, B toggles bust mode, G toggles the autopilot, N starts a new hunt.</div>
-
-      <div style="margin-top:1.2rem">
-        <div class="section-title pink-ttl">WHAT THE HUNTER HEARS</div>
-        <div class="viz-panel">
-          <div class="viz-title" id="think-title">Ready</div>
-          <div class="gh-think" id="think-body" aria-live="polite"></div>
-        </div>
-      </div>
-
-      <details class="log-fold" id="log-fold">
-        <summary>Event log</summary>
-        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(0,255,136,0.3)"></div>
-      </details>
-    </div>
-
-    <div class="proj-ctrl-col">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
       <div>
         <div class="section-title pink-ttl">HUNT</div>
         <div class="stack">
@@ -190,6 +141,65 @@
         </div>
       </div>
     </div>
+  </details>
+
+  <div class="proj-body play-layout">
+    <div class="proj-game-col">
+      <div class="gh-stage">
+        <canvas id="gh-map" class="gh-map" role="img" aria-label="Ghost Hunt maze: belief fog for each ghost, your position, sonar rings, busted ghosts" title="Brighter fog means more probability that the ghost is there."></canvas>
+        <div class="gh-readout field-hint" id="gh-info" aria-live="polite">Hover or click a cell next to you to move or bust.</div>
+      </div>
+
+      <div class="field-hint" id="gh-matchup" style="text-align:center"></div>
+
+      <div class="gh-pad" role="group" aria-label="Move or bust">
+        <span></span>
+        <button class="cyber-btn" id="mv-N" type="button" aria-label="North"><span class="btn-txt">▲ N</span></button>
+        <span></span>
+        <button class="cyber-btn" id="mv-W" type="button" aria-label="West"><span class="btn-txt">◀ W</span></button>
+        <button class="cyber-btn" id="mv-stay" type="button" aria-label="Wait"><span class="btn-txt">· WAIT</span></button>
+        <button class="cyber-btn" id="mv-E" type="button" aria-label="East"><span class="btn-txt">E ▶</span></button>
+        <span></span>
+        <button class="cyber-btn" id="mv-S" type="button" aria-label="South"><span class="btn-txt">▼ S</span></button>
+        <span></span>
+      </div>
+
+      <div class="gh-controls">
+        <button class="cyber-btn pink" id="btn-bust" type="button" aria-pressed="false" title="While on, a click fires the trap at that neighbouring cell or your own cell."><span class="btn-txt">◉ BUST MODE: OFF</span></button>
+        <button class="cyber-btn green" id="btn-auto" type="button" aria-pressed="false" title="The autopilot fires at its most likely cell once that cell holds more than half of the ghost's probability and sits next to it. Otherwise it walks toward it."><span class="btn-txt">▶ AUTOPILOT</span></button>
+        <button class="cyber-btn" id="btn-step" type="button"><span class="btn-txt">STEP ›</span></button>
+        <button class="cyber-btn" id="btn-replay" type="button" disabled title="Replays the Viterbi path of each busted ghost, against its true path."><span class="btn-txt">⟲ VITERBI REPLAY</span></button>
+        <button class="cyber-btn pink" id="btn-new" type="button"><span class="btn-txt">↺ NEW HUNT</span></button>
+      </div>
+
+      <div class="field-hint gh-keys">Keys: arrows or WASD move, . waits, B toggles bust mode, G toggles the autopilot, N starts a new hunt.</div>
+    </div>
+
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
+      <div style="margin-top:1.2rem">
+        <div class="section-title pink-ttl">WHAT THE HUNTER HEARS</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Ready</div>
+          <div class="gh-think" id="think-body" aria-live="polite"></div>
+        </div>
+      </div>
+
+
+
+      <div class="gh-legend">
+        <span><i class="gh-sw gh-sw-fog"></i>belief fog (one colour per ghost)</span>
+        <span><i class="gh-sw gh-sw-dot"></i>particles</span>
+        <span><i class="gh-sw gh-sw-ring"></i>sonar ring (reading in cells)</span>
+        <span><i class="gh-sw gh-sw-ghost"></i>busted ghost</span>
+        <span><i class="gh-sw gh-sw-true"></i>true path</span>
+        <span><i class="gh-sw gh-sw-vit"></i>Viterbi path</span>
+      </div>
+
+      <details class="log-fold" id="log-fold">
+        <summary>Event log</summary>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(0,255,136,0.3)"></div>
+      </details>
+    </aside>
   </div>
 
   <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
@@ -200,16 +210,16 @@
     <p>The maze is a <b>perfect maze</b>: an odd grid of rooms and passages in which there is exactly one route between any two open cells. It is carved by a seeded backtracker, which walks from room to room, knocks down the wall between the current room and a random unvisited room two steps away, and backtracks when it is stuck. Every room is reached once, so the result is a tree.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/maze.py#L27-L56" target="_blank" rel="noopener" title="ghosthunt/maze.py, lines 27–56" aria-label="Code on GitHub: ghosthunt/maze.py, lines 27 to 56">1</a> The player starts in the top-left room. Because the route is unique, the sonar distance is the length of the corridor path, not a straight-line guess.</p>
     <p>The open cells are numbered 0 to K−1, and each one has up to four neighbours, in the order north, east, south, west. The <b>distance</b> dist(a, b) is the number of steps along the corridors between two open cells, found by a breadth-first search from every cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/maze.py#L59-L103" target="_blank" rel="noopener" title="ghosthunt/maze.py, lines 59–103" aria-label="Code on GitHub: ghosthunt/maze.py, lines 59 to 103">2</a></p>
     <p>A <b>hidden state</b> is s = 4k + h, where k is the open cell and h is the heading of the ghost's last move, 0 to 3 for north, east, south and west. The heading is in the state so that the patrol model can follow a corridor. There are 4K states. A 15 by 15 maze has 97 open cells, so 388 states.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L1-L16" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 1–16" aria-label="Code on GitHub: ghosthunt/motion.py, lines 1 to 16">3</a></p>
-    <p>Each ghost starts in a random state chosen from the <b>eligible</b> states, those whose cell is at least 4 steps from the player. The prior, the belief before any ping, is uniform over the eligible states and zero elsewhere. Every filter starts from this same prior.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L84-L97" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 84–97" aria-label="Code on GitHub: ghosthunt/game.py, lines 84 to 97">4</a></p>
-    <!-- ghosthunt/game.py:84-90 -->
+    <p>Each ghost starts in a random state chosen from the <b>eligible</b> states, those whose cell is at least 4 steps from the player. The prior, the belief before any ping, is uniform over the eligible states and zero elsewhere. Every filter starts from this same prior.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L93-L110" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 93–110" aria-label="Code on GitHub: ghosthunt/game.py, lines 93 to 110">4</a></p>
+    <!-- ghosthunt/game.py:93-103 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L84-L90" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 84–90" aria-label="Code on GitHub: ghosthunt/game.py, lines 84 to 90">5</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L93-L103" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 93–103" aria-label="Code on GitHub: ghosthunt/game.py, lines 93 to 103">5</a></span>
       <div class="math math-block">\pi(s) = \begin{cases} 1 / |E| & \text{if } s \in E \\ 0 & \text{otherwise} \end{cases}, \qquad E = \{\, 4k + h : \mathrm{dist}(k, \mathrm{start}) \ge 4 \,\}</div>
     </div>
-    <p>A <b>turn</b> has a fixed order. The player acts first: it moves, waits or fires a bust. A bust resolves against the ghosts' current cells, before they move, and it does not move the player. Then each live ghost takes one motion step with the player's new cell, and the sonar pings the distance from that cell to the ghost. A ghost busted this turn gives no ping. The filters follow the same order.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L125-L163" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 125–163" aria-label="Code on GitHub: ghosthunt/game.py, lines 125 to 163">6</a></p>
+    <p>A <b>turn</b> has a fixed order. The player acts first: it moves, waits or fires a bust. A bust resolves against the ghosts' current cells, before they move, and it does not move the player. Then each live ghost takes one motion step with the player's new cell, and the sonar pings the distance from that cell to the ghost. A ghost busted this turn gives no ping. The filters follow the same order.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L139-L177" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 139–177" aria-label="Code on GitHub: ghosthunt/game.py, lines 139 to 177">6</a></p>
     <p>Each live ghost draws two random numbers per turn, one for its move and one for its ping, from its own stream. Two runs with the same seed therefore see the same ghost walks and pings even when the player plays differently. The benchmark uses this common-random-numbers design, so the filters are compared on the same ghosts.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L1-L20" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 1–20" aria-label="Code on GitHub: ghosthunt/game.py, lines 1 to 20">7</a></p>
 
-    <p>Every ping is labelled with the ghost it measures, and the ghosts move independently. The joint belief over all the ghosts therefore factorises, so each ghost gets its own filter, and the per-ghost beliefs are exact without a joint filter. Correlations between ghosts would appear only if the sonar could not tell them apart.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L165-L175" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 165–175" aria-label="Code on GitHub: ghosthunt/game.py, lines 165 to 175">8</a></p>
+    <p>Every ping is labelled with the ghost it measures, and the ghosts move independently. The joint belief over all the ghosts therefore factorises, so each ghost gets its own filter, and the per-ghost beliefs are exact without a joint filter. Correlations between ghosts would appear only if the sonar could not tell them apart.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/game.py#L179-L189" target="_blank" rel="noopener" title="ghosthunt/game.py, lines 179–189" aria-label="Code on GitHub: ghosthunt/game.py, lines 179 to 189">8</a></p>
 
     <h3 class="hiw-sub">The three ghost motions</h3>
     <p>A motion model is the <b>transition</b> probability P(s' | s, p): the chance that a ghost in state s moves to s' when the player stands in cell p. The three models are the random walk, the lurker and the patrol. The hunter knows every probability, because the models are known.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/motion.py#L1-L16" target="_blank" rel="noopener" title="ghosthunt/motion.py, lines 1–16" aria-label="Code on GitHub: ghosthunt/motion.py, lines 1 to 16">3</a></p>
@@ -278,7 +288,7 @@
     <p>To draw a reading, the game inverts the row's cumulative distribution at a uniform random number u. It returns the first reading whose running total passes u.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/sonar.py#L36-L43" target="_blank" rel="noopener" title="ghosthunt/sonar.py, lines 36–43" aria-label="Code on GitHub: ghosthunt/sonar.py, lines 36 to 43">14</a></p>
 
     <h3 class="hiw-sub">The forward algorithm: exact filtering</h3>
-    <p><b>Filtering</b> means computing the belief over the hidden state at the current turn, given every reading so far. The <b>forward algorithm</b> does this exactly for a hidden Markov model. At each turn it runs two steps. The <b>predict</b> step pushes every state's probability through the transition model. The <b>update</b> step multiplies each state by the likelihood of the reading if the ghost were there, then normalises.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L1-L22" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 1–22" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 1 to 22">15</a></p>
+    <p><b>Filtering</b> means computing the belief over the hidden state at the current turn, given every reading so far. The <b>forward algorithm</b> does this exactly for a hidden Markov model. At each turn it runs two steps. The <b>predict</b> step pushes every state's probability through the transition model. The <b>update</b> step multiplies each state by the likelihood of the reading if the ghost were there, then normalises.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L1-L21" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 1–21" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 1 to 21">15</a></p>
     <!-- ghosthunt/hmm.py:36-59 -->
     <div class="math-fig">
       <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/hmm.py#L36-L59" target="_blank" rel="noopener" title="ghosthunt/hmm.py, lines 36–59" aria-label="Code on GitHub: ghosthunt/hmm.py, lines 36 to 59">16</a></span>
@@ -318,21 +328,21 @@
     <h3 class="hiw-sub">Particle filtering: a sample of the belief</h3>
     <p>When the state space is too large to keep, a <b>particle filter</b> keeps N <b>particles</b>, each one a sampled state, and the weighted histogram of the particles stands in for the belief. The page uses it when the particle filter is chosen, with 10 to 1000 particles per ghost, 300 by default.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L1-L23" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 1–23" aria-label="Code on GitHub: ghosthunt/particles.py, lines 1 to 23">18</a></p>
     <p>The particles start as draws from the prior. Each draw inverts the cumulative prior at a fresh uniform number. Each turn, every particle moves by one sample of the motion model. A particle whose motion has only one option moves without drawing a random number.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L34-L60" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 34–60" aria-label="Code on GitHub: ghosthunt/particles.py, lines 34 to 60">19</a></p>
-    <p>The update multiplies each particle's weight by the sonar likelihood of its distance, then normalises. The <b>effective sample size</b> (ESS) is 1 / Σw², which equals N when the weights are equal and falls toward 1 when one particle holds almost all the weight. When ESS falls below N/2, the particles are resampled.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L62-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 62–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 62 to 76">20</a></p>
+    <p>The update multiplies each particle's weight by the sonar likelihood of its distance, then normalises. The <b>effective sample size</b> (ESS) is 1 / Σw², which equals N when the weights are equal and falls toward 1 when one particle holds almost all the weight. When ESS falls below N/2, the particles are resampled.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L63-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 63–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 63 to 76">20</a></p>
     <!-- ghosthunt/particles.py:62-76 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L62-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 62–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 62 to 76">20</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L63-L76" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 63–76" aria-label="Code on GitHub: ghosthunt/particles.py, lines 63 to 76">20</a></span>
       <div class="math math-block">w_i \leftarrow \dfrac{w_i\, P(r_t \mid \mathrm{dist}(k_i, p_t))}{\sum_j w_j\, P(r_t \mid \mathrm{dist}(k_j, p_t))}, \qquad \mathrm{ESS} = \dfrac{1}{\sum_i w_i^2}, \qquad \text{resample when } \mathrm{ESS} < N/2</div>
     </div>
-    <p>Here <span class="math">k_i</span> is the cell of particle <span class="math">i</span>. The resampling is systematic. It draws one uniform offset, then places N evenly spaced pointers over the cumulative weights, so each particle is copied about N times its weight. The copies are spread as evenly as the weights allow.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L78-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 78–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 78 to 91">21</a></p>
+    <p>Here <span class="math">k_i</span> is the cell of particle <span class="math">i</span>. The resampling is systematic. It draws one uniform offset, then places N evenly spaced pointers over the cumulative weights, so each particle is copied about N times its weight. The copies are spread as evenly as the weights allow.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L79-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 79–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 79 to 91">21</a></p>
     <!-- ghosthunt/particles.py:78-91 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L78-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 78–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 78 to 91">21</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L79-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 79–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 79 to 91">21</a></span>
       <div class="math math-block">u_0 = \dfrac{U}{N}, \qquad p_i = u_0 + \dfrac{i}{N}, \qquad j_i = \text{the first } j \text{ with } C_j > p_i, \qquad C_j = \sum_{k \le j} w_k</div>
     </div>
-    <p>Here <span class="math">U</span> is one uniform draw on [0, 1), and the search returns the last index if rounding leaves no cumulative value above the pointer. The filter's belief is the histogram of the particles' cells, weighted by their weights.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L93-L110" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 93–110" aria-label="Code on GitHub: ghosthunt/particles.py, lines 93 to 110">22</a></p>
+    <p>Here <span class="math">U</span> is one uniform draw on [0, 1), and the search returns the last index if rounding leaves no cumulative value above the pointer. The filter's belief is the histogram of the particles' cells, weighted by their weights.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L94-L110" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 94–110" aria-label="Code on GitHub: ghosthunt/particles.py, lines 94 to 110">22</a></p>
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L44-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 44–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 44 to 91">23</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/particles.py#L45-L91" target="_blank" rel="noopener" title="ghosthunt/particles.py, lines 45–91" aria-label="Code on GitHub: ghosthunt/particles.py, lines 45 to 91">23</a></span>
       <pre class="pseudo-simple">function PARTICLE-STEP(particles, weights, player, reading):
     for each particle: move it by one sample of the motion model from player
     for each particle: weights ← weights × SONAR(reading, distance of particle from player)
@@ -422,10 +432,10 @@
     return path</pre>
     </div>
     <p>The simple version has the same shape as the full one: score every path, keep the best predecessor at each turn, then read the path back. The full version sets zero-prior states to minus infinity, and it applies the strict comparison that breaks ties toward the lowest index.</p>
-    <p>On the page, a busted ghost's Viterbi path is drawn in cyan next to its true path in pink. The benchmark compares the Viterbi cell at each turn with the filtered MAP cell, which is the most likely cell from the readings so far only.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L91-L113" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 91–113" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 91 to 113">28</a></p>
+    <p>On the page, a busted ghost's Viterbi path is drawn in cyan next to its true path in pink. The benchmark compares the Viterbi cell at each turn with the filtered MAP cell, which is the most likely cell from the readings so far only.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L105-L133" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 105–133" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 105 to 133">28</a></p>
 
     <h3 class="hiw-sub">The autopilot: busting when sure</h3>
-    <p>The <b>autopilot</b> is a simple policy that reads only the beliefs, so it works with either filter. Each turn it takes the most probable cell over all live ghosts, the most confident <b>peak</b>. If that peak holds more than half of the ghost's probability and is the player's cell or a neighbour, it fires there. Otherwise it walks one step along a shortest corridor path toward the peak. If the player already stands on the peak, it walks toward the second-best cell, because sonar from another corridor sharpens the belief.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L1-L20" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 1–20" aria-label="Code on GitHub: ghosthunt/agent.py, lines 1 to 20">29</a></p>
+    <p>The <b>autopilot</b> is a simple policy that reads only the beliefs, so it works with either filter. Each turn it takes the most probable cell over all live ghosts, the most confident <b>peak</b>. If that peak holds more than half of the ghost's probability and is the player's cell or a neighbour, it fires there. Otherwise it walks one step along a shortest corridor path toward the peak. If the player already stands on the peak, it walks toward the second-best cell, because sonar from another corridor sharpens the belief.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L1-L19" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 1–19" aria-label="Code on GitHub: ghosthunt/agent.py, lines 1 to 19">29</a></p>
     <!-- ghosthunt/agent.py:44-69 -->
     <div class="pseudo">
       <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/agent.py#L44-L69" target="_blank" rel="noopener" title="ghosthunt/agent.py, lines 44–69" aria-label="Code on GitHub: ghosthunt/agent.py, lines 44 to 69">30</a></span>
@@ -506,7 +516,7 @@ function FIRST-STEP(p, target):
         </tbody>
       </table>
     </div>
-    <p class="hiw-note"><b>KL</b> here is the Kullback–Leibler divergence, KL(exact ‖ particles) = Σ over cells of p<sub>exact</sub> log(p<sub>exact</sub> / max(p<sub>particles</sub>, 10<sup>−6</sup>)). It is measured in nats, the natural-log unit, and the floor keeps an empty particle cell from costing an infinite amount.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L37-L64" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 37–64" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 37 to 64">35</a></p>
+    <p class="hiw-note"><b>KL</b> here is the Kullback–Leibler divergence, KL(exact ‖ particles) = Σ over cells of p<sub>exact</sub> log(p<sub>exact</sub> / max(p<sub>particles</sub>, 10<sup>−6</sup>)). It is measured in nats, the natural-log unit, and the floor keeps an empty particle cell from costing an infinite amount.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/ghosthunt/benchmark.py#L37-L72" target="_blank" rel="noopener" title="ghosthunt/benchmark.py, lines 37–72" aria-label="Code on GitHub: ghosthunt/benchmark.py, lines 37 to 72">35</a></p>
   </section>
 </div>
 </div>

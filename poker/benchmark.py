@@ -63,8 +63,10 @@ def markdown(result: dict) -> str:
     ]
     for m in result["matchups"]:
         lo, hi = m["ci95_mbb"]
-        lines.append(f"| {m['opponent']} | {m['hands']:,} | {m['mbb_per_hand']:+.1f} | "
-                     f"[{lo:+.1f}, {hi:+.1f}] | {m['chips_per_hand']:+.4f} |")
+        lines.append(
+            f"| {m['opponent']} | {m['hands']:,} | {m['mbb_per_hand']:+.1f} | "
+            f"[{lo:+.1f}, {hi:+.1f}] | {m['chips_per_hand']:+.4f} |"
+        )
     return "\n".join(lines) + "\n"
 
 

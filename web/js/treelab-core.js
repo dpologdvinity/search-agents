@@ -90,9 +90,9 @@ export function bestSplit(X, y, idx, features, criterion, minLeaf, K) {
       const gain = parent - (nl / m) * gl - (nr / m) * gr;
       const lo = v[pos];
       const hi = v[pos + 1];
-      let thr = (lo + hi) / 2;
-      if (!(lo < thr)) thr = hi;
-      cands.push([gain, thr]);
+      let cut = (lo + hi) / 2;
+      if (!(lo < cut)) cut = hi;
+      cands.push([gain, cut]);
     }
     if (!cands.length) continue;
     let gmax = -Infinity;

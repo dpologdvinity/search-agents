@@ -78,7 +78,7 @@ def two_opt_delta(tour: list[int], i: int, j: int, dist) -> float:
 
 def reverse_segment(tour: list[int], i: int, j: int) -> None:
     """Apply a 2-opt move in place by reversing tour[i..j]."""
-    tour[i:j + 1] = reversed(tour[i:j + 1])
+    tour[i : j + 1] = reversed(tour[i : j + 1])
 
 
 class _Recorder:
@@ -151,8 +151,12 @@ def nearest_neighbor_2opt(cities, max_passes: int = 50) -> Result:
     tour = nearest_neighbor(dist)
     length = tour_length(tour, dist)
     frames = [{"step": 0, "best_length": round(length, 5), "tour": list(tour)}]
-    improvements = two_opt_descent(tour, dist, max_passes, on_improve=lambda count, t, ln: frames.append(
-        {"step": count, "best_length": round(ln, 5), "tour": list(t)}))
+    improvements = two_opt_descent(
+        tour,
+        dist,
+        max_passes,
+        on_improve=lambda count, t, ln: frames.append({"step": count, "best_length": round(ln, 5), "tour": list(t)}),
+    )
     # Thin the frames so long runs stay a reasonable size.
     stride = max(1, len(frames) // MAX_FRAMES)
     frames = frames[::stride] + ([frames[-1]] if (len(frames) - 1) % stride else [])
@@ -182,8 +186,13 @@ def initial_temperature(tour, dist, rng: random.Random, samples: int = 200, acce
     return -avg / math.log(accept)
 
 
-def simulated_annealing(cities, iterations: int = 60_000, cooling: float | None = None,
-                        start_temp: float | None = None, seed: int | None = None) -> Result:
+def simulated_annealing(
+    cities,
+    iterations: int = 60_000,
+    cooling: float | None = None,
+    start_temp: float | None = None,
+    seed: int | None = None,
+) -> Result:
     """Simulated annealing over 2-opt moves, starting from a random tour.
 
     Each iteration proposes reversing a random segment:
@@ -226,8 +235,9 @@ def simulated_annealing(cities, iterations: int = 60_000, cooling: float | None 
                 accepted_uphill += 1
             if length < best_len - 1e-12:
                 best, best_len = list(tour), length
-        rec.record(step, best, best_len, current_length=round(length, 5), temperature=temp,
-                   uphill_accepted=accepted_uphill)
+        rec.record(
+            step, best, best_len, current_length=round(length, 5), temperature=temp, uphill_accepted=accepted_uphill
+        )
         temp *= rate
 
     # Finishing pass: random sampling can miss the last few improving moves as
@@ -260,8 +270,8 @@ def order_crossover(parent_a: list[int], parent_b: list[int], rng: random.Random
     n = len(parent_a)
     i, j = sorted(rng.sample(range(n), 2))
     child = [-1] * n  # -1 marks a position not filled yet
-    child[i:j + 1] = parent_a[i:j + 1]
-    kept = set(child[i:j + 1])
+    child[i : j + 1] = parent_a[i : j + 1]
+    kept = set(child[i : j + 1])
     fill = [city for k in range(n) if (city := parent_b[(j + 1 + k) % n]) not in kept]
     for k, city in enumerate(fill):
         child[(j + 1 + k) % n] = city
@@ -284,8 +294,14 @@ def tournament(population, lengths, rng: random.Random, size: int = 3) -> list[i
     return population[min(contenders, key=lambda k: lengths[k])]
 
 
-def genetic_algorithm(cities, population_size: int = 120, generations: int = 300,
-                      mutation_rate: float = 0.3, elite: int = 4, seed: int | None = None) -> Result:
+def genetic_algorithm(
+    cities,
+    population_size: int = 120,
+    generations: int = 300,
+    mutation_rate: float = 0.3,
+    elite: int = 4,
+    seed: int | None = None,
+) -> Result:
     """Evolve tours: selection, order crossover, inversion mutation, elitism.
 
     Each generation:
@@ -369,8 +385,7 @@ def held_karp(cities) -> Result:
                     continue
                 rest = mask ^ bit
                 cost[(mask, j)] = min(
-                    (cost[(rest, k)][0] + dist[k][j], k)
-                    for k in range(1, n) if rest & (1 << (k - 1))
+                    (cost[(rest, k)][0] + dist[k][j], k) for k in range(1, n) if rest & (1 << (k - 1))
                 )
 
     full = (1 << (n - 1)) - 1

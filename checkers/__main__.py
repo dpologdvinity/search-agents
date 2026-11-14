@@ -24,8 +24,14 @@ import sys
 from .agents import AGENTS, choose, matchup_text
 from .board import RED, SIZES, WHITE, Move, geometry, legal_moves, notation, start_position
 
-NAMES = {"alphabeta": "alpha-beta", "minimax": "minimax", "mcts": "MCTS", "greedy": "greedy", "random": "random",
-         "chance": "chance"}
+NAMES = {
+    "alphabeta": "alpha-beta",
+    "minimax": "minimax",
+    "mcts": "MCTS",
+    "greedy": "greedy",
+    "random": "random",
+    "chance": "chance",
+}
 SIDES = {RED: "red", WHITE: "white"}
 PIECES = {1: "r", 2: "R", -1: "w", -2: "W"}
 
@@ -66,7 +72,7 @@ def render(board) -> str:
 
 
 def count(n: int, one: str, many: str) -> str:
-    """"1 ply", "2 plies", "1,234 positions": the number with the noun in the right form."""
+    """Format a count with its noun in the right form: "1 ply", "2 plies", "1,234 positions"."""
     return f"{n:,} {one if n == 1 else many}"
 
 
@@ -139,8 +145,17 @@ def ask_move(board, turn: int, agent: str, level: int, moves: list[Move], read=i
         print("  not a legal move: type a number from the list, a move such as 22-18, h, or q")
 
 
-def play(players: dict, level: int, read=input, board=None, *, size: int = 8, forced: bool = True,
-         by_nodes: bool = False, verbose: bool = True) -> int | None:
+def play(
+    players: dict,
+    level: int,
+    read=input,
+    board=None,
+    *,
+    size: int = 8,
+    forced: bool = True,
+    by_nodes: bool = False,
+    verbose: bool = True,
+) -> int | None:
     """Run one game. players maps RED and WHITE to "human" or an agent name.
 
     Returns the winning side (RED or WHITE), 0 for a draw, or None if the human quit.
@@ -170,8 +185,10 @@ def play(players: dict, level: int, read=input, board=None, *, size: int = 8, fo
         else:
             result = choose(board, turn, player, level, forced=forced, by_nodes=by_nodes)
             move = as_move(result["move"])
-            say(f"  {SIDES[turn].capitalize()} ({NAMES[player]}) plays {result['move']['notation']}: "
-                f"{summary(result['analysis'])}")
+            say(
+                f"  {SIDES[turn].capitalize()} ({NAMES[player]}) plays {result['move']['notation']}: "
+                f"{summary(result['analysis'])}"
+            )
         # Captures and man moves reset the draw count; a king stepping without capturing does not.
         quiet = 0 if move.captured or abs(board[move.path[0]]) == 1 else quiet + 1
         board = move.result
@@ -209,8 +226,7 @@ def opening_position(size: int, pair: int, forced: bool = True) -> tuple[int, ..
     return board
 
 
-def match(first: str, second: str, games: int, level: int, *, size: int = 8, forced: bool = True,
-          out=print) -> dict:
+def match(first: str, second: str, games: int, level: int, *, size: int = 8, forced: bool = True, out=print) -> dict:
     """Play `games` games between two agents, alternating colours, and tally the results.
 
     Games come in pairs that share a random opening (opening_position), and the colours
@@ -221,8 +237,10 @@ def match(first: str, second: str, games: int, level: int, *, size: int = 8, for
     """
     names = (first, second)
     tally = [{"wins": 0, "draws": 0, "losses": 0} for _ in names]
-    out(f"Match: {first} vs {second}, {games} games at level {level} on {size}x{size}, "
-        f"{'forced' if forced else 'optional'} captures, paired from {MATCH_OPENING_PLIES}-ply random openings")
+    out(
+        f"Match: {first} vs {second}, {games} games at level {level} on {size}x{size}, "
+        f"{'forced' if forced else 'optional'} captures, paired from {MATCH_OPENING_PLIES}-ply random openings"
+    )
     out(matchup_text({RED: first, WHITE: second}, {RED: level, WHITE: level}, size, forced=forced, by_nodes=True))
     out(f"{'Game':>4}  {'Red':<11} {'White':<11} Result")
     for g in range(games):
@@ -251,8 +269,9 @@ def match(first: str, second: str, games: int, level: int, *, size: int = 8, for
 
 def match_main(argv) -> int:
     """`python -m checkers match FIRST SECOND`: parse the options and run the match."""
-    parser = argparse.ArgumentParser(prog="python -m checkers match",
-                                     description="Play a match between two agents and print a win/draw/loss table.")
+    parser = argparse.ArgumentParser(
+        prog="python -m checkers match", description="Play a match between two agents and print a win/draw/loss table."
+    )
     parser.add_argument("first", choices=AGENTS)
     parser.add_argument("second", choices=AGENTS)
     parser.add_argument("--games", type=int, default=10, help="number of games (default 10)")
@@ -262,8 +281,7 @@ def match_main(argv) -> int:
     args = parser.parse_args(argv)
     if args.games < 1:
         parser.error("--games must be at least 1")
-    match(args.first, args.second, args.games, args.level, size=args.size,
-          forced=not args.no_forced_capture)
+    match(args.first, args.second, args.games, args.level, size=args.size, forced=not args.no_forced_capture)
     return 0
 
 
@@ -273,22 +291,37 @@ def main(argv=None, read=input) -> int:
         argv = sys.argv[1:]
     if argv[:1] == ["match"]:
         return match_main(argv[1:])
-    parser = argparse.ArgumentParser(prog="python -m checkers", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m checkers", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     players_choices = [*AGENTS, "human"]
-    parser.add_argument("--agent", choices=AGENTS, default="alphabeta",
-                        help="opponent (default alphabeta)")
+    parser.add_argument("--agent", choices=AGENTS, default="alphabeta", help="opponent (default alphabeta)")
     parser.add_argument("--level", type=int, choices=(1, 2, 3), default=2, help="search budget (default 2)")
-    parser.add_argument("--size", type=int, choices=SIZES, default=8,
-                        help="board size: 8 (default), 10 or 12")
-    parser.add_argument("--no-forced-capture", action="store_true",
-                        help="captures are optional; by default a capture must be played")
-    parser.add_argument("--red", nargs="?", const="human", choices=players_choices,
-                        help="who plays red: an agent name or human (see the players note above)")
-    parser.add_argument("--white", nargs="?", const="human", choices=players_choices,
-                        help="who plays white: an agent name, or human alone (you play white)")
-    parser.add_argument("--watch", nargs=2, metavar=("FIRST", "SECOND"), choices=AGENTS,
-                        help="watch two agents play each other; FIRST plays red")
+    parser.add_argument("--size", type=int, choices=SIZES, default=8, help="board size: 8 (default), 10 or 12")
+    parser.add_argument(
+        "--no-forced-capture", action="store_true", help="captures are optional; by default a capture must be played"
+    )
+    parser.add_argument(
+        "--red",
+        nargs="?",
+        const="human",
+        choices=players_choices,
+        help="who plays red: an agent name or human (see the players note above)",
+    )
+    parser.add_argument(
+        "--white",
+        nargs="?",
+        const="human",
+        choices=players_choices,
+        help="who plays white: an agent name, or human alone (you play white)",
+    )
+    parser.add_argument(
+        "--watch",
+        nargs=2,
+        metavar=("FIRST", "SECOND"),
+        choices=AGENTS,
+        help="watch two agents play each other; FIRST plays red",
+    )
     args = parser.parse_args(argv)
 
     players = players_from(args)

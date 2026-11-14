@@ -11,8 +11,9 @@ WEIGHTS = (1.0, 1.0, 0.5, 1.0, 0.5, 0.2)
 
 def random_boards(n, seed):
     rng = random.Random(seed)
-    return [from_grid([[rng.choice([0, 0, 2, 4, 8, 16, 64, 512]) for _ in range(4)] for _ in range(4)])
-            for _ in range(n)]
+    return [
+        from_grid([[rng.choice([0, 0, 2, 4, 8, 16, 64, 512]) for _ in range(4)] for _ in range(4)]) for _ in range(n)
+    ]
 
 
 def test_features_by_hand():

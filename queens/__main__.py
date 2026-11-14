@@ -63,15 +63,19 @@ def hint(board: Board) -> str:
         here = board.queen_attacks(r)
         best_c = min(range(n), key=lambda c: (board.attacks_if(r, c), c))
         best = board.attacks_if(r, best_c)
-        return (f"min-conflicts: move the row {r + 1} queen from {chr(97 + board.cols[r])}{r + 1} "
-                f"({here} attack{'s' if here != 1 else ''}) to {chr(97 + best_c)}{r + 1} "
-                f"({best} attack{'s' if best != 1 else ''} there)")
+        return (
+            f"min-conflicts: move the row {r + 1} queen from {chr(97 + board.cols[r])}{r + 1} "
+            f"({here} attack{'s' if here != 1 else ''}) to {chr(97 + best_c)}{r + 1} "
+            f"({best} attack{'s' if best != 1 else ''} there)"
+        )
     empty = [r for r in range(n) if board.cols[r] < 0]
     if empty:
         r = empty[0]
         best_c = min(range(n), key=lambda c: (board.attacks_if(r, c), c))
-        return (f"no conflicts yet: row {r + 1} needs a queen; {chr(97 + best_c)}{r + 1} is attacked by "
-                f"{board.attacks_if(r, best_c)} queen{'s' if board.attacks_if(r, best_c) != 1 else ''}")
+        return (
+            f"no conflicts yet: row {r + 1} needs a queen; {chr(97 + best_c)}{r + 1} is attacked by "
+            f"{board.attacks_if(r, best_c)} queen{'s' if board.attacks_if(r, best_c) != 1 else ''}"
+        )
     return "every row has a queen and nothing attacks anything"
 
 
@@ -132,8 +136,9 @@ def solve_summary(n: int, agent: str, seed: int | None, time_limit: float | None
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m queens",
-                                     description="N-Queens: four agents on one board, and the benchmark.")
+    parser = argparse.ArgumentParser(
+        prog="python -m queens", description="N-Queens: four agents on one board, and the benchmark."
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("play", help="place the queens yourself on an 8x8 board")
     p_solve = sub.add_parser("solve", help="solve an N-Queens board with one agent")
@@ -162,8 +167,11 @@ def main(argv=None) -> int:
         plan = QUICK_PLAN if args.quick else FULL_PLAN
 
         def progress(agent, n, summary):
-            print(f"{agent:9s} N={n:>9,}  solved {summary['solved']}/{summary['runs']}  "
-                  f"median time {summary['seconds_median']:.3g} s", flush=True)
+            print(
+                f"{agent:9s} N={n:>9,}  solved {summary['solved']}/{summary['runs']}  "
+                f"median time {summary['seconds_median']:.3g} s",
+                flush=True,
+            )
 
         t0 = time.perf_counter()
         data = run_benchmark(plan, progress=progress)

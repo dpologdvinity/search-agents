@@ -36,6 +36,7 @@ def run_map(size: int, density: float, seed: int, radius: int = RADIUS) -> dict:
     Expansions and time come from the D*-driven run, so both planners are measured on the same route.
     The A*-driven run only supplies its own route length, and its cross-check counts go into `mismatches`.
     """
+
     def explore(driver: str) -> Explorer:
         ex = Explorer(World(size, generate(size, density, seed)), radius=radius, driver=driver).run()
         assert ex.done, f"the rover did not reach the goal on {size}x{size} d={density} seed={seed}"
@@ -43,9 +44,15 @@ def run_map(size: int, density: float, seed: int, radius: int = RADIUS) -> dict:
 
     d = explore("dstar")
     a = explore("astar")
-    row = {"size": size, "density": density, "seed": seed,
-           "steps_dstar": d.steps, "steps_astar": a.steps, "replans": d.replans,
-           "mismatches": d.mismatches + a.mismatches}
+    row = {
+        "size": size,
+        "density": density,
+        "seed": seed,
+        "steps_dstar": d.steps,
+        "steps_astar": a.steps,
+        "replans": d.replans,
+        "mismatches": d.mismatches + a.mismatches,
+    }
     for name in ("dstar", "astar"):
         row[f"init_{name}"] = d.init_expansions[name]
         row[f"replan_{name}"] = d.expansions(name) - d.init_expansions[name]
@@ -56,11 +63,26 @@ def run_map(size: int, density: float, seed: int, radius: int = RADIUS) -> dict:
 
 def summarise(rows: list[dict]) -> dict:
     """Averages over the maps of one (size, density) cell, plus the ratios the table reports."""
+
     def mean(key):
         return statistics.fmean(r[key] for r in rows)
-    out = {k: round(mean(k), 1) for k in (
-        "steps_dstar", "steps_astar", "replans", "init_dstar", "replan_dstar", "total_dstar",
-        "init_astar", "replan_astar", "total_astar", "ms_dstar", "ms_astar")}
+
+    out = {
+        k: round(mean(k), 1)
+        for k in (
+            "steps_dstar",
+            "steps_astar",
+            "replans",
+            "init_dstar",
+            "replan_dstar",
+            "total_dstar",
+            "init_astar",
+            "replan_astar",
+            "total_astar",
+            "ms_dstar",
+            "ms_astar",
+        )
+    }
     out["maps"] = len(rows)
     out["mismatches"] = sum(r["mismatches"] for r in rows)
     out["ratio_total"] = round(out["total_dstar"] / out["total_astar"], 3)
@@ -77,8 +99,15 @@ def run(sizes=SIZES, densities=DENSITIES, seeds: int = SEEDS, radius: int = RADI
             rows.extend(cell)
             summary.append({"size": size, "density": density, **summarise(cell)})
     return {
-        "config": {"sizes": list(sizes), "densities": list(densities), "seeds": seeds, "radius": radius,
-                   "connectivity": 4, "heuristic": "manhattan", "unknown_cells": "planned as free"},
+        "config": {
+            "sizes": list(sizes),
+            "densities": list(densities),
+            "seeds": seeds,
+            "radius": radius,
+            "connectivity": 4,
+            "heuristic": "manhattan",
+            "unknown_cells": "planned as free",
+        },
         "rows": rows,
         "summary": summary,
     }
@@ -102,11 +131,15 @@ def markdown(result: dict) -> str:
             f"| {s['size']}x{s['size']} | {int(round(s['density'] * 100))}% | {s['steps_dstar']:.0f} | "
             f"{s['replans']:.1f} | {s['init_dstar']:.0f} | {s['replan_dstar']:.0f} | {s['init_astar']:.0f} | "
             f"{s['replan_astar']:.0f} | {s['total_dstar']:.0f} / {s['total_astar']:.0f} "
-            f"({s['ratio_total']:.2f}x) | {s['ms_dstar']:.0f} | {s['ms_astar']:.0f} |")
+            f"({s['ratio_total']:.2f}x) | {s['ms_dstar']:.0f} | {s['ms_astar']:.0f} |"
+        )
     mism = sum(r["mismatches"] for r in result["rows"])
     replans = sum(r["replans"] for r in result["rows"])
-    lines += ["", f"Cost check: {mism} replans where D* Lite and A* disagreed on the cost from the rover's cell "
-              f"(out of {replans} replans across {len(result['rows'])} maps)."]
+    lines += [
+        "",
+        f"Cost check: {mism} replans where D* Lite and A* disagreed on the cost from the rover's cell "
+        f"(out of {replans} replans across {len(result['rows'])} maps).",
+    ]
     return "\n".join(lines) + "\n"
 
 

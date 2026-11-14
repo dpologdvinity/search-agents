@@ -33,14 +33,16 @@ def test_unsolvable_and_limit():
     h = batch_heuristic("manhattan", 3)
     assert batch_weighted_a_star(unsolvable, h).status == "unsolvable"
     hard = walk(4, 80, random.Random(0))
-    result = batch_weighted_a_star(hard, batch_heuristic("manhattan", 4),
-                                   batch_size=10, limits=SearchLimits(max_nodes=30))
+    result = batch_weighted_a_star(
+        hard, batch_heuristic("manhattan", 4), batch_size=10, limits=SearchLimits(max_nodes=30)
+    )
     assert result.status == "limit"
 
 
 def test_on_expand_sees_every_expansion():
     seen = []
     start = walk(3, 25, random.Random(3))
-    result = batch_weighted_a_star(start, batch_heuristic("manhattan", 3), batch_size=8,
-                                   on_expand=lambda node, f: seen.append(node.board))
+    result = batch_weighted_a_star(
+        start, batch_heuristic("manhattan", 3), batch_size=8, on_expand=lambda node, f: seen.append(node.board)
+    )
     assert len(seen) == result.expanded

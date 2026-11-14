@@ -81,8 +81,9 @@ process.stdout.write(JSON.stringify(out));
 
 def _node_output():
     env = dict(os.environ, NNLAB_CORE=str(CORE), NNLAB_CASE=json.dumps(CASE))
-    res = subprocess.run([NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True,
-                         text=True, timeout=120)
+    res = subprocess.run(
+        [NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True, text=True, timeout=120
+    )
     assert res.returncode == 0, res.stderr
     return json.loads(res.stdout)
 
@@ -91,12 +92,20 @@ def _python_reference():
     """The same steps, in Python, with the same seeds and order."""
     out = {"points": {}, "runs": []}
     for name in PRESETS:
-        out["points"][name] = [[p["x"], p["y"], p["label"], p["jx"], p["jy"], p["u"]]
-                               for p in generate(name, CASE["nPoints"], CASE["seed"])]
+        out["points"][name] = [
+            [p["x"], p["y"], p["label"], p["jx"], p["jy"], p["u"]]
+            for p in generate(name, CASE["nPoints"], CASE["seed"])
+        ]
     pts = generate(CASE["data"], CASE["n"], CASE["seed"])
     Xtr, ytr, Xte, yte = build_split(pts, CASE["features"], CASE["noise"], CASE["testFrac"])
-    out["split"] = {"ntr": Xtr.shape[0], "nte": Xte.shape[0], "Xtr": Xtr.ravel(), "ytr": ytr.ravel(),
-                    "Xte": Xte.ravel(), "yte": yte.ravel()}
+    out["split"] = {
+        "ntr": Xtr.shape[0],
+        "nte": Xte.shape[0],
+        "Xtr": Xtr.ravel(),
+        "ytr": ytr.ravel(),
+        "Xte": Xte.ravel(),
+        "yte": yte.ravel(),
+    }
     sizes = [len(CASE["features"]), *CASE["hidden"], 1]
     # The probe points go through the same feature map as the browser's grid.
     grid_X = np.array([featurize(x, y, CASE["features"]) for x, y in CASE["grid"]], dtype=np.float64)
@@ -114,11 +123,19 @@ def _python_reference():
         tl, ta = evaluate(net, Xtr, ytr)
         vl, va = evaluate(net, Xte, yte)
         pred = predict(net, grid_X).ravel()
-        out["runs"].append({
-            "act": act, "kind": kind, "init": init, "grads": grads, "curve": curve,
-            "final": {"W": [w.ravel() for w in net.W], "b": [v.copy() for v in net.b]},
-            "trainEval": {"loss": tl, "acc": ta}, "testEval": {"loss": vl, "acc": va}, "pred": pred,
-        })
+        out["runs"].append(
+            {
+                "act": act,
+                "kind": kind,
+                "init": init,
+                "grads": grads,
+                "curve": curve,
+                "final": {"W": [w.ravel() for w in net.W], "b": [v.copy() for v in net.b]},
+                "trainEval": {"loss": tl, "acc": ta},
+                "testEval": {"loss": vl, "acc": va},
+                "pred": pred,
+            }
+        )
     return out
 
 

@@ -112,8 +112,10 @@ def write_results(lex: Lexicon, results: list[dict], openers: dict, out_dir: Pat
         "|---:|---|---:|---:|---:|---|",
     ]
     for k, row in enumerate(openers["entropy"], 1):
-        lines.append(f"| {k} | {row['word']} | {row['bits']:.3f} | {row['worst']} | {row['expected_left']:.1f} | "
-                     f"{'yes' if row['candidate'] else 'no'} |")
+        lines.append(
+            f"| {k} | {row['word']} | {row['bits']:.3f} | {row['worst']} | {row['expected_left']:.1f} | "
+            f"{'yes' if row['candidate'] else 'no'} |"
+        )
     md_path = out_dir / "wordle_benchmark.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return json_path, md_path
@@ -121,8 +123,10 @@ def write_results(lex: Lexicon, results: list[dict], openers: dict, out_dir: Pat
 
 def main_benchmark(strategies: list[str], out_dir: Path | None) -> int:
     lex = get_lexicon()
-    openers = {"entropy": solver.opening_table(lex, "entropy", top=10),
-               "minimax": solver.opening_table(lex, "minimax", top=5)}
+    openers = {
+        "entropy": solver.opening_table(lex, "entropy", top=10),
+        "minimax": solver.opening_table(lex, "minimax", top=5),
+    }
     print(f"best opening (entropy): {openers['entropy'][0]['word']} ({openers['entropy'][0]['bits']} bits)")
     results = []
     for s in strategies:

@@ -107,7 +107,7 @@ def test_swap_gives_the_first_stone_to_the_second_player():
     assert SWAP in b.legal()
     s = b.play(SWAP)
     assert s.cells[12] == ACROSS  # the second player now owns the stone
-    assert s.to_move == DOWN       # and the first player moves next
+    assert s.to_move == DOWN  # and the first player moves next
     assert len(s.moves) == 2
     with pytest.raises(ValueError):
         s.play(SWAP)  # swap is only the reply to the first move
@@ -221,8 +221,7 @@ def test_small_benchmark_has_the_right_shape():
 def test_play_quits_and_reports_bad_input():
     lines = []
     script = iter(["zz", "h", "q"])
-    board, winner = play(5, DOWN, "random", 1, False, seed=1,
-                         read=lambda prompt: next(script), out=lines.append)
+    board, winner = play(5, DOWN, "random", 1, False, seed=1, read=lambda prompt: next(script), out=lines.append)
     assert winner is None and board.moves == []
     assert any("not a legal move" in line for line in lines)
     assert any("hint:" in line for line in lines)
@@ -231,8 +230,9 @@ def test_play_quits_and_reports_bad_input():
 def test_play_runs_the_agent_replies_until_the_player_quits():
     lines = []
     answers = iter(["a1", "b1", "c1"])  # the player's moves; anything after that quits
-    board, winner = play(5, DOWN, "shortest", 1, False, seed=2,
-                         read=lambda prompt: next(answers, "q"), out=lines.append)
+    board, winner = play(
+        5, DOWN, "shortest", 1, False, seed=2, read=lambda prompt: next(answers, "q"), out=lines.append
+    )
     assert winner is None
     # A player move that lands on an agent stone is refused and asks again, so the exact count depends on
     # the agent's replies. What must hold: moves come in pairs (player, then agent), and every agent move is printed.

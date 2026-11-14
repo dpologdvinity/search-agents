@@ -41,17 +41,21 @@ def render_presses(n: int, presses) -> str:
 def describe_unsolvable(sol: Solution) -> str:
     """Explain why a board cannot be cleared, in terms the player can check."""
     cells = sol.n * sol.n
-    return (f"This board cannot be cleared. The press matrix has rank {sol.rank} of {cells}, so only "
-            f"2^{sol.rank} of the 2^{cells} boards can be reached by presses, and this one is not among them. "
-            "Each press moves a board within its class, so no press sequence will ever reach dark.")
+    return (
+        f"This board cannot be cleared. The press matrix has rank {sol.rank} of {cells}, so only "
+        f"2^{sol.rank} of the 2^{cells} boards can be reached by presses, and this one is not among them. "
+        "Each press moves a board within its class, so no press sequence will ever reach dark."
+    )
 
 
 def describe_counts(sol: Solution) -> str:
     """Summary of the solution space: how many solutions there are and which press counts occur."""
     seen = sorted(set(sol.solution_sizes))
     noun = "solution" if sol.count == 1 else "solutions"
-    return (f"rank {sol.rank} of {sol.n * sol.n}, nullity {sol.nullity}: {sol.count} {noun}, "
-            f"press counts {', '.join(str(s) for s in seen)}")
+    return (
+        f"rank {sol.rank} of {sol.n * sol.n}, nullity {sol.nullity}: {sol.count} {noun}, "
+        f"press counts {', '.join(str(s) for s in seen)}"
+    )
 
 
 def print_solution(n: int, board, out=print) -> None:
@@ -140,10 +144,15 @@ def parse_board_text(text: str) -> tuple[int, tuple[int, ...]]:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Play Lights Out, or print the solution for a board.")
-    parser.add_argument("-n", "--size", type=int, help=f"board size, {MIN_N}..{MAX_N} (default {DEFAULT_N}); "
-                        "with --solve the size is read from the board")
-    parser.add_argument("--any", action="store_true",
-                        help="draw any random board, which may be unsolvable, instead of a solvable one")
+    parser.add_argument(
+        "-n",
+        "--size",
+        type=int,
+        help=f"board size, {MIN_N}..{MAX_N} (default {DEFAULT_N}); with --solve the size is read from the board",
+    )
+    parser.add_argument(
+        "--any", action="store_true", help="draw any random board, which may be unsolvable, instead of a solvable one"
+    )
     parser.add_argument("--solve", metavar="BOARD", help="print the minimum-press solution for BOARD and exit")
     parser.add_argument("--seed", type=int, help="seed the random board, for a repeatable game")
     args = parser.parse_args(argv)

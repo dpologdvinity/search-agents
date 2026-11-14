@@ -95,8 +95,7 @@ def game_score(game: Game, starve_penalty: float = STARVE_PENALTY) -> float:
     return game.apples + bonus - cost
 
 
-def evaluate(genome: np.ndarray, seeds: list[int], size: int = BOARD,
-             starve_penalty: float = STARVE_PENALTY) -> Score:
+def evaluate(genome: np.ndarray, seeds: list[int], size: int = BOARD, starve_penalty: float = STARVE_PENALTY) -> Score:
     """Average fitness over the given seeded games. Every genome sees exactly the same boards."""
     net = Net.from_genome(genome)
     total, apples, steps, deaths, starved = 0.0, 0, 0, 0, 0

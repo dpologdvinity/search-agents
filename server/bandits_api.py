@@ -60,8 +60,12 @@ def _meta() -> dict:
     return {
         "kinds": list(KINDS),
         "agents": [
-            {"key": key, "label": cls.label, "blurb": cls.blurb,
-             "lineup": [kind for kind, keys in LINEUP.items() if key in keys]}
+            {
+                "key": key,
+                "label": cls.label,
+                "blurb": cls.blurb,
+                "lineup": [kind for kind, keys in LINEUP.items() if key in keys],
+            }
             for key, cls in AGENTS.items()
         ],
         "lineup": {kind: list(keys) for kind, keys in LINEUP.items()},
@@ -69,10 +73,17 @@ def _meta() -> dict:
         "limits": {"pulls": [1, MAX_PULLS], "machines": [MIN_MACHINES, MAX_MACHINES], "seed_max": SEED_MAX},
         # The JavaScript port reads these so it draws the same machines, outcomes and agent streams.
         "constants": {
-            "sigma": SIGMA, "drift_period": DRIFT_PERIOD, "gap": GAP, "low": LOW, "high": HIGH,
-            "reward_offset": REWARD_OFFSET, "agent_offset": AGENT_OFFSET,
-            "window": SlidingWindowUCB.window, "window_xi": SlidingWindowUCB.xi,
-            "last_pulls": LAST, "table_at": list(TABLE_AT),
+            "sigma": SIGMA,
+            "drift_period": DRIFT_PERIOD,
+            "gap": GAP,
+            "low": LOW,
+            "high": HIGH,
+            "reward_offset": REWARD_OFFSET,
+            "agent_offset": AGENT_OFFSET,
+            "window": SlidingWindowUCB.window,
+            "window_xi": SlidingWindowUCB.xi,
+            "last_pulls": LAST,
+            "table_at": list(TABLE_AT),
         },
         "benchmark": BENCHMARK.is_file(),
     }
@@ -97,7 +108,11 @@ async def machines(
 ):
     m = make_machines(kind, k, pulls, seed)
     return {
-        "kind": kind, "k": k, "seed": seed, "pulls": pulls, "period": m.period,
+        "kind": kind,
+        "k": k,
+        "seed": seed,
+        "pulls": pulls,
+        "period": m.period,
         "schedule": [list(seg) for seg in m.schedule],
         "best": [seg.index(max(seg)) for seg in m.schedule],
     }
@@ -129,7 +144,10 @@ def score_json(req: ScoreRequest) -> dict:
     for key in LINEUP[req.kind]:
         agents[key] = {"label": AGENTS[key].label, **summary(play(key, env))}
     return {
-        "kind": req.kind, "k": req.k, "seed": req.seed, "pulls": len(req.arms),
+        "kind": req.kind,
+        "k": req.k,
+        "seed": req.seed,
+        "pulls": len(req.arms),
         "player": summary(mine),
         "agents": agents,
     }

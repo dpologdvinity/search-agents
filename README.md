@@ -1,10 +1,10 @@
 # search-agents
 
-Twenty-six puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers, including retrograde analysis for endgame tablebases; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
+Nineteen puzzles and games, each played or solved by a classic AI algorithm: search guided by hand-built heuristics, pattern databases, or models trained from self-generated data; exact solvers; reinforcement learning; and multi-agent pathfinding. Every algorithm runs in Python, in the terminal and behind a browser frontend.
 
 | Domain | Classic search | Learned guidance | Live demo shows |
 |---|---|---|---|
-| **N-Puzzle** | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\* | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
+| **N-Puzzle** (2x2 to 10x10) | BFS, DFS, IDS, UCS, bidirectional BFS, greedy, A\*, weighted A\*, IDA\*; searches that store boards get a node cap that shrinks on boards above 4x4 | Neural cost-to-go heuristic trained by approximate value iteration on top of a 5-5-5 pattern database (both 4x4 only) | Every expansion as it happens, depth vs heuristic plots, side-by-side algorithm comparison |
 | **Connect Four** | Alpha-beta negamax, UCT Monte Carlo tree search | AlphaZero-style PUCT with a policy-value ResNet trained only by self-play | The network's prior vs search visits per column, and its win probability |
 | **Checkers** | Plain minimax, alpha-beta with iterative deepening, a transposition table, and move ordering; Monte Carlo tree search (UCT) with capped, seeded rollouts; greedy and random baselines | Hand-built evaluation (material, advancement, home row, centre), also used to score MCTS rollouts | How many positions it searched and how many branches pruning cut, with every candidate move's score; MCTS win rates; W/D/L matches between any two agents |
 | **Battleship** | Bayesian probability targeting: counts every fleet layout that fits what it has seen, exactly when that is cheap and by importance sampling otherwise | Hunt/target (checkerboard parity, then the neighbours of wounded ships) and random firing | Its odds of every cell of your fleet glowing live, and the cell it fires at next |
@@ -13,21 +13,13 @@ Twenty-six puzzles and games, each played or solved by a classic AI algorithm: s
 | **2048** | Expectimax with six hand-crafted features, weights tuned by the cross-entropy method | N-tuple network trained by TD(0) on afterstates, used greedily or inside expectimax | Expected value of each move, search depth |
 | **Sudoku** | Backtracking, MRV + forward checking | Constraint propagation (naked and hidden singles) | Every guess, forced fill, and backtrack, replayed |
 | **Lights Out** | Gaussian elimination over GF(2), exact (no search): the null space gives every solution and the lightest one is the answer | None: the answer is exact, so there is nothing to learn | The augmented matrix reducing one pivot at a time, the rank, and which boards can never be cleared |
-| **Endgame tablebases** (king and queen or rook against a lone king) | Retrograde analysis: every position's exact distance to mate, built backwards from checkmate. No search at play time | None: the tables are exact, so there is nothing to learn | Each legal move's distance to mate, the agent's choice against the alternatives, the lone king's heat map, and the distance-to-mate histogram over all 368,452 KQK positions |
-| **Sokoban** | Search over pushes (player walks are free, so states are box layouts and the player's region): BFS, greedy best-first, and A\* with a sum-of-nearest-goal bound or a minimum-cost box-to-goal matching (Hungarian), each with or without deadlock pruning (dead squares, frozen boxes) | None needed: the search is exact, and both bounds are admissible (they never overestimate) | The next push the solver suggests, the matching lines from each box to its goal, dead squares tinted red, and the nodes expanded with and without deadlock pruning, side by side |
 | **Pac-Man** | A* routes for ghosts with chaser, ambusher and scatter personalities, or chance ghosts that roll fixed odds; random and greedy reflex baselines | Approximate Q-learning over 13 hand-built features (one is a six-turn survival search over the ghosts' real moves), trained by epsilon-greedy self-play | Each ghost's A* route as glowing lines, every move's Q-value, and the feature contributions behind it |
 | **Warehouse robots** (multi-agent pathfinding) | Independent A\*, prioritized planning (robots planned one at a time, earlier paths as moving obstacles) | Conflict-Based Search: optimal sum of costs, branching on each collision and replanning only the constrained robot with space-time A\* | Each robot's path step by step with glowing trails, collisions flashing, the constraint tree growing as CBS branches, and a race between the three planners |
 | **Wordle** | Information theory: pick the guess with the most expected bits (entropy of the feedback patterns over the candidates); minimax (smallest worst-case bucket); random consistent word as the baseline | None needed: a guess is scored exactly against every answer, so the search is exhaustive over the allowed guesses | Every candidate's feedback and bucket size, the bits each guess is expected to give against the bits it actually gave, and the remaining words after each guess |
-| **Poker** (Leduc hold'em, imperfect information) | Exact best response and exploitability on the game tree (no search); the Kuhn value is checked against -1/18 | Counterfactual regret minimization by self-play: vanilla CFR and CFR+, with the average strategy as the answer | The bot's actions, its probability bars for every decision once the showdown shows them, a hint with the equilibrium mix for your card, why its bets are bluffs, and exploitability falling over iterations |
 | **Minesweeper** | Constraint satisfaction on the frontier, then exact probabilities: each number is a constraint, components are counted by memoized backtracking, and the global mine count weights every layout | None: the counts are exact, so the agent proves what it can and prices the rest | Which cells are proven safe or mines, the constraint components, and the exact mine probability of every covered cell |
 | **Hex** | Monte Carlo tree search with RAVE: UCT statistics blended with all-moves-as-first statistics, beta = sqrt(k / (3n + k)); shortest-path and random baselines | None: every playout is a random fill, so nothing is learned | The agent's visit heat map and principal variation, a hint with visits and win rates, and agent-versus-agent games |
-| **Bandits** (slot machines) | Greedy, epsilon-greedy (fixed and decaying), UCB1, and Thompson sampling with Beta posteriors; EXP3 and sliding-window UCB for drifting payouts | None: each agent learns only from the rewards it sees, and Thompson's posteriors narrow as it pulls | Each agent's regret curve and best-machine share, Thompson's Beta posteriors and UCB bars per machine, and your own regret ranked against the agents on the same machines |
-| **CartPole** | Policy gradients in pure NumPy: REINFORCE with a baseline, actor-critic with a learned value baseline trained on Monte Carlo returns, and a cross-entropy search over linear policies | None: the policies are learned from reward alone. The PD controller is hand-tuned, not learned | The pole's angle and the cart's position as the policy's probabilities and the critic's value change, and the learning curves across seeds |
 | **N-Queens** | Backtracking with column and diagonal bitmasks (exhaustive, so it proves infeasibility), steepest-ascent hill climbing with restarts, simulated annealing on the conflict count, min-conflicts from a greedy start | None: local search over one-queen-per-row boards, with no learned component | Four agents on one board: backtracking blowing up past 32 queens, hill climbing stalling on plateaus, and min-conflicts solving a live pixel board of a thousand queens |
 | **Snake** | Cross-entropy method tuning eight weights of an evaluation function over hand-built features of each move (no gradients), 90.1 mean apples on held-out boards; a genetic algorithm evolving a 339-weight net is the second learned agent | BFS path planner to the food with a tail-chasing safety check, as the classic baseline | Each move's weighted terms and scores for the evaluation function; the net's senses, hidden units, and output probabilities |
-| **Rover** (D* Lite on a map learned from a sensor) | D* Lite incremental replanning, which repairs only the cells a new wall affects, against A* replanned from scratch | None: the rover learns the map from its sensor, not from training | The learned map, the planned route and its replans, and the expansion counts of both planners |
-| **Ghost Hunt** (invisible ghosts from noisy sonar) | Hidden Markov model: exact forward filtering (predict with a known motion model, weigh by the sonar likelihood), a particle filter approximation, and Viterbi for the most likely path after a bust | None: the motion model and the sonar noise are known, so the belief is computed, not learned | The belief fog for each ghost, the particle cloud, sonar rings, the autopilot's bust decisions, and a Viterbi replay of the path against the true one |
-| **Lost Robot** (Bayes filtering on a floor plan) | A histogram Bayes filter (exact on its bins) against Monte Carlo localisation with systematic resampling and augmented-MCL kidnap recovery | None: the robot never learns the map; the filters use the known floor plan | The belief over where the robot is, the particle cloud, the range beams, and the grid heat map |
 | **Tetris** (placement search) | Placement search over every rotation and column, scored by nine board features; a cross-entropy search tunes the weights | None for play: the weights are tuned, not learned end to end. The tuned v3 weights beat the hand-picked set on held-out 10-row games (one run, 6 iterations) | The chosen placement as a ghost, the nine feature values, and the tuning history |
 | **Cluster lab** (a lab, not a game) | k-means (Lloyd's algorithm with k-means++ starts), DBSCAN, and EM for a Gaussian mixture | None: unsupervised, so the lab shows how each method finds groups in points you paint | The step-by-step cluster memberships and centroid moves, DBSCAN's core and border points, the fitted Gaussian ellipses, and inertia, silhouette and elbow charts |
 | **Neural net lab** (a lab, not a game) | A NumPy multilayer perceptron with hand-written backprop, mini-batch Adam or SGD, L2, and five seeded datasets; the browser runs the same maths, checked against the Python code by a parity test | None: the network learns from the labelled points you place | The forward pass, the loss, backprop, and each neuron's own heat map, updated live as the network trains |
@@ -38,8 +30,10 @@ Twenty-six puzzles and games, each played or solved by a classic AI algorithm: s
 | **Markov text** (a lab, not a game) | Order-n Markov chain counted from public-domain text, with add-alpha smoothed next-token odds, temperature, and held-out perplexity per order | None: the counts are the model, with no gradient training | The next-token odds, the context window, and a copy meter that shows how much of the output is verbatim from the source |
 | **Regression** (a lab, not a game) | Least squares by normal equations and by Householder QR (compared), ridge penalties, gradient descent, and logistic regression by gradient descent | None: closed-form and gradient fits, with no learned features | The fitted curve and its squared residuals, the train and test error by degree, the descent path, and the logistic boundary |
 | **Evolving walkers** (a lab, not a game) | Genetic algorithm over soft-body creatures (point masses, springs, pulsing muscles) with NEAT-style speciation, index-aligned crossover, and graph mutation | None: the gaits are not coded, and selection sees only distance | A population of creatures racing right, the champion gaits, species, a hall of fame, and a creature lab to drop your own design in |
-| **404 page** (tic-tac-toe, a page, not a game) | Alpha-beta minimax, solved from the empty board and checked against a full Python reference | None: the game is solved, so the agent plays perfectly | The agent's live search tree on the empty board, with its pruned branches |
+| **Tic-tac-toe** (also the 404 page) | Alpha-beta minimax, solved from the empty board and checked against a full Python reference; EASY and MEDIUM cap the search at 2 and 4 plies and score the horizon as a draw | None: the game is solved, so PERFECT never loses and the shallow levels lose only to forks past their horizon | The agent's live search tree with its values, bounds and pruned branches, at the level you pick |
 | **Nonogram** | Line solving by automaton reachability (the clue as a finite automaton, forward and backward sweeps over the cells), then DPLL SAT or a guess-and-propagate search where line solving stops | None: the answer is exact once the search finishes, and the solver counts solutions to prove uniqueness | Each row and column's forced cells, the DP over positions, the SAT search counters, and the hint's reason for each cell |
+
+Endgame tablebases, Sokoban, Poker, Bandits, CartPole, Rover, Ghost Hunt and Lost Robot are hidden from the site's menus for now. Their code, tests and sections below remain, and their pages still load by URL.
 
 **Live demo: https://kb-search-agents.fly.dev** (the first request after idle can take a few seconds while the server wakes up).
 
@@ -448,7 +442,7 @@ Every position with White to move is a win in both endgames. The longest mates a
 
 ### Sokoban: pushes, deadlocks, and bounds
 
-Twelve levels, from one push to 19 pushes in the optimal solution. Levels 1 to 7 are hand-drawn and 8 to 12 are generated (random reverse pushes from the goals, kept when the solver finds the most pushes). Each run gets 20,000 expanded nodes and 10 s.
+Twelve levels (the first 12 of the 16 in the catalog; levels 13 to 16 were added later and are not in this table), from one push to 19 pushes in the optimal solution. Levels 1 to 7 are hand-drawn and 8 to 12 are generated (random reverse pushes from the goals, kept when the solver finds the most pushes). Each run gets 20,000 expanded nodes and 10 s.
 
 | Search | Deadlock pruning | Solved | Optimal | Nodes expanded, all 12 levels | Time |
 |---|---|---:|---:|---:|---:|
@@ -468,22 +462,22 @@ Unsolved runs ran out of budget. "Optimal" means the solved plan has the optimal
 
 ### Pac-Man: approximate Q-learning vs baselines
 
-Seeds 10000-10199, 200 games per maze on two hand-drawn mazes (400 games per agent).
+Seeds 10000-10199, 200 games per maze on two hand-drawn mazes (400 games per agent). The benchmark runs on the two training mazes by default, and the learned agent only plays boards of its trained 15x11 size.
 
 | Agent | Win rate | Mean score | Mean turns | Won / lost / timeout |
 |---|---|---|---|---|
-| **Approximate Q-learning** | **64.2%** | **1350.3** | 193.9 | 257 / 47 / 96 |
-| Reflex (greedy nearest pellet, avoids ghosts) | 0.5% | 157.5 | 22.8 | 2 / 395 / 3 |
-| Random | 0.0% | 45.5 | 8.9 | 0 / 400 / 0 |
+| **Approximate Q-learning** | **59.8%** | **1324.2** | 208.3 | 239 / 69 / 92 |
+| Reflex (greedy nearest pellet, avoids ghosts) | 0.0% | 111.7 | 16.9 | 0 / 399 / 1 |
+| Random | 0.0% | 35.8 | 8.6 | 0 / 400 / 0 |
 
-Per maze: the Q-agent wins 43.5% on Neon Lanes (mean 1218) and 85.0% on Vault (mean 1483).
-Reflex: 0.5% and 0.5% (means 178 and 137). Random: 0% on both (means 51 and 40).
+Per maze: the Q-agent wins 37.5% on Neon Lanes (mean 1144) and 82.0% on Vault (mean 1504).
+Reflex and Random win no games on either maze (means 137 and 86 for Reflex, 39 and 32 for Random).
 
 For comparison, the 12-feature agent this replaced (no survival feature) won 5.0% with a mean of 667.5 on the same seeds. The timeouts are games that reached the 300-turn limit with pellets left: the agent survives them but clears the maze too slowly.
 
 Training: 3000 self-play games, seed 1, alternating the two mazes; step size 0.01 falling
 to 0.001, discount 0.9, exploration 0.3 falling to 0.02. Over the final 25 training games
-(exploration 0.02) it averaged 852 points and won 5 of them.
+(exploration 0.02) it averaged 1059 points and won 4 of them.
 
 ### Warehouse robots: optimal cost without collisions
 
@@ -752,9 +746,9 @@ python -m walkers replay "<creature string>"                  # ASCII side view 
 python -m walkers study --reuse results/walkers_evolution.json # the committed study's presets
 ```
 
-### Tic-tac-toe: the solved game behind the 404 page
+### Tic-tac-toe: a solved game at three search depths
 
-Unknown URLs get a 404 page with a tic-tac-toe game against the agent, and the page shows the agent's live search tree. The Python reference solves the whole game (`python -m tictactoe stats`):
+The tic-tac-toe page (`web/tictactoe.html`) plays you against the agent at EASY, MEDIUM or PERFECT, and unknown URLs get a 404 page with the PERFECT agent. Both pages show the agent's live search tree. The Python reference solves the whole game (`python -m tictactoe stats`):
 
 ```
 positions:       5,478 distinct boards reachable (4,520 still in play)
@@ -765,7 +759,9 @@ alpha-beta from the empty board: searched 18,297, pruned 6,930
 
 With perfect play the game is a draw, so the agent never loses. Alpha-beta searches 18,297 nodes from the empty board, pruning 6,930 more, against 549,946 nodes for the full game tree. The browser port (`web/js/tictactoe-core.js`) is tested against the same reference by `tests/test_tictactoe.py` and `tests/web/tictactoe.test.mjs`.
 
-This page is an easter egg, not a lab: it is checked by its tests, and it has no benchmark table.
+The levels cap the search at a number of plies and score a live position at the cap as a draw. Playing every human strategy against each depth (`tests/test_tictactoe.py`) shows a human can force a win against depths 2 and 4 from either side, against depth 5 only as X, and against depth 6 or more never. So EASY is 2 plies (26 positions searched from the empty board) and MEDIUM is 4 (206).
+
+The game is solved, so there is no benchmark table: the tests check the values and the levels.
 
 ## How it works
 
@@ -868,10 +864,10 @@ Result from `python -m pacman match --games 200`, written to `results/pacman_cha
 
 | Ghosts | Win rate | Mean score | Mean turns | Won / lost / timeout |
 |---|---|---|---|---|
-| AI ghosts (A* routes) | 64.2% | 1350.3 | 193.9 | 257 / 47 / 96 |
-| Chance (fixed odds) | 46.2% | 1513.7 | 110.8 | 185 / 215 / 0 |
+| AI ghosts (A* routes) | 59.8% | 1324.2 | 208.3 | 239 / 69 / 92 |
+| Chance (fixed odds) | 38.0% | 1320.5 | 106.1 | 152 / 248 / 0 |
 
-The AI row matches the benchmark above. Against chance ghosts the Q-agent wins less often and its games end sooner, with no timeouts, while its mean score is higher. The score difference is not explained yet. The match cannot separate ghost difficulty from the Q-agent's model: its survival feature replays the game with the A* ghosts, so it predicts the wrong moves when the ghosts are chance ghosts.
+The AI row matches the benchmark above. Against chance ghosts the Q-agent wins less often and its games end sooner, with no timeouts, while its mean score is about the same. The match cannot separate ghost difficulty from the Q-agent's model: its survival feature replays the game with the A* ghosts, so it predicts the wrong moves when the ghosts are chance ghosts.
 
 ### Warehouse robots
 
@@ -1067,21 +1063,15 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 
 ### Tic-tac-toe and the 404 page
 
-- **Reference** (`tictactoe/core.py`). Board states, legal moves, the win check, and minimax with alpha-beta pruning, with the number of nodes searched and pruned counted for each call.
-- **Browser port** (`web/js/tictactoe-core.js`). The same search in JavaScript, so the 404 page needs no server. `tests/web/tictactoe.test.mjs` checks it against the Python reference.
+- **Reference** (`tictactoe/core.py`). Board states, legal moves, the win check, and minimax with alpha-beta pruning and an optional depth cap (the levels), with the number of nodes searched and pruned counted for each call.
+- **Browser port** (`web/js/tictactoe-core.js`). The same search in JavaScript, so neither page needs the server. `tests/web/tictactoe.test.mjs` checks it against the Python reference, uncapped and at MEDIUM's depth.
+- **Game page** (`web/tictactoe.html`, `web/js/tictactoe.js`). You against the agent at a chosen level and side, with a W-D-L score. The board and the search-tree drawing are shared with the 404 page (`web/js/tictactoe-view.js`, `web/tictactoe.css`).
 - **404 page** (`web/404.html`, `web/js/notfound.js`). Unknown GET pages get this page with status 404. Unknown paths under `/api/` stay JSON 404s, so the API's error format is unchanged (`server/app.py`, `WebFiles`).
 - **Checks** (`tests/test_tictactoe.py`, `tests/test_server_404.py`, `tests/web/tictactoe.test.mjs`). Reference and port agreement, the game's rules, and the 404 status for pages and the JSON 404 for the API.
 
 ## Architecture
 
-```
-web/            static HTML/CSS/JS, no build step
-server/         FastAPI: REST for game moves, a WebSocket that streams N-Puzzle searches
-npuzzle/ connect4/ checkers/ routes/ game2048/ sudoku/ lightsout/ blackjack/ battleship/ pacman/ warehouse/ endgame/ sokoban/ wordle/ poker/ minesweeper/ hexgame/ bandits/ cartpole/ queens/ snake/ rover/ ghosthunt/ tetris/ nonogram/ localize/ clusters/ nnlab/ pathfind/ mdplab/ optlab/ treelab/ markov/ regression/ walkers/   search code, training scripts, data files
-```
-
-- Searches run in worker threads. A semaphore caps concurrent searches, each client is rate limited, and every request has node and time limits. Searches that keep every state in memory use about 1 KB per expanded node, so they stop at 250,000 nodes; IDS and IDA\* use memory linear in depth and may run longer.
-- Trained models ship as `.npz` weights and run in NumPy, so the server image has no torch (about 350 MB) and loads every model in about 120 MB of RAM.
+See [ARCHITECTURE.md](ARCHITECTURE.md): how the static frontend, the FastAPI server and the game packages fit together, the request guards, and the limits the 1 GB server sets.
 
 ## Sound
 
@@ -1102,6 +1092,8 @@ uv venv && uv pip install -e ".[dev]"      # add ".[train]" for torch and matplo
 uvicorn server.app:app --reload            # then open http://localhost:8000
 python -m pytest -q
 ```
+
+Checks, git hooks, the browser layout test, commit conventions and the steps for adding a game are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Command-line tools:
 
@@ -1219,7 +1211,8 @@ python -m regression logistic --data moons --steps 500                  # sigmoi
 python -m walkers evolve --generations 50 --pop 80 --seed 1   # one line per generation: best, mean, median, species
 python -m walkers replay "<creature string>"                  # ASCII side view of one run
 python -m walkers benchmark                                   # simulation throughput and the presets' distances
-python -m tictactoe positions      # the alpha-beta search tree from the empty board, as JSON
+python -m tictactoe positions      # every reachable position in play with its search result, as JSON
+python -m tictactoe positions 4    # the same with the search capped at 4 plies (MEDIUM)
 python -m routes --compare --cities 12                                       # compare the TSP solvers on a random map
 python -m npuzzle astar 7,2,4,5,0,6,8,3,1                                    # any algorithm by name
 python -m npuzzle.benchmark 8puzzle                                          # results/npuzzle_8puzzle.md
@@ -1242,7 +1235,7 @@ python -m game2048.tune --generations 20 --population 32 --elite 8 --games 300 -
 
 ## Deploying
 
-`Dockerfile` builds the serving image and `fly.toml` runs it on one always-on Fly.io machine (shared CPU, 1 GB):
+`Dockerfile` builds the serving image and `fly.toml` runs it on one Fly.io machine that suspends when idle (shared CPU, 1 GB):
 
 ```bash
 fly launch --no-deploy   # first time: create the app

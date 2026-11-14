@@ -16,8 +16,15 @@ from .cbs import cbs
 from .grid import Grid, Problem, layout_grid
 
 
-def random_instance(layout: str | Grid | Sequence[str], robots: int, seed: int, *, attempts: int = 30,
-                    max_nodes: int = 3000, max_seconds: float = 5.0) -> Problem:
+def random_instance(
+    layout: str | Grid | Sequence[str],
+    robots: int,
+    seed: int,
+    *,
+    attempts: int = 30,
+    max_nodes: int = 3000,
+    max_seconds: float = 5.0,
+) -> Problem:
     """A solvable instance with ``robots`` robots on a built-in layout name, a ``Grid``, or raw map rows."""
     if isinstance(layout, str):
         grid = layout_grid(layout)

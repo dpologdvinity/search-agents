@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="tetris.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -53,7 +54,23 @@
     <p style="margin-top:0.5rem">AI PLAYS hands the moves to the agent, and SHOW AGENT marks its choice for the current piece while you play. The agent starts on the TUNED weights when they load, and HAND-PICKED switches to the hand-written set.</p>
   </section>
 
-  <div class="proj-body">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
+      <div>
+        <div class="section-title pink-ttl" title="Drag a weight and the agent re-scores every candidate. The score is the sum of weight times feature, and the agent takes the highest.">FEATURE WEIGHTS</div>
+        <div class="tt-presets">
+          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false" title="The weights found by the cross-entropy search"><span class="btn-txt">TUNED</span></button>
+          <button class="cyber-btn green" id="tt-reset-hand" type="button" aria-pressed="true" title="The hand-written weights, never tuned"><span class="btn-txt">HAND-PICKED</span></button>
+        </div>
+        <div class="tt-sliders" id="tt-sliders"></div>
+      </div>
+
+
+    </div>
+  </details>
+
+  <div class="proj-body play-layout">
     <div class="proj-game-col">
       <div class="tt-stage">
         <div class="tt-board-wrap">
@@ -100,7 +117,9 @@
           </select>
         </span>
       </details>
+    </div>
 
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">WHAT THE AGENT IS THINKING</div>
         <div class="viz-panel tt-why-panel">
@@ -109,18 +128,6 @@
           <div class="field-hint">Green pushes the score up, pink pushes it down. Ghosts run from cold blue (worst) to hot pink (best).</div>
         </div>
       </div>
-    </div>
-
-    <div class="proj-ctrl-col">
-      <div>
-        <div class="section-title pink-ttl" title="Drag a weight and the agent re-scores every candidate. The score is the sum of weight times feature, and the agent takes the highest.">FEATURE WEIGHTS</div>
-        <div class="tt-presets">
-          <button class="cyber-btn" id="tt-reset-tuned" type="button" aria-pressed="false" title="The weights found by the cross-entropy search"><span class="btn-txt">TUNED</span></button>
-          <button class="cyber-btn green" id="tt-reset-hand" type="button" aria-pressed="true" title="The hand-written weights, never tuned"><span class="btn-txt">HAND-PICKED</span></button>
-        </div>
-        <div class="tt-sliders" id="tt-sliders"></div>
-      </div>
-
       <div style="margin-top:1.4rem">
         <div class="section-title green-ttl">HOW THE TUNED WEIGHTS WERE FOUND</div>
         <div class="viz-panel">
@@ -130,8 +137,7 @@
           <div class="field-hint">Cyan: best sample in each iteration. Pink: mean of all samples. Each iteration's samples play the same seeded games.</div>
         </div>
       </div>
-
-    </div>
+    </aside>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
@@ -154,7 +160,7 @@
   </div>
   <p>Here <span class="math">m</span> is one of the six best placements of the current piece, <span class="math">s_m</span> the board after <span class="math">m</span> locks, <span class="math">p</span> the preview piece, and <span class="math">M(s, p)</span> the set of legal placements of <span class="math">p</span> on board <span class="math">s</span>. Each <span class="math">m'</span> is scored with the same weights on <span class="math">s_m</span>. If the preview has no legal placement, the bonus is <span class="math">-10^{9}</span>, which makes that candidate a forced game over and avoids it unless all six are.</p>
   <p><i>Example.</i> On an empty board the I piece has 17 placements: 7 in its horizontal rotation and 10 in its vertical one. The search scores all 17 and keeps the highest.</p>
-  <p>The page computes the same placements, feature values and scores in JavaScript, and a test checks that its legal placements match the Python search on the same boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L174-L188" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 174–188" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 174 to 188">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L265-L290" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 265–290" aria-label="Code on GitHub: tests/test_tetris.py, lines 265 to 290">15</a> Each decision is made when a piece spawns, and again when the weights or the lookahead setting change. Every candidate is shown as a ghost. The page then animates the piece turning and sliding to the chosen column and drops it. The slide is shown but is not part of the search. The piece always locks at the chosen placement. When turning and sliding cannot reach it, for example when a block overhangs the path near the top, the piece locks there at once with no animation, so the move the panel describes is the move that happens.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris.js#L165-L178" target="_blank" rel="noopener" title="web/js/tetris.js, lines 165–178" aria-label="Code on GitHub: web/js/tetris.js, lines 165 to 178">16</a></p>
+  <p>The page computes the same placements, feature values and scores in JavaScript, and a test checks that its legal placements match the Python search on the same boards.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L174-L188" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 174–188" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 174 to 188">14</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L274-L299" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 274–299" aria-label="Code on GitHub: tests/test_tetris.py, lines 274 to 299">15</a> Each decision is made when a piece spawns, and again when the weights or the lookahead setting change. Every candidate is shown as a ghost. The page then animates the piece turning and sliding to the chosen column and drops it. The slide is shown but is not part of the search. The piece always locks at the chosen placement. When turning and sliding cannot reach it, for example when a block overhangs the path near the top, the piece locks there at once with no animation, so the move the panel describes is the move that happens.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris.js#L165-L178" target="_blank" rel="noopener" title="web/js/tetris.js, lines 165–178" aria-label="Code on GitHub: web/js/tetris.js, lines 165 to 178">16</a></p>
   <p><b>Game over</b> means that a piece cannot be placed. In the Python training and benchmark games, that happens when no rotation and column is legal. The page's AI uses that same rule, so it plays the same games as the benchmark. Play by hand is different, because a person cannot place a piece by search. In that mode the game ends as soon as the next piece cannot appear at its spawn position, which is the top centre with rotation 0, even if the piece could be placed elsewhere.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/tetris_engine.js#L295-L303" target="_blank" rel="noopener" title="web/js/tetris_engine.js, lines 295–303" aria-label="Code on GitHub: web/js/tetris_engine.js, lines 295 to 303">17</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/game.py#L91-L104" target="_blank" rel="noopener" title="tetris/game.py, lines 91–104" aria-label="Code on GitHub: tetris/game.py, lines 91 to 104">18</a></p>
 
   <!-- tetris/search.py:56-78, tetris/search.py:41-53, tetris/board.py:37-49, tetris/board.py:24-34, tetris/board.py:52-83, tetris/features.py:123-127 -->
@@ -345,11 +351,11 @@ function TRANSITIONS(mask):
   <h3 class="hiw-sub">Cross-entropy method (v3, the shipped weights)</h3>
   <p>The <b>cross-entropy method</b> (CEM) is a search over parameter vectors. It keeps a probability distribution over them, here a Gaussian, samples candidates from it, and moves the distribution toward the best candidates. Szita and Lorincz (2006) applied a noisy version of this method to learning Tetris weights, and the shipped weights come from it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L1-L17" target="_blank" rel="noopener" title="tetris/cem.py, lines 1–17" aria-label="Code on GitHub: tetris/cem.py, lines 1 to 17">37</a></p>
   <p>Each <b>iteration</b> samples 20 weight vectors, scores each one by playing games, keeps the best 15% as the <b>elite</b> set, and refits the Gaussian to the elites. The Gaussian has a mean and a variance for each weight, so the nine weights are sampled independently. The <b>noise</b> is an extra variance added at every refit. It keeps the distribution wide, so the search does not collapse onto one early elite.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L35-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 35–53" aria-label="Code on GitHub: tetris/cem.py, lines 35 to 53">38</a></p>
-  <!-- tetris/cem.py:60-61, tetris/cem.py:98-99 -->
+  <!-- tetris/cem.py:60-61, tetris/cem.py:104-105 -->
 
   <div class="math-fig">
     <div class="math math-block">w^{(i)}_j = \operatorname{clip}\big(\mu_j + \sigma_j\, \xi^{(i)}_j\big), \qquad \xi^{(i)}_j \sim \mathcal{N}(0, 1), \qquad \operatorname{clip}(x) = \max\big(-10,\ \min(10, x)\big)</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L60-L61" target="_blank" rel="noopener" title="tetris/cem.py, lines 60–61" aria-label="Code on GitHub: tetris/cem.py, lines 60 to 61">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L98-L99" target="_blank" rel="noopener" title="tetris/cem.py, lines 98–99" aria-label="Code on GitHub: tetris/cem.py, lines 98 to 99">40</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L60-L61" target="_blank" rel="noopener" title="tetris/cem.py, lines 60–61" aria-label="Code on GitHub: tetris/cem.py, lines 60 to 61">39</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L104-L105" target="_blank" rel="noopener" title="tetris/cem.py, lines 104–105" aria-label="Code on GitHub: tetris/cem.py, lines 104 to 105">40</a></span>
   </div>
   <!-- tetris/cem.py:32, tetris/cem.py:56-57, tetris/cem.py:64-67 -->
 
@@ -357,7 +363,7 @@ function TRANSITIONS(mask):
     <div class="math math-block">F(w) = \frac{1}{G} \sum_{k=0}^{G-1} L\big(w,\; s_{t,k}\big), \qquad s_{t,k} = 200\,000 + G\,t + k</div>
     <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L32" target="_blank" rel="noopener" title="tetris/cem.py, line 32" aria-label="Code on GitHub: tetris/cem.py, line 32">41</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L56-L57" target="_blank" rel="noopener" title="tetris/cem.py, lines 56–57" aria-label="Code on GitHub: tetris/cem.py, lines 56 to 57">42</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L64-L67" target="_blank" rel="noopener" title="tetris/cem.py, lines 64–67" aria-label="Code on GitHub: tetris/cem.py, lines 64 to 67">43</a></span>
   </div>
-  <!-- tetris/cem.py:93, tetris/cem.py:101-102, tetris/cem.py:106-110, tetris/cem.py:51-53 -->
+  <!-- tetris/cem.py:99, tetris/cem.py:107-108, tetris/cem.py:115-119, tetris/cem.py:51-53 -->
 
   <div class="math-fig">
     <div class="math math-block">\begin{aligned}
@@ -367,15 +373,15 @@ n_e &amp;= \max\big(2,\ \lceil 0.15 \cdot 20 \rceil\big) = 3 \\
 \sigma_j &amp;\leftarrow \sqrt{\frac{1}{n_e} \sum_{e \in E_t} \big(e_j - \mu_j\big)^2 + z_t} \\
 z_t &amp;= \max\big(0.05,\; 1.0 \cdot (1 - t/20)\big)
 \end{aligned}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L93" target="_blank" rel="noopener" title="tetris/cem.py, line 93" aria-label="Code on GitHub: tetris/cem.py, line 93">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L101-L102" target="_blank" rel="noopener" title="tetris/cem.py, lines 101–102" aria-label="Code on GitHub: tetris/cem.py, lines 101 to 102">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L106-L110" target="_blank" rel="noopener" title="tetris/cem.py, lines 106–110" aria-label="Code on GitHub: tetris/cem.py, lines 106 to 110">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L99" target="_blank" rel="noopener" title="tetris/cem.py, line 99" aria-label="Code on GitHub: tetris/cem.py, line 99">44</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L107-L108" target="_blank" rel="noopener" title="tetris/cem.py, lines 107–108" aria-label="Code on GitHub: tetris/cem.py, lines 107 to 108">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L115-L119" target="_blank" rel="noopener" title="tetris/cem.py, lines 115–119" aria-label="Code on GitHub: tetris/cem.py, lines 115 to 119">46</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
   </div>
   <p>Here <span class="math">\mu_j</span> and <span class="math">\sigma_j</span> are the mean and standard deviation of weight <span class="math">j</span>, and <span class="math">\xi</span> is a standard normal draw. The clip keeps each weight between −10 and 10, the same limit as the GA. <span class="math">L(w, s)</span> is the number of lines that the greedy agent with weights <span class="math">w</span> clears on seed <span class="math">s</span>, playing until game over or until 100,000 pieces. Iteration <span class="math">t</span> uses the three seeds <span class="math">200\,000 + 3t + k</span>, so each iteration plays its own games, and every sample in an iteration plays the same games. The elite count is <span class="math">n_e = 3</span>. The noise <span class="math">z_t</span> starts at 1.0, falls by 0.05 each iteration, and stops at its floor of 0.05 from iteration 19.</p>
   <p><i>Example.</i> In the committed run's last iteration, <span class="math">t = 5</span>, so <span class="math">z_t = 0.75</span>. The elite mean of that iteration was 6,869.4 lines.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_log.jsonl" target="_blank" rel="noopener" title="results/tetris_cem_log.jsonl" aria-label="Code on GitHub: results/tetris_cem_log.jsonl">48</a></p>
 
-  <!-- tetris/cem.py:70-136, tetris/cem.py:51-53 -->
+  <!-- tetris/cem.py:70-154, tetris/cem.py:51-53 -->
 
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L70-L136" target="_blank" rel="noopener" title="tetris/cem.py, lines 70–136" aria-label="Code on GitHub: tetris/cem.py, lines 70 to 136">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L70-L154" target="_blank" rel="noopener" title="tetris/cem.py, lines 70–154" aria-label="Code on GitHub: tetris/cem.py, lines 70 to 154">49</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L51-L53" target="_blank" rel="noopener" title="tetris/cem.py, lines 51–53" aria-label="Code on GitHub: tetris/cem.py, lines 51 to 53">47</a></span>
     <pre class="pseudo-simple">function CROSS-ENTROPY(iterations, samples):
     mu ← the hand-picked weights                    # the mean starts at the hand-picked set
     sigma ← 1.0 for each of the nine weights
@@ -411,7 +417,7 @@ function LINES(w, s):
     return the lines cleared</pre>
   </div>
     <p>The noise is the part that keeps the search from collapsing. Without it, the variance can shrink quickly, and the search stops exploring. The extra term <span class="math">z_t</span> sets a floor for the variance that falls over the run.</p>
-  <p>The returned weights are the final mean <span class="math">\mu</span>, and that mean is not one of the samples. The training fitness reported for the run is the elite mean of the last iteration, which scores the samples and not <span class="math">\mu</span> itself. The best single sample is recorded only for reference, since it was picked on the same games that scored it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L103-L105" target="_blank" rel="noopener" title="tetris/cem.py, lines 103–105" aria-label="Code on GitHub: tetris/cem.py, lines 103 to 105">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L134-L136" target="_blank" rel="noopener" title="tetris/cem.py, lines 134–136" aria-label="Code on GitHub: tetris/cem.py, lines 134 to 136">51</a></p>
+  <p>The returned weights are the final mean <span class="math">\mu</span>, and that mean is not one of the samples. The training fitness reported for the run is the elite mean of the last iteration, which scores the samples and not <span class="math">\mu</span> itself. The best single sample is recorded only for reference, since it was picked on the same games that scored it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L109-L114" target="_blank" rel="noopener" title="tetris/cem.py, lines 109–114" aria-label="Code on GitHub: tetris/cem.py, lines 109 to 114">50</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/cem.py#L147-L154" target="_blank" rel="noopener" title="tetris/cem.py, lines 147–154" aria-label="Code on GitHub: tetris/cem.py, lines 147 to 154">51</a></p>
   <p>The committed run used 6 iterations, 20 samples per iteration, 3 games per sample, an elite fraction of 0.15, a 10-row training board, a cap of 100,000 pieces, an initial standard deviation of 1.0 and sampler seed 0. Its mean after the sixth refit is the shipped set. Its training fitness, 6,869.4 lines, is the elite mean of the last iteration.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/tuned.json" target="_blank" rel="noopener" title="tetris/tuned.json" aria-label="Code on GitHub: tetris/tuned.json">35</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_cem_weights.json" target="_blank" rel="noopener" title="results/tetris_cem_weights.json" aria-label="Code on GitHub: results/tetris_cem_weights.json">52</a></p>
 
   <h3 class="hiw-sub">Genetic algorithm (v2, earlier)</h3>
@@ -431,12 +437,12 @@ w_j \leftarrow \operatorname{clip}\big(w_j + \varepsilon_j\big) \;\text{ with pr
     <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L72-L75" target="_blank" rel="noopener" title="tetris/evolve.py, lines 72–75" aria-label="Code on GitHub: tetris/evolve.py, lines 72 to 75">57</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L78-L85" target="_blank" rel="noopener" title="tetris/evolve.py, lines 78–85" aria-label="Code on GitHub: tetris/evolve.py, lines 78 to 85">58</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L88-L89" target="_blank" rel="noopener" title="tetris/evolve.py, lines 88–89" aria-label="Code on GitHub: tetris/evolve.py, lines 88 to 89">59</a></span>
   </div>
   <p>Here <span class="math">L(w, s)</span> is the lines cleared by the greedy agent with weights <span class="math">w</span> on seed <span class="math">s</span>, with each game capped at 2,500 pieces. In the first formula, <span class="math">g</span> is the generation number, and each generation plays six games with its own seeds, so no generation plays another generation's games. In the second, <span class="math">a</span> and <span class="math">b</span> are the two parents. Each gene has its own <span class="math">\tau_j</span>. Crossover happens with probability 0.8, and otherwise the child copies the first parent. Each gene mutates with probability 0.2, and a mutated gene gets a Gaussian step with standard deviation 0.3.</p>
-  <p>A tournament draws three different genomes at random and keeps the fittest. Each child uses two tournaments, one for each parent. The population has 16 genomes, and the two fittest are copied unchanged into the next generation, which is called elitism. The loop evaluates generations 0 to 16. That is 17 evaluations and 16 rounds of breeding, the 16 generations of the setting plus the random starting generation.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L143" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–143" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 143">60</a></p>
+  <p>A tournament draws three different genomes at random and keeps the fittest. Each child uses two tournaments, one for each parent. The population has 16 genomes, and the two fittest are copied unchanged into the next generation, which is called elitism. The loop evaluates generations 0 to 16. That is 17 evaluations and 16 rounds of breeding, the 16 generations of the setting plus the random starting generation.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L149" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–149" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 149">60</a></p>
 
-  <!-- tetris/evolve.py:92-143, tetris/evolve.py:72-89 -->
+  <!-- tetris/evolve.py:92-149, tetris/evolve.py:72-89 -->
 
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L143" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–143" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 143">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L72-L89" target="_blank" rel="noopener" title="tetris/evolve.py, lines 72–89" aria-label="Code on GitHub: tetris/evolve.py, lines 72 to 89">61</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L92-L149" target="_blank" rel="noopener" title="tetris/evolve.py, lines 92–149" aria-label="Code on GitHub: tetris/evolve.py, lines 92 to 149">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/evolve.py#L72-L89" target="_blank" rel="noopener" title="tetris/evolve.py, lines 72–89" aria-label="Code on GitHub: tetris/evolve.py, lines 72 to 89">61</a></span>
     <pre class="pseudo-simple">function GENETIC-TUNE(generations):
     pop ← 16 random weight vectors, each weight uniform in [−1, 1]
     for each generation from 0 to generations:
@@ -489,7 +495,7 @@ function MUTATE(genome):
   <p>The reported result is the best genome seen in any generation. Its fitness is measured on the games of the generation where it was found. Because it was chosen for that score, the score is optimistic. For v2, that is 804.5 lines on generation 16's games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_tuned_v2.json" target="_blank" rel="noopener" title="results/tetris_tuned_v2.json" aria-label="Code on GitHub: results/tetris_tuned_v2.json">36</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_train_log.jsonl" target="_blank" rel="noopener" title="results/tetris_train_log.jsonl" aria-label="Code on GitHub: results/tetris_train_log.jsonl">62</a></p>
 
   <h3 class="hiw-sub">Training and benchmark settings</h3>
-  <p>The training games and the benchmark games come from separate seed ranges: 200,000 upward for the CEM, 1,000 upward for the GA, and 50,000 to 50,029 for the benchmark. A test checks that two GA generations share no seed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L197-L200" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 197–200" aria-label="Code on GitHub: tests/test_tetris.py, lines 197 to 200">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L35" target="_blank" rel="noopener" title="tetris/benchmark.py, line 35" aria-label="Code on GitHub: tetris/benchmark.py, line 35">64</a></p>
+  <p>The training games and the benchmark games come from separate seed ranges: 200,000 upward for the CEM, 1,000 upward for the GA, and 50,000 to 50,029 for the benchmark. A test checks that two GA generations share no seed.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_tetris.py#L203-L207" target="_blank" rel="noopener" title="tests/test_tetris.py, lines 203–207" aria-label="Code on GitHub: tests/test_tetris.py, lines 203 to 207">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L35" target="_blank" rel="noopener" title="tetris/benchmark.py, line 35" aria-label="Code on GitHub: tetris/benchmark.py, line 35">64</a></p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Setting</th><th>CEM (v3, shipped)</th><th>GA (v2)</th><th>Held-out benchmark</th></tr></thead><tbody>
     <tr><td>Seeds</td><td class="num">200,000 + 3t + k</td><td class="num">1,000 + 6g + i</td><td class="num">50,000 to 50,029</td></tr>
     <tr><td>Candidates</td><td class="num">20 samples, 6 iterations</td><td class="num">16 genomes, generations 0 to 16</td><td class="num">random, hand-picked and one tuned set</td></tr>
@@ -501,12 +507,12 @@ function MUTATE(genome):
   <p class="hiw-note">The table gives the settings recorded for the committed runs. The benchmark column describes the held-out runs, which are logged with the results below.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard_v3.md" target="_blank" rel="noopener" title="results/tetris_benchmark_hard_v3.md" aria-label="Code on GitHub: results/tetris_benchmark_hard_v3.md">65</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/tetris_benchmark_hard.md" target="_blank" rel="noopener" title="results/tetris_benchmark_hard.md" aria-label="Code on GitHub: results/tetris_benchmark_hard.md">66</a></p>
 
   <h3 class="hiw-sub">Held-out results</h3>
-  <p>The benchmark plays every strategy on the same 30 seeds and reports the mean lines with a 95% confidence interval. The interval is the mean plus or minus the t value times the standard error, where the standard error is the sample standard deviation divided by the square root of the number of games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L85-L103" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 85–103" aria-label="Code on GitHub: tetris/benchmark.py, lines 85 to 103">67</a></p>
-  <!-- tetris/benchmark.py:39-46, tetris/benchmark.py:85-103 -->
+  <p>The benchmark plays every strategy on the same 30 seeds and reports the mean lines with a 95% confidence interval. The interval is the mean plus or minus the t value times the standard error, where the standard error is the sample standard deviation divided by the square root of the number of games.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L121-L139" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 121–139" aria-label="Code on GitHub: tetris/benchmark.py, lines 121 to 139">67</a></p>
+  <!-- tetris/benchmark.py:39-75, tetris/benchmark.py:121-139 -->
 
   <div class="math-fig">
     <div class="math math-block">\bar{x} \pm t_{0.975,\; n-1} \cdot \frac{s}{\sqrt{n}}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L39-L46" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 39–46" aria-label="Code on GitHub: tetris/benchmark.py, lines 39 to 46">68</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L85-L103" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 85–103" aria-label="Code on GitHub: tetris/benchmark.py, lines 85 to 103">67</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L39-L75" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 39–75" aria-label="Code on GitHub: tetris/benchmark.py, lines 39 to 75">68</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tetris/benchmark.py#L121-L139" target="_blank" rel="noopener" title="tetris/benchmark.py, lines 121–139" aria-label="Code on GitHub: tetris/benchmark.py, lines 121 to 139">67</a></span>
   </div>
   <p>Here <span class="math">\bar{x}</span> is the mean number of lines over the games, <span class="math">s</span> the sample standard deviation, and <span class="math">n</span> the number of games. With 30 games, <span class="math">t_{0.975,\,29} = 2.045</span>, which the code reads from its table of two-sided 95% values.</p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Agent</th><th class="num">Mean lines</th><th class="num">95% CI</th><th class="num">Median</th><th class="num">Mean pieces</th><th class="num">Hit cap</th></tr></thead><tbody>

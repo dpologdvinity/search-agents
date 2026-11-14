@@ -29,7 +29,7 @@ class KuhnState:
 
     def __init__(self, cards: tuple[int, int] | None = None, hist: str = ""):
         self.cards = cards  # (seat 0's card, seat 1's card)
-        self.hist = hist    # betting actions so far, e.g. "kb" (check, then bet)
+        self.hist = hist  # betting actions so far, e.g. "kb" (check, then bet)
 
     def is_chance(self) -> bool:
         return self.cards is None

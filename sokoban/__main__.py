@@ -30,8 +30,7 @@ HEURISTIC_CHOICES = (SIMPLE, MATCHING)
 def _solve_command(args) -> int:
     level = get_level(args.level)
     heuristic = NONE if args.algorithm == BFS else args.heuristic
-    res = solve(level, args.algorithm, heuristic, not args.no_prune, node_budget=args.budget,
-                time_limit=args.seconds)
+    res = solve(level, args.algorithm, heuristic, not args.no_prune, node_budget=args.budget, time_limit=args.seconds)
     print("\n".join(render(level, level.start_player, level.start_boxes)))
     print(f"{args.algorithm} ({heuristic}, deadlock pruning {'off' if args.no_prune else 'on'}): {res.status}")
     print(f"expanded {res.expanded:,}  generated {res.generated:,}  pruned {res.pruned:,}  time {res.seconds:.3f} s")
@@ -65,8 +64,9 @@ def _benchmark_command(args) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m sokoban",
-                                     description="Sokoban: search with push-level pruning and matching bounds.")
+    parser = argparse.ArgumentParser(
+        prog="python -m sokoban", description="Sokoban: search with push-level pruning and matching bounds."
+    )
     sub = parser.add_subparsers(dest="command")
 
     p_play = sub.add_parser("play", help="play in the terminal (the default)")
@@ -79,8 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_solve = sub.add_parser("solve", help="run one search and print the plan")
     p_solve.add_argument("--level", type=int, default=1)
     p_solve.add_argument("--algorithm", choices=ALGORITHMS, default=ASTAR)
-    p_solve.add_argument("--heuristic", choices=HEURISTIC_CHOICES, default=MATCHING,
-                         help="for greedy and A* (BFS has none)")
+    p_solve.add_argument(
+        "--heuristic", choices=HEURISTIC_CHOICES, default=MATCHING, help="for greedy and A* (BFS has none)"
+    )
     p_solve.add_argument("--no-prune", action="store_true", help="turn deadlock pruning off")
     p_solve.add_argument("--budget", type=int, default=DEFAULT_NODES, help="node budget")
     p_solve.add_argument("--seconds", type=float, default=DEFAULT_SECONDS, help="time limit")

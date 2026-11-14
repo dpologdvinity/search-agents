@@ -96,7 +96,9 @@ def node_results(scenarios):
     proc = subprocess.run(
         [NODE, "--input-type=module", "-e", NODE_PROGRAM],
         env={**os.environ, "ROVER_CORE": str(CORE), "ROVER_SCENARIOS": json.dumps(scenarios)},
-        capture_output=True, text=True, timeout=120,
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout.strip().splitlines()[-1])

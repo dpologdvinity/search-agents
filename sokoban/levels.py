@@ -1,6 +1,6 @@
-"""The built-in levels, in order of difficulty (fewest pushes in the optimal solution).
+"""The built-in levels. Levels 1-12 keep their numbers from the benchmark set; 13-16 were added later.
 
-All twelve levels are fixed in this file: the boards are written out below, not generated at run time.
+All sixteen levels are fixed in this file: the boards are written out below, not generated at run time.
 Each optimal push count is what the solver finds (A* with the matching heuristic), and the tests check
 that the solver still reaches it. The tests also solve every level, so none can be unsolvable.
 """
@@ -13,20 +13,31 @@ from .board import Level, parse_level
 
 # (name, optimal pushes, text). The text uses the symbols in board.py.
 LEVEL_TEXT = (
-    ("Warm-up", 1, """
+    (
+        "Warm-up",
+        1,
+        """
 #####
 #@$.#
 #####
-"""),
-    ("Around the corner", 3, """
+""",
+    ),
+    (
+        "Around the corner",
+        3,
+        """
 #######
 #     #
 # $   #
 #   . #
 #  @  #
 #######
-"""),
-    ("Pillar", 3, """
+""",
+    ),
+    (
+        "Pillar",
+        3,
+        """
 ########
 #  .   #
 # #$#  #
@@ -34,23 +45,35 @@ LEVEL_TEXT = (
 #  @   #
 #      #
 ########
-"""),
-    ("Two in a row", 4, """
+""",
+    ),
+    (
+        "Two in a row",
+        4,
+        """
 ########
 #  ..  #
 # $$ @ #
 #      #
 ########
-"""),
-    ("Side step", 6, """
+""",
+    ),
+    (
+        "Side step",
+        6,
+        """
 #########
 #  .#   #
 #  $ $  #
 #  #@   #
 #   .   #
 #########
-"""),
-    ("Crossroads", 8, """
+""",
+    ),
+    (
+        "Crossroads",
+        8,
+        """
 #########
 #   .   #
 # $ # $ #
@@ -58,8 +81,12 @@ LEVEL_TEXT = (
 # $ # . #
 #   .   #
 #########
-"""),
-    ("Open room", 9, """
+""",
+    ),
+    (
+        "Open room",
+        9,
+        """
 #######
 #     #
 # $ $ #
@@ -67,8 +94,12 @@ LEVEL_TEXT = (
 # $ . #
 #.  . #
 #######
-"""),
-    ("Stacks", 11, """
+""",
+    ),
+    (
+        "Stacks",
+        11,
+        """
 ########
 # $.   #
 # $  $ #
@@ -77,8 +108,12 @@ LEVEL_TEXT = (
 #  #   #
 #  .@  #
 ########
-"""),
-    ("Forklift", 13, """
+""",
+    ),
+    (
+        "Forklift",
+        13,
+        """
 ##########
 #  .  #  .#
 #     $  ##
@@ -87,8 +122,12 @@ LEVEL_TEXT = (
 # #    .  #
 #   #      #
 ##########
-"""),
-    ("Shelf", 15, """
+""",
+    ),
+    (
+        "Shelf",
+        15,
+        """
 #########
 #.  #  @#
 # $ #$$ #
@@ -97,8 +136,12 @@ LEVEL_TEXT = (
 #  #    #
 #  .    #
 #########
-"""),
-    ("Aisle", 18, """
+""",
+    ),
+    (
+        "Aisle",
+        18,
+        """
 ###########
 #  .  #  .#
 # $      .#
@@ -106,8 +149,12 @@ LEVEL_TEXT = (
 # $#$$#  ##
 #@ .      #
 ###########
-"""),
-    ("Dock", 19, """
+""",
+    ),
+    (
+        "Dock",
+        19,
+        """
   ########
   #      #
 ###  ##  ###
@@ -119,7 +166,61 @@ LEVEL_TEXT = (
 ### $##  ###
   #      #
   ########
-"""),
+""",
+    ),
+    (
+        "Gallery",
+        4,
+        """
+#########
+# .   . #
+#       #
+# $   $ #
+#   @   #
+#       #
+#########
+""",
+    ),
+    (
+        "Alcove",
+        6,
+        """
+#########
+#   .   #
+#  ###  #
+#   $   #
+#       #
+#  @    #
+#########
+""",
+    ),
+    (
+        "Canal",
+        2,
+        """
+###########
+# .     . #
+# $ ### $ #
+#   # #   #
+#   # #   #
+#    @    #
+###########
+""",
+    ),
+    (
+        "Team lift",
+        6,
+        """
+##########
+#  .  .  #
+#        #
+#  $$    #
+#   ##   #
+# @      #
+#        #
+##########
+""",
+    ),
 )
 
 NAMES = tuple(name for name, _, _ in LEVEL_TEXT)

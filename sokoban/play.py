@@ -69,8 +69,14 @@ class Game:
 
     def plan_from_here(self):
         """A* with the matching heuristic and deadlock pruning, from the current position."""
-        return solve(self.level.with_state(self.player, self.boxes), "astar", "matching", True,
-                     node_budget=20_000, time_limit=10.0)
+        return solve(
+            self.level.with_state(self.player, self.boxes),
+            "astar",
+            "matching",
+            True,
+            node_budget=20_000,
+            time_limit=10.0,
+        )
 
 
 def _segment(moves: str) -> str:
@@ -78,7 +84,7 @@ def _segment(moves: str) -> str:
     for i, ch in enumerate(moves):
         if ch.isupper():
             walk = moves[:i]
-            return (f"walk {walk} then push {ch}" if walk else f"push {ch}")
+            return f"walk {walk} then push {ch}" if walk else f"push {ch}"
     return "no push left"
 
 
@@ -92,8 +98,9 @@ def animate(game: Game, moves: str, out: Callable[[str], None], delay: float) ->
             out("\n" + "\n".join(render(game.level, game.player, game.boxes)))
 
 
-def play(level_number: int = 1, read: Callable[[str], str] = input, out: Callable[[str], None] = print,
-         delay: float = 0.12) -> int:
+def play(
+    level_number: int = 1, read: Callable[[str], str] = input, out: Callable[[str], None] = print, delay: float = 0.12
+) -> int:
     """Interactive game. Returns the number of levels solved. Ends on q or when input runs out."""
     levels = all_levels()
     game = Game.start(levels[level_number - 1])

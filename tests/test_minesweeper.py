@@ -387,7 +387,6 @@ def test_over_budget_keeps_the_proofs_and_gives_estimates_instead():
     assert exact.exact and not fallback.exact
     assert set(fallback.safe) <= set(exact.safe) and set(fallback.mines) <= set(exact.mines)
     assert fallback.numerator == {}
-    assert all(fallback.probability(c) is not None and 0 <= fallback.probability(c) <= 1
-               for c in fallback.covered)
+    assert all(fallback.probability(c) is not None and 0 <= fallback.probability(c) <= 1 for c in fallback.covered)
     guess = best_guess(fallback)
     assert fallback.estimate[guess] == min(fallback.estimate[c] for c in fallback.covered)

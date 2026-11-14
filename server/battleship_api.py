@@ -162,8 +162,13 @@ async def meta():
         "columns": COLUMNS,
         "fleet": [{"name": n, "length": length} for n, length in zip(FLEET_NAMES, FLEET)],
         "agent": {"name": ProbabilityAgent.name, "label": ProbabilityAgent.label, "description": DESCRIPTION},
-        "chance": {"name": ChanceAgent.name, "label": ChanceAgent.label, "description": CHANCE_DESCRIPTION,
-                   "profile": list(CHANCE_PROFILE), "rule": "weight(row, col) = profile[row] * profile[col]"},
+        "chance": {
+            "name": ChanceAgent.name,
+            "label": ChanceAgent.label,
+            "description": CHANCE_DESCRIPTION,
+            "profile": list(CHANCE_PROFILE),
+            "rule": "weight(row, col) = profile[row] * profile[col]",
+        },
         "samples": SAMPLES,
         "game_ttl_seconds": GAME_TTL,
     }
@@ -191,12 +196,16 @@ async def shot(req: CellIn, request: Request):
     won = rec.fleet.all_sunk
     body = {"cell": cell_name(cell), "result": s.result, "afloat": rec.fleet.afloat(), "won": won, "fleet": None}
     if s.result == "sunk":
-        body["ship"] = {"name": FLEET_NAMES[s.ship_index], "length": len(s.ship),
-                        "cells": [cell_name(c) for c in s.ship]}
+        body["ship"] = {
+            "name": FLEET_NAMES[s.ship_index],
+            "length": len(s.ship),
+            "cells": [cell_name(c) for c in s.ship],
+        }
     if won:
         rec.over = True
-        body["fleet"] = [{"name": n, "cells": [cell_name(c) for c in ship]}
-                         for n, ship in zip(FLEET_NAMES, rec.fleet.ships)]
+        body["fleet"] = [
+            {"name": n, "cells": [cell_name(c) for c in ship]} for n, ship in zip(FLEET_NAMES, rec.fleet.ships)
+        ]
     return body
 
 

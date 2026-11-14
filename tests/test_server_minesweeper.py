@@ -120,8 +120,7 @@ def test_a_wide_frontier_board_is_answered_with_estimates_and_says_so(client):
     g.reveal(0)  # places the mines; the page never sees them, and neither does the request below
     mines = g.mine_set()
     # Numbers on every other row, covered elsewhere: long covered chains between the numbers.
-    cells = [g.adjacent_mines(i) if (i // 30 + i % 30) % 2 == 0 and i not in mines else UNKNOWN
-             for i in range(16 * 30)]
+    cells = [g.adjacent_mines(i) if (i // 30 + i % 30) % 2 == 0 and i not in mines else UNKNOWN for i in range(16 * 30)]
     start = time.perf_counter()
     body_in = {"rows": 16, "cols": 30, "mines": 99, "cells": cells, "level": 3}
     resp = client.post("/api/minesweeper/analyze", json=body_in)

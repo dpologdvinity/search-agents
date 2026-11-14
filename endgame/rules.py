@@ -60,9 +60,7 @@ def _rays(sq: int, dirs) -> tuple[tuple[int, ...], ...]:
 RAYS = {p: tuple(_rays(sq, dirs) for sq in range(64)) for p, dirs in _DIRS.items()}
 
 KING_NEIGHBOURS: tuple[tuple[int, ...], ...] = tuple(
-    tuple(sq for sq in range(64)
-          if max(abs((sq & 7) - (s & 7)), abs((sq >> 3) - (s >> 3))) == 1)
-    for s in range(64)
+    tuple(sq for sq in range(64) if max(abs((sq & 7) - (s & 7)), abs((sq >> 3) - (s >> 3))) == 1) for s in range(64)
 )
 # The same neighbours as a bit mask, so "are these two kings touching" is one shift and mask.
 _KING_MASK = tuple(sum(1 << n for n in KING_NEIGHBOURS[s]) for s in range(64))

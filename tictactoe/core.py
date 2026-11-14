@@ -6,6 +6,10 @@ Values are from X's point of view: 1 means X wins with perfect play, 0 a draw, -
 The search visits children in square order 0..8 and records the first two plies (the agent's candidate
 moves and the replies to them), so the page can draw the tree. Records carry the running counts of
 positions searched and moves pruned, so the page can show the counters growing as the tree is drawn.
+
+A search can be capped at a number of plies (the game page's levels). A position at the cap that is still in
+play scores 0: the agent cannot see past its horizon, so it treats what lies beyond as a draw. A shallow
+agent therefore takes wins and blocks threats it can see, but walks into forks that only show up deeper.
 """
 
 from __future__ import annotations
@@ -19,6 +23,11 @@ EMPTY_BOARD = "........."
 INF = 2
 # Records are kept for plies 0 and 1 only: the agent's moves (ply 1) and the replies to them (ply 2).
 MAX_PLY = 2
+# Search depth per level, in plies; None searches to the end of the game. A human can no longer force a win
+# from depth 5 when playing O, and from depth 6 when playing X, so EASY and MEDIUM stay beatable from either
+# side (tests/test_tictactoe.py checks this). EASY wins and blocks but never sees a fork; MEDIUM sees forks
+# one move out.
+LEVELS = {"easy": 2, "medium": 4, "perfect": None}
 
 
 def winner(board: str) -> str:
@@ -71,10 +80,13 @@ class Search:
     tree: list[dict] = field(default_factory=list)
 
 
-def _node(board: str, turn: str, alpha: int, beta: int, ply: int, kids: list[dict], stats: list[int]):
+def _node(
+    board: str, turn: str, alpha: int, beta: int, ply: int, kids: list[dict], stats: list[int], depth: int | None
+):
     """Alpha-beta over one node. Returns (value, exact, best_move_or_None).
 
     kids receives the records for this node's children while ply < MAX_PLY. stats is [searched, pruned].
+    depth is the ply cap (None for none); a live position at the cap scores 0.
     """
     stats[0] += 1
     w = winner(board)
@@ -82,6 +94,8 @@ def _node(board: str, turn: str, alpha: int, beta: int, ply: int, kids: list[dic
         return (1 if w == "X" else -1), True, None
     moves = legal_moves(board)
     if not moves:
+        return 0, True, None
+    if depth is not None and ply >= depth:
         return 0, True, None
     keep = ply < MAX_PLY
     maximize = turn == "X"
@@ -91,7 +105,7 @@ def _node(board: str, turn: str, alpha: int, beta: int, ply: int, kids: list[dic
     for k, m in enumerate(moves):
         child = board[:m] + turn + board[m + 1 :]
         rec = {"m": m, "v": None, "b": "", "pruned": False, "kids": [], "s": 0, "p": 0}
-        cv, cexact, _ = _node(child, other(turn), alpha, beta, ply + 1, rec["kids"], stats)
+        cv, cexact, _ = _node(child, other(turn), alpha, beta, ply + 1, rec["kids"], stats, depth)
         rec["v"] = cv
         # The child was searched with the window (alpha, beta) as it stood at the call. A value at or
         # below alpha, or at or above beta, is only a bound.
@@ -116,13 +130,19 @@ def _node(board: str, turn: str, alpha: int, beta: int, ply: int, kids: list[dic
     return v, a0 < v < b0, best
 
 
-def search(board: str, turn: str) -> Search:
-    """Alpha-beta minimax for the side to move, with the first two plies recorded."""
+def search(board: str, turn: str, depth: int | None = None) -> Search:
+    """Alpha-beta minimax for the side to move, with the first two plies recorded.
+
+    depth caps the search at that many plies (None searches to the end of the game). It must be at least 1:
+    depth 0 would score the root itself and return no move for a game still in play.
+    """
+    if depth is not None and depth < 1:
+        raise ValueError(f"depth must be at least 1 ply, got {depth}")
     if winner(board) or not legal_moves(board):
-        return Search(None, _node(board, turn, -INF, INF, 0, [], [0, 0])[0], 1, 0, [])
+        return Search(None, _node(board, turn, -INF, INF, 0, [], [0, 0], None)[0], 1, 0, [])
     stats = [0, 0]
     tree: list[dict] = []
-    value, _, move = _node(board, turn, -INF, INF, 0, tree, stats)
+    value, _, move = _node(board, turn, -INF, INF, 0, tree, stats, depth)
     return Search(move, value, stats[0], stats[1], tree)
 
 

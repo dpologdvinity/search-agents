@@ -101,8 +101,10 @@ def play_game(preset: str, seed: int | None, read=None, out=print) -> int:
     rows, cols, mines = PRESETS[preset]
     rng = random.Random(seed)
     game = Game(rows, cols, mines, rng)
-    out(f"Minesweeper {preset}: {cols} columns x {rows} rows, {mines} mines. "
-        "Type c5 to reveal, f c5 to flag, h for a hint, p for probabilities, q to quit.")
+    out(
+        f"Minesweeper {preset}: {cols} columns x {rows} rows, {mines} mines. "
+        "Type c5 to reveal, f c5 to flag, h for a hint, p for probabilities, q to quit."
+    )
     while True:
         out("\n" + render(game))
         if game.over:
@@ -119,8 +121,10 @@ def play_game(preset: str, seed: int | None, read=None, out=print) -> int:
         if text == "p":
             analysis = analyse(game.view(), LEVEL_PROBABILITY)
             out(render_probabilities(game.view(), analysis))
-            out(f"{len(analysis.components)} frontier components, {len(analysis.interior)} interior covered cells, "
-                f"{analysis.remaining} mines left to place.")
+            out(
+                f"{len(analysis.components)} frontier components, {len(analysis.interior)} interior covered cells, "
+                f"{analysis.remaining} mines left to place."
+            )
             continue
         flag = text.startswith("f ")
         target = text[2:] if flag else text
@@ -172,8 +176,9 @@ def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0] not in COMMANDS + ("-h", "--help"):
         argv = ["play"] + argv  # bare options mean "play"
-    parser = argparse.ArgumentParser(prog="python -m minesweeper",
-                                     description="Minesweeper with a constraint and probability agent.")
+    parser = argparse.ArgumentParser(
+        prog="python -m minesweeper", description="Minesweeper with a constraint and probability agent."
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     p_play = sub.add_parser("play", help="play in the terminal")
     p_play.add_argument("-p", "--preset", choices=tuple(PRESETS), default=DEFAULT_PRESET)

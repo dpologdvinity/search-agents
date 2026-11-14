@@ -20,8 +20,16 @@ from .rules import hard_and_ace, rank_label, rank_value, total
 from .solver import ACTION_LETTERS, UPCARDS, basic_action, best, get_solver, row_label, table_rows
 
 DECKS = 6
-ACTION_KEYS = {"t": "hit", "hit": "hit", "s": "stand", "stand": "stand", "d": "double", "double": "double",
-               "p": "split", "split": "split"}
+ACTION_KEYS = {
+    "t": "hit",
+    "hit": "hit",
+    "s": "stand",
+    "stand": "stand",
+    "d": "double",
+    "double": "double",
+    "p": "split",
+    "split": "split",
+}
 PROMPT_NAMES = {"stand": "[s]tand", "hit": "[t]ake a card", "double": "[d]ouble", "split": "s[p]lit"}
 
 
@@ -120,17 +128,23 @@ def format_strategy() -> str:
     """The exact basic-strategy table as text, with the house edge."""
     solver = get_solver()
     heads = ["T" if u == 10 else ("A" if u == 1 else str(u)) for u in UPCARDS]
-    lines = ["Basic strategy, exact (infinite-deck model): S stand, H hit, D double, P split.",
-             "Dealer stands on all 17s and checks for blackjack. Double on any two cards, one split.",
-             "", " " * 6 + "  " + " ".join(f"{h:>2}" for h in heads)]
+    lines = [
+        "Basic strategy, exact (infinite-deck model): S stand, H hit, D double, P split.",
+        "Dealer stands on all 17s and checks for blackjack. Double on any two cards, one split.",
+        "",
+        " " * 6 + "  " + " ".join(f"{h:>2}" for h in heads),
+    ]
     for kind, t in table_rows():
         cells = []
         for u in UPCARDS:
             cells.append(f"{ACTION_LETTERS[best(solver.cell_values(kind, t, u))]:>2}")
         lines.append(f"{row_label(kind, t):>6}  " + " ".join(cells))
     edge = solver.house_edge()
-    lines += ["", f"House edge with perfect basic strategy: {100 * edge:.3f}% of each bet "
-                  f"(the player's expected return is {-100 * edge:.3f}%)."]
+    lines += [
+        "",
+        f"House edge with perfect basic strategy: {100 * edge:.3f}% of each bet "
+        f"(the player's expected return is {-100 * edge:.3f}%).",
+    ]
     return "\n".join(lines)
 
 
@@ -141,8 +155,10 @@ def main(argv: list[str] | None = None) -> int:
             print(format_strategy())
             return 0
         if argv and argv[0] == "simulate":
-            parser = argparse.ArgumentParser(prog="python -m blackjack simulate",
-                                             description="Play basic strategy through a shoe and measure the return.")
+            parser = argparse.ArgumentParser(
+                prog="python -m blackjack simulate",
+                description="Play basic strategy through a shoe and measure the return.",
+            )
             parser.add_argument("--hands", type=int, default=20_000, help="rounds to play (default 20000)")
             parser.add_argument("--seed", type=int, default=1, help="shuffle seed (default 1)")
             parser.add_argument("--decks", type=int, default=DECKS, help="decks in the shoe (default 6)")
@@ -152,12 +168,14 @@ def main(argv: list[str] | None = None) -> int:
             result = simulate(args.hands, seed=args.seed, decks=args.decks)
             edge = get_solver().house_edge()
             print(f"Rounds: {result.rounds:,} ({args.decks}-deck shoe, seed {args.seed})")
-            print(f"Measured return per unit bet: {100 * result.mean:+.3f}% "
-                  f"(standard error {100 * result.stderr:.3f}%)")
+            print(
+                f"Measured return per unit bet: {100 * result.mean:+.3f}% (standard error {100 * result.stderr:.3f}%)"
+            )
             print(f"Exact infinite-deck return:   {-100 * edge:+.3f}%")
             return 0
-        parser = argparse.ArgumentParser(prog="python -m blackjack", description=__doc__,
-                                         formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser = argparse.ArgumentParser(
+            prog="python -m blackjack", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+        )
         parser.add_argument("--bankroll", type=int, default=500, help="starting chips (default 500)")
         parser.add_argument("--seed", type=int, default=None, help="shuffle seed (default random)")
         args = parser.parse_args(argv)

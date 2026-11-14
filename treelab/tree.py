@@ -60,8 +60,15 @@ def _impurity_rows(cnt: np.ndarray, n: np.ndarray, criterion: str) -> np.ndarray
     return acc
 
 
-def best_split(X: np.ndarray, y: np.ndarray, idx: np.ndarray, features: Sequence[int], criterion: str,
-               min_leaf: int, n_classes: int) -> tuple[int, float, float] | None:
+def best_split(
+    X: np.ndarray,
+    y: np.ndarray,
+    idx: np.ndarray,
+    features: Sequence[int],
+    criterion: str,
+    min_leaf: int,
+    n_classes: int,
+) -> tuple[int, float, float] | None:
     """Best (feature, threshold, gain) over the candidate features, or None if no split helps.
 
     gain is the decrease in weighted impurity, parent minus the size-weighted children. Both children must
@@ -92,8 +99,8 @@ def best_split(X: np.ndarray, y: np.ndarray, idx: np.ndarray, features: Sequence
         # Midpoint threshold; if rounding puts it on the upper value, use the upper value so the
         # left side is exactly the samples at or below the lower one.
         lo, hi = v[pos], v[pos + 1]
-        thr = (lo + hi) / 2.0
-        thr = np.where(lo < thr, thr, hi)
+        cut = (lo + hi) / 2.0
+        cut = np.where(lo < cut, cut, hi)
         # First candidate within EPS of this feature's best gain.
         gmax = gain.max()
         k = int(np.flatnonzero(gain >= gmax - EPS)[0])
@@ -103,7 +110,7 @@ def best_split(X: np.ndarray, y: np.ndarray, idx: np.ndarray, features: Sequence
         else:
             ok = g > best_gain + EPS
         if ok:
-            best_f, best_gain, best_t = int(f), g, float(thr[k])
+            best_f, best_gain, best_t = int(f), g, float(cut[k])
     if best_f is None:
         return None
     return best_f, best_t, best_gain
@@ -146,9 +153,19 @@ class Node:
 class Builder:
     """Breadth-first CART. step() splits the next splittable node in the frontier; grow() runs to the end."""
 
-    def __init__(self, X: np.ndarray, y: np.ndarray, n_classes: int, *, criterion: str = "gini",
-                 max_depth: int = 4, min_samples_leaf: int = 1, rng: Mulberry32 | None = None,
-                 max_features: int | None = None, idx: np.ndarray | None = None):
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        n_classes: int,
+        *,
+        criterion: str = "gini",
+        max_depth: int = 4,
+        min_samples_leaf: int = 1,
+        rng: Mulberry32 | None = None,
+        max_features: int | None = None,
+        idx: np.ndarray | None = None,
+    ):
         if criterion not in CRITERIA:
             raise ValueError(f"criterion must be one of {CRITERIA}")
         if min_samples_leaf < 1:
@@ -171,8 +188,7 @@ class Builder:
 
     def _make(self, rows: np.ndarray, depth: int) -> Node:
         counts = np.bincount(self.y[rows], minlength=self.n_classes).tolist()
-        node = Node(id=self._next_id, depth=depth, counts=counts, impurity=impurity(counts, self.criterion),
-                    idx=rows)
+        node = Node(id=self._next_id, depth=depth, counts=counts, impurity=impurity(counts, self.criterion), idx=rows)
         self._next_id += 1
         return node
 
@@ -196,8 +212,7 @@ class Builder:
             if node.impurity <= 0 or node.depth >= self.max_depth or node.n < 2 * self.min_leaf:
                 node.status = "leaf"
                 continue
-            best = best_split(self.X, self.y, rows, self._candidates(), self.criterion, self.min_leaf,
-                              self.n_classes)
+            best = best_split(self.X, self.y, rows, self._candidates(), self.criterion, self.min_leaf, self.n_classes)
             if best is None:
                 node.status = "leaf"
                 continue
@@ -220,8 +235,14 @@ class Builder:
 class DecisionTree:
     """A CART classifier. fit() grows the whole tree; predict_proba() routes rows to their leaves."""
 
-    def __init__(self, criterion: str = "gini", max_depth: int = 4, min_samples_leaf: int = 1,
-                 max_features: int | None = None, rng: Mulberry32 | None = None):
+    def __init__(
+        self,
+        criterion: str = "gini",
+        max_depth: int = 4,
+        min_samples_leaf: int = 1,
+        max_features: int | None = None,
+        rng: Mulberry32 | None = None,
+    ):
         self.criterion = criterion
         self.max_depth = max_depth
         self.min_samples_leaf = min_samples_leaf
@@ -230,13 +251,22 @@ class DecisionTree:
         self.root: Node | None = None
         self.n_classes = 0
 
-    def fit(self, X: np.ndarray, y: np.ndarray, n_classes: int | None = None,
-            idx: np.ndarray | None = None) -> DecisionTree:
+    def fit(
+        self, X: np.ndarray, y: np.ndarray, n_classes: int | None = None, idx: np.ndarray | None = None
+    ) -> DecisionTree:
         y = np.asarray(y, dtype=np.int64)
         self.n_classes = int(n_classes if n_classes is not None else y.max() + 1)
-        builder = Builder(X, y, self.n_classes, criterion=self.criterion, max_depth=self.max_depth,
-                          min_samples_leaf=self.min_samples_leaf, rng=self.rng, max_features=self.max_features,
-                          idx=idx)
+        builder = Builder(
+            X,
+            y,
+            self.n_classes,
+            criterion=self.criterion,
+            max_depth=self.max_depth,
+            min_samples_leaf=self.min_samples_leaf,
+            rng=self.rng,
+            max_features=self.max_features,
+            idx=idx,
+        )
         self.root = builder.grow()
         return self
 
@@ -285,13 +315,23 @@ def tree_depth(root: Node) -> int:
 
 def copy_tree(root: Node) -> Node:
     """Deep copy of the structure (training rows are dropped; the copy is for display and pruning)."""
+
     def clone(node: Node) -> Node:
-        new = Node(id=node.id, depth=node.depth, counts=list(node.counts), impurity=node.impurity,
-                   feature=node.feature, threshold=node.threshold, gain=node.gain, status=node.status)
+        new = Node(
+            id=node.id,
+            depth=node.depth,
+            counts=list(node.counts),
+            impurity=node.impurity,
+            feature=node.feature,
+            threshold=node.threshold,
+            gain=node.gain,
+            status=node.status,
+        )
         if node.left is not None:
             new.left = clone(node.left)
             new.right = clone(node.right)
         return new
+
     return clone(root)
 
 
@@ -351,11 +391,13 @@ def rules_text(root: Node, names: Sequence[str], criterion: str = "gini") -> str
     def walk(node: Node, pad: str) -> None:
         if node.is_leaf:
             counts = ", ".join(f"{c}:{k}" for c, k in enumerate(node.counts))
-            lines.append(f"{pad}-> class {node.label}  (n={node.n}, {criterion}={node.impurity:.3f}, "
-                         f"counts [{counts}])")
+            lines.append(
+                f"{pad}-> class {node.label}  (n={node.n}, {criterion}={node.impurity:.3f}, counts [{counts}])"
+            )
             return
-        lines.append(f"{pad}{names[node.feature]} < {node.threshold:.4f}?  "
-                     f"(n={node.n}, {criterion}={node.impurity:.3f})")
+        lines.append(
+            f"{pad}{names[node.feature]} < {node.threshold:.4f}?  (n={node.n}, {criterion}={node.impurity:.3f})"
+        )
         lines.append(f"{pad}  yes:")
         walk(node.left, pad + "    ")
         lines.append(f"{pad}  no:")

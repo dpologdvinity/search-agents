@@ -134,8 +134,8 @@ function buildBoard() {
   const board = $('ms');
   board.innerHTML = '';
   board.style.setProperty('--cols', state.cols);
-  board.style.setProperty('--cell', `${PRESETS[state.preset].cell}px`);
-  board.style.setProperty('--num-size', `${Math.round(PRESETS[state.preset].cell * 0.46)}px`);
+  board.style.setProperty('--rows', state.rows);
+  board.style.setProperty('--preferred-cell', `${PRESETS[state.preset].cell}px`);
   for (let i = 0; i < state.rows * state.cols; i++) {
     const b = document.createElement('button');
     b.type = 'button';

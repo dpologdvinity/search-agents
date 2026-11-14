@@ -28,6 +28,7 @@ def solved_vi(mdp, eps=1e-12):
 
 # ── grids and presets ────────────────────────────────────────────────────
 
+
 def test_every_preset_is_a_valid_connected_grid():
     for key, pr in PRESETS.items():
         mdp = GridMDP(pr.grid(), pr.params)
@@ -35,13 +36,16 @@ def test_every_preset_is_a_valid_connected_grid():
         assert mdp.terminal.count(True) >= 1, key
 
 
-@pytest.mark.parametrize("rows", [
-    [],
-    ["#S", "#"],
-    ["#Q#"],
-    ["#...#"],
-    ["S.S"],
-])
+@pytest.mark.parametrize(
+    "rows",
+    [
+        [],
+        ["#S", "#"],
+        ["#Q#"],
+        ["#...#"],
+        ["S.S"],
+    ],
+)
 def test_bad_grids_are_rejected(rows):
     with pytest.raises(ValueError):
         Grid(tuple(rows))
@@ -61,6 +65,7 @@ def test_preset_override_and_unknown_key():
 
 
 # ── the transition model, by hand ────────────────────────────────────────
+
 
 def test_transitions_sum_to_one_and_respect_walls():
     mdp = GridMDP(preset("rooms").grid(), preset("rooms").params)
@@ -103,6 +108,7 @@ def test_direction_for_matches_the_transition_table():
 
 
 # ── planning ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize("key", list(PRESETS))
 def test_value_iteration_satisfies_the_bellman_optimality_equation(key):
@@ -229,6 +235,7 @@ def test_q_learning_on_the_maze_matches_the_optimal_policy():
 
 
 # ── command line ─────────────────────────────────────────────────────────
+
 
 def test_cli_solve_prints_grids_and_full_agreement(capsys):
     assert main(["solve", "--preset", "cliff"]) == 0

@@ -80,15 +80,18 @@ def test_main_rejects_too_few_cities(capsys):
     assert "at least 3 cities" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("flags, message", [
-    (["--solver", "simulated_annealing", "--iterations", "0"], "at least one iteration"),
-    (["--solver", "simulated_annealing", "--cooling", "0"], "cooling must be above 0"),
-    (["--solver", "genetic_algorithm", "--generations", "0"], "one tour and one generation"),
-    (["--solver", "genetic_algorithm", "--population", "0"], "one tour and one generation"),
-    (["--solver", "genetic_algorithm", "--population", "4"], "more tours than the 4 elite"),
-    (["--compare", "--cities", "6", "--population", "4"], "more tours than the 4 elite"),
-    (["--compare", "--cities", "6", "--generations", "0"], "one tour and one generation"),
-])
+@pytest.mark.parametrize(
+    "flags, message",
+    [
+        (["--solver", "simulated_annealing", "--iterations", "0"], "at least one iteration"),
+        (["--solver", "simulated_annealing", "--cooling", "0"], "cooling must be above 0"),
+        (["--solver", "genetic_algorithm", "--generations", "0"], "one tour and one generation"),
+        (["--solver", "genetic_algorithm", "--population", "0"], "one tour and one generation"),
+        (["--solver", "genetic_algorithm", "--population", "4"], "more tours than the 4 elite"),
+        (["--compare", "--cities", "6", "--population", "4"], "more tours than the 4 elite"),
+        (["--compare", "--cities", "6", "--generations", "0"], "one tour and one generation"),
+    ],
+)
 def test_bad_solver_settings_exit_cleanly(flags, message, capsys):
     with pytest.raises(SystemExit) as exit_info:
         main(flags)

@@ -51,8 +51,10 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     for path in (args.answers, args.guesses):
         if not path.is_file():
-            parser.error(f"{path} is not a file; install the Debian package wamerican-small / wamerican-large "
-                         "or pass the path of a one-word-per-line list")
+            parser.error(
+                f"{path} is not a file; install the Debian package wamerican-small / wamerican-large "
+                "or pass the path of a one-word-per-line list"
+            )
     n_answers, n_guesses = build(args.answers, args.guesses)
     print(f"wrote {n_answers} answers and {n_guesses} guesses to {ANSWERS_FILE.parent}")
     return 0

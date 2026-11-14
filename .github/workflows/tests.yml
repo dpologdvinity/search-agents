@@ -4,20 +4,47 @@ on:
   push:
   pull_request:
 
+# Read-only token; pull-requests lets gitleaks list a pull request's commits.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.11"
           cache: pip
       - name: Install
         # Serving and test dependencies only; tests that need torch skip themselves.
-        run: pip install "numpy>=1.26" "fastapi>=0.115" "uvicorn[standard]>=0.30" "httpx>=0.27" "pytest>=8" "ruff>=0.6"
+        run: pip install "numpy>=1.26" "fastapi>=0.115" "uvicorn[standard]>=0.30" "httpx>=0.27" "pytest>=8" "ruff==0.17.2"
       - name: Lint
         run: ruff check .
+      - name: Format
+        run: ruff format --check .
+      - name: Spelling
+        uses: crate-ci/typos@276087d9a4f06398b3e04825487805e2d7375888 # v1.52.2
       - name: Test
         run: python -m pytest -q
+      - name: Frontend tests
+        # Node ships with the runner image. TTT_PYTHON lets the tic-tac-toe parity test call the Python reference.
+        env:
+          TTT_PYTHON: python
+        run: node --test tests/web/*.test.mjs
+
+  secrets:
+    # Separate job: gitleaks scans the pushed or pull-request commits, which needs a full clone the tests do not.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          # Personal-account repos need no GITLEAKS_LICENSE.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

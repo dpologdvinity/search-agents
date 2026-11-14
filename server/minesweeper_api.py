@@ -103,9 +103,7 @@ def analysis_json(view: View, level: int) -> dict:
 @router.get("/api/minesweeper/meta")
 async def meta():
     return {
-        "presets": [
-            {"name": name, "rows": r, "cols": c, "mines": m} for name, (r, c, m) in PRESETS.items()
-        ],
+        "presets": [{"name": name, "rows": r, "cols": c, "mines": m} for name, (r, c, m) in PRESETS.items()],
         "max_rows": MAX_ROWS,
         "max_cols": MAX_COLS,
         "agents": [{"name": name, "description": DESCRIPTIONS[name]} for name in AGENT_NAMES],

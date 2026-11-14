@@ -10,7 +10,8 @@ A layout is a tuple of equal-length text rows:
 
 Cells are numbered row-major: id = row * width + col. Each open cell stores the ids of
 its neighbours to the North, East, South and West (NO_CELL for a wall or the edge), so a
-move is a single table lookup. Both layouts here are drawn by hand for this project.
+move is a single table lookup. Layouts include mazes designed for this project and a grid
+adaptation of the Google Doodle.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from collections import deque
 from dataclasses import dataclass
 from functools import cache
 
-ACTIONS = ("N", "E", "S", "W")
+ACTIONS = ("N", "E", "S", "W", "WAIT")
 # Row and column offsets for N, E, S, W, in the same order as ACTIONS.
 _DELTAS = ((-1, 0), (0, 1), (1, 0), (0, -1))
 NO_CELL = -1
@@ -57,6 +58,130 @@ LAYOUTS: dict[str, tuple[str, tuple[str, ...]]] = {
             "###############",
         ),
     ),
+    "pocket": (
+        "Pocket",
+        (
+            "###########",
+            "#o...#...o#",
+            "#.##.#.##.#",
+            "#....P....#",
+            "#.##.#.##.#",
+            "#o.G...G.o#",
+            "###########",
+        ),
+    ),
+    "arcade": (
+        "Arcade",
+        (
+            "#####################",
+            "#o.......#.........o#",
+            "#.##.###.#.###.###..#",
+            "#...................#",
+            "#.##.#.#####.#.###..#",
+            "#....#...#...#......#",
+            "####.###.#.###.####.#",
+            "#....#.......#......#",
+            "#.##.#.##.##.#.##.#.#",
+            "#.......G.G.........#",
+            "#.###.#.###.#.###.#.#",
+            "#.....#..G..#.......#",
+            "#.###.###.###.###.#.#",
+            "#.........P.........#",
+            "#.##.#.#####.#.##.#.#",
+            "#o...#.......#.....o#",
+            "#.##.###.#.###.###..#",
+            "#........#..........#",
+            "#####################",
+        ),
+    ),
+    # Google corridors: https://www.google.com/logos/js/pacman10-hp.12.js
+    # The ghost house is adapted to whole cells; the side tunnel wraps.
+    "google": (
+        "Google Doodle",
+        (
+            "#################################################################",
+            "####........................................................#####",
+            "####.###.#########.###############.######## ###.#####.#####.#####",
+            "####o###.#########.###############.######## ###.#####.#####o#####",
+            "####.....#########.................    G    ###.............#####",
+            "########.###.......#######.####### ######## ###.#######.#########",
+            "########.###.#####.#######.####### ######## ###.#######.#########",
+            "########.###.#####.#######.#######   G G G  ###.#######.#########",
+            "        .###..o###.#######.####### ######## ###.#######.         ",
+            "########.#########.#######.####### ######## ###.###.....#########",
+            "########.#########.#######.#######          ###.#######.#########",
+            "########.#########.#######.####### ######## ###.#######.#########",
+            "####...............................########.................#####",
+            "####.####.##########.##.##########....##....#########.#####.#####",
+            "####.####.##########.##.##########.##.##.##.#########.#####.#####",
+            "####o................##............##. P.##................o#####",
+            "#################################################################",
+        ),
+    ),
+    "circuit": (
+        "Circuit",
+        (
+            "###############",
+            "#o...........o#",
+            "#...#.....#...#",
+            "#...#.###.#...#",
+            "#...#.....#...#",
+            "#G.....P.....G#",
+            "#...#.....#...#",
+            "#...#.###.#...#",
+            "#...#.....#...#",
+            "#o.....G.....o#",
+            "###############",
+        ),
+    ),
+    "courtyard": (
+        "Courtyard",
+        (
+            "###############",
+            "#o...........o#",
+            "#.............#",
+            "#..####.####..#",
+            "#..#.......#..#",
+            "#G.....P.....G#",
+            "#..#.......#..#",
+            "#..####.####..#",
+            "#.............#",
+            "#o.....G.....o#",
+            "###############",
+        ),
+    ),
+    "switchyard": (
+        "Switchyard",
+        (
+            "###############",
+            "#o...........o#",
+            "#.#####.#####.#",
+            "#.............#",
+            "#####.....#####",
+            "#G.....P.....G#",
+            "#.#####.#####.#",
+            "#.............#",
+            "######...######",
+            "#o.....G.....o#",
+            "###############",
+        ),
+    ),
+    "spiral": (
+        "Spiral",
+        (
+            "###############",
+            "#o...........o#",
+            "#..#########..#",
+            "#..........#..#",
+            "#..######..#..#",
+            "#G.#...P#..#.G#",
+            "#..#....#..#..#",
+            "#..#.......#..#",
+            "#..#########..#",
+            "#o.....G.....o#",
+            "###############",
+        ),
+    ),
 }
 
 
@@ -78,6 +203,7 @@ class Maze:
     pac_start: int
     ghost_starts: tuple[int, ...]
     corners: tuple[int, ...]  # the open cell nearest each corner: NW, NE, SW, SE
+    wraps: bool  # at least one row has an open tunnel through both edges
 
     @property
     def cells(self) -> int:
@@ -133,6 +259,9 @@ def parse(name: str) -> Maze:
         for dr, dc in _DELTAS:
             rr, cc = r + dr, c + dc
             inside = 0 <= rr < height and 0 <= cc < width
+            if dc and not inside:
+                cc %= width  # Open ends on the same row form a wrapping tunnel.
+                inside = True
             options.append(rr * width + cc if inside and is_open[rr * width + cc] else NO_CELL)
         nbr.append((options[0], options[1], options[2], options[3]))
 
@@ -170,6 +299,7 @@ def parse(name: str) -> Maze:
         pac_start=pac_starts[0],
         ghost_starts=tuple(ghost_starts),
         corners=corners,
+        wraps=any(is_open[r * width] and is_open[(r + 1) * width - 1] for r in range(height)),
     )
 
 

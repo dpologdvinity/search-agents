@@ -136,8 +136,10 @@ def to_markdown(data: dict) -> str:
             steps = f"{s['steps_median_solved']:,.0f}" if "steps_median_solved" in s else "—"
             work = f"{s['evaluations_median_solved']:,.0f}" if "evaluations_median_solved" in s else "—"
             ends = ", ".join(f"{k} {v}" for k, v in s["reasons"].items() if k != "solved") or "—"
-            lines.append(f"| {agent} | {int(n):,} | {s['runs']} | {s['solved']} | {steps} | {work} | "
-                         f"{s['seconds_median']:.3g} s | {ends} |")
+            lines.append(
+                f"| {agent} | {int(n):,} | {s['runs']} | {s['solved']} | {steps} | {work} | "
+                f"{s['seconds_median']:.3g} s | {ends} |"
+            )
     for key, why in data.get("skipped", {}).items():
         lines.append(f"| {key} | | | | | | | {why} |")
     return "\n".join(lines) + "\n"

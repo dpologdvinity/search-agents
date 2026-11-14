@@ -2,15 +2,15 @@ Seeds 10000-10199, 200 games per maze.
 
 | agent | win rate | mean score | mean turns | won / lost / timeout |
 |---|---|---|---|---|
-| q | 64.2% | 1350.3 | 193.9 | 257 / 47 / 96 |
-| reflex | 0.5% | 157.5 | 22.8 | 2 / 395 / 3 |
-| random | 0.0% | 45.5 | 8.9 | 0 / 400 / 0 |
+| q | 59.8% | 1324.2 | 208.3 | 239 / 69 / 92 |
+| reflex | 0.0% | 111.7 | 16.9 | 0 / 399 / 1 |
+| random | 0.0% | 35.8 | 8.6 | 0 / 400 / 0 |
 
 | agent | maze | win rate | mean score |
 |---|---|---|---|
-| q | Neon Lanes | 43.5% | 1218.0 |
-| q | Vault | 85.0% | 1482.5 |
-| reflex | Neon Lanes | 0.5% | 178.2 |
-| reflex | Vault | 0.5% | 136.8 |
-| random | Neon Lanes | 0.0% | 51.0 |
-| random | Vault | 0.0% | 40.0 |
+| q | Neon Lanes | 37.5% | 1144.0 |
+| q | Vault | 82.0% | 1504.5 |
+| reflex | Neon Lanes | 0.0% | 137.3 |
+| reflex | Vault | 0.0% | 86.0 |
+| random | Neon Lanes | 0.0% | 39.2 |
+| random | Vault | 0.0% | 32.4 |

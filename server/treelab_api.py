@@ -29,15 +29,25 @@ def meta() -> dict:
         "presets": [{"name": name, "classes": k} for name, k in PRESETS.items()],
         "features": list(FEATURE_NAMES_WEB),
         "criteria": list(CRITERIA),
-        "defaults": {"criterion": "gini", "depth": 5, "min_leaf": 3, "test": 0.3, "trees": 25, "n": 240,
-                     "extras": True},
+        "defaults": {
+            "criterion": "gini",
+            "depth": 5,
+            "min_leaf": 3,
+            "test": 0.3,
+            "trees": 25,
+            "n": 240,
+            "extras": True,
+        },
         "limits": {"n": [N_MIN, N_MAX], "seed": [0, SEED_MAX], "depth": [1, 12], "trees": [1, 100]},
     }
 
 
 @router.get("/api/treelab/presets")
-def preset(name: str = Query(..., pattern="^[a-z]+$"), n: int = Query(240, ge=N_MIN, le=N_MAX),
-           seed: int = Query(1, ge=0, le=SEED_MAX)) -> dict:
+def preset(
+    name: str = Query(..., pattern="^[a-z]+$"),
+    n: int = Query(240, ge=N_MIN, le=N_MAX),
+    seed: int = Query(1, ge=0, le=SEED_MAX),
+) -> dict:
     if name not in PRESETS:
         raise HTTPException(status_code=404, detail=f"unknown preset {name!r}")
     X, y = make_preset(name, n, seed)

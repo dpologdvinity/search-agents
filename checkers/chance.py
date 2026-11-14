@@ -58,5 +58,7 @@ class Chance:
 def odds_text() -> str:
     """The weight table in words, for the description shown on the page and in the CLI."""
     w = CHANCE_WEIGHTS
-    return (f"picks captures {w['capture']}×, men moving into the centre {w['centre_man']}×, "
-            f"other man moves {w['man']}×, king moves {w['king']}×")
+    return (
+        f"picks captures {w['capture']}×, men moving into the centre {w['centre_man']}×, "
+        f"other man moves {w['man']}×, king moves {w['king']}×"
+    )

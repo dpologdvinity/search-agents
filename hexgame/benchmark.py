@@ -71,9 +71,14 @@ def match(n: int, a: str, b: str, games: int, sims: int) -> dict:
         wins[a_colour][1] += won
     lo, hi = wilson(a_wins, games)
     return {
-        "a": a, "b": b, "games": games,
-        "a_wins": a_wins, "a_rate": round(a_wins / games, 4), "ci95": [lo, hi],
-        "a_as_down": f"{wins[DOWN][1]}/{wins[DOWN][0]}", "a_as_across": f"{wins[ACROSS][1]}/{wins[ACROSS][0]}",
+        "a": a,
+        "b": b,
+        "games": games,
+        "a_wins": a_wins,
+        "a_rate": round(a_wins / games, 4),
+        "ci95": [lo, hi],
+        "a_as_down": f"{wins[DOWN][1]}/{wins[DOWN][0]}",
+        "a_as_across": f"{wins[ACROSS][1]}/{wins[ACROSS][0]}",
         "mean_moves": round(total_moves / games, 1),
         "seconds": round(time.perf_counter() - start, 1),
     }
@@ -84,9 +89,12 @@ def speed(n: int, sims: int, reps: int = 2000) -> dict:
     out = {}
     for name, rave in (("rave", True), ("uct", False)):
         res = search(n, [EMPTY] * (n * n), DOWN, sims=sims, rave=rave, seed=7)
-        out[name] = {"sims": res["sims"], "seconds": round(res["seconds"], 3),
-                     "sims_per_second": round(res["sims"] / res["seconds"]),
-                     "nodes": res["nodes"]}
+        out[name] = {
+            "sims": res["sims"],
+            "seconds": round(res["seconds"], 3),
+            "sims_per_second": round(res["sims"] / res["seconds"]),
+            "nodes": res["nodes"],
+        }
     rng = random.Random(7)
     start = time.perf_counter()
     for _ in range(reps):
@@ -100,7 +108,9 @@ def run(size: int = 7, sims: int = 400, games: int = 40, matchups=MATCHUPS) -> d
     """The whole benchmark as one JSON-friendly dict."""
     start = time.perf_counter()
     return {
-        "size": size, "sims_per_move": sims, "games_per_matchup": games,
+        "size": size,
+        "sims_per_move": sims,
+        "games_per_matchup": games,
         "seed_base": 1000,
         "speed": speed(size, sims=max(sims, 2000)),
         "matchups": [match(size, a, b, games, sims) for a, b in matchups],
@@ -121,8 +131,10 @@ def to_markdown(result: dict) -> str:
     ]
     for m in result["matchups"]:
         lo, hi = m["ci95"]
-        lines.append(f"| {m['a']} vs {m['b']} | {100 * m['a_rate']:.1f}% ({100 * lo:.1f}%-{100 * hi:.1f}%) "
-                     f"| {m['a_as_down']} | {m['a_as_across']} | {m['mean_moves']} |")
+        lines.append(
+            f"| {m['a']} vs {m['b']} | {100 * m['a_rate']:.1f}% ({100 * lo:.1f}%-{100 * hi:.1f}%) "
+            f"| {m['a_as_down']} | {m['a_as_across']} | {m['mean_moves']} |"
+        )
     lines += [
         "",
         f"Speed on an empty {n}x{n} board: RAVE {sp['rave']['sims_per_second']} simulations/s, "

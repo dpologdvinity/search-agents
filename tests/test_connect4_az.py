@@ -77,8 +77,7 @@ def test_self_play_rows_are_consistent():
     from connect4.train_az import AZNet, self_play
 
     torch.manual_seed(0)
-    rows, results = self_play(AZNet(channels=8, blocks=1), games=3, simulations=8,
-                              rng=np.random.default_rng(0))
+    rows, results = self_play(AZNet(channels=8, blocks=1), games=3, simulations=8, rng=np.random.default_rng(0))
     assert len(rows) % 2 == 0
     for board, pi, z in rows:
         assert z in (-1.0, 0.0, 1.0)
@@ -145,9 +144,33 @@ def test_cpu_short_run_resumes_without_losing_progress(tmp_path):
     from connect4.train_az import main
 
     ckpt, npz, log = tmp_path / "az.pt", tmp_path / "az.npz", tmp_path / "log.jsonl"
-    common = ["--device", "cpu", "--threads", "1", "--games", "2", "--simulations", "4", "--steps", "1",
-              "--batch", "16", "--channels", "8", "--blocks", "1", "--eval-every", "0", "--save-buffer",
-              "--checkpoint", str(ckpt), "--weights-out", str(npz), "--log", str(log)]
+    common = [
+        "--device",
+        "cpu",
+        "--threads",
+        "1",
+        "--games",
+        "2",
+        "--simulations",
+        "4",
+        "--steps",
+        "1",
+        "--batch",
+        "16",
+        "--channels",
+        "8",
+        "--blocks",
+        "1",
+        "--eval-every",
+        "0",
+        "--save-buffer",
+        "--checkpoint",
+        str(ckpt),
+        "--weights-out",
+        str(npz),
+        "--log",
+        str(log),
+    ]
     main(["--iterations", "1", *common])
     assert ckpt.exists() and (tmp_path / "az.buffer.npz").exists() and npz.exists()
     # Resume from the same checkpoint: counters continue and the buffer is reloaded, not reset.
@@ -160,8 +183,19 @@ def test_cpu_short_run_resumes_without_losing_progress(tmp_path):
     assert second["buffer"] > first["buffer"] and second["device"] == "cpu" and second["amp"] is False
 
     with pytest.raises(SystemExit):  # --resume with no checkpoint must not silently start over
-        main(["--resume", "--iterations", "1", "--device", "cpu",
-              "--checkpoint", str(tmp_path / "missing.pt"), "--log", str(log)])
+        main(
+            [
+                "--resume",
+                "--iterations",
+                "1",
+                "--device",
+                "cpu",
+                "--checkpoint",
+                str(tmp_path / "missing.pt"),
+                "--log",
+                str(log),
+            ]
+        )
 
 
 def test_export_records_iteration_and_games(tmp_path):

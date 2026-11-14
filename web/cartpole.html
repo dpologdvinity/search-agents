@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="cartpole.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -53,70 +54,9 @@
     <p style="margin-top:0.5rem">WHAT THE AGENT IS THINKING shows the probabilities and value estimate of a learned agent. TRAIN IN YOUR BROWSER trains REINFORCE from random weights in this tab.</p>
   </section>
 
-  <div class="proj-body">
-    <div class="proj-game-col">
-
-      <div class="cp-stage-wrap">
-        <canvas id="stage" class="cp-stage" role="img" aria-label="Cart and pole simulation"></canvas>
-        <div class="cp-banner" id="status-line" aria-live="polite"></div>
-      </div>
-
-      <div class="cp-controls">
-        <div class="cp-mode" role="tablist" aria-label="Who pushes the cart">
-          <button class="cyber-btn act" id="mode-watch" type="button" role="tab" aria-selected="true" title="The agent you picked pushes the cart"><span class="btn-txt">◉ WATCH</span></button>
-          <button class="cyber-btn" id="mode-play" type="button" role="tab" aria-selected="false" title="You push the cart with the arrow keys, A and D, or the buttons below"><span class="btn-txt">✋ PLAY</span></button>
-        </div>
-        <div class="cp-buttons">
-          <button class="cyber-btn green" id="btn-run" type="button" title="Pause or resume the simulation (space)"><span class="btn-txt">❚❚ PAUSE</span></button>
-          <button class="cyber-btn pink" id="btn-nudge" type="button" title="Knock the pole sideways to test how well the agent recovers (N)"><span class="btn-txt">⚡ NUDGE</span></button>
-          <button class="cyber-btn" id="btn-reset" type="button" title="Start a new episode from a new random start state"><span class="btn-txt">⟲ NEW EPISODE</span></button>
-        </div>
-        <div class="cp-touch" aria-label="Push the cart">
-          <button class="cyber-btn" id="push-left" type="button" aria-label="Push left"><span class="btn-txt">◀ PUSH LEFT</span></button>
-          <button class="cyber-btn" id="push-right" type="button" aria-label="Push right"><span class="btn-txt">PUSH RIGHT ▶</span></button>
-        </div>
-        <div class="field-hint" id="keys-hint">Keys: space pauses, N nudges the pole. Pick PLAY to push it yourself.</div>
-      </div>
-
-      <div class="cp-mind">
-        <div class="section-title green-ttl">WHAT THE AGENT IS THINKING</div>
-        <div class="viz-panel cp-mind-panel">
-          <div class="viz-title" id="mind-title">Watch an agent. Its probabilities and value estimate appear here.</div>
-          <div class="cp-bars" id="mind-bars"></div>
-          <canvas id="vspark" class="cp-spark" width="600" height="60" aria-label="Critic value over the last steps"></canvas>
-          <div class="cp-narration" id="narration"></div>
-        </div>
-      </div>
-
-      <div class="cp-learn">
-        <div class="section-title pink-ttl">LEARNING CURVES · 5 SEEDS EACH</div>
-        <div class="viz-panel">
-          <div class="cp-legend" id="curve-legend"></div>
-          <canvas id="curves" class="cp-curves" width="720" height="300" aria-label="Episode return against training episode, mean and band across seeds"></canvas>
-          <div class="cp-learn-controls">
-            <button class="cyber-btn green" id="btn-train" type="button" title="Train REINFORCE from random weights in this tab, with the same equations as the Python run"><span class="btn-txt">▶ TRAIN IN YOUR BROWSER</span></button>
-            <span class="field-hint" id="train-note">REINFORCE from random weights, in this tab.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="cp-bench">
-        <div class="section-title">BENCHMARK · 200 SEEDED EPISODES EACH</div>
-        <div class="viz-panel">
-          <table class="cp-table" id="bench-table" title="Learned policies act greedily. The benchmark seeds are not used in training.">
-            <thead><tr><th>AGENT</th><th>MEAN STEPS</th><th>95% CI</th><th>REACHED 500</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <details class="log-fold">
-        <summary>Event log</summary>
-        <div class="agent-log" id="log" style="max-height:180px;border-color:rgba(255,0,160,0.3)"></div>
-      </details>
-    </div>
-
-    <div class="proj-ctrl-col">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
       <div>
         <div class="section-title pink-ttl">AGENT</div>
         <div class="stack">
@@ -146,6 +86,7 @@
           </div>
         </details>
       </div>
+
       <div>
         <div class="section-title green-ttl">CHECK THE PORT</div>
         <div class="viz-panel">
@@ -154,6 +95,74 @@
         </div>
       </div>
     </div>
+  </details>
+
+  <div class="proj-body play-layout">
+    <div class="proj-game-col">
+      <div class="cp-stage-wrap">
+        <canvas id="stage" class="cp-stage" role="img" aria-label="Cart and pole simulation"></canvas>
+        <div class="cp-banner" id="status-line" aria-live="polite"></div>
+      </div>
+
+      <div class="cp-controls">
+        <div class="cp-mode" role="tablist" aria-label="Who pushes the cart">
+          <button class="cyber-btn act" id="mode-watch" type="button" role="tab" aria-selected="true" title="The agent you picked pushes the cart"><span class="btn-txt">◉ WATCH</span></button>
+          <button class="cyber-btn" id="mode-play" type="button" role="tab" aria-selected="false" title="You push the cart with the arrow keys, A and D, or the buttons below"><span class="btn-txt">✋ PLAY</span></button>
+        </div>
+        <div class="cp-buttons">
+          <button class="cyber-btn green" id="btn-run" type="button" title="Pause or resume the simulation (space)"><span class="btn-txt">❚❚ PAUSE</span></button>
+          <button class="cyber-btn pink" id="btn-nudge" type="button" title="Knock the pole sideways to test how well the agent recovers (N)"><span class="btn-txt">⚡ NUDGE</span></button>
+          <button class="cyber-btn" id="btn-reset" type="button" title="Start a new episode from a new random start state"><span class="btn-txt">⟲ NEW EPISODE</span></button>
+        </div>
+        <div class="cp-touch" aria-label="Push the cart">
+          <button class="cyber-btn" id="push-left" type="button" aria-label="Push left"><span class="btn-txt">◀ PUSH LEFT</span></button>
+          <button class="cyber-btn" id="push-right" type="button" aria-label="Push right"><span class="btn-txt">PUSH RIGHT ▶</span></button>
+        </div>
+        <div class="field-hint" id="keys-hint">Keys: space pauses, N nudges the pole. Pick PLAY to push it yourself.</div>
+      </div>
+
+    </div>
+
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
+      <div class="cp-mind">
+        <div class="section-title green-ttl">WHAT THE AGENT IS THINKING</div>
+        <div class="viz-panel cp-mind-panel">
+          <div class="viz-title" id="mind-title">Watch an agent. Its probabilities and value estimate appear here.</div>
+          <div class="cp-bars" id="mind-bars"></div>
+          <canvas id="vspark" class="cp-spark" width="600" height="60" aria-label="Critic value over the last steps"></canvas>
+          <div class="cp-narration" id="narration"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="play-study">
+    <div class="cp-learn">
+        <div class="section-title pink-ttl">LEARNING CURVES · 5 SEEDS EACH</div>
+        <div class="viz-panel">
+          <div class="cp-legend" id="curve-legend"></div>
+          <canvas id="curves" class="cp-curves" width="720" height="300" aria-label="Episode return against training episode, mean and band across seeds"></canvas>
+          <div class="cp-learn-controls">
+            <button class="cyber-btn green" id="btn-train" type="button" title="Train REINFORCE from random weights in this tab, with the same equations as the Python run"><span class="btn-txt">▶ TRAIN IN YOUR BROWSER</span></button>
+            <span class="field-hint" id="train-note">REINFORCE from random weights, in this tab.</span>
+          </div>
+        </div>
+      </div>
+
+    <div class="cp-bench">
+        <div class="section-title">BENCHMARK · 200 SEEDED EPISODES EACH</div>
+        <div class="viz-panel">
+          <table class="cp-table" id="bench-table" title="Learned policies act greedily. The benchmark seeds are not used in training.">
+            <thead><tr><th>AGENT</th><th>MEAN STEPS</th><th>95% CI</th><th>REACHED 500</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    <details class="log-fold">
+        <summary>Event log</summary>
+        <div class="agent-log" id="log" style="max-height:180px;border-color:rgba(255,0,160,0.3)"></div>
+      </details>
   </div>
 
 <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
@@ -165,24 +174,24 @@
   <p class="hiw-note">The equations are the classic cart-pole equations with the constants of gym's CartPole.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L18-L29" target="_blank" rel="noopener" title="cartpole/env.py, lines 18–29" aria-label="Code on GitHub: cartpole/env.py, lines 18 to 29">2</a> At each step, the force on the cart is <span class="math">F = +10</span> N for a push to the right and <span class="math">-10</span> N for a push to the left.</p>
   <div class="math-fig">
     <div class="math math-block">\begin{aligned} \text{temp} &amp;= \frac{F + m_p\, l\, \dot\theta^{2} \sin\theta}{M} \\ \ddot\theta &amp;= \frac{g \sin\theta - \cos\theta \cdot \text{temp}}{l\left(\frac{4}{3} - \frac{m_p \cos^{2}\theta}{M}\right)} \\ \ddot x &amp;= \text{temp} - \frac{m_p\, l\, \ddot\theta \cos\theta}{M} \end{aligned}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L76" target="_blank" rel="noopener" title="cartpole/env.py, line 76" aria-label="Code on GitHub: cartpole/env.py, line 76">3</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L78-L79" target="_blank" rel="noopener" title="cartpole/env.py, lines 78–79" aria-label="Code on GitHub: cartpole/env.py, lines 78 to 79">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L81" target="_blank" rel="noopener" title="cartpole/env.py, line 81" aria-label="Code on GitHub: cartpole/env.py, line 81">5</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L76" target="_blank" rel="noopener" title="cartpole/env.py, line 76" aria-label="Code on GitHub: cartpole/env.py, line 76">3</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L78-L80" target="_blank" rel="noopener" title="cartpole/env.py, lines 78–80" aria-label="Code on GitHub: cartpole/env.py, lines 78 to 80">4</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L82" target="_blank" rel="noopener" title="cartpole/env.py, line 82" aria-label="Code on GitHub: cartpole/env.py, line 82">5</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">g = 9.8</span> m/s² is gravity, <span class="math">m_c = 1.0</span> kg is the cart mass, <span class="math">m_p = 0.1</span> kg is the pole mass, <span class="math">M = m_c + m_p = 1.1</span> kg is the total mass, and <span class="math">l = 0.5</span> m is the distance from the hinge to the pole's centre of mass. The value <span class="math">\text{temp}</span> is the cart's acceleration that the push alone would produce. The pole's angular acceleration <span class="math">\ddot\theta</span> couples gravity against the cart's acceleration, and the cart's acceleration <span class="math">\ddot x</span> is then corrected for the reaction of the pole. The factor 4/3 is the moment of inertia of a rod about its end.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L77" target="_blank" rel="noopener" title="cartpole/env.py, line 77" aria-label="Code on GitHub: cartpole/env.py, line 77">6</a></p>
-  <p class="hiw-note">The state is advanced by the <b>explicit Euler</b> method, which moves each variable by its rate times the time step <span class="math">\tau = 0.02</span> s, using the rates from the start of the step.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L82-L86" target="_blank" rel="noopener" title="cartpole/env.py, lines 82–86" aria-label="Code on GitHub: cartpole/env.py, lines 82 to 86">7</a></p>
+  <p class="hiw-note">The state is advanced by the <b>explicit Euler</b> method, which moves each variable by its rate times the time step <span class="math">\tau = 0.02</span> s, using the rates from the start of the step.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L83-L87" target="_blank" rel="noopener" title="cartpole/env.py, lines 83–87" aria-label="Code on GitHub: cartpole/env.py, lines 83 to 87">7</a></p>
   <div class="math-fig">
     <div class="math math-block">x \leftarrow x + \tau\,\dot x, \qquad \dot x \leftarrow \dot x + \tau\,\ddot x, \qquad \theta \leftarrow \theta + \tau\,\dot\theta, \qquad \dot\theta \leftarrow \dot\theta + \tau\,\ddot\theta</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L83-L86" target="_blank" rel="noopener" title="cartpole/env.py, lines 83–86" aria-label="Code on GitHub: cartpole/env.py, lines 83 to 86">8</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L84-L87" target="_blank" rel="noopener" title="cartpole/env.py, lines 84–87" aria-label="Code on GitHub: cartpole/env.py, lines 84 to 87">8</a></span>
   </div>
   <p class="hiw-note">At the start of an episode each of the four state variables is drawn uniformly from <span class="math">[-0.05, 0.05]</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L50-L52" target="_blank" rel="noopener" title="cartpole/env.py, lines 50–52" aria-label="Code on GitHub: cartpole/env.py, lines 50 to 52">9</a> The episode is <b>terminated</b> when the pole falls or the cart leaves the track, and is <b>truncated</b> when it reaches the 500-step cap without falling.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L28" target="_blank" rel="noopener" title="cartpole/env.py, line 28" aria-label="Code on GitHub: cartpole/env.py, line 28">10</a></p>
   <div class="math-fig">
     <div class="math math-block">\text{terminated} \iff |x| &gt; 2.4 \;\lor\; |\theta| &gt; 12^\circ \;(0.2094 \text{ rad}), \qquad \text{truncated} \iff \lnot\,\text{terminated} \land \text{steps} \ge 500</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L89-L90" target="_blank" rel="noopener" title="cartpole/env.py, lines 89–90" aria-label="Code on GitHub: cartpole/env.py, lines 89 to 90">11</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L90-L91" target="_blank" rel="noopener" title="cartpole/env.py, lines 90–91" aria-label="Code on GitHub: cartpole/env.py, lines 90 to 91">11</a></span>
   </div>
-  <p class="hiw-note">Every step gives reward <span class="math">r = 1</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L91" target="_blank" rel="noopener" title="cartpole/env.py, line 91" aria-label="Code on GitHub: cartpole/env.py, line 91">12</a> The total reward of an episode is therefore the number of steps balanced, and a truncated episode counts as a full balance of 500.</p>
+  <p class="hiw-note">Every step gives reward <span class="math">r = 1</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L92" target="_blank" rel="noopener" title="cartpole/env.py, line 92" aria-label="Code on GitHub: cartpole/env.py, line 92">12</a> The total reward of an episode is therefore the number of steps balanced, and a truncated episode counts as a full balance of 500.</p>
   <p class="hiw-note"><b>Example.</b> Start from <span class="math">\theta = 0.05</span> rad with the other three values at zero, and push right. Then <span class="math">\text{temp} = 9.09</span>, <span class="math">\ddot\theta = -13.82</span> rad/s² and <span class="math">\ddot x = 9.72</span> m/s². After one step, <span class="math">\dot x = 0.194</span> m/s and <span class="math">\dot\theta = -0.276</span> rad/s. The angular acceleration is negative, so the pole starts to swing back toward vertical.</p>
   <!-- env.py constants 18-29; step 64-91 (the full version keeps the raise and the bookkeeping lines) -->
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L64-L91" target="_blank" rel="noopener" title="cartpole/env.py, lines 64–91" aria-label="Code on GitHub: cartpole/env.py, lines 64 to 91">13</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L64-L92" target="_blank" rel="noopener" title="cartpole/env.py, lines 64–92" aria-label="Code on GitHub: cartpole/env.py, lines 64 to 92">13</a></span>
     <pre class="pseudo-simple">function STEP(state, action):
     force ← +FORCE if action is RIGHT, otherwise −FORCE
     temp ← (force + POLE-MASS-LENGTH · theta_dot² · sin(theta)) / TOTAL-MASS
@@ -212,7 +221,7 @@ function STEP(state, action):
     truncated ← (not terminated) and steps ≥ MAX-STEPS
     return state, reward 1, terminated, truncated</pre>
   </div>
-  <p class="hiw-note"><b>Explicit and semi-implicit Euler.</b> Both position updates use the velocities from before the step, which makes the scheme explicit. A semi-implicit scheme would use the new velocity in the position update. The code keeps the old values on purpose, so each line uses the same state.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L82-L86" target="_blank" rel="noopener" title="cartpole/env.py, lines 82–86" aria-label="Code on GitHub: cartpole/env.py, lines 82 to 86">7</a></p>
+  <p class="hiw-note"><b>Explicit and semi-implicit Euler.</b> Both position updates use the velocities from before the step, which makes the scheme explicit. A semi-implicit scheme would use the new velocity in the position update. The code keeps the old values on purpose, so each line uses the same state.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L83-L87" target="_blank" rel="noopener" title="cartpole/env.py, lines 83–87" aria-label="Code on GitHub: cartpole/env.py, lines 83 to 87">7</a></p>
   <p class="hiw-note"><b>Reading the state once.</b> The sine and cosine of the angle are read once, before any variable changes. Every formula in the step therefore sees the state at the start of the step.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/env.py#L74" target="_blank" rel="noopener" title="cartpole/env.py, line 74" aria-label="Code on GitHub: cartpole/env.py, line 74">14</a></p>
 
   <h3 class="hiw-sub">PD controller (hand-tuned)</h3>
@@ -254,29 +263,29 @@ function PD-ACT(state):
     <div class="math math-block">s = \left(\frac{x}{2.4},\; \frac{\dot x}{2},\; \frac{\theta}{0.2094},\; \frac{\dot\theta}{2}\right)</div>
     <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L31" target="_blank" rel="noopener" title="cartpole/nets.py, line 31" aria-label="Code on GitHub: cartpole/nets.py, line 31">19</a></span>
   </div>
-  <p class="hiw-note">A <b>multilayer perceptron</b> (MLP) with one hidden layer is a function of <span class="math">s</span>. Its hidden layer applies a <b>tanh</b> function, which squashes each value into <span class="math">(-1, 1)</span>, and its output layer is linear.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L67-L72" target="_blank" rel="noopener" title="cartpole/nets.py, lines 67–72" aria-label="Code on GitHub: cartpole/nets.py, lines 67 to 72">20</a></p>
+  <p class="hiw-note">A <b>multilayer perceptron</b> (MLP) with one hidden layer is a function of <span class="math">s</span>. Its hidden layer applies a <b>tanh</b> function, which squashes each value into <span class="math">(-1, 1)</span>, and its output layer is linear.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L68-L73" target="_blank" rel="noopener" title="cartpole/nets.py, lines 68–73" aria-label="Code on GitHub: cartpole/nets.py, lines 68 to 73">20</a></p>
   <div class="math-fig">
     <div class="math math-block">h = \tanh(W_1 s + b_1), \qquad z = W_2 h + b_2</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L70-L71" target="_blank" rel="noopener" title="cartpole/nets.py, lines 70–71" aria-label="Code on GitHub: cartpole/nets.py, lines 70 to 71">21</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L71-L72" target="_blank" rel="noopener" title="cartpole/nets.py, lines 71–72" aria-label="Code on GitHub: cartpole/nets.py, lines 71 to 72">21</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">W_1</span> is a <span class="math">16 \times 4</span> matrix and <span class="math">b_1</span> a vector of 16 biases, so <span class="math">h</span> has 16 hidden activations. For the policy, <span class="math">W_2</span> is <span class="math">2 \times 16</span>, and <span class="math">z = (z_0, z_1)</span> are the two <b>logits</b>, one for left and one for right. A <b>softmax</b> turns them into probabilities, and the policy is the pair <span class="math">p_L = e^{z_0} / (e^{z_0} + e^{z_1})</span> and <span class="math">p_R = 1 - p_L</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L39-L43" target="_blank" rel="noopener" title="cartpole/nets.py, lines 39–43" aria-label="Code on GitHub: cartpole/nets.py, lines 39 to 43">22</a></p>
-  <p class="hiw-note">The policy acts greedily by choosing right when <span class="math">z_1 &gt; z_0</span>, which is the same as <span class="math">p_R &gt; 0.5</span>. During training it samples from <span class="math">p</span> instead, so it keeps exploring.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L95-L97" target="_blank" rel="noopener" title="cartpole/agents.py, lines 95–97" aria-label="Code on GitHub: cartpole/agents.py, lines 95 to 97">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L80-L81" target="_blank" rel="noopener" title="cartpole/train.py, lines 80–81" aria-label="Code on GitHub: cartpole/train.py, lines 80 to 81">24</a></p>
+  <p class="hiw-note">The policy acts greedily by choosing right when <span class="math">z_1 &gt; z_0</span>, which is the same as <span class="math">p_R &gt; 0.5</span>. During training it samples from <span class="math">p</span> instead, so it keeps exploring.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L95-L97" target="_blank" rel="noopener" title="cartpole/agents.py, lines 95–97" aria-label="Code on GitHub: cartpole/agents.py, lines 95 to 97">23</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L81-L82" target="_blank" rel="noopener" title="cartpole/train.py, lines 81–82" aria-label="Code on GitHub: cartpole/train.py, lines 81 to 82">24</a></p>
   <p class="hiw-note">The <b>critic</b> is a second MLP with one output, which is the value estimate <span class="math">V(s)</span> of a state. Its output is multiplied by 50 (the constant <code>VALUE_SCALE</code>), so the network predicts <span class="math">V / 50</span> and its outputs stay near 1 when values approach 100.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L49" target="_blank" rel="noopener" title="cartpole/train.py, line 49" aria-label="Code on GitHub: cartpole/train.py, line 49">25</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L87-L93" target="_blank" rel="noopener" title="cartpole/agents.py, lines 87–93" aria-label="Code on GitHub: cartpole/agents.py, lines 87 to 93">26</a></p>
-  <p class="hiw-note"><b>Starting weights.</b> The hidden weights start at random values with standard deviation <span class="math">1/\sqrt{4}</span> and the output weights at standard deviation <span class="math">s/\sqrt{16}</span>, where <span class="math">s</span> is the output scale. The output scale is 0.1 for the policy, so the first policy is close to 50/50, and 1.0 for the critic. All biases start at zero.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L52-L65" target="_blank" rel="noopener" title="cartpole/nets.py, lines 52–65" aria-label="Code on GitHub: cartpole/nets.py, lines 52 to 65">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L152-L164" target="_blank" rel="noopener" title="cartpole/train.py, lines 152–164" aria-label="Code on GitHub: cartpole/train.py, lines 152 to 164">28</a></p>
+  <p class="hiw-note"><b>Starting weights.</b> The hidden weights start at random values with standard deviation <span class="math">1/\sqrt{4}</span> and the output weights at standard deviation <span class="math">s/\sqrt{16}</span>, where <span class="math">s</span> is the output scale. The output scale is 0.1 for the policy, so the first policy is close to 50/50, and 1.0 for the critic. All biases start at zero.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L52-L66" target="_blank" rel="noopener" title="cartpole/nets.py, lines 52–66" aria-label="Code on GitHub: cartpole/nets.py, lines 52 to 66">27</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L153-L165" target="_blank" rel="noopener" title="cartpole/train.py, lines 153–165" aria-label="Code on GitHub: cartpole/train.py, lines 153 to 165">28</a></p>
   <p class="hiw-note"><b>Backpropagation</b> is the chain rule applied layer by layer. Given <span class="math">dL/dZ</span> for each row of a batch, where a row is one step, the gradients are:</p>
   <div class="math-fig">
     <div class="math math-block">dW_2 = dZ^{\top} H, \qquad db_2 = \sum_{\text{rows}} dZ, \qquad dH = dZ\, W_2, \qquad dA = dH \odot (1 - H^{2}), \qquad dW_1 = dA^{\top} X, \qquad db_1 = \sum_{\text{rows}} dA</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L79-L86" target="_blank" rel="noopener" title="cartpole/nets.py, lines 79–86" aria-label="Code on GitHub: cartpole/nets.py, lines 79 to 86">29</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L80-L87" target="_blank" rel="noopener" title="cartpole/nets.py, lines 80–87" aria-label="Code on GitHub: cartpole/nets.py, lines 80 to 87">29</a></span>
   </div>
-  <p class="hiw-note">Here <span class="math">X</span> is the matrix of scaled states with one row per step, <span class="math">H</span> the matrix of hidden activations, <span class="math">\odot</span> the elementwise product, and <span class="math">1 - H^2</span> the derivative of tanh. The tests compare these gradients with finite differences.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_cartpole.py#L122-L155" target="_blank" rel="noopener" title="tests/test_cartpole.py, lines 122–155" aria-label="Code on GitHub: tests/test_cartpole.py, lines 122 to 155">30</a></p>
+  <p class="hiw-note">Here <span class="math">X</span> is the matrix of scaled states with one row per step, <span class="math">H</span> the matrix of hidden activations, <span class="math">\odot</span> the elementwise product, and <span class="math">1 - H^2</span> the derivative of tanh. The tests compare these gradients with finite differences.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tests/test_cartpole.py#L124-L155" target="_blank" rel="noopener" title="tests/test_cartpole.py, lines 124–155" aria-label="Code on GitHub: tests/test_cartpole.py, lines 124 to 155">30</a></p>
   <p class="hiw-note"><b>Adam</b> is the optimiser used for every network. It keeps a running mean <span class="math">m</span> of each gradient <span class="math">g</span> and a running mean <span class="math">v</span> of its square. The update for each parameter <span class="math">\theta</span> is:</p>
   <div class="math-fig">
     <div class="math math-block">m \leftarrow \beta_1 m + (1 - \beta_1)\,g, \qquad v \leftarrow \beta_2 v + (1 - \beta_2)\,g^{2}, \qquad \theta \leftarrow \theta - \alpha\, \frac{m / (1 - \beta_1^{t})}{\sqrt{v / (1 - \beta_2^{t})} + \varepsilon}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L103-L110" target="_blank" rel="noopener" title="cartpole/nets.py, lines 103–110" aria-label="Code on GitHub: cartpole/nets.py, lines 103 to 110">31</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L104-L111" target="_blank" rel="noopener" title="cartpole/nets.py, lines 104–111" aria-label="Code on GitHub: cartpole/nets.py, lines 104 to 111">31</a></span>
   </div>
-  <p class="hiw-note">The step size is <span class="math">\alpha = 0.01</span>, the decay rates are <span class="math">\beta_1 = 0.9</span> and <span class="math">\beta_2 = 0.999</span>, and <span class="math">\varepsilon = 10^{-8}</span> guards the division. The step count is <span class="math">t</span>. Dividing by <span class="math">1 - \beta^{t}</span> corrects for both averages starting at zero, which would otherwise make the first steps too small. The step subtracts the update, so the gradient passed in is the gradient of the loss, and the step lowers it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L89-L94" target="_blank" rel="noopener" title="cartpole/nets.py, lines 89–94" aria-label="Code on GitHub: cartpole/nets.py, lines 89 to 94">32</a></p>
+  <p class="hiw-note">The step size is <span class="math">\alpha = 0.01</span>, the decay rates are <span class="math">\beta_1 = 0.9</span> and <span class="math">\beta_2 = 0.999</span>, and <span class="math">\varepsilon = 10^{-8}</span> guards the division. The step count is <span class="math">t</span>. Dividing by <span class="math">1 - \beta^{t}</span> corrects for both averages starting at zero, which would otherwise make the first steps too small. The step subtracts the update, so the gradient passed in is the gradient of the loss, and the step lowers it.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L90-L95" target="_blank" rel="noopener" title="cartpole/nets.py, lines 90–95" aria-label="Code on GitHub: cartpole/nets.py, lines 90 to 95">32</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L99-L110" target="_blank" rel="noopener" title="cartpole/nets.py, lines 99–110" aria-label="Code on GitHub: cartpole/nets.py, lines 99 to 110">33</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L100-L111" target="_blank" rel="noopener" title="cartpole/nets.py, lines 100–111" aria-label="Code on GitHub: cartpole/nets.py, lines 100 to 111">33</a></span>
     <pre class="pseudo-simple">function ADAM-STEP(grads):
     t ← t + 1
     for each parameter p with gradient g:
@@ -296,26 +305,26 @@ function ADAM-STEP(grads):
   </div>
 
   <h3 class="hiw-sub">REINFORCE with a baseline</h3>
-  <p class="hiw-note"><b>REINFORCE</b> is a <b>policy gradient</b> method. It samples episodes from the policy, then makes the actions that led to high returns more likely. An episode is a sequence of states, actions and rewards. The <b>return</b> <span class="math">G_t</span> is the discounted sum of the rewards from step <span class="math">t</span> on, where the <b>discount factor</b> <span class="math">\gamma = 0.99</span> makes later rewards count a little less. It is computed backwards, one step at a time.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L42" target="_blank" rel="noopener" title="cartpole/train.py, line 42" aria-label="Code on GitHub: cartpole/train.py, line 42">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L90-L97" target="_blank" rel="noopener" title="cartpole/train.py, lines 90–97" aria-label="Code on GitHub: cartpole/train.py, lines 90 to 97">35</a></p>
+  <p class="hiw-note"><b>REINFORCE</b> is a <b>policy gradient</b> method. It samples episodes from the policy, then makes the actions that led to high returns more likely. An episode is a sequence of states, actions and rewards. The <b>return</b> <span class="math">G_t</span> is the discounted sum of the rewards from step <span class="math">t</span> on, where the <b>discount factor</b> <span class="math">\gamma = 0.99</span> makes later rewards count a little less. It is computed backwards, one step at a time.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L42" target="_blank" rel="noopener" title="cartpole/train.py, line 42" aria-label="Code on GitHub: cartpole/train.py, line 42">34</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L91-L98" target="_blank" rel="noopener" title="cartpole/train.py, lines 91–98" aria-label="Code on GitHub: cartpole/train.py, lines 91 to 98">35</a></p>
   <div class="math-fig">
     <div class="math math-block">G_t = r_t + \gamma\, G_{t+1}, \qquad G_{T} = 0</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L95" target="_blank" rel="noopener" title="cartpole/train.py, line 95" aria-label="Code on GitHub: cartpole/train.py, line 95">36</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L96" target="_blank" rel="noopener" title="cartpole/train.py, line 96" aria-label="Code on GitHub: cartpole/train.py, line 96">36</a></span>
   </div>
-  <p class="hiw-note">The <b>baseline</b> is the mean of the returns over every step of the batch of 8 episodes. Subtracting a baseline does not change the expected gradient, but it lowers the variance of the estimate. The <b>advantage</b> <span class="math">A_t</span> is the return minus the baseline, divided by the batch standard deviation <span class="math">\sigma_G</span> (the population form, which divides by the number of steps <span class="math">T</span>), so that the size of the step does not depend on the reward scale.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L112-L118" target="_blank" rel="noopener" title="cartpole/train.py, lines 112–118" aria-label="Code on GitHub: cartpole/train.py, lines 112 to 118">37</a></p>
+  <p class="hiw-note">The <b>baseline</b> is the mean of the returns over every step of the batch of 8 episodes. Subtracting a baseline does not change the expected gradient, but it lowers the variance of the estimate. The <b>advantage</b> <span class="math">A_t</span> is the return minus the baseline, divided by the batch standard deviation <span class="math">\sigma_G</span> (the population form, which divides by the number of steps <span class="math">T</span>), so that the size of the step does not depend on the reward scale.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L113-L119" target="_blank" rel="noopener" title="cartpole/train.py, lines 113–119" aria-label="Code on GitHub: cartpole/train.py, lines 113 to 119">37</a></p>
   <div class="math-fig">
     <div class="math math-block">A_t = \frac{G_t - \bar G}{\sigma_G + 10^{-8}}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L117" target="_blank" rel="noopener" title="cartpole/train.py, line 117" aria-label="Code on GitHub: cartpole/train.py, line 117">38</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L118" target="_blank" rel="noopener" title="cartpole/train.py, line 118" aria-label="Code on GitHub: cartpole/train.py, line 118">38</a></span>
   </div>
   <p class="hiw-note">Here <span class="math">\bar G</span> and <span class="math">\sigma_G</span> are taken over all <span class="math">T</span> steps of the batch, and the term <span class="math">10^{-8}</span> keeps the division safe when every return is the same.</p>
   <p class="hiw-note">The <b>loss</b> is <span class="math">L = -\frac{1}{T}\sum_t A_t \log \pi(a_t \mid s_t)</span>, the negative of the advantage-weighted log-probability of each action taken. Minimising it performs gradient ascent on the expected return. For a softmax, the derivative with respect to each logit is:</p>
   <div class="math-fig">
     <div class="math math-block">\frac{\partial L}{\partial z_k} = -\frac{A_t}{T}\left(\mathbf{1}[k = a_t] - p_k\right)</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L100-L109" target="_blank" rel="noopener" title="cartpole/train.py, lines 100–109" aria-label="Code on GitHub: cartpole/train.py, lines 100 to 109">39</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L101-L110" target="_blank" rel="noopener" title="cartpole/train.py, lines 101–110" aria-label="Code on GitHub: cartpole/train.py, lines 101 to 110">39</a></span>
   </div>
-  <p class="hiw-note">Here <span class="math">\mathbf{1}[k = a_t]</span> is 1 when <span class="math">k</span> is the action taken and 0 otherwise, and <span class="math">p_k</span> is the policy's probability of <span class="math">k</span>. This row of derivatives is the <span class="math">dZ</span> that backpropagation takes, and then one Adam step is taken on the batch. Each batch of 8 episodes gives one update, with a learning rate of 0.01.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L43-L47" target="_blank" rel="noopener" title="cartpole/train.py, lines 43–47" aria-label="Code on GitHub: cartpole/train.py, lines 43 to 47">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L170-L175" target="_blank" rel="noopener" title="cartpole/train.py, lines 170–175" aria-label="Code on GitHub: cartpole/train.py, lines 170 to 175">41</a></p>
+  <p class="hiw-note">Here <span class="math">\mathbf{1}[k = a_t]</span> is 1 when <span class="math">k</span> is the action taken and 0 otherwise, and <span class="math">p_k</span> is the policy's probability of <span class="math">k</span>. This row of derivatives is the <span class="math">dZ</span> that backpropagation takes, and then one Adam step is taken on the batch. Each batch of 8 episodes gives one update, with a learning rate of 0.01.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L43-L47" target="_blank" rel="noopener" title="cartpole/train.py, lines 43–47" aria-label="Code on GitHub: cartpole/train.py, lines 43 to 47">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L171-L176" target="_blank" rel="noopener" title="cartpole/train.py, lines 171–176" aria-label="Code on GitHub: cartpole/train.py, lines 171 to 176">41</a></p>
   <p class="hiw-note"><b>Example.</b> In a batch where the action taken had a return above the mean, <span class="math">A_t</span> is positive, and the derivative for the chosen logit is negative, so Adam raises that logit. The opposite holds for a below-average action.</p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L72-L87" target="_blank" rel="noopener" title="cartpole/train.py, lines 72–87" aria-label="Code on GitHub: cartpole/train.py, lines 72 to 87">42</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L73-L88" target="_blank" rel="noopener" title="cartpole/train.py, lines 73–88" aria-label="Code on GitHub: cartpole/train.py, lines 73 to 88">42</a></span>
     <pre class="pseudo-simple">function ROLLOUT(policy, rng, env_seed):
     state ← RESET(env_seed)                  # the start state comes from the seed
     while the episode is not done:
@@ -338,9 +347,9 @@ function ADAM-STEP(grads):
         append x to obs, a to act, r to rew, scaled(o) to nxt
     return Episode(obs, act, rew, nxt, terminated)</pre>
   </div>
-  <p class="hiw-note"><b>Sampling, not the argmax.</b> The rollout draws each action from the policy's probabilities. The greedy rule is used only when the trained policy is shown or benchmarked. Each episode in a batch gets its own start state, drawn from the training generator, so the batch covers different starts.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L157-L172" target="_blank" rel="noopener" title="cartpole/train.py, lines 157–172" aria-label="Code on GitHub: cartpole/train.py, lines 157 to 172">43</a></p>
+  <p class="hiw-note"><b>Sampling, not the argmax.</b> The rollout draws each action from the policy's probabilities. The greedy rule is used only when the trained policy is shown or benchmarked. Each episode in a batch gets its own start state, drawn from the training generator, so the batch covers different starts.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L158-L173" target="_blank" rel="noopener" title="cartpole/train.py, lines 158–173" aria-label="Code on GitHub: cartpole/train.py, lines 158 to 173">43</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L90-L118" target="_blank" rel="noopener" title="cartpole/train.py, lines 90–118" aria-label="Code on GitHub: cartpole/train.py, lines 90 to 118">44</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L91-L119" target="_blank" rel="noopener" title="cartpole/train.py, lines 91–119" aria-label="Code on GitHub: cartpole/train.py, lines 91 to 119">44</a></span>
     <pre class="pseudo-simple">function REINFORCE-UPDATE(batch):           # 8 sampled episodes
     G ← discounted return of every step in the batch
     advantage ← (G − mean(G)) / (std(G) + 1e-8)         # the batch mean is the baseline
@@ -367,20 +376,20 @@ function POLICY-STEP(X, A, adv):
     grads ← BACKPROP(X, H, dZ)                          # dW2, db2, dW1, db1
     ADAM-STEP(grads)</pre>
   </div>
-  <p class="hiw-note"><b>Why the update uses a batch.</b> A single episode gives a noisy gradient, and a batch of 8 gives a steadier one. The baseline is taken over the whole batch, so it does not depend on any one episode. The gradient is divided by the total number of steps <span class="math">T</span>, so it is an average per step, and a long episode contributes more terms because it has more steps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L112-L118" target="_blank" rel="noopener" title="cartpole/train.py, lines 112–118" aria-label="Code on GitHub: cartpole/train.py, lines 112 to 118">37</a></p>
+  <p class="hiw-note"><b>Why the update uses a batch.</b> A single episode gives a noisy gradient, and a batch of 8 gives a steadier one. The baseline is taken over the whole batch, so it does not depend on any one episode. The gradient is divided by the total number of steps <span class="math">T</span>, so it is an average per step, and a long episode contributes more terms because it has more steps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L113-L119" target="_blank" rel="noopener" title="cartpole/train.py, lines 113–119" aria-label="Code on GitHub: cartpole/train.py, lines 113 to 119">37</a></p>
   <p class="hiw-note"><b>Why the gradient is written out.</b> The project keeps training in NumPy so that serving needs no deep-learning framework. The derivatives are therefore written out by hand, and each line can be checked against the equations above. The tests check them numerically.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L1-L4" target="_blank" rel="noopener" title="cartpole/nets.py, lines 1–4" aria-label="Code on GitHub: cartpole/nets.py, lines 1 to 4">45</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/nets.py#L12-L18" target="_blank" rel="noopener" title="cartpole/nets.py, lines 12–18" aria-label="Code on GitHub: cartpole/nets.py, lines 12 to 18">46</a></p>
 
   <h3 class="hiw-sub">Actor-critic (Monte Carlo critic)</h3>
   <p class="hiw-note"><b>Actor-critic</b> adds a learned <b>critic</b> to the policy. The policy is the <b>actor</b>. The critic is trained to predict the return from each state, which is the value <span class="math">V(s)</span>. The advantage is then the return that the episode actually earned minus the critic's prediction, so the policy learns how much better or worse the episode went than the critic expected, not how it compared with the batch average.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L15-L18" target="_blank" rel="noopener" title="cartpole/train.py, lines 15–18" aria-label="Code on GitHub: cartpole/train.py, lines 15 to 18">47</a></p>
-  <p class="hiw-note">The critic's target is the <b>Monte Carlo</b> return <span class="math">y_t = G_t</span>, which is the return actually observed from step <span class="math">t</span> to the end of the episode. The critic minimises a squared error, and its advantage is computed from the same values before the critic moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L133-L149" target="_blank" rel="noopener" title="cartpole/train.py, lines 133–149" aria-label="Code on GitHub: cartpole/train.py, lines 133 to 149">48</a></p>
+  <p class="hiw-note">The critic's target is the <b>Monte Carlo</b> return <span class="math">y_t = G_t</span>, which is the return actually observed from step <span class="math">t</span> to the end of the episode. The critic minimises a squared error, and its advantage is computed from the same values before the critic moves.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L134-L150" target="_blank" rel="noopener" title="cartpole/train.py, lines 134–150" aria-label="Code on GitHub: cartpole/train.py, lines 134 to 150">48</a></p>
   <div class="math-fig">
     <div class="math math-block">L_V = \frac{1}{2T}\sum_t \bigl(V(s_t) - y_t\bigr)^2, \qquad V(s_t) = 50\, z^{V}_t, \qquad \delta_t = y_t - V(s_t), \qquad A_t = \frac{\delta_t}{50}</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L134-L149" target="_blank" rel="noopener" title="cartpole/train.py, lines 134–149" aria-label="Code on GitHub: cartpole/train.py, lines 134 to 149">49</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L135-L150" target="_blank" rel="noopener" title="cartpole/train.py, lines 135–150" aria-label="Code on GitHub: cartpole/train.py, lines 135 to 150">49</a></span>
   </div>
-  <p class="hiw-note">Here <span class="math">z^{V}_t</span> is the critic's raw output for step <span class="math">t</span>, and the policy then takes the same update as REINFORCE with advantage <span class="math">A_t</span>. The division by 50 brings <span class="math">\delta_t</span> to roughly the scale of a return minus a baseline, so the step size stays comparable with REINFORCE's. The critic's gradient is <span class="math">\partial L_V / \partial z^{V}_t = 50\,(V(s_t) - y_t)/T</span>, and it takes one Adam step at learning rate 0.01.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L142-L144" target="_blank" rel="noopener" title="cartpole/train.py, lines 142–144" aria-label="Code on GitHub: cartpole/train.py, lines 142 to 144">50</a></p>
-  <p class="hiw-note">The textbook alternative is a <b>temporal-difference</b> target, TD(0), which bootstraps from the critic's own estimate of the next state: <span class="math">y_t = r_t + \gamma V(s_{t+1})</span>, with <span class="math">V = 0</span> after a fall. In this code it is kept as the option <code>ACTOR_CRITIC_TARGET = "td"</code>. In the pilot runs it did not learn reliably, so the shipped critic regresses onto Monte Carlo returns.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L19-L21" target="_blank" rel="noopener" title="cartpole/train.py, lines 19–21" aria-label="Code on GitHub: cartpole/train.py, lines 19 to 21">51</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L45" target="_blank" rel="noopener" title="cartpole/train.py, line 45" aria-label="Code on GitHub: cartpole/train.py, line 45">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L138-L140" target="_blank" rel="noopener" title="cartpole/train.py, lines 138–140" aria-label="Code on GitHub: cartpole/train.py, lines 138 to 140">53</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L147-L168" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 147–168" aria-label="Code on GitHub: cartpole/__main__.py, lines 147 to 168">54</a></p>
+  <p class="hiw-note">Here <span class="math">z^{V}_t</span> is the critic's raw output for step <span class="math">t</span>, and the policy then takes the same update as REINFORCE with advantage <span class="math">A_t</span>. The division by 50 brings <span class="math">\delta_t</span> to roughly the scale of a return minus a baseline, so the step size stays comparable with REINFORCE's. The critic's gradient is <span class="math">\partial L_V / \partial z^{V}_t = 50\,(V(s_t) - y_t)/T</span>, and it takes one Adam step at learning rate 0.01.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L143-L145" target="_blank" rel="noopener" title="cartpole/train.py, lines 143–145" aria-label="Code on GitHub: cartpole/train.py, lines 143 to 145">50</a></p>
+  <p class="hiw-note">The textbook alternative is a <b>temporal-difference</b> target, TD(0), which bootstraps from the critic's own estimate of the next state: <span class="math">y_t = r_t + \gamma V(s_{t+1})</span>, with <span class="math">V = 0</span> after a fall. In this code it is kept as the option <code>ACTOR_CRITIC_TARGET = "td"</code>. In the pilot runs it did not learn reliably, so the shipped critic regresses onto Monte Carlo returns.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L19-L21" target="_blank" rel="noopener" title="cartpole/train.py, lines 19–21" aria-label="Code on GitHub: cartpole/train.py, lines 19 to 21">51</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L45" target="_blank" rel="noopener" title="cartpole/train.py, line 45" aria-label="Code on GitHub: cartpole/train.py, line 45">52</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L139-L141" target="_blank" rel="noopener" title="cartpole/train.py, lines 139–141" aria-label="Code on GitHub: cartpole/train.py, lines 139 to 141">53</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L163-L184" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 163–184" aria-label="Code on GitHub: cartpole/__main__.py, lines 163 to 184">54</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L121-L149" target="_blank" rel="noopener" title="cartpole/train.py, lines 121–149" aria-label="Code on GitHub: cartpole/train.py, lines 121 to 149">55</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L122-L150" target="_blank" rel="noopener" title="cartpole/train.py, lines 122–150" aria-label="Code on GitHub: cartpole/train.py, lines 122 to 150">55</a></span>
     <pre class="pseudo-simple">function ACTOR-CRITIC-UPDATE(batch):
     V ← critic's value of every step in the batch
     y ← Monte Carlo return of every step
@@ -408,18 +417,18 @@ function ACTOR-CRITIC-UPDATE(batch):
     delta ← y − V                                         # from the values before the critic moved
     POLICY-STEP(X, A, delta / VALUE_SCALE)                # the policy update defined under REINFORCE</pre>
   </div>
-  <p class="hiw-note"><b>Why the advantage is taken before the critic moves.</b> The critic's update changes <span class="math">V</span>. Computing <span class="math">\delta_t</span> from the old values keeps the advantage defined by the same critic that produced it, and the code does this on purpose.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L146-L149" target="_blank" rel="noopener" title="cartpole/train.py, lines 146–149" aria-label="Code on GitHub: cartpole/train.py, lines 146 to 149">56</a></p>
-  <p class="hiw-note"><b>Stopping at a true fall.</b> In the TD branch, the flag <code>done</code> is set only on the last step of an episode that fell. An episode cut off at 500 steps still bootstraps from the next state, because the cap is not a failure.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L129-L130" target="_blank" rel="noopener" title="cartpole/train.py, lines 129–130" aria-label="Code on GitHub: cartpole/train.py, lines 129 to 130">57</a></p>
+  <p class="hiw-note"><b>Why the advantage is taken before the critic moves.</b> The critic's update changes <span class="math">V</span>. Computing <span class="math">\delta_t</span> from the old values keeps the advantage defined by the same critic that produced it, and the code does this on purpose.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L147-L150" target="_blank" rel="noopener" title="cartpole/train.py, lines 147–150" aria-label="Code on GitHub: cartpole/train.py, lines 147 to 150">56</a></p>
+  <p class="hiw-note"><b>Stopping at a true fall.</b> In the TD branch, the flag <code>done</code> is set only on the last step of an episode that fell. An episode cut off at 500 steps still bootstraps from the next state, because the cap is not a failure.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L130-L131" target="_blank" rel="noopener" title="cartpole/train.py, lines 130–131" aria-label="Code on GitHub: cartpole/train.py, lines 130 to 131">57</a></p>
 
   <h3 class="hiw-sub">Cross-entropy search</h3>
   <p class="hiw-note">The <b>cross-entropy method</b> (CEM) is a search with no gradients. It samples candidate parameter vectors from a <b>Gaussian</b> distribution, a bell curve over each parameter with a mean <span class="math">\mu</span> and a spread <span class="math">\sigma</span>. It scores each candidate, keeps the best quarter as the <b>elite</b>, and refits the Gaussian to the elite. The policy is linear: it pushes right when <span class="math">w \cdot s + b &gt; 0</span>, where <span class="math">s</span> is the scaled state, so the parameter vector <span class="math">\theta = (w_1, w_2, w_3, w_4, b)</span> has five numbers.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L100-L108" target="_blank" rel="noopener" title="cartpole/agents.py, lines 100–108" aria-label="Code on GitHub: cartpole/agents.py, lines 100 to 108">58</a></p>
   <div class="math-fig">
     <div class="math math-block">\theta^{(i)} = \mu + \sigma \odot \varepsilon^{(i)}, \quad \varepsilon^{(i)} \sim \mathcal{N}(0, I), \quad i = 1,\dots,40 \qquad \mu \leftarrow \frac{1}{10}\sum_{i \in E}\theta^{(i)}, \qquad \sigma \leftarrow \operatorname{std}_{i \in E}\bigl(\theta^{(i)}\bigr) + 0.01</div>
-    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L195-L202" target="_blank" rel="noopener" title="cartpole/train.py, lines 195–202" aria-label="Code on GitHub: cartpole/train.py, lines 195 to 202">59</a></span>
+    <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L196-L203" target="_blank" rel="noopener" title="cartpole/train.py, lines 196–203" aria-label="Code on GitHub: cartpole/train.py, lines 196 to 203">59</a></span>
   </div>
-  <p class="hiw-note">Each generation draws 40 candidates. The score of a candidate is the number of steps it balances from one start state, shared by all 40 candidates, so they are compared on the same episode. <span class="math">E</span> is the set of the 10 highest scores. Ties at the cap are broken by the sort order, so some elite choices among tied candidates are arbitrary. The mean and spread are computed separately for each of the five numbers, and the <b>floor</b> of 0.01 stops the spread from collapsing to zero too early. The search starts with <span class="math">\mu = 0</span> and <span class="math">\sigma = 1</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L187-L202" target="_blank" rel="noopener" title="cartpole/train.py, lines 187–202" aria-label="Code on GitHub: cartpole/train.py, lines 187 to 202">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L50-L52" target="_blank" rel="noopener" title="cartpole/train.py, lines 50–52" aria-label="Code on GitHub: cartpole/train.py, lines 50 to 52">61</a></p>
+  <p class="hiw-note">Each generation draws 40 candidates. The score of a candidate is the number of steps it balances from one start state, shared by all 40 candidates, so they are compared on the same episode. <span class="math">E</span> is the set of the 10 highest scores. Ties at the cap are broken by the sort order, so some elite choices among tied candidates are arbitrary. The mean and spread are computed separately for each of the five numbers, and the <b>floor</b> of 0.01 stops the spread from collapsing to zero too early. The search starts with <span class="math">\mu = 0</span> and <span class="math">\sigma = 1</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L188-L203" target="_blank" rel="noopener" title="cartpole/train.py, lines 188–203" aria-label="Code on GitHub: cartpole/train.py, lines 188 to 203">60</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L50-L52" target="_blank" rel="noopener" title="cartpole/train.py, lines 50–52" aria-label="Code on GitHub: cartpole/train.py, lines 50 to 52">61</a></p>
   <div class="pseudo">
-    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L187-L205" target="_blank" rel="noopener" title="cartpole/train.py, lines 187–205" aria-label="Code on GitHub: cartpole/train.py, lines 187 to 205">62</a></span>
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L188-L206" target="_blank" rel="noopener" title="cartpole/train.py, lines 188–206" aria-label="Code on GitHub: cartpole/train.py, lines 188 to 206">62</a></span>
     <pre class="pseudo-simple">function CEM(episodes):
     mu ← zeros(5)                            # mean of the sampling distribution
     sigma ← ones(5)                          # spread for each of the five numbers
@@ -476,10 +485,10 @@ function LINEAR-ACT(theta, state):
     <tr><td>CEM start</td><td>Mean 0, spread 1 for each of the 5 numbers</td><td>CEM</td></tr>
     <tr><td>Training</td><td>Seeds 0 to 4, 1,500 episodes each</td><td>trained agents</td></tr>
   </tbody></table></div>
-  <p class="hiw-note"><b>How these were chosen.</b> The physics uses the constants of gym's CartPole and is not tuned. The PD gains were set by hand after a coarse sweep over tuning seeds 9000 to 9099, and that sweep is not in the repository.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L36-L38" target="_blank" rel="noopener" title="cartpole/agents.py, lines 36–38" aria-label="Code on GitHub: cartpole/agents.py, lines 36 to 38">64</a> The network width (16), batch size (8), learning rate (0.01 for both networks), discount (0.99), critic scale (50) and CEM settings (40, 10, 0.01) are single hand-picked values. No sweep over them is committed. The one comparison on record is the actor-critic target: TD(0) variants were tried while tuning, and the Monte Carlo target was kept.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L42-L53" target="_blank" rel="noopener" title="cartpole/train.py, lines 42–53" aria-label="Code on GitHub: cartpole/train.py, lines 42 to 53">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L147-L168" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 147–168" aria-label="Code on GitHub: cartpole/__main__.py, lines 147 to 168">54</a></p>
+  <p class="hiw-note"><b>How these were chosen.</b> The physics uses the constants of gym's CartPole and is not tuned. The PD gains were set by hand after a coarse sweep over tuning seeds 9000 to 9099, and that sweep is not in the repository.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/agents.py#L36-L38" target="_blank" rel="noopener" title="cartpole/agents.py, lines 36–38" aria-label="Code on GitHub: cartpole/agents.py, lines 36 to 38">64</a> The network width (16), batch size (8), learning rate (0.01 for both networks), discount (0.99), critic scale (50) and CEM settings (40, 10, 0.01) are single hand-picked values. No sweep over them is committed. The one comparison on record is the actor-critic target: TD(0) variants were tried while tuning, and the Monte Carlo target was kept.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L42-L53" target="_blank" rel="noopener" title="cartpole/train.py, lines 42–53" aria-label="Code on GitHub: cartpole/train.py, lines 42 to 53">63</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L163-L184" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 163–184" aria-label="Code on GitHub: cartpole/__main__.py, lines 163 to 184">54</a></p>
 
   <h3 class="hiw-sub">Training</h3>
-  <p class="hiw-note">REINFORCE, actor-critic and CEM were each trained on seeds 0 to 4 for 1,500 episodes. Training episodes are sampled, not greedy. The shipped weights are those of the seed whose last 50 training episodes averaged highest: REINFORCE seed 2, actor-critic seed 0 and CEM seed 0. Ties go to the seed listed first, because several seeds reach the 500-step cap and their last-50 means tie. The table gives the first training episode at which the trailing 100-episode mean reached 475.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L228-L245" target="_blank" rel="noopener" title="cartpole/train.py, lines 228–245" aria-label="Code on GitHub: cartpole/train.py, lines 228 to 245">65</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/cartpole_learning.md" target="_blank" rel="noopener" title="results/cartpole_learning.md" aria-label="Code on GitHub: results/cartpole_learning.md">66</a></p>
+  <p class="hiw-note">REINFORCE, actor-critic and CEM were each trained on seeds 0 to 4 for 1,500 episodes. Training episodes are sampled, not greedy. The shipped weights are those of the seed whose last 50 training episodes averaged highest: REINFORCE seed 2, actor-critic seed 0 and CEM seed 0. Ties go to the seed listed first, because several seeds reach the 500-step cap and their last-50 means tie. The table gives the first training episode at which the trailing 100-episode mean reached 475.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/train.py#L229-L246" target="_blank" rel="noopener" title="cartpole/train.py, lines 229–246" aria-label="Code on GitHub: cartpole/train.py, lines 229 to 246">65</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/cartpole_learning.md" target="_blank" rel="noopener" title="results/cartpole_learning.md" aria-label="Code on GitHub: results/cartpole_learning.md">66</a></p>
   <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Seed</th><th class="num">REINFORCE</th><th class="num">Actor-critic</th><th class="num">CEM</th></tr></thead><tbody>
     <tr><td>0</td><td class="num">376</td><td class="num">344</td><td class="num">391</td></tr>
     <tr><td>1</td><td class="num">384</td><td class="num">381</td><td class="num">388</td></tr>
@@ -487,14 +496,14 @@ function LINEAR-ACT(theta, state):
     <tr><td>3</td><td class="num">478</td><td class="num">347</td><td class="num">299</td></tr>
     <tr><td>4</td><td class="num">377</td><td class="num">382</td><td class="num">329</td></tr>
   </tbody></table></div>
-  <p class="hiw-note">The TD(0) pilots are recorded as configurations in the code. Across the five configurations tried, at most one of the five seeds ended with a last-50 mean of 475 or more, so the TD(0) critic did not learn reliably and was not shipped.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L147-L168" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 147–168" aria-label="Code on GitHub: cartpole/__main__.py, lines 147 to 168">54</a> The in-browser REINFORCE trainer uses the same equations (batch 8, γ 0.99, learning rate 0.01, batch-normalised advantages) with its own random stream, so its runs will not match the Python seeds.</p>
+  <p class="hiw-note">The TD(0) pilots are recorded as configurations in the code. Across the five configurations tried, at most one of the five seeds ended with a last-50 mean of 475 or more, so the TD(0) critic did not learn reliably and was not shipped.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/cartpole/__main__.py#L163-L184" target="_blank" rel="noopener" title="cartpole/__main__.py, lines 163–184" aria-label="Code on GitHub: cartpole/__main__.py, lines 163 to 184">54</a> The in-browser REINFORCE trainer uses the same equations (batch 8, γ 0.99, learning rate 0.01, batch-normalised advantages) with its own random stream, so its runs will not match the Python seeds.</p>
 
   <h3 class="hiw-sub">Training in the browser</h3>
   <p class="hiw-note">TRAIN IN YOUR BROWSER runs 600 episodes of REINFORCE from random weights in this tab, with the same equations as the Python run. It takes one Adam step per batch of 8 episodes and draws its random numbers from a seeded generator (mulberry32), so a browser run does not reproduce a Python seed. The starting weights have the same distribution as the Python ones.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js#L581-L589" target="_blank" rel="noopener" title="web/js/cartpole.js, lines 581–589" aria-label="Code on GitHub: web/js/cartpole.js, lines 581 to 589">67</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js#L610-L662" target="_blank" rel="noopener" title="web/js/cartpole.js, lines 610–662" aria-label="Code on GitHub: web/js/cartpole.js, lines 610 to 662">68</a></p>
   <p class="hiw-note">The browser also uses batch-normalised advantages, which divide by the population standard deviation plus <span class="math">10^{-8}</span>. The gradient, the backward pass and the Adam update are plain loops over one flat array of parameters.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js#L591-L601" target="_blank" rel="noopener" title="web/js/cartpole.js, lines 591–601" aria-label="Code on GitHub: web/js/cartpole.js, lines 591 to 601">69</a></p>
 
   <h3 class="hiw-sub">Verifying the port</h3>
-  <p class="hiw-note">The browser runs the physics and the policies in JavaScript. VERIFY AGAINST PYTHON asks the server to replay one episode in Python from the Python start state, and then checks every step in the browser. For each step it compares the action with the action Python took, and it compares the next state from the Python state with the browser's next state. The check passes when no action differs and the largest one-step error is below <span class="math">10^{-9}</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/cartpole_api.py#L61-L74" target="_blank" rel="noopener" title="server/cartpole_api.py, lines 61–74" aria-label="Code on GitHub: server/cartpole_api.py, lines 61 to 74">70</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js#L704-L735" target="_blank" rel="noopener" title="web/js/cartpole.js, lines 704–735" aria-label="Code on GitHub: web/js/cartpole.js, lines 704 to 735">71</a></p>
+  <p class="hiw-note">The browser runs the physics and the policies in JavaScript. VERIFY AGAINST PYTHON asks the server to replay one episode in Python from the Python start state, and then checks every step in the browser. For each step it compares the action with the action Python took, and it compares the next state from the Python state with the browser's next state. The check passes when no action differs and the largest one-step error is below <span class="math">10^{-9}</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/cartpole_api.py#L61-L73" target="_blank" rel="noopener" title="server/cartpole_api.py, lines 61–73" aria-label="Code on GitHub: server/cartpole_api.py, lines 61 to 73">70</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/cartpole.js#L704-L735" target="_blank" rel="noopener" title="web/js/cartpole.js, lines 704–735" aria-label="Code on GitHub: web/js/cartpole.js, lines 704 to 735">71</a></p>
   <p class="hiw-note">Each step is checked from the Python state, not from the browser's own running state. The controllers hover near the switching point, so a single flipped decision would otherwise make the rest of the episode diverge, and the check would test nothing else.</p>
 
   <h3 class="hiw-sub">Results on fixed seeds</h3>

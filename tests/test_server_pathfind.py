@@ -35,3 +35,14 @@ def test_presets_are_buildable_recipes(client):
     for p in body["presets"]:
         maze = make_maze(p["maze"], p["size"], p["size"], p["seed"], swamp=p["swamp"], density=p.get("density", 28))
         assert len(maze.grid) == p["size"] * p["size"]
+
+
+def test_expanded_presets_have_unique_names_and_reachable_goals(client):
+    from pathfind.search import astar
+
+    presets = client.get("/api/pathfind/presets").json()["presets"]
+    assert len(presets) >= 9
+    assert len({p["id"] for p in presets}) == len(presets)
+    for p in presets[5:]:
+        maze = make_maze(p["maze"], p["size"], p["size"], p["seed"], swamp=p["swamp"])
+        assert astar(maze.grid, maze.start, maze.goal, diagonal=p["diagonal"]).found, p["id"]

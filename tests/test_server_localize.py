@@ -19,14 +19,15 @@ def client():
 
 def test_meta_lists_layouts_and_defaults(client):
     body = client.get("/api/localize/meta").json()
-    assert {lay["key"] for lay in body["layouts"]} == {"halls", "vault"}
+    assert {lay["key"] for lay in body["layouts"]} == {"halls", "vault", "gallery", "atrium", "workshop"}
     assert body["particles"] == [100, 500, 2000]
     assert body["defaults"]["particles"] == 2000 and body["defaults"]["rays"] == 8
 
 
-def test_map_is_the_packages_floor(client):
-    body = client.get("/api/localize/map", params={"layout": "halls", "seed": 3}).json()
-    f = make_floor("halls", 3)
+@pytest.mark.parametrize("layout", ["halls", "vault", "gallery", "atrium", "workshop"])
+def test_map_is_the_packages_floor(client, layout):
+    body = client.get("/api/localize/map", params={"layout": layout, "seed": 3}).json()
+    f = make_floor(layout, 3)
     assert body["walls"] == [int(v) for v in f.walls.ravel()]
     assert body["pillars"] == [list(p) for p in f.pillars]
     assert body["w"] == f.w and body["h"] == f.h

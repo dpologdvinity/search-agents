@@ -37,9 +37,18 @@ async def meta():
         "noise": sonar.NOISE_LEVELS,
         "filters": list(FILTERS),
         "particles": [10, 30, 100, 300, 1000],
-        "defaults": {"size": 15, "ghosts": 2, "model": "random", "noise": "med", "filter": "exact",
-                     "particles": 200, "seed": 1, "bust_threshold": agent.BUST_THRESHOLD, "max_turns": TURN_CAP,
-                     "min_start_distance": MIN_START_DISTANCE},
+        "defaults": {
+            "size": 15,
+            "ghosts": 2,
+            "model": "random",
+            "noise": "med",
+            "filter": "exact",
+            "particles": 200,
+            "seed": 1,
+            "bust_threshold": agent.BUST_THRESHOLD,
+            "max_turns": TURN_CAP,
+            "min_start_distance": MIN_START_DISTANCE,
+        },
         "description": DESCRIPTION,
     }
 

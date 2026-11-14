@@ -1,4 +1,4 @@
-// Tic-tac-toe rules and an alpha-beta minimax search, for the 404 page's game.
+// Tic-tac-toe rules and an alpha-beta minimax search, for the tic-tac-toe page and the 404 page's game.
 //
 // This is a pure module (no DOM), so node can test it. It mirrors tictactoe/core.py in the repo: the same
 // move order, the same cutoffs and the same records, so tests/web/tictactoe.test.mjs can check the two
@@ -11,6 +11,10 @@ export const EMPTY_BOARD = '.........';
 const INF = 2;
 // Records are kept for plies 0 and 1 only: the agent's moves and the replies to them.
 const MAX_PLY = 2;
+// Search depth per level, in plies; null searches to the end of the game. A live position at the cap scores 0
+// (the agent treats what it cannot see as a draw). EASY and MEDIUM stay beatable from either side
+// (tests/test_tictactoe.py), PERFECT never loses. Same values as LEVELS in tictactoe/core.py.
+export const LEVELS = { easy: 2, medium: 4, perfect: null };
 
 /** 'X' or 'O' if that side has three in a row, else ''. */
 export function winner(board) {
@@ -43,13 +47,14 @@ export function turnOf(board) {
 }
 
 // Alpha-beta over one node. Returns [value, exact, bestMove]. kids receives this node's child records while
-// ply < MAX_PLY. stats is [searched, pruned], shared by the whole search.
-function node(board, turn, alpha, beta, ply, kids, stats) {
+// ply < MAX_PLY. stats is [searched, pruned], shared by the whole search. depth is the ply cap (null for none).
+function node(board, turn, alpha, beta, ply, kids, stats, depth) {
   stats[0]++;
   const w = winner(board);
   if (w) return [w === 'X' ? 1 : -1, true, null];
   const moves = legalMoves(board);
   if (!moves.length) return [0, true, null];
+  if (depth !== null && ply >= depth) return [0, true, null];
   const keep = ply < MAX_PLY;
   const maximize = turn === 'X';
   const a0 = alpha, b0 = beta;
@@ -58,7 +63,7 @@ function node(board, turn, alpha, beta, ply, kids, stats) {
   for (let k = 0; k < moves.length; k++) {
     const m = moves[k];
     const rec = { m, v: null, b: '', pruned: false, kids: [], s: 0, p: 0 };
-    const [cv, cexact] = node(place(board, m, turn), other(turn), alpha, beta, ply + 1, rec.kids, stats);
+    const [cv, cexact] = node(place(board, m, turn), other(turn), alpha, beta, ply + 1, rec.kids, stats, depth);
     rec.v = cv;
     // The child was searched with the window (alpha, beta) as it stood at the call: a value at or below
     // alpha, or at or above beta, is only a bound.
@@ -84,17 +89,20 @@ function node(board, turn, alpha, beta, ply, kids, stats) {
 
 /**
  * Alpha-beta minimax for the side to move. Returns {move, value, searched, pruned, tree}: move is null when
- * the game is already over, and tree holds the first two plies as described in tictactoe/core.py.
+ * the game is already over, and tree holds the first two plies as described in tictactoe/core.py. depth caps
+ * the search at that many plies (null searches to the end of the game). It must be at least 1: depth 0 would
+ * score the root itself and return no move for a game still in play.
  */
-export function search(board, turn) {
+export function search(board, turn, depth = null) {
+  if (depth !== null && !(depth >= 1)) throw new RangeError(`depth must be at least 1 ply, got ${depth}`);
   if (winner(board) || !legalMoves(board).length) {
     const stats = [0, 0];
-    const [value] = node(board, turn, -INF, INF, 0, [], stats);
+    const [value] = node(board, turn, -INF, INF, 0, [], stats, null);
     return { move: null, value, searched: 1, pruned: 0, tree: [] };
   }
   const stats = [0, 0];
   const tree = [];
-  const [value, , move] = node(board, turn, -INF, INF, 0, tree, stats);
+  const [value, , move] = node(board, turn, -INF, INF, 0, tree, stats, depth);
   return { move, value, searched: stats[0], pruned: stats[1], tree };
 }
 

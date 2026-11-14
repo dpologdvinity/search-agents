@@ -63,8 +63,10 @@ def status(game: Game) -> str:
         state = "ALL BUSTED"
     else:
         state = "OUT OF TURNS" if game.t >= game.max_turns else "hunting"
-    return (f"turn {game.t:3d}  busted {game.busted}/{len(game.ghosts)}  {state:<12}"
-            f"sonar {readings}  noise sigma {game.sigma}  {game.model}  {game.filt}")
+    return (
+        f"turn {game.t:3d}  busted {game.busted}/{len(game.ghosts)}  {state:<12}"
+        f"sonar {readings}  noise sigma {game.sigma}  {game.model}  {game.filt}"
+    )
 
 
 def parse_word(word: str) -> str | None:
@@ -163,14 +165,21 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m ghosthunt",
         description="Ghost Hunt: track invisible ghosts from noisy sonar with an HMM (forward algorithm, "
-                    "particle filter, Viterbi).")
-    parser.add_argument("command", nargs="?", default="play", choices=["play", "benchmark"],
-                        help="play (default) runs a game; benchmark runs the seeded comparison")
+        "particle filter, Viterbi).",
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="play",
+        choices=["play", "benchmark"],
+        help="play (default) runs a game; benchmark runs the seeded comparison",
+    )
     parser.add_argument("--size", type=int, default=15, choices=[11, 15, 21], help="maze side (default 15)")
     parser.add_argument("--ghosts", type=int, default=2, help="number of ghosts, 1..3 (default 2)")
     parser.add_argument("--motion", choices=MODELS, default="random", help="ghost motion model (default random)")
-    parser.add_argument("--noise", choices=list(sonar.NOISE_LEVELS), default="med",
-                        help="sonar noise: low, med or high (default med)")
+    parser.add_argument(
+        "--noise", choices=list(sonar.NOISE_LEVELS), default="med", help="sonar noise: low, med or high (default med)"
+    )
     parser.add_argument("--seed", type=int, default=1, help="seed for the maze and the ghosts (default 1)")
     parser.add_argument("--filter", choices=FILTERS, default="exact", help="belief: exact forward or particles")
     parser.add_argument("--particles", type=int, default=200, help="particles per ghost (default 200)")
@@ -179,8 +188,11 @@ def main(argv=None) -> int:
     parser.add_argument("--cheat", action="store_true", help="show the true ghost cells")
     parser.add_argument("--play-seeds", type=int, default=12, help="benchmark: games per configuration (default 12)")
     parser.add_argument("--conv-seeds", type=int, default=6, help="benchmark: games for the convergence table")
-    parser.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "results"),
-                        help="benchmark: directory for the results files")
+    parser.add_argument(
+        "--out",
+        default=str(Path(__file__).resolve().parent.parent / "results"),
+        help="benchmark: directory for the results files",
+    )
     args = parser.parse_args(argv)
 
     if args.command == "benchmark":
@@ -195,13 +207,22 @@ def main(argv=None) -> int:
         parser.error("--ghosts must be between 1 and 3")
     if args.particles < 2:
         parser.error("--particles must be at least 2")
-    game = Game(size=args.size, ghosts=args.ghosts, model=args.motion, sigma=sonar.NOISE_LEVELS[args.noise],
-                seed=args.seed, filt=args.filter, particles=args.particles)
+    game = Game(
+        size=args.size,
+        ghosts=args.ghosts,
+        model=args.motion,
+        sigma=sonar.NOISE_LEVELS[args.noise],
+        seed=args.seed,
+        filt=args.filter,
+        particles=args.particles,
+    )
     if args.autopilot:
         watch(game, args.delay, clear=True)
     else:
-        print(f"Ghost Hunt: {args.ghosts} ghost(s), {args.motion} motion, {args.noise} noise, seed {args.seed}. "
-              f"Bust a ghost by standing next to it and firing. Type 'auto' to watch the autopilot finish.")
+        print(
+            f"Ghost Hunt: {args.ghosts} ghost(s), {args.motion} motion, {args.noise} noise, seed {args.seed}. "
+            f"Bust a ghost by standing next to it and firing. Type 'auto' to watch the autopilot finish."
+        )
         play_interactive(game, cheat=args.cheat, show_map=True)
     return 0
 

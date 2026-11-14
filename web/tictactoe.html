@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIC-TAC-TOE // SEARCH AGENTS</title>
+<meta name="description" content="Play tic-tac-toe against a minimax agent with alpha-beta pruning at three search depths, and watch its game tree while it thinks. The shallow levels walk into forks past their horizon; the full search never loses.">
+<meta property="og:title" content="TIC-TAC-TOE // SEARCH AGENTS">
+<meta property="og:description" content="Play tic-tac-toe against a minimax agent with alpha-beta pruning at three search depths, and watch its game tree while it thinks. The shallow levels walk into forks past their horizon; the full search never loses.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kb-search-agents.fly.dev/tictactoe.html">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="tictactoe.css">
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo"><a href="index.html">KB<span style="color:var(--dim);font-weight:400"> // SEARCH AGENTS</span></a></div>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">MAIN</a></li>
+  </ul>
+</nav>
+
+<div class="page act">
+<div class="proj-page">
+  <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
+
+  <div class="proj-header">
+    <div class="proj-header-left">
+      <a class="back-btn" href="index.html">← MAIN</a>
+      <div class="proj-pg-tag">TIC-TAC-TOE // MINIMAX · ALPHA-BETA PRUNING</div>
+      <h1 class="proj-pg-title neon-pink glitch" data-text="TIC-TAC-TOE">TIC-TAC-TOE</h1>
+      <div class="proj-pg-sub">Three in a row against an agent that searches the game tree. The shallow levels can be beaten; the full search cannot.</div>
+    </div>
+    <div class="proj-header-right">
+      <div class="stat-chips">
+        <span class="stat-chip pink">STATUS <span class="val" id="chip-status">READY</span></span>
+        <span class="stat-chip">LEVEL <span class="val" id="chip-level">MEDIUM</span></span>
+        <span class="stat-chip green" title="Your wins, draws and losses on this visit">W-D-L <span class="val" id="chip-score">0-0-0</span></span>
+      </div>
+    </div>
+  </div>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 class="howto-title" id="howto-title">HOW TO PLAY</h2>
+    <p>Get three of your marks in a row, across, down or diagonally, before the agent does. X moves first. Click an empty square to play it.</p>
+    <p style="margin-top:0.5rem">YOU PLAY picks your mark; when you play O, the agent opens. LEVEL sets how far ahead the agent searches: EASY looks 2 moves ahead, MEDIUM 4, and PERFECT to the end of the game. Changing either starts a new game, and NEW GAME restarts with the same settings.</p>
+    <p style="margin-top:0.5rem">EASY and MEDIUM can be beaten from either side. Look for a fork: a move that makes two threats at once, so one block can not stop both. PERFECT never loses, so a draw is the best you can do.</p>
+  </section>
+
+  <div class="proj-body">
+    <div class="proj-game-col">
+      <div class="ttt-stage">
+        <div class="ttt-board" id="ttt-board" role="group" aria-label="Tic-tac-toe board"></div>
+      </div>
+      <div class="field-hint" id="ttt-note" aria-live="polite" style="text-align:center">Pick a square.</div>
+      <div class="inline" style="justify-content:center;flex-wrap:wrap;margin-top:0.6rem">
+        <button class="cyber-btn pink" id="btn-new" type="button" title="Start a new game with the settings on the right"><span class="btn-txt">↺ NEW GAME</span></button>
+      </div>
+
+      <div style="margin-top:1.4rem">
+        <div class="section-title green-ttl">WHAT THE AGENT IS THINKING</div>
+        <div class="viz-panel">
+          <div class="field-hint">Each column is a square the agent considered, with its minimax value from the agent's side
+            (+1 it wins, 0 draw, -1 it loses). Below it are your replies. A dashed box with ≤ or ≥ is only a bound: the search
+            stopped as soon as it proved the move was no better. Struck replies were pruned and never searched. At EASY and
+            MEDIUM, a 0 can also mean "past the horizon": the agent did not look that far and assumed a draw.</div>
+          <div class="ttt-tree-wrap">
+            <svg class="ttt-tree" id="ttt-tree" viewBox="0 0 522 236" role="img" aria-label="The agent's search tree"></svg>
+          </div>
+          <div class="ttt-readout" aria-live="off">
+            <span>positions searched <b id="ttt-searched">0</b></span>
+            <span>pruned <b id="ttt-pruned">0</b></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-ctrl-col">
+      <div>
+        <div class="section-title pink-ttl">MATCH</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">YOU PLAY</div>
+            <select class="cyber-select" id="you" style="width:100%" title="Your mark. X moves first.">
+              <option value="X" selected>X (move first)</option>
+              <option value="O">O (agent opens)</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">LEVEL</div>
+            <select class="cyber-select" id="level" style="width:100%" title="How many moves ahead the agent searches">
+              <option value="easy">EASY (2 moves ahead)</option>
+              <option value="medium" selected>MEDIUM (4 moves ahead)</option>
+              <option value="perfect">PERFECT (whole game)</option>
+            </select>
+          </div>
+          <button class="cyber-btn" id="btn-score-reset" type="button" title="Set your wins, draws and losses back to zero"><span class="btn-txt">RESET SCORE</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
+  <h2 class="section-title" id="hiw-title">HOW IT WORKS</h2>
+  <p class="hiw-lede">The agent is <b>minimax</b> with <b>alpha-beta pruning</b>. It assumes you always make your best reply, picks the move whose worst case is best, and skips every branch it can prove will not change that choice. The levels cut the search off at a fixed depth.</p>
+
+  <h3 class="hiw-sub">Minimax</h3>
+  <p class="hiw-note">A board is nine squares, stored as a nine-character string row by row. <b>Minimax</b> scores a finished game +1 if X has won, −1 if O has won, and 0 for a draw. A position still in play takes the best of its children for the side to move: X maximises, O minimises.</p>
+  <div class="math-fig">
+    <div class="math math-block">V(s)=\begin{cases}u(s) & s\ \text{finished}\\ \max_{m} V(s\cdot m) & \text{X to move}\\ \min_{m} V(s\cdot m) & \text{O to move}\end{cases}</div>
+  </div>
+  <p class="hiw-note">Here s · m is the board after move m, and u(s) is the result of a finished game. Tic-tac-toe has 5,478 distinct reachable boards and 549,946 move sequences, and its value from the empty board is 0: with perfect play on both sides every game is a draw<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/README.md#L749-L760" target="_blank" rel="noopener" title="README.md, lines 749–760" aria-label="Code on GitHub: README.md, lines 749 to 760">1</a>.</p>
+
+  <h3 class="hiw-sub">Alpha-beta pruning</h3>
+  <p class="hiw-note">Alpha-beta carries a window (α, β): α is the best value X is already sure of elsewhere, and β the best value O is sure of. Once a node's value leaves the window, the side choosing above it will never let the game reach it, so its remaining moves are <b>pruned</b>. The pruned moves are the struck boxes in the tree<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tictactoe/core.py#L122-L129" target="_blank" rel="noopener" title="tictactoe/core.py, lines 122–129" aria-label="Code on GitHub: tictactoe/core.py, lines 122 to 129">2</a>.</p>
+  <p class="hiw-note">From the empty board the full search visits 18,297 positions and prunes 6,930 moves, against 549,946 nodes for the whole game tree. Squares are tried in order 1 to 9, and the first square with the best value wins ties, so the agent always plays the same way from the same board.</p>
+
+  <h3 class="hiw-sub">The horizon: what the levels change</h3>
+  <p class="hiw-note">A level is a <b>depth limit</b>: the number of moves the search looks ahead. A position at the limit that is still in play scores 0, because the agent has not looked past it and assumes a draw<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tictactoe/core.py#L98-L99" target="_blank" rel="noopener" title="tictactoe/core.py, lines 98–99" aria-label="Code on GitHub: tictactoe/core.py, lines 98 to 99">3</a>. EASY searches 2 moves: it sees its own wins and your next winning move, so it takes the first and blocks the second, but a fork two moves away looks like a draw. MEDIUM searches 4 moves and sees a fork one move out, but not one set up earlier.</p>
+  <p class="hiw-note">The depths were chosen by a check that plays every human strategy against each level<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tictactoe/core.py#L26-L30" target="_blank" rel="noopener" title="tictactoe/core.py, lines 26–30" aria-label="Code on GitHub: tictactoe/core.py, lines 26 to 30">4</a>. A human can force a win against depths 2 and 4 from either side. Depth 5 can only be beaten by a human playing X, and from depth 6 the agent never loses. From the empty board, EASY visits 26 positions and MEDIUM 206.</p>
+
+  <div class="pseudo">
+    <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/tictactoe/core.py#L83-L130" target="_blank" rel="noopener" title="tictactoe/core.py, lines 83–130" aria-label="Code on GitHub: tictactoe/core.py, lines 83 to 130">5</a></span>
+    <pre class="pseudo-simple">function ALPHA-BETA(board, turn, α, β, ply, depth):
+    if board has a winner: return +1 if X won else −1
+    if board is full: return 0
+    if ply ≥ depth: return 0                # the horizon: unseen counts as a draw
+    for each empty square m, in order 1..9:
+        v ← ALPHA-BETA(board + m, other turn, α, β, ply + 1, depth)
+        if turn is X: α ← max(α, v)         # X raises its guarantee
+        else:         β ← min(β, v)         # O lowers its guarantee
+        if α ≥ β: break                      # prune the rest
+    return the best v for turn</pre>
+  </div>
+</section>
+</div>
+</div>
+
+<script defer src="vendor/katex/katex.min.js"></script>
+<script type="module" src="js/explain.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/tictactoe.js"></script>
+</body>
+</html>

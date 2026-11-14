@@ -51,12 +51,48 @@ LAYOUTS: dict[str, tuple[str, ...]] = {
         ".###.###.###.",
         ".............",
     ),
+    "serpentine": (
+        ".............",
+        "############.",
+        ".............",
+        ".............",
+        ".############",
+        ".............",
+        ".............",
+        "############.",
+        ".............",
+    ),
+    "ring": (
+        ".............",
+        ".............",
+        "..#########..",
+        "..#########..",
+        "..#########..",
+        "..#########..",
+        "..#########..",
+        ".............",
+        ".............",
+    ),
+    "staging": (
+        "...............",
+        ".###..###..###.",
+        ".###..###..###.",
+        "...............",
+        ".###..###..###.",
+        ".###..###..###.",
+        "...............",
+        "...............",
+        "...............",
+    ),
 }
 
 LAYOUT_INFO: dict[str, dict[str, str]] = {
     "aisles": {"title": "Shelf aisles", "blurb": "Long parallel aisles with cross lanes at the ends."},
     "crossroads": {"title": "Crossroads", "blurb": "Two shelf blocks around a central plaza."},
     "bottleneck": {"title": "Bottleneck", "blurb": "Two halves joined by a single doorway cell."},
+    "serpentine": {"title": "Switchback aisles", "blurb": "Broad aisles connected by alternating end passages."},
+    "ring": {"title": "Ring road", "blurb": "Two-wide lanes circle a central storage block."},
+    "staging": {"title": "Loading apron", "blurb": "Three shelf banks open onto a broad staging area."},
 }
 
 

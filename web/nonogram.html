@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="nonogram.css">
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -53,7 +54,57 @@
     <p style="margin-top:0.5rem">SOLVE runs the chosen method and, for SAT and hybrid, replays its search. DEDUCE shows the cells that line solving can prove, and HINT names one forced cell with its reason.</p>
   </section>
 
-  <div class="proj-body">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
+      <div>
+        <div class="section-title pink-ttl">PUZZLE</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">PICK A PICTURE</div>
+            <select class="cyber-select" id="puzzle" style="width:100%" aria-label="Puzzle" title="A hand-drawn picture. Only its clues are shown."></select>
+          </div>
+          <div class="field-hint">Size <span id="chip-size">—</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title green-ttl">RANDOM PICTURE</div>
+        <div class="stack">
+          <button class="cyber-btn green" id="btn-random" type="button" style="width:100%" title="Make a random picture with exactly one solution. The size is set under More settings."><span class="btn-txt">↺ RANDOM</span></button>
+          <details class="more-settings">
+            <summary>More settings</summary>
+            <div class="inline" style="gap:0.5rem">
+              <div style="flex:1">
+                <div class="field-lbl">ROWS</div>
+                <select class="cyber-select" id="rand-rows" style="width:100%" aria-label="Rows" title="Rows of the random picture, 5 to 20"></select>
+              </div>
+              <div style="flex:1">
+                <div class="field-lbl">COLUMNS</div>
+                <select class="cyber-select" id="rand-cols" style="width:100%" aria-label="Columns" title="Columns of the random picture, 5 to 20"></select>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">SOLVER</div>
+        <div class="stack">
+          <div>
+            <div class="field-lbl">SOLVE METHOD</div>
+            <select class="cyber-select" id="method" style="width:100%" aria-label="Solve method" title="Hybrid: line rules plus guesses. SAT: the grid as clauses for DPLL. Line: line rules only. Solves run on the server, which limits them to 30 a minute.">
+              <option value="hybrid" selected>Hybrid: lines plus guessing</option>
+              <option value="sat">SAT: CNF plus DPLL</option>
+              <option value="line">Line solving only</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <div class="proj-body play-layout">
     <div class="proj-game-col">
       <div class="nono-stage">
         <div class="nono-wrap" id="nono-wrap">
@@ -70,7 +121,9 @@
           <button class="cyber-btn" id="btn-reset" type="button" title="Erase every mark. The puzzle stays the same."><span class="btn-txt">⟲ CLEAR MARKS</span></button>
         </div>
       </div>
+    </div>
 
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
       <div style="margin-top:1.6rem">
         <div class="section-title green-ttl">LINE SOLVING</div>
         <div class="viz-panel">
@@ -104,52 +157,7 @@
         <summary>Game log</summary>
         <div class="agent-log" id="log" style="max-height:220px;border-color:rgba(255,0,160,0.3)"></div>
       </details>
-    </div>
-
-    <div class="proj-ctrl-col">
-      <div>
-        <div class="section-title pink-ttl">PUZZLE</div>
-        <div class="stack">
-          <div>
-            <div class="field-lbl">PICK A PICTURE</div>
-            <select class="cyber-select" id="puzzle" style="width:100%" aria-label="Puzzle" title="A hand-drawn picture. Only its clues are shown."></select>
-          </div>
-          <div class="field-hint">Size <span id="chip-size">—</span></div>
-        </div>
-      </div>
-      <div>
-        <div class="section-title green-ttl">RANDOM PICTURE</div>
-        <div class="stack">
-          <button class="cyber-btn green" id="btn-random" type="button" style="width:100%" title="Make a random picture with exactly one solution. The size is set under More settings."><span class="btn-txt">↺ RANDOM</span></button>
-          <details class="more-settings">
-            <summary>More settings</summary>
-            <div class="inline" style="gap:0.5rem">
-              <div style="flex:1">
-                <div class="field-lbl">ROWS</div>
-                <select class="cyber-select" id="rand-rows" style="width:100%" aria-label="Rows" title="Rows of the random picture, 5 to 20"></select>
-              </div>
-              <div style="flex:1">
-                <div class="field-lbl">COLUMNS</div>
-                <select class="cyber-select" id="rand-cols" style="width:100%" aria-label="Columns" title="Columns of the random picture, 5 to 20"></select>
-              </div>
-            </div>
-          </details>
-        </div>
-      </div>
-      <div>
-        <div class="section-title">SOLVER</div>
-        <div class="stack">
-          <div>
-            <div class="field-lbl">SOLVE METHOD</div>
-            <select class="cyber-select" id="method" style="width:100%" aria-label="Solve method" title="Hybrid: line rules plus guesses. SAT: the grid as clauses for DPLL. Line: line rules only. Solves run on the server, which limits them to 30 a minute.">
-              <option value="hybrid" selected>Hybrid: lines plus guessing</option>
-              <option value="sat">SAT: CNF plus DPLL</option>
-              <option value="line">Line solving only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
+    </aside>
   </div>
 
   <section class="hiw" id="how-it-works">
@@ -160,7 +168,7 @@
     <p class="hiw-note">A line of <span class="math">n</span> cells is a string of 0s (empty) and 1s (filled). The strings that satisfy a clue form a <b>regular language</b>, and a small <b>deterministic finite automaton</b> (DFA) recognises exactly that language. A DFA has a set of states, a start state, a set of accepting states, and at most one successor for each state and symbol. A missing successor is a dead move, written <span class="math">\bot</span>. For a clue with <span class="math">m</span> runs of lengths <span class="math">L_0, \dots, L_{m-1}</span>, the states are <span class="math">A_k</span> (<span class="math">k</span> runs are finished and none is open, for <span class="math">0 \le k \le m</span>), <span class="math">B_{k,j}</span> (inside run <span class="math">k</span>, with <span class="math">j</span> of its cells filled, for <span class="math">1 \le j < L_k</span>), and <span class="math">D_{k+1}</span> (run <span class="math">k</span> has just been completed, so the next cell must be empty). The automaton has <span class="math">\sum_k L_k + m + 1</span> states. For <span class="math">k = m</span>, reading a 1 from <span class="math">A_m</span> is a dead move, because no run is left to open. Its start state is <span class="math">A_0</span>, and it accepts when it ends in <span class="math">A_m</span> or <span class="math">D_m</span>. A clue with no runs accepts only the all-empty line.</p>
     <!-- nonogram/automaton.py:79-91 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/automaton.py#L8-L16" target="_blank" rel="noopener" title="nonogram/automaton.py, lines 8–16, 79–91" aria-label="Code on GitHub: nonogram/automaton.py, lines 8 to 16, 79 to 91">1</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/automaton.py#L8-L16" target="_blank" rel="noopener" title="nonogram/automaton.py, lines 8–16" aria-label="Code on GitHub: nonogram/automaton.py, lines 8 to 16">1</a></span>
       <div class="math math-block">\delta(A_k, 0) = A_k, \qquad \delta(A_k, 1) = \begin{cases} B_{k,1} &amp; \text{if } L_k &gt; 1 \\ D_{k+1} &amp; \text{if } L_k = 1 \end{cases}</div>
     </div>
     <div class="math-fig">
@@ -192,7 +200,7 @@
     <p class="hiw-note">Here <span class="math">\text{Acc}</span> is the accepting set, and the sets never contain <span class="math">\bot</span>. The known value of cell <span class="math">i</span> is <span class="math">c_i \in \{-1, 0, 1\}</span>, where <span class="math">-1</span> means unknown, so <span class="math">V_i = \{0, 1\}</span> when <span class="math">c_i = -1</span> and <span class="math">V_i = \{c_i\}</span> otherwise. Cell <span class="math">i</span> can take value <span class="math">v</span> when some state in <span class="math">F_i</span> moves on <span class="math">v</span> into <span class="math">B_{i+1}</span>. That joins a fitting prefix, cell <span class="math">i</span> equal to <span class="math">v</span>, and a fitting suffix, which together form a full arrangement. The possible values are stored as a bitmask <span class="math">P_i</span>, with bit <span class="math">v</span> set when value <span class="math">v</span> is possible.</p>
     <!-- nonogram/lines.py:26-29,70-81 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/lines.py#L26-L29" target="_blank" rel="noopener" title="nonogram/lines.py, lines 26–29, 70–81" aria-label="Code on GitHub: nonogram/lines.py, lines 26 to 29, 70 to 81">6</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/lines.py#L26-L29" target="_blank" rel="noopener" title="nonogram/lines.py, lines 26–29" aria-label="Code on GitHub: nonogram/lines.py, lines 26 to 29">6</a></span>
       <div class="math math-block">P_i = \sum_{v \in \Pi_i} 2^{v}, \qquad \Pi_i = \{\, v \in V_i : \exists\, s \in F_i,\ \delta(s, v) \in B_{i+1} \,\}</div>
     </div>
     <p class="hiw-note">Bit 0 is <code>EMPTY_OK</code> (value 0 is possible) and bit 1 is <code>FILLED_OK</code> (value 1 is possible). A mask of <span class="math">2</span> forces the cell filled, a mask of <span class="math">1</span> forces it empty, and a mask of <span class="math">3</span> leaves it unknown.</p>
@@ -310,7 +318,7 @@
     <p class="hiw-note">A <b>transition variable</b> <span class="math">y</span> marks one step of the automaton: it is true when the line is in state <span class="math">q</span> at position <span class="math">i</span>, cell <span class="math">i</span> has the value <span class="math">v</span>, and the automaton moves to state <span class="math">t</span>. Let <span class="math">\ell_{i,v}</span> be the literal "cell <span class="math">i</span> equals <span class="math">v</span>", which is <span class="math">x_i</span> when <span class="math">v = 1</span> and <span class="math">\neg x_i</span> when <span class="math">v = 0</span>. The clauses below make the state sequence a witness that the clue holds.</p>
     <!-- nonogram/cnf.py:76-80,105-106 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/cnf.py#L76-L80" target="_blank" rel="noopener" title="nonogram/cnf.py, lines 76–80, 105–106" aria-label="Code on GitHub: nonogram/cnf.py, lines 76 to 80, 105 to 106">14</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/cnf.py#L76-L80" target="_blank" rel="noopener" title="nonogram/cnf.py, lines 76–80" aria-label="Code on GitHub: nonogram/cnf.py, lines 76 to 80">14</a></span>
       <div class="math math-block">s_{0,A_0}, \qquad \neg s_{0,q} \ \ (q \ne A_0), \qquad \bigvee_{q \in \text{Acc}} s_{n,q}</div>
     </div>
     <p class="hiw-note">The first clause sets the start state, and the second rules out every other start. The last clause says that at least one accepting state is true after cell <span class="math">n</span>. An empty clause here means that no fitting line exists at this length, and makes the formula unsatisfiable.</p>
@@ -391,7 +399,7 @@
 
     <!-- nonogram/dpll.py:166-185,191-239,243-366 -->
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/dpll.py#L60-L79" target="_blank" rel="noopener" title="nonogram/dpll.py, lines 60–79, 85–133, 137–260" aria-label="Code on GitHub: nonogram/dpll.py, lines 60 to 79, 85 to 133, 137 to 260">20</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/dpll.py#L60-L79" target="_blank" rel="noopener" title="nonogram/dpll.py, lines 60–79" aria-label="Code on GitHub: nonogram/dpll.py, lines 60 to 79">20</a></span>
       <pre class="pseudo-simple">function DPLL(clauses, cell-variables):
     remove pure variables and the clauses they satisfy
     repeat:
@@ -492,17 +500,17 @@ function PURE-ELIMINATE(clauses):
 
     <h3 class="hiw-sub">Hybrid search</h3>
     <p class="hiw-note"><b>Hybrid</b> is a depth-first search with line propagation at every node. Each node first runs line passes to a fixed point. If cells are still unknown, the search makes a <b>guess</b>. It picks the line with the fewest unknown cells among the lines that have any, with rows first on ties. It takes the first unknown cell of that line and tries 1, then 0. The code's comment says that guessing on this line collapses the most arrangements per guess. A <b>backtrack</b> is counted when a guess leads to no new solution.</p>
-    <!-- nonogram/solvers.py:219-229 -->
+    <!-- nonogram/solvers.py:227-237 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L219-L229" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 219–229" aria-label="Code on GitHub: nonogram/solvers.py, lines 219 to 229">23</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L227-L237" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 227–237" aria-label="Code on GitHub: nonogram/solvers.py, lines 227 to 237">23</a></span>
       <div class="math math-block">\ell^{*} = \arg\min_{\ell :\, u(\ell) > 0} u(\ell)</div>
     </div>
     <p class="hiw-note">Here <span class="math">u(\ell)</span> is the number of unknown cells in row or column <span class="math">\ell</span>, and the minimum is taken over the lines that still have an unknown cell. A node where no unknown cell is left is a solution. Propagation has already checked every line against its clue, so the solver also verifies the grid against the clues before reporting it.</p>
-    <p class="hiw-note">Every node checks two limits before it does any work. The guess budget is 2,000 guesses on the server. The deadline is 10 s of wall-clock time, which the server passes in. Passing either one ends the search with the status undecided<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L210-L214" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 210–214" aria-label="Code on GitHub: nonogram/solvers.py, lines 210 to 214">24</a>. The server sets both limits<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/nonogram_api.py#L87-L98" target="_blank" rel="noopener" title="server/nonogram_api.py, lines 87–98" aria-label="Code on GitHub: server/nonogram_api.py, lines 87 to 98">25</a>.</p>
+    <p class="hiw-note">Every node checks two limits before it does any work. The guess budget is 2,000 guesses on the server. The deadline is 10 s of wall-clock time, which the server passes in. Passing either one ends the search with the status undecided<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L218-L222" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 218–222" aria-label="Code on GitHub: nonogram/solvers.py, lines 218 to 222">24</a>. The server sets both limits<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/nonogram_api.py#L87-L98" target="_blank" rel="noopener" title="server/nonogram_api.py, lines 87–98" aria-label="Code on GitHub: server/nonogram_api.py, lines 87 to 98">25</a>.</p>
 
-    <!-- nonogram/solvers.py:195-254 -->
+    <!-- nonogram/solvers.py:202-265 -->
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L195-L254" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 195–254" aria-label="Code on GitHub: nonogram/solvers.py, lines 195 to 254">26</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L202-L265" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 202–265" aria-label="Code on GitHub: nonogram/solvers.py, lines 202 to 265">26</a></span>
       <pre class="pseudo-simple">function SEARCH(grid):
     if not PROPAGATE-LINES(grid): return      # a line cannot fit: undo the guess
     if grid is full: record it as a solution; return
@@ -551,13 +559,13 @@ function SEARCH(grid):
 
     <h3 class="hiw-sub">Uniqueness</h3>
     <p class="hiw-note">A good puzzle has exactly one picture that fits its clues. The page checks this by finding one solution and then asking for a different one. SAT does it with a <b>blocking clause</b>: a clause that is false on exactly the first picture, so the solver must find a picture that differs in at least one cell. If that second solve is unsatisfiable, the first picture is the only one. The hybrid method instead counts solutions with a limit of two, and stops at the second.</p>
-    <!-- nonogram/solvers.py:321-327 -->
+    <!-- nonogram/solvers.py:356-362 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L321-L327" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 321–327" aria-label="Code on GitHub: nonogram/solvers.py, lines 321 to 327">27</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L356-L362" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 356–362" aria-label="Code on GitHub: nonogram/solvers.py, lines 356 to 362">27</a></span>
       <div class="math math-block">\bigvee_{(r,c):\ \text{filled}} \neg x_{rc} \ \vee \bigvee_{(r,c):\ \text{empty}} x_{rc}</div>
     </div>
     <p class="hiw-note">The blocking clause is the OR over the cells of the first solution: a filled cell must become empty, or an empty cell must become filled. A puzzle with two solutions is reported as multiple, and the page then offers the other picture as SECOND ANSWER. A puzzle with no solution is reported as a contradiction, which the page shows as NO SOLUTION.</p>
-    <p class="hiw-note">Every solution is checked against the clues before it is reported<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L363-L365" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 363–365" aria-label="Code on GitHub: nonogram/solvers.py, lines 363 to 365">28</a>. A failed check raises an error, because it would mean a bug in the solver rather than a wrong answer for the player.</p>
+    <p class="hiw-note">Every solution is checked against the clues before it is reported<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L430-L432" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 430–432" aria-label="Code on GitHub: nonogram/solvers.py, lines 430 to 432">28</a>. A failed check raises an error, because it would mean a bug in the solver rather than a wrong answer for the player.</p>
 
     <h3 class="hiw-sub">Random pictures</h3>
     <p class="hiw-note">A uniformly random grid is a poor puzzle, because most random pictures have many solutions: nothing ties neighbouring cells together. So the generator draws smooth random blobs. It sets a random value on a coarse grid, with one value for about every 3 cells, then <b>interpolates</b> each cell's value from the four coarse points around it. Interpolation here is <b>bilinear</b>: it blends the two coarse points on each side horizontally, then blends those two results vertically. A cell is filled when its value is at least 0.5. A picture is kept only when its filled fraction is between 30% and 70%, and then the hybrid search must find exactly one solution within a budget of 300 guesses<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L29" target="_blank" rel="noopener" title="nonogram/generate.py, line 29" aria-label="Code on GitHub: nonogram/generate.py, line 29">29</a>. The seed fixes every draw, so the same seed always gives the same puzzle.</p>
@@ -573,16 +581,16 @@ function SEARCH(grid):
       <div class="math math-block">x_c = \frac{c\,(g_C - 1)}{C - 1}, \quad x_0 = \min(\lfloor x_c \rfloor,\, g_C - 2), \quad f_c = x_c - x_0</div>
       <div class="math math-block">\text{value}(r,c) = \bigl(u_{y_0,x_0}(1 - f_c) + u_{y_0,\,x_0+1} f_c\bigr)(1 - f_r) + \bigl(u_{y_0+1,\,x_0}(1 - f_c) + u_{y_0+1,\,x_0+1} f_c\bigr) f_r</div>
     </div>
-    <!-- nonogram/generate.py:57,76 -->
+    <!-- nonogram/generate.py:57,77 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L57" target="_blank" rel="noopener" title="nonogram/generate.py, lines 57, 76" aria-label="Code on GitHub: nonogram/generate.py, lines 57, 76">32</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L57" target="_blank" rel="noopener" title="nonogram/generate.py, line 57" aria-label="Code on GitHub: nonogram/generate.py, line 57">32</a></span>
       <div class="math math-block">\text{cell}(r,c) = [\text{value}(r,c) \ge 0.5], \qquad 0.30 \le \frac{\sum_{r,c} \text{cell}(r,c)}{R\,C} \le 0.70</div>
     </div>
     <p class="hiw-note">Here <span class="math">R</span> and <span class="math">C</span> are the rows and columns of the picture, <span class="math">g_R</span> and <span class="math">g_C</span> are the sizes of the coarse grid, and <span class="math">u_{ij}</span> is a uniform random number in <span class="math">[0, 1)</span> on that grid. <span class="math">y_r</span> and <span class="math">x_c</span> locate the cell in coarse-grid units, and <span class="math">y_0, x_0</span> pick the coarse square around it. <span class="math">f_r, f_c</span> are the fractions across that square. The value is blended first horizontally, between the two coarse points of each coarse row, then vertically. The brackets in the cell formula are 1 when the condition holds and 0 otherwise.</p>
 
-    <!-- nonogram/generate.py:37-82 -->
+    <!-- nonogram/generate.py:37-83 -->
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L37-L82" target="_blank" rel="noopener" title="nonogram/generate.py, lines 37–82" aria-label="Code on GitHub: nonogram/generate.py, lines 37 to 82">33</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L37-L83" target="_blank" rel="noopener" title="nonogram/generate.py, lines 37–83" aria-label="Code on GitHub: nonogram/generate.py, lines 37 to 83">33</a></span>
       <pre class="pseudo-simple">function RANDOM-PUZZLE(rows, cols, seed):
     repeat up to 40 times:
         picture ← a random blobby picture
@@ -625,7 +633,7 @@ function RANDOM-PICTURE(rows, cols, rng):
     <p class="hiw-note">The generator draws a new coarse grid on every attempt, so the attempts are independent. A rejected picture costs at most about one second, because the uniqueness check is capped at 300 guesses. The check is the expensive part, and the density test runs first so that the check is skipped for pictures that are clearly too sparse or too dense.</p>
 
     <h3 class="hiw-sub">Hints</h3>
-    <p class="hiw-note">HINT uses only the line analysis, with no search. It first checks every line against the marks. If one cannot fit, the hint names that line as a contradiction, so the player can look for the wrong mark there. Otherwise it scans the rows, then the columns, and reports the first unknown cell that <code>ANALYSE-LINE</code> forces<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L381-L423" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 381–423" aria-label="Code on GitHub: nonogram/solvers.py, lines 381 to 423">34</a>. Each hint also gives a reason. If the cell is filled, the reason is the run whose overlap covers it, and the longest such run is named. If the cell is empty, the reason is that no arrangement puts a run on it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L435-L451" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 435–451" aria-label="Code on GitHub: nonogram/solvers.py, lines 435 to 451">35</a>.</p>
+    <p class="hiw-note">HINT uses only the line analysis, with no search. It first checks every line against the marks. If one cannot fit, the hint names that line as a contradiction, so the player can look for the wrong mark there. Otherwise it scans the rows, then the columns, and reports the first unknown cell that <code>ANALYSE-LINE</code> forces<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L451-L495" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 451–495" aria-label="Code on GitHub: nonogram/solvers.py, lines 451 to 495">34</a>. Each hint also gives a reason. If the cell is filled, the reason is the run whose overlap covers it, and the longest such run is named. If the cell is empty, the reason is that no arrangement puts a run on it<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L516-L534" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 516–534" aria-label="Code on GitHub: nonogram/solvers.py, lines 516 to 534">35</a>.</p>
     <p class="hiw-note">HINT does not fill the cell. It only shows it, and APPLY HINT writes the value into the marks.</p>
 
     <h3 class="hiw-sub">Budgets and parameters</h3>
@@ -656,12 +664,12 @@ function RANDOM-PICTURE(rows, cols, rng):
         </tbody>
       </table>
     </div>
-    <p class="hiw-note"><b>How a run is shown.</b> The server records up to 4,000 search events<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L29" target="_blank" rel="noopener" title="nonogram/solvers.py, lines 29, 102–116" aria-label="Code on GitHub: nonogram/solvers.py, lines 29, 102 to 116">37</a>: decisions with their cell and value, conflicts, and backtracks. The page plays them back in at most 150 ticks of 40 ms, which is about 6 s. Events are not recorded for propagations, so that counter shows "…" during the replay. When the replay ends, the exact totals from the server replace the running numbers. If the event list was capped, the counters are still the full run.</p>
+    <p class="hiw-note"><b>How a run is shown.</b> The server records up to 4,000 search events<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/solvers.py#L29" target="_blank" rel="noopener" title="nonogram/solvers.py, line 29" aria-label="Code on GitHub: nonogram/solvers.py, line 29">37</a>: decisions with their cell and value, conflicts, and backtracks. The page plays them back in at most 150 ticks of 40 ms, which is about 6 s. Events are not recorded for propagations, so that counter shows "…" during the replay. When the replay ends, the exact totals from the server replace the running numbers. If the event list was capped, the counters are still the full run.</p>
     <p class="hiw-note">The count budgets are backstops for small pictures, and the time limit binds first on large ones. The server's rates are set in <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/app.py#L64-L73" target="_blank" rel="noopener" title="server/app.py, lines 64–73" aria-label="Code on GitHub: server/app.py, lines 64 to 73">38</a>, and the sizes come from <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/puzzle.py#L19-L20" target="_blank" rel="noopener" title="nonogram/puzzle.py, lines 19–20" aria-label="Code on GitHub: nonogram/puzzle.py, lines 19 to 20">39</a> and <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/generate.py#L30" target="_blank" rel="noopener" title="nonogram/generate.py, line 30" aria-label="Code on GitHub: nonogram/generate.py, line 30">40</a>. A budget or time limit that is hit is reported as undecided, so a slow case never returns a wrong answer.</p>
     <p class="hiw-note">The decay of 0.95 follows MiniSat's VSIDS, as the code comment says. The random noise and density values are the generator's own choices.</p>
 
     <h3 class="hiw-sub">Results</h3>
-    <p class="hiw-note">The committed benchmark runs all three methods on the 12 library pictures<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/library.py#L1-L10" target="_blank" rel="noopener" title="nonogram/library.py, lines 1–10" aria-label="Code on GitHub: nonogram/library.py, lines 1 to 10">41</a> and on 30 seeded random pictures, 10 each at 10 × 10, 15 × 15 and 20 × 20<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/benchmark.py#L24-L37" target="_blank" rel="noopener" title="nonogram/benchmark.py, lines 24–37" aria-label="Code on GitHub: nonogram/benchmark.py, lines 24 to 37">42</a>. Line solving alone finishes 39 of the 42 puzzles. The three it does not finish are the library pictures smiley and rocket and one random 20 × 20 picture. Hybrid and SAT both finish all 42, with no undecided run. The times are wall-clock on the machine that wrote the results file, so they are a relative guide, not a fixed measure<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/nonogram_benchmark.md" target="_blank" rel="noopener" title="results/nonogram_benchmark.md" aria-label="Code on GitHub: results/nonogram_benchmark.md">43</a>.</p>
+    <p class="hiw-note">The committed benchmark runs all three methods on the first 12 library pictures (pictures added to the library later are not in it)<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/library.py#L1-L10" target="_blank" rel="noopener" title="nonogram/library.py, lines 1–10" aria-label="Code on GitHub: nonogram/library.py, lines 1 to 10">41</a> and on 30 seeded random pictures, 10 each at 10 × 10, 15 × 15 and 20 × 20<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/nonogram/benchmark.py#L25-L40" target="_blank" rel="noopener" title="nonogram/benchmark.py, lines 25–40" aria-label="Code on GitHub: nonogram/benchmark.py, lines 25 to 40">42</a>. Line solving alone finishes 39 of the 42 puzzles. The three it does not finish are the library pictures smiley and rocket and one random 20 × 20 picture. Hybrid and SAT both finish all 42, with no undecided run. The times are wall-clock on the machine that wrote the results file, so they are a relative guide, not a fixed measure<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/results/nonogram_benchmark.md" target="_blank" rel="noopener" title="results/nonogram_benchmark.md" aria-label="Code on GitHub: results/nonogram_benchmark.md">43</a>.</p>
     <div class="hiw-scroll"><table class="cmp-table hiw-table"><thead><tr><th>Group</th><th class="num">Puzzles</th><th class="num">Line alone finishes</th><th class="num">Hybrid median s</th><th class="num">Hybrid max s</th><th class="num">SAT median s</th><th class="num">SAT max s</th></tr></thead><tbody>
       <tr><td>Library</td><td class="num">12</td><td class="num">10</td><td class="num">0.0104</td><td class="num">0.1144</td><td class="num">0.1235</td><td class="num">3.3978</td></tr>
       <tr><td>Random 10×10</td><td class="num">10</td><td class="num">10</td><td class="num">0.0039</td><td class="num">0.0078</td><td class="num">0.0459</td><td class="num">0.1266</td></tr>

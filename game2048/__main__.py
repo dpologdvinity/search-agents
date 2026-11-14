@@ -73,8 +73,9 @@ def main(argv=None) -> int:
         from .benchmark import main as benchmark_main
 
         return benchmark_main(argv[1:]) or 0
-    parser = argparse.ArgumentParser(prog="python -m game2048", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m game2048", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--watch", choices=sorted(DESCRIPTIONS), help="let an agent play instead of you")
     parser.add_argument("--quiet", action="store_true", help="with --watch, print only the final board")
     parser.add_argument("--seed", type=int, help="random seed for tile spawns")

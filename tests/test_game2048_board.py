@@ -22,10 +22,18 @@ def slide_row_left(row):
 
 def reference_move(grid, d):
     g = [row[:] for row in grid]
-    rotate = {LEFT: lambda g: g, RIGHT: lambda g: [r[::-1] for r in g],
-              UP: lambda g: [list(c) for c in zip(*g)], DOWN: lambda g: [list(c)[::-1] for c in zip(*g)]}
-    undo = {LEFT: lambda g: g, RIGHT: lambda g: [r[::-1] for r in g],
-            UP: lambda g: [list(c) for c in zip(*g)], DOWN: lambda g: [list(c) for c in zip(*[r[::-1] for r in g])]}
+    rotate = {
+        LEFT: lambda g: g,
+        RIGHT: lambda g: [r[::-1] for r in g],
+        UP: lambda g: [list(c) for c in zip(*g)],
+        DOWN: lambda g: [list(c)[::-1] for c in zip(*g)],
+    }
+    undo = {
+        LEFT: lambda g: g,
+        RIGHT: lambda g: [r[::-1] for r in g],
+        UP: lambda g: [list(c) for c in zip(*g)],
+        DOWN: lambda g: [list(c) for c in zip(*[r[::-1] for r in g])],
+    }
     total, rows = 0, []
     for row in rotate[d](g):
         moved, s = slide_row_left(row)

@@ -194,8 +194,15 @@ class AlphaBeta:
             # only exception that could escape _check() is removed here.
             self.deadline, self.max_nodes = float("inf"), None
             score = -self._negamax(moves[0].result, -side, self.forced_depth - 1, -WIN * 2, WIN * 2, 1)
-            return SearchInfo(moves[0], score, self.forced_depth, self.nodes, self.cutoffs,
-                              time.perf_counter() - start, [(moves[0], score)])
+            return SearchInfo(
+                moves[0],
+                score,
+                self.forced_depth,
+                self.nodes,
+                self.cutoffs,
+                time.perf_counter() - start,
+                [(moves[0], score)],
+            )
         for depth in range(1, self.max_depth + 1):
             try:
                 # The previous best move goes first, so this depth's cutoffs come early.

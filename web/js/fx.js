@@ -1,7 +1,7 @@
 // Shared effects for the game pages: particle bursts, screen shake, floating
-// score pops, and banners for big moments. One overlay canvas, drawn only
+// score pops, and small corner toasts for big moments. One overlay canvas, drawn only
 // while particles are alive. All effects are skipped under reduced motion,
-// except banners, which carry information and appear without animation. Each effect also plays its synth
+// except toasts, which carry information and appear without animation. Each effect also plays its synth
 // sound (sfx.js); those play even under reduced motion, since they are not motion.
 
 import { announce, outcome, play } from './sfx.js';
@@ -49,9 +49,9 @@ function center(el) {
 }
 
 /** Burst of particles from the centre of el (or [x, y]). */
-export function burst(target, { count = 60, colors = COLORS, speed = 7, gravity = 0.12 } = {}) {
+export function burst(target, { count = 60, colors = COLORS, speed = 7, gravity = 0.12, sound = true } = {}) {
   if (!target) return;
-  play('burst');
+  if (sound) play('burst');
   if (REDUCED) return;
   overlay();
   const [x, y] = Array.isArray(target) ? target : center(target);
@@ -65,9 +65,9 @@ export function burst(target, { count = 60, colors = COLORS, speed = 7, gravity 
 }
 
 /** Shake an element briefly. */
-export function shake(el, strength = 'small') {
+export function shake(el, strength = 'small', sound = true) {
   if (!el) return;
-  play(strength === 'big' ? 'thudBig' : 'thud');
+  if (sound) play(strength === 'big' ? 'thudBig' : 'thud');
   if (REDUCED) return;
   el.classList.remove('fx-shake', 'fx-shake-big');
   void el.offsetWidth; // restart the animation
@@ -75,9 +75,9 @@ export function shake(el, strength = 'small') {
 }
 
 /** Floating text (e.g. "+64") that rises from el and fades. */
-export function pop(target, text, color = '#ffe600') {
+export function pop(target, text, color = '#ffe600', sound = true) {
   if (!target) return;
-  play('tick');
+  if (sound) play('tick');
   if (REDUCED) return;
   const [x, y] = Array.isArray(target) ? target : center(target);
   const el = document.createElement('div');
@@ -88,9 +88,9 @@ export function pop(target, text, color = '#ffe600') {
   el.addEventListener('animationend', () => el.remove());
 }
 
-/** Big banner across the screen for a moment; `sub` is a smaller second line. */
-export function banner(text, sub = '', color = '#00f5ff') {
-  announce(outcome(text, color));
+/** Small toast in the top-right corner for a moment (CSS .fx-banner); `sub` is a smaller second line. */
+export function banner(text, sub = '', color = '#00f5ff', sound = true) {
+  if (sound) announce(outcome(text, color));
   document.querySelectorAll('.fx-banner').forEach((b) => b.remove());
   const el = document.createElement('div');
   el.className = 'fx-banner';
@@ -100,6 +100,6 @@ export function banner(text, sub = '', color = '#00f5ff') {
   el.querySelector('.fx-banner-main').textContent = text;
   el.querySelector('.fx-banner-sub').textContent = sub;
   document.body.appendChild(el);
-  setTimeout(() => el.classList.add('fx-out'), REDUCED ? 2600 : 2200);
-  setTimeout(() => el.remove(), 3000);
+  setTimeout(() => el.classList.add('fx-out'), 2000);
+  setTimeout(() => el.remove(), 2500);
 }

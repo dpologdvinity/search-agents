@@ -1,12 +1,12 @@
 """Pac-Man from the command line.
 
-    python -m pacman                          play in the terminal (w/a/s/d + Enter each turn)
-    python -m pacman --maze vault --seed 7    the same, on another maze or seed
-    python -m pacman --watch q                watch an agent play: q, reflex, or random
-    python -m pacman --ghosts chance          play against chance ghosts (fixed odds) instead of the A* ghosts
-    python -m pacman train --episodes 3000    learn the Q-agent's weights into pacman/data/weights.json
-    python -m pacman benchmark --games 200    win rate and average score for each agent
-    python -m pacman match --games 200        the agent against the A* ghosts and against chance ghosts
+python -m pacman                          play in the terminal (w/a/s/d + Enter each turn)
+python -m pacman --maze vault --seed 7    the same, on another maze or seed
+python -m pacman --watch q                watch an agent play: q, reflex, or random
+python -m pacman --ghosts chance          play against chance ghosts (fixed odds) instead of the A* ghosts
+python -m pacman train --episodes 3000    learn the Q-agent's weights into pacman/data/weights.json
+python -m pacman benchmark --games 200    win rate and average score for each agent
+python -m pacman match --games 200        the agent against the A* ghosts and against chance ghosts
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from pathlib import Path
 
 from .agents import AGENTS, WEIGHTS_PATH, save_weights
 from .benchmark import run_benchmark, to_markdown
+from .episode import UntrainedBoardError
 from .ghosts import GHOST_POLICIES
 from .match import match_markdown, run_match
 from .mazes import names
@@ -32,8 +33,14 @@ def cmd_train(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="python -m pacman train", description="Learn Q-agent weights by self-play.")
     ap.add_argument("--episodes", type=int, default=3000)
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--alpha", type=float, nargs=2, default=(0.01, 0.001), metavar=("START", "END"),
-                    help="learning rate, falling linearly from START to END")
+    ap.add_argument(
+        "--alpha",
+        type=float,
+        nargs=2,
+        default=(0.01, 0.001),
+        metavar=("START", "END"),
+        help="learning rate, falling linearly from START to END",
+    )
     ap.add_argument("--gamma", type=float, default=0.9, help="discount factor")
     ap.add_argument("--out", type=Path, default=WEIGHTS_PATH)
     ap.add_argument("--log", type=Path, default=RESULTS / "pacman_train_log.jsonl")
@@ -41,14 +48,21 @@ def cmd_train(argv: list[str]) -> int:
 
     args.log.parent.mkdir(parents=True, exist_ok=True)
     with args.log.open("w") as log:
+
         def on_log(record: dict) -> None:
             log.write(json.dumps(record) + "\n")
             log.flush()
             print(json.dumps({k: v for k, v in record.items() if k != "weights"}), flush=True)
 
         result = train(args.episodes, seed=args.seed, alpha=tuple(args.alpha), gamma=args.gamma, on_log=on_log)
-    trained = {"episodes": args.episodes, "seed": args.seed, "alpha": list(args.alpha), "gamma": args.gamma,
-               "mazes": ["lanes", "vault"], "final": result.history[-1]}
+    trained = {
+        "episodes": args.episodes,
+        "seed": args.seed,
+        "alpha": list(args.alpha),
+        "gamma": args.gamma,
+        "mazes": ["lanes", "vault"],
+        "final": result.history[-1],
+    }
     save_weights(args.out, result.weights, trained)
     print(f"wrote {args.out}")
     return 0
@@ -69,8 +83,9 @@ def cmd_benchmark(argv: list[str]) -> int:
 
 
 def cmd_match(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(prog="python -m pacman match",
-                                 description="Play an agent against the A* ghosts and against chance ghosts.")
+    ap = argparse.ArgumentParser(
+        prog="python -m pacman match", description="Play an agent against the A* ghosts and against chance ghosts."
+    )
     ap.add_argument("--games", type=int, default=200, help="games per maze per ghost policy")
     ap.add_argument("--agent", choices=AGENTS, default="q", help="the Pac-Man agent (default q)")
     ap.add_argument("--out", type=Path, default=RESULTS / "pacman_chance_match.json")
@@ -93,14 +108,19 @@ def main(argv: list[str] | None = None) -> int:
     if argv[:1] == ["match"]:
         return cmd_match(argv[1:])
 
-    ap = argparse.ArgumentParser(prog="python -m pacman", description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        prog="python -m pacman", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--maze", choices=names(), default="lanes", help="maze to play (default lanes)")
     ap.add_argument("--seed", type=int, default=None, help="game seed (default: random)")
     ap.add_argument("--watch", choices=AGENTS, help="watch an agent instead of playing")
     ap.add_argument("--delay", type=float, default=0.25, help="seconds between turns when watching")
-    ap.add_argument("--ghosts", choices=GHOST_POLICIES, default="ai",
-                    help="ghost policy: ai (A* routes, default) or chance (fixed odds)")
+    ap.add_argument(
+        "--ghosts",
+        choices=GHOST_POLICIES,
+        default="ai",
+        help="ghost policy: ai (A* routes, default) or chance (fixed odds)",
+    )
     args = ap.parse_args(argv)
 
     seed = args.seed if args.seed is not None else random.randrange(1_000_000)
@@ -109,9 +129,15 @@ def main(argv: list[str] | None = None) -> int:
             watch(args.watch, args.maze, seed, delay=args.delay, ghosts=args.ghosts)
         else:
             status = play_human(args.maze, seed, ghosts=args.ghosts)
-            print({"won": "You cleared the maze!", "lost": "Caught by a ghost.",
-                   "timeout": "Out of turns.", "quit": "You quit."}[status])
-    except FileNotFoundError as e:  # Q-agent weights not trained yet
+            print(
+                {
+                    "won": "You cleared the maze!",
+                    "lost": "Caught by a ghost.",
+                    "timeout": "Out of turns.",
+                    "quit": "You quit.",
+                }[status]
+            )
+    except (FileNotFoundError, UntrainedBoardError) as e:  # Q-agent weights missing, or a board it was not trained on
         print(e, file=sys.stderr)
         return 1
     except (EOFError, KeyboardInterrupt):

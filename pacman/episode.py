@@ -11,8 +11,9 @@ import random
 from dataclasses import dataclass
 
 from .agents import Decision
-from .engine import MAX_TURNS, Game, State, Turn, legal_actions
+from .engine import Game, State, Turn, legal_actions
 from .mazes import Maze
+from .qlearning import TRAINED_SIZE
 
 
 @dataclass(frozen=True)
@@ -34,18 +35,26 @@ class Episode:
         return self.final.points
 
 
+class UntrainedBoardError(ValueError):
+    """The learned agent was asked to play a board of a size it was not trained on."""
+
+
 def agent_rng(seed: int) -> random.Random:
     """The agent's generator for a game seeded with `seed`. Offset so it differs from the game's own RNG."""
     return random.Random(seed * 7919 + 1)
 
 
-def run_episode(agent, maze: Maze, seed: int, name: str = "", max_turns: int = MAX_TURNS,
-                ghosts: str = "ai") -> Episode:
+def run_episode(
+    agent, maze: Maze, seed: int, name: str = "", max_turns: int | None = None, ghosts: str = "ai"
+) -> Episode:
     """Play `agent` on `maze` with ghost randomness from `seed` until the game ends.
 
     `agent` is any object with act(state, rng) -> Decision; `name` is recorded for display.
     `ghosts` picks the ghost policy: "ai" (A* routes) or "chance" (fixed odds).
     """
+    if getattr(agent, "name", "") == "q" and (maze.width, maze.height) != TRAINED_SIZE:
+        width, height = TRAINED_SIZE
+        raise UntrainedBoardError(f"the learned agent supports its trained {width}x{height} board only")
     game = Game(maze, seed=seed, max_turns=max_turns, ghosts=ghosts)
     rng = agent_rng(seed)
     turns: list[Turn] = []

@@ -50,19 +50,20 @@ class MLP:
         self.params = params
 
     @classmethod
-    def init(cls, rng: np.random.Generator, n_in: int, n_hidden: int, n_out: int,
-             out_scale: float = 1.0) -> MLP:
+    def init(cls, rng: np.random.Generator, n_in: int, n_hidden: int, n_out: int, out_scale: float = 1.0) -> MLP:
         """Random start. Hidden weights use a 1/sqrt(fan_in) scale; out_scale shrinks the output layer.
 
         A small out_scale (0.1 for the policy) makes the starting policy close to 50/50, so early
         episodes explore both directions instead of committing to one.
         """
-        return cls({
-            "W1": rng.normal(0.0, 1.0 / np.sqrt(n_in), (n_hidden, n_in)),
-            "b1": np.zeros(n_hidden),
-            "W2": rng.normal(0.0, out_scale / np.sqrt(n_hidden), (n_out, n_hidden)),
-            "b2": np.zeros(n_out),
-        })
+        return cls(
+            {
+                "W1": rng.normal(0.0, 1.0 / np.sqrt(n_in), (n_hidden, n_in)),
+                "b1": np.zeros(n_hidden),
+                "W2": rng.normal(0.0, out_scale / np.sqrt(n_hidden), (n_out, n_hidden)),
+                "b2": np.zeros(n_out),
+            }
+        )
 
     def forward(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Return (H, Z): the hidden activations and the outputs, both with one row per input row."""
@@ -80,7 +81,7 @@ class MLP:
         dW2 = dZ.T @ H
         db2 = dZ.sum(axis=0)
         dH = dZ @ W2
-        dA = dH * (1.0 - H * H)     # through the tanh: its derivative is 1 - tanh(a)^2
+        dA = dH * (1.0 - H * H)  # through the tanh: its derivative is 1 - tanh(a)^2
         dW1 = dA.T @ X
         db1 = dA.sum(axis=0)
         return {"W1": dW1, "b1": db1, "W2": dW2, "b2": db2}
@@ -102,8 +103,8 @@ class Adam:
 
     def step(self, grads: dict[str, np.ndarray]) -> None:
         self.t += 1
-        c1 = 1.0 - self.b1 ** self.t
-        c2 = 1.0 - self.b2 ** self.t
+        c1 = 1.0 - self.b1**self.t
+        c2 = 1.0 - self.b2**self.t
         for k, g in grads.items():
             self.m[k] = self.b1 * self.m[k] + (1 - self.b1) * g
             self.v[k] = self.b2 * self.v[k] + (1 - self.b2) * g * g

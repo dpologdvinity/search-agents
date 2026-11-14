@@ -69,8 +69,7 @@ def test_forced_flag_changes_the_legal_moves(client):
 @pytest.mark.parametrize("size", [10, 12])
 @pytest.mark.parametrize("forced", [True, False])
 def test_every_agent_answers_on_bigger_boards(client, agent, size, forced):
-    body = {"board": list(start_position(size)), "size": size, "turn": -1, "forced": forced,
-            "agent": agent, "level": 1}
+    body = {"board": list(start_position(size)), "size": size, "turn": -1, "forced": forced, "agent": agent, "level": 1}
     r = client.post("/api/checkers/move", json=body)
     assert r.status_code == 200, r.text
     legal = {tuple(m.path) for m in legal_moves(start_position(size), -1, forced)}
@@ -90,8 +89,10 @@ def test_chance_agent_and_describe_endpoint(client):
     r = client.post("/api/checkers/move", json={"board": list(START), "turn": -1, "agent": "chance"})
     assert r.status_code == 200
     assert tuple(r.json()["move"]["path"]) in {tuple(m.path) for m in legal_moves(START, -1)}
-    text = client.get("/api/checkers/describe", params={"red": "mcts", "red_level": 3, "white": "alphabeta",
-                                                        "white_level": 1, "size": 10}).json()["text"]
+    text = client.get(
+        "/api/checkers/describe",
+        params={"red": "mcts", "red_level": 3, "white": "alphabeta", "white_level": 1, "size": 10},
+    ).json()["text"]
     assert text == "Red: MCTS (1,000 playouts) vs White: alpha-beta search (iterative deepening, 0.2 s)"
     human = client.get("/api/checkers/describe", params={"white": "chance"}).json()["text"]
     assert human == "White: Chance (fixed odds)"  # red defaults to a human

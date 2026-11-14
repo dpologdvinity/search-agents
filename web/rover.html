@@ -19,6 +19,7 @@
   /* The benchmark table: numbers right-aligned. */
   .hiw-table th.num, .hiw-table td.num { text-align: right; }
 </style>
+<link rel="stylesheet" href="play.css">
 </head>
 <body>
 
@@ -30,7 +31,7 @@
 </nav>
 
 <div class="page act">
-<div class="proj-page">
+<div class="proj-page compact-play">
   <div class="neon-floor" aria-hidden="true"><div class="neon-floor-plane"></div></div>
 
   <div class="proj-header">
@@ -57,60 +58,9 @@
     <p style="margin-top:0.5rem">The cyan route is D* Lite's and the dashed yellow route is A*'s. The WORK SO FAR chart shows which planner does more work as the rover learns.</p>
   </section>
 
-  <div class="proj-body">
-    <div class="proj-game-col">
-      <div class="rv-stage">
-        <canvas id="rv-map" class="rv-map" role="img" aria-label="Rover map: unknown cells dim, discovered walls pink, planned routes cyan and yellow" title="Unseen cells are planned as free until the sensor covers them. Click a cell to drop a wall or lift one; walls in view replan at once."></canvas>
-        <div class="rv-readout field-hint" id="rv-info">Hover a cell for its D* Lite values. Click a cell to drop or remove a wall.</div>
-      </div>
-
-      <div class="rv-legend">
-        <span><i class="rv-sw rv-sw-unknown"></i>unseen</span>
-        <span><i class="rv-sw rv-sw-free"></i>sensed free</span>
-        <span><i class="rv-sw rv-sw-wall"></i>wall found</span>
-        <span><i class="rv-sw rv-sw-ghost"></i>your wall, not seen yet</span>
-        <span><i class="rv-sw rv-sw-dstar"></i>D* route</span>
-        <span><i class="rv-sw rv-sw-astar"></i>A* route</span>
-        <span><i class="rv-sw rv-sw-exp"></i>expanded in the last replan</span>
-      </div>
-
-      <div class="rv-controls">
-        <button class="cyber-btn green" id="btn-run" type="button" aria-pressed="false" title="Explore automatically: the rover senses, replans and moves until it reaches the goal. Press again to pause."><span class="btn-txt">▶ RUN</span></button>
-        <button class="cyber-btn" id="btn-step" type="button" title="One tick: sense, replan if the sensor changed the map, then move one cell."><span class="btn-txt">STEP ›</span></button>
-        <button class="cyber-btn pink" id="btn-new" type="button" title="Draw a new random map from a new seed."><span class="btn-txt">↺ NEW MAP</span></button>
-        <button class="cyber-btn" id="btn-reset" type="button" title="Start again on the map of the current seed."><span class="btn-txt">⟲ REPLAY SEED</span></button>
-      </div>
-
-      <div style="margin-top:1.2rem">
-        <div class="section-title pink-ttl">WHAT THE ROVER IS THINKING</div>
-        <div class="viz-panel">
-          <div class="viz-title" id="think-title">Ready</div>
-          <div class="rv-think" id="think-body" aria-live="polite"></div>
-        </div>
-      </div>
-
-      <div style="margin-top:1.2rem">
-        <div class="section-title green-ttl">WORK SO FAR</div>
-        <div class="viz-panel">
-          <div class="viz-title">D* LITE against A*: cumulative expansions by step. Lower is less work.</div>
-          <canvas id="rv-chart" class="rv-chart" width="640" height="220" role="img" aria-label="Cumulative expansions of D* Lite and A* against steps"></canvas>
-          <div class="inline" style="flex-wrap:wrap;justify-content:center;gap:0.4rem;margin-top:0.5rem">
-            <span class="rv-key rv-key-dstar">D* LITE</span>
-            <span class="rv-key rv-key-astar">A*</span>
-            <span class="stat-chip">REPLANS <span class="val" id="chip-replans">0</span></span>
-            <span class="stat-chip">D*/A* <span class="val" id="chip-ratio">—</span></span>
-            <span class="stat-chip" title="D* Lite and A* must report the same cost from the rover's cell at every replan.">COST CHECK <span class="val" id="chip-check">—</span></span>
-          </div>
-        </div>
-      </div>
-
-      <details class="log-fold" id="log-fold">
-        <summary>Event log</summary>
-        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
-      </details>
-    </div>
-
-    <div class="proj-ctrl-col">
+  <details class="play-settings">
+    <summary>Game settings</summary>
+    <div class="play-settings-grid">
       <div>
         <div class="section-title pink-ttl">MAZE</div>
         <div class="stack">
@@ -177,6 +127,62 @@
         </div>
       </details>
     </div>
+  </details>
+
+  <div class="proj-body play-layout">
+    <div class="proj-game-col">
+      <div class="rv-stage">
+        <canvas id="rv-map" class="rv-map" role="img" aria-label="Rover map: unknown cells dim, discovered walls pink, planned routes cyan and yellow" title="Unseen cells are planned as free until the sensor covers them. Click a cell to drop a wall or lift one; walls in view replan at once."></canvas>
+        <div class="rv-readout field-hint" id="rv-info">Hover a cell for its D* Lite values. Click a cell to drop or remove a wall.</div>
+      </div>
+
+      <div class="rv-controls">
+        <button class="cyber-btn green" id="btn-run" type="button" aria-pressed="false" title="Explore automatically: the rover senses, replans and moves until it reaches the goal. Press again to pause."><span class="btn-txt">▶ RUN</span></button>
+        <button class="cyber-btn" id="btn-step" type="button" title="One tick: sense, replan if the sensor changed the map, then move one cell."><span class="btn-txt">STEP ›</span></button>
+        <button class="cyber-btn pink" id="btn-new" type="button" title="Draw a new random map from a new seed."><span class="btn-txt">↺ NEW MAP</span></button>
+        <button class="cyber-btn" id="btn-reset" type="button" title="Start again on the map of the current seed."><span class="btn-txt">⟲ REPLAY SEED</span></button>
+      </div>
+    </div>
+
+    <aside class="proj-ctrl-col play-inspector" aria-label="Agent activity">
+      <div style="margin-top:1.2rem">
+        <div class="section-title pink-ttl">WHAT THE ROVER IS THINKING</div>
+        <div class="viz-panel">
+          <div class="viz-title" id="think-title">Ready</div>
+          <div class="rv-think" id="think-body" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.2rem">
+        <div class="section-title green-ttl">WORK SO FAR</div>
+        <div class="viz-panel">
+          <div class="viz-title">D* LITE against A*: cumulative expansions by step. Lower is less work.</div>
+          <canvas id="rv-chart" class="rv-chart" width="640" height="220" role="img" aria-label="Cumulative expansions of D* Lite and A* against steps"></canvas>
+          <div class="inline" style="flex-wrap:wrap;justify-content:center;gap:0.4rem;margin-top:0.5rem">
+            <span class="rv-key rv-key-dstar">D* LITE</span>
+            <span class="rv-key rv-key-astar">A*</span>
+            <span class="stat-chip">REPLANS <span class="val" id="chip-replans">0</span></span>
+            <span class="stat-chip">D*/A* <span class="val" id="chip-ratio">—</span></span>
+            <span class="stat-chip" title="D* Lite and A* must report the same cost from the rover's cell at every replan.">COST CHECK <span class="val" id="chip-check">—</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rv-legend">
+        <span><i class="rv-sw rv-sw-unknown"></i>unseen</span>
+        <span><i class="rv-sw rv-sw-free"></i>sensed free</span>
+        <span><i class="rv-sw rv-sw-wall"></i>wall found</span>
+        <span><i class="rv-sw rv-sw-ghost"></i>your wall, not seen yet</span>
+        <span><i class="rv-sw rv-sw-dstar"></i>D* route</span>
+        <span><i class="rv-sw rv-sw-astar"></i>A* route</span>
+        <span><i class="rv-sw rv-sw-exp"></i>expanded in the last replan</span>
+      </div>
+
+      <details class="log-fold" id="log-fold">
+        <summary>Event log</summary>
+        <div class="agent-log" id="log" style="max-height:200px;border-color:rgba(255,0,160,0.3)"></div>
+      </details>
+    </aside>
   </div>
 
   <section class="hiw" id="how-it-works" aria-labelledby="hiw-title">
@@ -212,7 +218,7 @@
     <p>Each <b>tick</b> of the rover loop senses first. The cells whose state differs from the belief are the changes. If there are any, both planners are told about them and both replan. The <b>driver</b>, the planner chosen in DRIVER, then names the next cell, and the rover moves there. The page's timer calls the same tick in a loop while RUN is on.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/rover.js#L424-L430" target="_blank" rel="noopener" title="web/js/rover.js, lines 424–430" aria-label="Code on GitHub: web/js/rover.js, lines 424 to 430">11</a></p>
     <p>Both planners always see the same changes at the same moments. Their expansion counts can therefore be compared on exactly the same sequence of beliefs. The <b>cost check</b> counts the replans where the two planners report different costs from the rover's cell. That count must stay at 0.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/explorer.py#L91-L106" target="_blank" rel="noopener" title="rover/explorer.py, lines 91–106" aria-label="Code on GitHub: rover/explorer.py, lines 91 to 106">12</a></p>
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/explorer.py#L108-L130" target="_blank" rel="noopener" title="rover/explorer.py, lines 108–130, 80–89, 91–106" aria-label="Code on GitHub: rover/explorer.py, lines 108 to 130, 80 to 89, 91 to 106">13</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/explorer.py#L108-L130" target="_blank" rel="noopener" title="rover/explorer.py, lines 108–130" aria-label="Code on GitHub: rover/explorer.py, lines 108 to 130">13</a></span>
       <pre class="pseudo-simple">function ROVER-TICK():
     changes ← SENSE()                            # cells whose state the sensor just revealed
     if changes is not empty:
@@ -293,7 +299,7 @@ function SENSE():
     <p>Without this offset, every key would go stale as the rover moved, and the queue would have to be rebuilt. Because the new offset is measured from the same cell the old keys were measured from, the keys already in the queue remain comparable without being rewritten.</p>
     <p>The ON-CHANGE procedure below shows the whole repair. For each changed cell, the cell and each of its neighbours are re-examined, since every edge touching the change has a new cost. COMPUTE-SHORTEST-PATH then pops cells until the rover's cell is consistent and nothing cheaper is queued. A cell with g above rhs is <b>overconsistent</b>: its g is lowered to rhs, and its neighbours are re-examined. A cell with g below rhs is <b>underconsistent</b>: its g is set to infinity, which discards the stale value, and then the cell and its neighbours are re-examined. Cells that the change does not reach are never touched.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/dstar.py#L119-L149" target="_blank" rel="noopener" title="rover/dstar.py, lines 119–149" aria-label="Code on GitHub: rover/dstar.py, lines 119 to 149">25</a></p>
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/dstar.py#L153-L169" target="_blank" rel="noopener" title="rover/dstar.py, lines 153–169, 119–149, 105–117, 75–82, 84–103" aria-label="Code on GitHub: rover/dstar.py, lines 153 to 169, 119 to 149, 105 to 117, 75 to 82, 84 to 103">26</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/dstar.py#L153-L169" target="_blank" rel="noopener" title="rover/dstar.py, lines 153–169" aria-label="Code on GitHub: rover/dstar.py, lines 153 to 169">26</a></span>
       <pre class="pseudo-simple">function D-STAR-LITE.ON-CHANGE(changes, pos):
     km ← km + h(s_last, pos)                 # the rover moved, so the keys are offset
     s_last ← pos
@@ -407,7 +413,7 @@ function COMPUTE-SHORTEST-PATH():
     <p>With a consistent heuristic, the first time a cell is expanded its cost is final. The search therefore skips a cell when a later, worse queue entry for it is popped, and it never reopens an expanded cell.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/astar.py#L55-L57" target="_blank" rel="noopener" title="rover/astar.py, lines 55–57" aria-label="Code on GitHub: rover/astar.py, lines 55 to 57">32</a></p>
     <p>When the sensor changes the belief, A* writes the changes and searches again from the rover's cell, without using its earlier search at all. Between changes the rover follows the stored path. The path is trimmed to start at the rover's cell after each move.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/astar.py#L84-L100" target="_blank" rel="noopener" title="rover/astar.py, lines 84–100" aria-label="Code on GitHub: rover/astar.py, lines 84 to 100">33</a></p>
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/astar.py#L42-L80" target="_blank" rel="noopener" title="rover/astar.py, lines 42–80, 84–88" aria-label="Code on GitHub: rover/astar.py, lines 42 to 80, 84 to 88">34</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/astar.py#L42-L80" target="_blank" rel="noopener" title="rover/astar.py, lines 42–80" aria-label="Code on GitHub: rover/astar.py, lines 42 to 80">34</a></span>
       <pre class="pseudo-simple">function A-STAR.ON-CHANGE(changes, pos):
     record the changed walls in the belief
     g(pos) ← 0
@@ -490,7 +496,7 @@ u &= \bigl((t_2 \oplus (t_2 \gg 14)) \bmod 2^{32}\bigr) / 2^{32}
     </div>
     <p>Here <span class="math">u_c</span> is the next draw from the generator, and <span class="math">\text{density}</span> is the share of walls chosen on the page, 0.1, 0.2 or 0.3. A map is drawn again from the same stream until a plain breadth-first search finds a route from the start to the goal, so the rover always has a possible route.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L102-L103" target="_blank" rel="noopener" title="rover/world.py, lines 102–103" aria-label="Code on GitHub: rover/world.py, lines 102 to 103">40</a><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L72-L85" target="_blank" rel="noopener" title="rover/world.py, lines 72–85" aria-label="Code on GitHub: rover/world.py, lines 72 to 85">41</a></p>
     <div class="pseudo">
-      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L88-L103" target="_blank" rel="noopener" title="rover/world.py, lines 88–103, 72–85" aria-label="Code on GitHub: rover/world.py, lines 88 to 103, 72 to 85">42</a></span>
+      <span class="pseudo-bar"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L88-L103" target="_blank" rel="noopener" title="rover/world.py, lines 88–103" aria-label="Code on GitHub: rover/world.py, lines 88 to 103">42</a></span>
       <pre class="pseudo-simple">function GENERATE(n, density, seed):
     while True:
         for each cell c that is not a corner:
@@ -528,10 +534,10 @@ function REACHABLE(n, walls, start, goal):
     <p>REACHABLE is a <b>breadth-first search</b>: it visits cells in the order they are discovered, so it finds a route if one exists, and it stops as soon as the goal is reached.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L72-L85" target="_blank" rel="noopener" title="rover/world.py, lines 72–85" aria-label="Code on GitHub: rover/world.py, lines 72 to 85">41</a> The generator's docstring notes that redraws are rare at the densities the page offers.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/world.py#L91-L92" target="_blank" rel="noopener" title="rover/world.py, lines 91–92" aria-label="Code on GitHub: rover/world.py, lines 91 to 92">44</a></p>
 
     <h3 class="hiw-sub">Results and parameters</h3>
-    <p>The benchmark explores each map twice, once steered by D* Lite and once by A*. In both runs, both planners see the same belief changes, so the work of each planner is measured on the same route.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L6-L9" target="_blank" rel="noopener" title="rover/benchmark.py, lines 6–9" aria-label="Code on GitHub: rover/benchmark.py, lines 6 to 9">45</a> Each row averages 5 seeded maps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L27-L30" target="_blank" rel="noopener" title="rover/benchmark.py, lines 27–30" aria-label="Code on GitHub: rover/benchmark.py, lines 27 to 30">46</a> A map's work splits into the initial plan on the empty map, <span class="math">I</span>, and the replans after sensing, <span class="math">R</span>, so the total is <span class="math">T = I + R</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L49-L53" target="_blank" rel="noopener" title="rover/benchmark.py, lines 49–53" aria-label="Code on GitHub: rover/benchmark.py, lines 49 to 53">47</a> The table reports the averages of those totals, and the ratio is the D* Lite average divided by the A* average.</p>
-    <!-- rover/benchmark.py:66 -->
+    <p>The benchmark explores each map twice, once steered by D* Lite and once by A*. In both runs, both planners see the same belief changes, so the work of each planner is measured on the same route.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L6-L9" target="_blank" rel="noopener" title="rover/benchmark.py, lines 6–9" aria-label="Code on GitHub: rover/benchmark.py, lines 6 to 9">45</a> Each row averages 5 seeded maps.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L27-L30" target="_blank" rel="noopener" title="rover/benchmark.py, lines 27–30" aria-label="Code on GitHub: rover/benchmark.py, lines 27 to 30">46</a> A map's work splits into the initial plan on the empty map, <span class="math">I</span>, and the replans after sensing, <span class="math">R</span>, so the total is <span class="math">T = I + R</span>.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L56-L60" target="_blank" rel="noopener" title="rover/benchmark.py, lines 56–60" aria-label="Code on GitHub: rover/benchmark.py, lines 56 to 60">47</a> The table reports the averages of those totals, and the ratio is the D* Lite average divided by the A* average.</p>
+    <!-- rover/benchmark.py:88 -->
     <div class="math-fig">
-      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L66" target="_blank" rel="noopener" title="rover/benchmark.py, line 66" aria-label="Code on GitHub: rover/benchmark.py, line 66">48</a></span>
+      <span class="math-refs"><a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/benchmark.py#L88" target="_blank" rel="noopener" title="rover/benchmark.py, line 88" aria-label="Code on GitHub: rover/benchmark.py, line 88">48</a></span>
       <div class="math math-block">\text{ratio} = \frac{\overline{T}_{\text{D* Lite}}}{\overline{T}_{\text{A*}}}, \qquad T = I + R</div>
     </div>
     <p>Here the bar marks an average over the maps in one row, <span class="math">I</span> is the initial plan and <span class="math">R</span> the replan expansions. Below 1 means D* Lite did less total work. Expansions are queue pops for D* Lite and closed cells for A*.</p>
@@ -555,7 +561,7 @@ function REACHABLE(n, walls, start, goal):
         </tbody>
       </table>
     </div>
-    <p class="hiw-note">The page runs the planners in JavaScript, with no server round trip. The JavaScript is a line-by-line port of the Python, in <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/rover_core.js" target="_blank" rel="noopener" title="web/js/rover_core.js" aria-label="Code on GitHub: web/js/rover_core.js">57</a>, and the page's controller is <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/rover.js" target="_blank" rel="noopener" title="web/js/rover.js" aria-label="Code on GitHub: web/js/rover.js">58</a>. The endpoint <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/rover_api.py#L103-L104" target="_blank" rel="noopener" title="server/rover_api.py, lines 103–104" aria-label="Code on GitHub: server/rover_api.py, lines 103 to 104">59</a> runs the Python planners once on any given map, so the tests can compare the port with the reference.</p>
+    <p class="hiw-note">The page runs the planners in JavaScript, with no server round trip. The JavaScript is a line-by-line port of the Python, in <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/rover_core.js" target="_blank" rel="noopener" title="web/js/rover_core.js" aria-label="Code on GitHub: web/js/rover_core.js">57</a>, and the page's controller is <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/web/js/rover.js" target="_blank" rel="noopener" title="web/js/rover.js" aria-label="Code on GitHub: web/js/rover.js">58</a>. The endpoint <a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/server/rover_api.py#L105-L106" target="_blank" rel="noopener" title="server/rover_api.py, lines 105–106" aria-label="Code on GitHub: server/rover_api.py, lines 105 to 106">59</a> runs the Python planners once on any given map, so the tests can compare the port with the reference.</p>
 
     <h3 class="hiw-sub">Reading the counters</h3>
     <p>Every expansion so far is counted, including the initial plan on the empty map. The chart plots the cumulative count against the rover's steps for each planner, and the lower line has done less work. REPLANS counts the ticks on which the sensor changed something.<a class="ref" href="https://github.com/dpologdvinity/search-agents/blob/master/rover/explorer.py#L48" target="_blank" rel="noopener" title="rover/explorer.py, line 48" aria-label="Code on GitHub: rover/explorer.py, line 48">60</a></p>

@@ -18,9 +18,17 @@ from .tree import DecisionTree, preorder
 
 
 class RandomForest:
-    def __init__(self, n_estimators: int = 50, *, criterion: str = "gini", max_depth: int = 5,
-                 min_samples_leaf: int = 1, max_features: int | None = None, bootstrap: bool = True,
-                 seed: int = 1):
+    def __init__(
+        self,
+        n_estimators: int = 50,
+        *,
+        criterion: str = "gini",
+        max_depth: int = 5,
+        min_samples_leaf: int = 1,
+        max_features: int | None = None,
+        bootstrap: bool = True,
+        seed: int = 1,
+    ):
         self.n_estimators = n_estimators
         self.criterion = criterion
         self.max_depth = max_depth
@@ -52,8 +60,9 @@ class RandomForest:
                 idx = np.arange(n, dtype=np.int64)
             mask = np.zeros(n, dtype=bool)
             mask[idx] = True
-            tree = DecisionTree(self.criterion, self.max_depth, self.min_samples_leaf,
-                                max_features=mf, rng=rng).fit(X, y, self.n_classes, idx=idx)
+            tree = DecisionTree(self.criterion, self.max_depth, self.min_samples_leaf, max_features=mf, rng=rng).fit(
+                X, y, self.n_classes, idx=idx
+            )
             self.trees.append(tree)
             self.in_bag.append(mask)
         self._score_oob(X, y)

@@ -39,8 +39,10 @@ def render_options(options: list[dict]) -> str:
     """Table of guesses with expected bits, worst case and expected words left. `could-win` marks candidates."""
     lines = ["    word   bits  worst  expect-left  could-win"]
     for o in options:
-        lines.append(f"    {o['word']}  {o['bits']:5.2f}  {o['worst']:5d}  {o['expected_left']:11.1f}  "
-                     f"{'yes' if o['candidate'] else ''}")
+        lines.append(
+            f"    {o['word']}  {o['bits']:5.2f}  {o['worst']:5d}  {o['expected_left']:11.1f}  "
+            f"{'yes' if o['candidate'] else ''}"
+        )
     return "\n".join(lines)
 
 
@@ -129,8 +131,10 @@ def solve_game(lex: Lexicon, strategy: str = "entropy", read=input, out=print) -
     for turn in range(1, MAX_GUESSES + 1):
         suggestion = lex.guesses[solver.choose(lex, cand, strategy)]
         g_sugg = lex.guess_index[suggestion]
-        out(f"\nguess {turn}: {suggestion.upper()}  ({len(cand)} candidates, "
-            f"{solver.guess_bits(lex, cand, g_sugg):.2f} expected bits)")
+        out(
+            f"\nguess {turn}: {suggestion.upper()}  ({len(cand)} candidates, "
+            f"{solver.guess_bits(lex, cand, g_sugg):.2f} expected bits)"
+        )
         if strategy != "random" and len(cand) > 1:  # the random baseline has no table to show
             out(render_options(solver.rank(lex, cand, strategy, top=3)))
         word = _ask_word(lex, read, out, default=suggestion)
@@ -155,8 +159,15 @@ def solve_game(lex: Lexicon, strategy: str = "entropy", read=input, out=print) -
     return -1
 
 
-def watch(lex: Lexicon, answer: str | None = None, seed: int | None = None, strategy: str = "entropy",
-          delay: float = 0.0, out=print, sleep=time.sleep) -> int:
+def watch(
+    lex: Lexicon,
+    answer: str | None = None,
+    seed: int | None = None,
+    strategy: str = "entropy",
+    delay: float = 0.0,
+    out=print,
+    sleep=time.sleep,
+) -> int:
     """The solver plays one secret word and explains each step. Returns the guess count, or -1 if it failed."""
     rng = random.Random(seed)
     secret_i = lex.answer_index[answer] if answer else rng.randrange(len(lex.answers))
@@ -183,8 +194,9 @@ def watch(lex: Lexicon, answer: str | None = None, seed: int | None = None, stra
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m wordle",
-                                     description="Play Wordle, watch the solver, or benchmark the strategies.")
+    parser = argparse.ArgumentParser(
+        prog="python -m wordle", description="Play Wordle, watch the solver, or benchmark the strategies."
+    )
     sub = parser.add_subparsers(dest="cmd")
     p_play = sub.add_parser("play", help="you guess; the game scores it (the default)")
     p_play.add_argument("--answer", help="the secret word (must be one of the answers)")
@@ -197,8 +209,11 @@ def main(argv=None) -> int:
     p_watch.add_argument("--strategy", choices=solver.STRATEGIES, default="entropy")
     p_watch.add_argument("--delay", type=float, default=0.6, help="seconds between guesses (default 0.6)")
     p_bench = sub.add_parser("benchmark", help="play every answer with each strategy")
-    p_bench.add_argument("--strategies", default=",".join(solver.STRATEGIES),
-                         help="comma-separated, from: " + ", ".join(solver.STRATEGIES))
+    p_bench.add_argument(
+        "--strategies",
+        default=",".join(solver.STRATEGIES),
+        help="comma-separated, from: " + ", ".join(solver.STRATEGIES),
+    )
     p_bench.add_argument("--no-write", action="store_true", help="print only; do not write results/")
     args = parser.parse_args(argv)
 

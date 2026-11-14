@@ -63,8 +63,7 @@ def _options(u: int, hard: int, ace: bool, n: int, pair_value: int) -> list[Opti
     """
     base = (((u - 1) * _HARD_SLOTS + hard) * 2 + int(ace)) * 3
     if pair_value:
-        return [(SPLIT, _PAIR_BASE + (u - 1) * 10 + pair_value - 1), (STAND, base), (HIT, base + 1),
-                (DOUBLE, base + 2)]
+        return [(SPLIT, _PAIR_BASE + (u - 1) * 10 + pair_value - 1), (STAND, base), (HIT, base + 1), (DOUBLE, base + 2)]
     if n == 2:
         return [(STAND, base), (HIT, base + 1), (DOUBLE, base + 2)]
     return [(STAND, base), (HIT, base + 1)]

@@ -25,11 +25,14 @@ def test_minimax_analysis_reports_win(client):
     assert body["analysis"]["best"]["result"] == "win"
 
 
-@pytest.mark.parametrize("moves, fragment", [
-    ("1111111", "full column"),
-    ("1212121", "already over"),
-    ("89", "digits 1-7"),
-])
+@pytest.mark.parametrize(
+    "moves, fragment",
+    [
+        ("1111111", "full column"),
+        ("1212121", "already over"),
+        ("89", "digits 1-7"),
+    ],
+)
 def test_rejects_bad_positions(client, moves, fragment):
     r = client.post("/api/connect4/move", json={"moves": moves, "agent": "minimax"})
     assert r.status_code in (400, 422)

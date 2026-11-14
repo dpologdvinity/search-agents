@@ -39,14 +39,23 @@ def watch(agent_name: str, seed: int, delay: float, out=print, sleep=time.sleep)
         action = agent.act(obs)
         probs = agent.probs(obs) if hasattr(agent, "probs") else None
         value = agent.value(obs) if hasattr(agent, "value") else None
-        out(CLEAR + f"{LABELS[agent_name]}   seed {seed}\n"
-            + render_frame(obs[0], obs[2], env.steps, action, probs, value))
+        out(
+            CLEAR
+            + f"{LABELS[agent_name]}   seed {seed}\n"
+            + render_frame(obs[0], obs[2], env.steps, action, probs, value)
+        )
         obs, _, _, _ = env.step(action)
         sleep(delay)
-    out(CLEAR + f"{LABELS[agent_name]}   seed {seed}\n"
+    out(
+        CLEAR
+        + f"{LABELS[agent_name]}   seed {seed}\n"
         + render_frame(env.x, env.theta, env.steps)
-        + ("\n\nreached the 500-step cap: balanced the whole episode" if env.truncated
-           else f"\n\nthe pole fell after {env.steps} steps"))
+        + (
+            "\n\nreached the 500-step cap: balanced the whole episode"
+            if env.truncated
+            else f"\n\nthe pole fell after {env.steps} steps"
+        )
+    )
     return env.steps
 
 
@@ -123,16 +132,23 @@ def _outcome(env: CartPole) -> str:
 def write_learning(data_dir=DATA_DIR, results_dir=RESULTS_DIR) -> None:
     """Results table for every algorithm in curves.json: the first and last 50 episodes per seed."""
     doc = json.loads((data_dir / "curves.json").read_text())
-    lines = ["# CartPole learning curves", "",
-             f"Training episodes per seed, sampled (not greedy) returns. Discount {doc.get('gamma', GAMMA)}.",
-             "The learned policy shipped is the seed with the best last 50 episodes.", ""]
+    lines = [
+        "# CartPole learning curves",
+        "",
+        f"Training episodes per seed, sampled (not greedy) returns. Discount {doc.get('gamma', GAMMA)}.",
+        "The learned policy shipped is the seed with the best last 50 episodes.",
+        "",
+    ]
     for algo in ALGOS:
         entry = doc["algorithms"].get(algo)
         if not entry:
             continue
-        lines += [f"## {LABELS.get(algo, algo).title()}", "",
-                  "| Seed | Episodes | First 50 mean | Last 50 mean | Trailing-100 mean reaches 475 at episode |",
-                  "|---:|---:|---:|---:|---:|"]
+        lines += [
+            f"## {LABELS.get(algo, algo).title()}",
+            "",
+            "| Seed | Episodes | First 50 mean | Last 50 mean | Trailing-100 mean reaches 475 at episode |",
+            "|---:|---:|---:|---:|---:|",
+        ]
         for seed, rets in entry["seeds"].items():
             r = np.asarray(rets, dtype=float)
             hit = "never" if len(r) < 100 else _first_hit(r)
@@ -209,8 +225,10 @@ def main(argv: list[str] | None = None) -> int:
         summary = train_and_save(args.algo, args.seeds, args.episodes)
         write_learning()
         for s, r in summary["summaries"].items():
-            print(f"seed {s}: first50 {r['first50']:.1f}  last50 {r['last50']:.1f}  "
-                  f"reaches 475 at {r.get('episodes_to_475_trailing100')}")
+            print(
+                f"seed {s}: first50 {r['first50']:.1f}  last50 {r['last50']:.1f}  "
+                f"reaches 475 at {r.get('episodes_to_475_trailing100')}"
+            )
         print(f"shipped seed {summary['best_seed']}")
     elif args.cmd == "benchmark":
         doc = run_benchmark(args.episodes)

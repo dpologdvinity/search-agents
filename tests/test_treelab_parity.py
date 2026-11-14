@@ -25,22 +25,98 @@ CORE = ROOT / "web" / "js" / "treelab-core.js"
 NODE = shutil.which("node")
 
 CASES = [
-    {"kind": "tree", "name": "blobs", "n": 160, "seed": 3, "extras": True, "criterion": "gini", "depth": 4,
-     "minLeaf": 2, "alphas": [0.0, 0.005, 0.02, 0.1]},
-    {"kind": "tree", "name": "xor", "n": 160, "seed": 4, "extras": True, "criterion": "entropy", "depth": 5,
-     "minLeaf": 3, "alphas": [0.0, 0.01, 0.05]},
-    {"kind": "tree", "name": "checkerboard", "n": 200, "seed": 5, "extras": False, "criterion": "gini",
-     "depth": 6, "minLeaf": 1, "alphas": [0.0, 0.002]},
-    {"kind": "tree", "name": "spiral", "n": 200, "seed": 6, "extras": True, "criterion": "entropy", "depth": 7,
-     "minLeaf": 2, "alphas": [0.0, 0.003, 0.02]},
-    {"kind": "tree", "name": "nested", "n": 180, "seed": 7, "extras": True, "criterion": "gini", "depth": 5,
-     "minLeaf": 4, "alphas": [0.0, 0.01]},
-    {"kind": "tree", "name": "diagonal", "n": 220, "seed": 8, "extras": True, "criterion": "entropy", "depth": 8,
-     "minLeaf": 1, "alphas": [0.0, 0.004, 0.03]},
-    {"kind": "forest", "name": "diagonal", "n": 200, "seed": 9, "extras": True, "criterion": "gini", "depth": 5,
-     "minLeaf": 2, "trees": 12, "forestSeed": 5, "splitSeed": 2},
-    {"kind": "forest", "name": "spiral", "n": 180, "seed": 10, "extras": True, "criterion": "entropy", "depth": 6,
-     "minLeaf": 1, "trees": 8, "forestSeed": 11, "splitSeed": 3},
+    {
+        "kind": "tree",
+        "name": "blobs",
+        "n": 160,
+        "seed": 3,
+        "extras": True,
+        "criterion": "gini",
+        "depth": 4,
+        "minLeaf": 2,
+        "alphas": [0.0, 0.005, 0.02, 0.1],
+    },
+    {
+        "kind": "tree",
+        "name": "xor",
+        "n": 160,
+        "seed": 4,
+        "extras": True,
+        "criterion": "entropy",
+        "depth": 5,
+        "minLeaf": 3,
+        "alphas": [0.0, 0.01, 0.05],
+    },
+    {
+        "kind": "tree",
+        "name": "checkerboard",
+        "n": 200,
+        "seed": 5,
+        "extras": False,
+        "criterion": "gini",
+        "depth": 6,
+        "minLeaf": 1,
+        "alphas": [0.0, 0.002],
+    },
+    {
+        "kind": "tree",
+        "name": "spiral",
+        "n": 200,
+        "seed": 6,
+        "extras": True,
+        "criterion": "entropy",
+        "depth": 7,
+        "minLeaf": 2,
+        "alphas": [0.0, 0.003, 0.02],
+    },
+    {
+        "kind": "tree",
+        "name": "nested",
+        "n": 180,
+        "seed": 7,
+        "extras": True,
+        "criterion": "gini",
+        "depth": 5,
+        "minLeaf": 4,
+        "alphas": [0.0, 0.01],
+    },
+    {
+        "kind": "tree",
+        "name": "diagonal",
+        "n": 220,
+        "seed": 8,
+        "extras": True,
+        "criterion": "entropy",
+        "depth": 8,
+        "minLeaf": 1,
+        "alphas": [0.0, 0.004, 0.03],
+    },
+    {
+        "kind": "forest",
+        "name": "diagonal",
+        "n": 200,
+        "seed": 9,
+        "extras": True,
+        "criterion": "gini",
+        "depth": 5,
+        "minLeaf": 2,
+        "trees": 12,
+        "forestSeed": 5,
+        "splitSeed": 2,
+    },
+    {
+        "kind": "forest",
+        "name": "spiral",
+        "n": 180,
+        "seed": 10,
+        "extras": True,
+        "criterion": "entropy",
+        "depth": 6,
+        "minLeaf": 1,
+        "trees": 8,
+        "forestSeed": 11,
+        "splitSeed": 3,
+    },
 ]
 
 GRID = [[i / 20.0, j / 20.0] for i in range(21) for j in range(21)]
@@ -93,9 +169,20 @@ def _ser(root):
     """Same layout as the JavaScript ser(): one row per node, ordered by id."""
     rows = []
     for node in sorted(preorder(root), key=lambda nd: nd.id):
-        rows.append([node.id, node.depth, list(node.counts), node.status, node.feature, node.threshold,
-                     node.gain, node.impurity, node.left.id if node.left else -1,
-                     node.right.id if node.right else -1])
+        rows.append(
+            [
+                node.id,
+                node.depth,
+                list(node.counts),
+                node.status,
+                node.feature,
+                node.threshold,
+                node.gain,
+                node.impurity,
+                node.left.id if node.left else -1,
+                node.right.id if node.right else -1,
+            ]
+        )
     return rows
 
 
@@ -122,14 +209,20 @@ def _python_forest_case(c):
     F = expand(X, c["extras"])
     gridF = expand(np.array(GRID), c["extras"])
     tr, te = train_test_split(len(y), 0.3, c["splitSeed"])
-    f = RandomForest(c["trees"], criterion=c["criterion"], max_depth=c["depth"], min_samples_leaf=c["minLeaf"],
-                     seed=c["forestSeed"]).fit(F[tr], y[tr], K)
+    f = RandomForest(
+        c["trees"], criterion=c["criterion"], max_depth=c["depth"], min_samples_leaf=c["minLeaf"], seed=c["forestSeed"]
+    ).fit(F[tr], y[tr], K)
     probs = f.predict_proba(gridF)
     return {
-        "X": X, "y": y, "train": tr.tolist(), "test": te.tolist(), "oob": f.oob_accuracy,
+        "X": X,
+        "y": y,
+        "train": tr.tolist(),
+        "test": te.tolist(),
+        "oob": f.oob_accuracy,
         "importances": f.feature_importances_.tolist(),
         "trees": [{"tree": _ser(t.root), "inBag": m.astype(int).tolist()} for t, m in zip(f.trees, f.in_bag)],
-        "labels": probs.argmax(axis=1).tolist(), "probs": probs.tolist(),
+        "labels": probs.argmax(axis=1).tolist(),
+        "probs": probs.tolist(),
     }
 
 
@@ -159,8 +252,9 @@ def js_results():
         pytest.skip("node is not installed")
     spec = {"cases": CASES, "grid": GRID}
     env = dict(os.environ, TREELAB_CORE=str(CORE), TREELAB_SPEC=json.dumps(spec))
-    proc = subprocess.run([NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True,
-                          text=True, timeout=120)
+    proc = subprocess.run(
+        [NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True, text=True, timeout=120
+    )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout)
 

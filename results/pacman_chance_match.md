@@ -4,7 +4,7 @@ Seeds 10000-10199, 200 games per maze, 2 mazes.
 
 | ghosts | win rate | mean score | mean turns | won / lost / timeout |
 |---|---|---|---|---|
-| AI ghosts (A* routes) | 64.2% | 1350.3 | 193.9 | 257 / 47 / 96 |
-| Chance (fixed odds) | 46.2% | 1513.7 | 110.8 | 185 / 215 / 0 |
+| AI ghosts (A* routes) | 59.8% | 1324.2 | 208.3 | 239 / 69 / 92 |
+| Chance (fixed odds) | 38.0% | 1320.5 | 106.1 | 152 / 248 / 0 |
 
 Chance odds, relative to the ghost's last move: straight 60%, left 15%, right 15%, back 10%.

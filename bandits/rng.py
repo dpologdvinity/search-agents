@@ -31,7 +31,7 @@ class Rng:
         t = self.state
         # The multiplies keep only the low 32 bits, like Math.imul in JavaScript.
         t = ((t ^ (t >> 15)) * (1 | t)) & MASK
-        t = (((t + (((t ^ (t >> 7)) * (61 | t)) & MASK)) & MASK) ^ t)
+        t = ((t + (((t ^ (t >> 7)) * (61 | t)) & MASK)) & MASK) ^ t
         return ((t ^ (t >> 14)) & MASK) / _TWO32
 
     def index(self, k: int) -> int:

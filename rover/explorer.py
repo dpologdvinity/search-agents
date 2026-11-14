@@ -41,14 +41,14 @@ class Explorer:
         self.radius = radius
         self.driver = driver
         N = self.n * self.n
-        self.belief = bytearray(N)   # 1 = wall as the rover currently believes it
-        self.seen = bytearray(N)     # 1 = the sensor has covered this cell at least once
+        self.belief = bytearray(N)  # 1 = wall as the rover currently believes it
+        self.seen = bytearray(N)  # 1 = the sensor has covered this cell at least once
         self.pos = world.start
         self.steps = 0
-        self.replans = 0             # ticks on which the sensor changed something
+        self.replans = 0  # ticks on which the sensor changed something
         self.done = False
-        self.stuck = False           # true when the driver has no route and the rover waits
-        self.mismatches = 0          # replans where D* Lite and A* disagree on the cost (should stay 0)
+        self.stuck = False  # true when the driver has no route and the rover waits
+        self.mismatches = 0  # replans where D* Lite and A* disagree on the cost (should stay 0)
         self.seconds = {"dstar": 0.0, "astar": 0.0}  # time spent inside each planner
         self.last_changes: list[tuple[int, int]] = []  # changes applied by the latest replan
         # Both planners plan on an all-free map here; the first sensing then arrives as changes.
@@ -118,7 +118,7 @@ class Explorer:
         nxt = planner.next_cell(self.pos)
         self.seconds[self.driver] += time.perf_counter() - t0
         if nxt is None:
-            self.stuck = True        # no known route: wait for the map to change
+            self.stuck = True  # no known route: wait for the map to change
             return
         # The sensor covers every neighbour, so the belief is true for nxt. Walking into a wall
         # would be a bug in the planner or the sensor.

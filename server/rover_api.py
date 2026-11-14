@@ -93,9 +93,11 @@ async def meta():
 
 
 @router.get("/api/rover/map")
-async def seeded_map(size: int = Query(21, ge=MIN_SIZE, le=MAX_SIZE),
-                     density: float = Query(0.2, ge=0.0, le=0.4),
-                     seed: int = Query(1, ge=0, le=2**32 - 1)):
+async def seeded_map(
+    size: int = Query(21, ge=MIN_SIZE, le=MAX_SIZE),
+    density: float = Query(0.2, ge=0.0, le=0.4),
+    seed: int = Query(1, ge=0, le=2**32 - 1),
+):
     walls = generate(size, density, seed)
     return {"n": size, "start": 0, "goal": size * size - 1, "walls": list(walls)}
 

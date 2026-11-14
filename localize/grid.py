@@ -29,8 +29,8 @@ import numpy as np
 
 from .world import TAU, Floor, blocked, cast, noise_sd, ray_loglik, wrap
 
-SUB = 2        # position bins per cell along each axis (0.25 m bins)
-HEADS = 16     # heading bins over the full circle (22.5 degrees)
+SUB = 2  # position bins per cell along each axis (0.25 m bins)
+HEADS = 16  # heading bins over the full circle (22.5 degrees)
 # Three-point Gauss-Hermite rule for a standard normal: nodes -sqrt(3), 0, sqrt(3) with weights 1/6, 2/3, 1/6.
 GH_NODES = (-math.sqrt(3.0), 0.0, math.sqrt(3.0))
 GH_WEIGHTS = (1.0 / 6.0, 2.0 / 3.0, 1.0 / 6.0)
@@ -54,7 +54,7 @@ class GridFilter:
         j = np.repeat(np.arange(self.h2), self.w2 * HEADS)
         i = np.tile(np.repeat(np.arange(self.w2), HEADS), self.h2)
         k = np.tile(np.arange(HEADS), self.h2 * self.w2)
-        self.x = (i + 0.5) / SUB           # bin centre, in cells
+        self.x = (i + 0.5) / SUB  # bin centre, in cells
         self.y = (j + 0.5) / SUB
         self.th = k * self.dh
         self.cos_th = np.cos(self.th)

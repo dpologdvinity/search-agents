@@ -1,10 +1,10 @@
 """Command-line tools for Tetris: play, watch the agent, tune the weights, and benchmark.
 
-    python -m tetris                       # play in the terminal (same as 'play')
-    python -m tetris play --seed 7         # turn-based game, 'h' shows the agent's placement
-    python -m tetris watch --pieces 300    # the agent plays a seeded game and prints every step
-    python -m tetris evolve --gens 30      # run the GA and write results/tetris_ga_weights.json + the log
-    python -m tetris benchmark --games 30  # the four-strategy comparison, written to results/
+python -m tetris                       # play in the terminal (same as 'play')
+python -m tetris play --seed 7         # turn-based game, 'h' shows the agent's placement
+python -m tetris watch --pieces 300    # the agent plays a seeded game and prints every step
+python -m tetris evolve --gens 30      # run the GA and write results/tetris_ga_weights.json + the log
+python -m tetris benchmark --games 30  # the four-strategy comparison, written to results/
 """
 
 from __future__ import annotations
@@ -50,8 +50,10 @@ def cmd_watch(args) -> int:
         lines += move.lines
         if args.delay:
             print("\033[2J\033[H", end="")  # clear the screen so the board animates in place
-        print(f"piece {n}: {piece} into rotation {move.rot} at column {move.x + 1}, "
-              f"clears {move.lines}, total {lines} lines")
+        print(
+            f"piece {n}: {piece} into rotation {move.rot} at column {move.x + 1}, "
+            f"clears {move.lines}, total {lines} lines"
+        )
         print(render(board))
         if args.delay:
             time.sleep(args.delay)
@@ -62,11 +64,19 @@ def cmd_watch(args) -> int:
 def cmd_evolve(args) -> int:
     from .evolve import GAConfig, evolve, save_tuned
 
-    cfg = GAConfig(population=args.pop, generations=args.gens, train_games=args.games,
-                   train_pieces=args.pieces, board_height=args.height, seed=args.seed)
-    print(f"GA: population {cfg.population}, generations {cfg.generations}, {cfg.train_games} training games "
-          f"per genome (fresh seeds each generation), cap {cfg.train_pieces} pieces, {cfg.board_height} rows, "
-          f"{args.workers} workers")
+    cfg = GAConfig(
+        population=args.pop,
+        generations=args.gens,
+        train_games=args.games,
+        train_pieces=args.pieces,
+        board_height=args.height,
+        seed=args.seed,
+    )
+    print(
+        f"GA: population {cfg.population}, generations {cfg.generations}, {cfg.train_games} training games "
+        f"per genome (fresh seeds each generation), cap {cfg.train_pieces} pieces, {cfg.board_height} rows, "
+        f"{args.workers} workers"
+    )
     result = evolve(cfg, workers=args.workers, log_path=Path(args.log) if args.log else None)
     print("weights:")
     for name, w in zip(FEATURES, result["weights"]):
@@ -82,17 +92,27 @@ def cmd_cem(args) -> int:
     """Noisy cross-entropy tuning (v3). Writes the log and the final mean as JSON; checkpoints as it goes."""
     from .cem import CEMConfig, run_cem
 
-    cfg = CEMConfig(iterations=args.iters, samples=args.samples, games=args.games, cap=args.cap,
-                    height=args.height, seed=args.seed)
-    print(f"CEM: {cfg.iterations} iterations, {cfg.samples} samples, {cfg.games} games per sample (fresh seeds), "
-          f"cap {cfg.cap}, {cfg.height} rows, {args.workers} workers, start at the hand-picked weights")
-    result = run_cem(cfg, workers=args.workers, checkpoint=Path(args.checkpoint), log_path=Path(args.log),
-                     resume=args.resume)
+    cfg = CEMConfig(
+        iterations=args.iters, samples=args.samples, games=args.games, cap=args.cap, height=args.height, seed=args.seed
+    )
+    print(
+        f"CEM: {cfg.iterations} iterations, {cfg.samples} samples, {cfg.games} games per sample (fresh seeds), "
+        f"cap {cfg.cap}, {cfg.height} rows, {args.workers} workers, start at the hand-picked weights"
+    )
+    result = run_cem(
+        cfg, workers=args.workers, checkpoint=Path(args.checkpoint), log_path=Path(args.log), resume=args.resume
+    )
     print("final mean:")
     for name, w in zip(FEATURES, result["weights"]):
         print(f"  {name:18s} {w:+.4f}")
-    doc = {"features": list(FEATURES), "weights": result["weights"], "config": result["config"],
-           "history": result["history"], "sigma": result["sigma"], "best_sample": result["best"]}
+    doc = {
+        "features": list(FEATURES),
+        "weights": result["weights"],
+        "config": result["config"],
+        "history": result["history"],
+        "sigma": result["sigma"],
+        "best_sample": result["best"],
+    }
     Path(args.out).write_text(json.dumps(doc, indent=1) + "\n")
     print(f"wrote {args.out}")
     return 0
@@ -106,8 +126,14 @@ def cmd_benchmark(args) -> int:
     ga_weights = None
     if args.weights:
         ga_weights = json.loads(Path(args.weights).read_text())["weights"]
-    result = run_benchmark(games=args.games, cap=args.cap, workers=args.workers, strategies=strategies,
-                           ga_weights=ga_weights, height=args.height)
+    result = run_benchmark(
+        games=args.games,
+        cap=args.cap,
+        workers=args.workers,
+        strategies=strategies,
+        ga_weights=ga_weights,
+        height=args.height,
+    )
     result["ga_source"] = args.weights or "tetris/tuned.json"
     print(to_markdown(result))
     print(f"hand-picked weights: {list(HAND_WEIGHTS)}")
@@ -142,8 +168,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--log", default=str(RESULTS / "tetris_train_log.jsonl"))
-    p.add_argument("--out", default=str(RESULTS / "tetris_ga_weights.json"),
-                   help="where the GA weights go (default results/tetris_ga_weights.json; tetris/tuned.json is kept)")
+    p.add_argument(
+        "--out",
+        default=str(RESULTS / "tetris_ga_weights.json"),
+        help="where the GA weights go (default results/tetris_ga_weights.json; tetris/tuned.json is kept)",
+    )
     p.set_defaults(fn=cmd_evolve)
 
     p = sub.add_parser("cem", help="tune the weights with the noisy cross-entropy method (v3)")

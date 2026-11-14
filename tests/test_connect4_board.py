@@ -13,18 +13,23 @@ def naive_winner(grid):
             if not v:
                 continue
             for dr, dc in ((0, 1), (1, 0), (1, 1), (1, -1)):
-                if all(0 <= r + k * dr < ROWS and 0 <= c + k * dc < COLS
-                       and grid[r + k * dr][c + k * dc] == v for k in range(4)):
+                if all(
+                    0 <= r + k * dr < ROWS and 0 <= c + k * dc < COLS and grid[r + k * dr][c + k * dc] == v
+                    for k in range(4)
+                ):
                     return v
     return 0
 
 
-@pytest.mark.parametrize("moves", [
-    "1212121",       # vertical
-    "1122334",       # horizontal
-    "12233434744",   # diagonal rising to the right: X at a1 b2 c3 d4
-    "76655454144",   # the same, mirrored: rising to the left
-])
+@pytest.mark.parametrize(
+    "moves",
+    [
+        "1212121",  # vertical
+        "1122334",  # horizontal
+        "12233434744",  # diagonal rising to the right: X at a1 b2 c3 d4
+        "76655454144",  # the same, mirrored: rising to the left
+    ],
+)
 def test_wins_in_each_direction(moves):
     before = Board.from_moves(moves[:-1])
     assert not before.last_player_won()

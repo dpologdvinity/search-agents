@@ -54,9 +54,14 @@ class Node:
 class Tree:
     """One search tree; reusable across moves via advance()."""
 
-    def __init__(self, board: Board, c_puct: float = 2.0,
-                 dirichlet_alpha: float = 1.0, noise_fraction: float = 0.0,
-                 rng: np.random.Generator | None = None):
+    def __init__(
+        self,
+        board: Board,
+        c_puct: float = 2.0,
+        dirichlet_alpha: float = 1.0,
+        noise_fraction: float = 0.0,
+        rng: np.random.Generator | None = None,
+    ):
         self.root = Node(board)
         self.c_puct = c_puct
         self.alpha = dirichlet_alpha

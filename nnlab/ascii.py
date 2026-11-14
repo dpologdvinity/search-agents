@@ -13,8 +13,9 @@ from .data import featurize
 from .mlp import Net, predict
 
 
-def render(net: Net, points: list[dict], features, noise: float = 0.0, width: int = 60, height: int = 22,
-           domain: float = 1.2) -> str:
+def render(
+    net: Net, points: list[dict], features, noise: float = 0.0, width: int = 60, height: int = 22, domain: float = 1.2
+) -> str:
     """Return the boundary and points as a multi-line string, with y increasing upwards."""
     xs = np.linspace(-domain, domain, width)
     ys = np.linspace(domain, -domain, height)  # top row is the largest y

@@ -43,9 +43,7 @@ def save(path: Path, meta: dict, table: dict[str, dict[str, float]]) -> None:
 def load(path: Path = LEDUC_STRATEGY) -> dict:
     """The whole file: metadata and the strategy table, with each row renormalized."""
     raw = json.loads(path.read_text())
-    raw["strategy"] = {
-        key: {a: p / sum(row.values()) for a, p in row.items()} for key, row in raw["strategy"].items()
-    }
+    raw["strategy"] = {key: {a: p / sum(row.values()) for a, p in row.items()} for key, row in raw["strategy"].items()}
     return raw
 
 

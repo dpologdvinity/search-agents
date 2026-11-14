@@ -19,18 +19,18 @@ import numpy as np
 from .prng import Stream
 
 CELL_M = 0.5
-MAX_RANGE = 8.0       # cells (4 m); a ray that hits nothing reads this value
-RAY_STEP = 0.25       # cells per step of the ray march (the hit distance is quantised to this)
-PILLAR_PROB = 0.5     # chance that each pillar slot holds a pillar in a seeded floor
-OUTLIER = 0.02        # mixture weight of a uniform "unexpected reading" term in the range likelihood
+MAX_RANGE = 8.0  # cells (4 m); a ray that hits nothing reads this value
+RAY_STEP = 0.25  # cells per step of the ray march (the hit distance is quantised to this)
+PILLAR_PROB = 0.5  # chance that each pillar slot holds a pillar in a seeded floor
+OUTLIER = 0.02  # mixture weight of a uniform "unexpected reading" term in the range likelihood
 TAU = 2.0 * math.pi
 
 # Default odometry noise: standard deviations grow with how far the robot turns or drives. Scaled by the
 # motion-noise slider. These are the values the filters assume, so the page's "motion noise" moves both.
-ROT_NOISE = (0.05, 0.15)     # radians: base, plus this fraction of |turn|
-FWD_NOISE = (0.03, 0.10)     # cells: base, plus this fraction of |drive|
+ROT_NOISE = (0.05, 0.15)  # radians: base, plus this fraction of |turn|
+FWD_NOISE = (0.03, 0.10)  # cells: base, plus this fraction of |drive|
 
-# Two floors. Walls are inclusive rectangles (x0, y0, x1, y1); pillar slots are single cells.
+# Floor plans. Walls are inclusive rectangles (x0, y0, x1, y1); pillar slots are single cells.
 # "halls" has six identical rooms (two rows of three) that look the same from inside, so its belief
 # splits between them until a feature shows up; the fourth room on the right is the only one that differs.
 # "vault" is an irregular plan with a few long walls and no symmetry.
@@ -40,13 +40,28 @@ LAYOUTS = {
         "w": 24,
         "h": 16,
         "walls": [
-            (0, 0, 23, 0), (0, 15, 23, 15), (0, 0, 0, 15), (23, 0, 23, 15),          # outer wall
+            (0, 0, 23, 0),
+            (0, 15, 23, 15),
+            (0, 0, 0, 15),
+            (23, 0, 23, 15),  # outer wall
             # top wall: gaps (doors) at x = 3, 9, 15 and 20
-            (1, 6, 2, 6), (4, 6, 8, 6), (10, 6, 14, 6), (16, 6, 19, 6), (21, 6, 22, 6),
+            (1, 6, 2, 6),
+            (4, 6, 8, 6),
+            (10, 6, 14, 6),
+            (16, 6, 19, 6),
+            (21, 6, 22, 6),
             # bottom wall: the same doors
-            (1, 9, 2, 9), (4, 9, 8, 9), (10, 9, 14, 9), (16, 9, 19, 9), (21, 9, 22, 9),
-            (6, 1, 6, 5), (12, 1, 12, 5), (18, 1, 18, 5),                             # top room dividers
-            (6, 10, 6, 14), (12, 10, 12, 14), (18, 10, 18, 14),                       # bottom room dividers
+            (1, 9, 2, 9),
+            (4, 9, 8, 9),
+            (10, 9, 14, 9),
+            (16, 9, 19, 9),
+            (21, 9, 22, 9),
+            (6, 1, 6, 5),
+            (12, 1, 12, 5),
+            (18, 1, 18, 5),  # top room dividers
+            (6, 10, 6, 14),
+            (12, 10, 12, 14),
+            (18, 10, 18, 14),  # bottom room dividers
         ],
         "slots": [(21, 3), (6, 7), (16, 8), (15, 12)],
     },
@@ -55,11 +70,70 @@ LAYOUTS = {
         "w": 24,
         "h": 16,
         "walls": [
-            (0, 0, 23, 0), (0, 15, 23, 15), (0, 0, 0, 15), (23, 0, 23, 15),
-            (5, 1, 5, 6), (10, 4, 10, 11), (15, 1, 15, 8), (19, 6, 19, 14),
-            (5, 10, 8, 10), (12, 13, 14, 13),
+            (0, 0, 23, 0),
+            (0, 15, 23, 15),
+            (0, 0, 0, 15),
+            (23, 0, 23, 15),
+            (5, 1, 5, 6),
+            (10, 4, 10, 11),
+            (15, 1, 15, 8),
+            (19, 6, 19, 14),
+            (5, 10, 8, 10),
+            (12, 13, 14, 13),
         ],
         "slots": [(2, 3), (7, 8), (13, 2), (17, 11), (21, 4)],
+    },
+    "gallery": {
+        "title": "THE GALLERY",
+        "w": 24,
+        "h": 16,
+        "walls": [
+            (0, 0, 23, 0),
+            (0, 15, 23, 15),
+            (0, 0, 0, 15),
+            (23, 0, 23, 15),
+            (6, 1, 6, 11),
+            (12, 4, 12, 14),
+            (18, 1, 18, 11),
+        ],
+        "slots": [(3, 4), (9, 12), (15, 2), (21, 9)],
+    },
+    "atrium": {
+        "title": "THE ATRIUM",
+        "w": 24,
+        "h": 16,
+        "walls": [
+            (0, 0, 23, 0),
+            (0, 15, 23, 15),
+            (0, 0, 0, 15),
+            (23, 0, 23, 15),
+            (3, 4, 8, 4),
+            (14, 4, 20, 4),
+            (3, 11, 8, 11),
+            (14, 11, 20, 11),
+            (8, 1, 8, 3),
+            (14, 12, 14, 14),
+        ],
+        "slots": [(5, 8), (11, 7), (17, 8), (21, 12)],
+    },
+    "workshop": {
+        "title": "THE WORKSHOP",
+        "w": 24,
+        "h": 16,
+        "walls": [
+            (0, 0, 23, 0),
+            (0, 15, 23, 15),
+            (0, 0, 0, 15),
+            (23, 0, 23, 15),
+            (3, 3, 7, 4),
+            (11, 3, 15, 4),
+            (18, 3, 20, 4),
+            (3, 8, 5, 11),
+            (8, 8, 10, 11),
+            (13, 8, 16, 9),
+            (19, 8, 20, 12),
+        ],
+        "slots": [(2, 6), (9, 6), (16, 12), (21, 6)],
     },
 }
 
@@ -122,15 +196,16 @@ def make_floor(key: str, seed: int = 1) -> Floor:
     w, h = lay["w"], lay["h"]
     walls = np.zeros((h, w), dtype=bool)
     for x0, y0, x1, y1 in lay["walls"]:
-        walls[y0:y1 + 1, x0:x1 + 1] = True
+        walls[y0 : y1 + 1, x0 : x1 + 1] = True
     stream = Stream(seed)
     pillars = []
     for x, y in lay["slots"]:
         if stream.uniforms(1)[0] < PILLAR_PROB:
             walls[y, x] = True
             pillars.append((x, y))
-    return Floor(key=key, title=lay["title"], seed=seed, w=w, h=h, walls=walls, pillars=pillars,
-                 region=_largest_component(walls))
+    return Floor(
+        key=key, title=lay["title"], seed=seed, w=w, h=h, walls=walls, pillars=pillars, region=_largest_component(walls)
+    )
 
 
 def blocked(walls: np.ndarray, x, y):
@@ -171,8 +246,22 @@ def erfc_pos(x):
     reading would have exceeded the maximum range. It is written out, not taken from math.erfc, so the
     JavaScript port computes the same numbers."""
     t = 1.0 / (1.0 + 0.5 * x)
-    poly = (-1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (
-        0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))))
+    poly = -1.26551223 + t * (
+        1.00002368
+        + t
+        * (
+            0.37409196
+            + t
+            * (
+                0.09678418
+                + t
+                * (
+                    -0.18628806
+                    + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277))))
+                )
+            )
+        )
+    )
     return t * np.exp(-x * x + poly)
 
 
@@ -214,8 +303,7 @@ def ray_loglik(z, e, sigma: float, pdrop: float, rmax: float = MAX_RANGE):
     A reading equal to rmax is a "no return": either a dropout (probability pdrop) or a true range so long that
     noise pushed the reading past the limit. Anything shorter is a Gaussian around the expected range, mixed with
     a small uniform floor (OUTLIER) so one surprising beam cannot erase a particle entirely."""
-    gauss = (1.0 - pdrop) * np.exp(-0.5 * ((z - e) / sigma) ** 2) / (sigma * math.sqrt(2.0 * math.pi)) \
-        + OUTLIER / rmax
+    gauss = (1.0 - pdrop) * np.exp(-0.5 * ((z - e) / sigma) ** 2) / (sigma * math.sqrt(2.0 * math.pi)) + OUTLIER / rmax
     tail = 0.5 * erfc_pos((rmax - e) / (sigma * math.sqrt(2.0)))
     maxp = pdrop + (1.0 - pdrop) * tail + OUTLIER / rmax
     return np.log(np.where(z >= rmax, maxp, gauss))

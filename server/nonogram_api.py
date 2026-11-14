@@ -122,10 +122,12 @@ async def puzzle(pid: str):
 
 
 @router.get("/api/nonogram/random")
-async def random_endpoint(request: Request,
-                          rows: int = Query(10, ge=RANDOM_MIN, le=RANDOM_MAX),
-                          cols: int = Query(10, ge=RANDOM_MIN, le=RANDOM_MAX),
-                          seed: int | None = Query(None, ge=0, lt=2**31)):
+async def random_endpoint(
+    request: Request,
+    rows: int = Query(10, ge=RANDOM_MIN, le=RANDOM_MAX),
+    cols: int = Query(10, ge=RANDOM_MIN, le=RANDOM_MAX),
+    seed: int | None = Query(None, ge=0, lt=2**31),
+):
     app = request.app
     if not app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")

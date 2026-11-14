@@ -29,12 +29,23 @@ import numpy as np
 from .board import DIRS, Game
 
 INPUT_NAMES = (
-    "danger ahead", "danger left", "danger right",
-    "free ahead", "free left", "free right",
-    "food forward", "food right",
-    "tail forward", "tail right",
-    "heading N", "heading E", "heading S", "heading W",
-    "room ahead", "room left", "room right",
+    "danger ahead",
+    "danger left",
+    "danger right",
+    "free ahead",
+    "free left",
+    "free right",
+    "food forward",
+    "food right",
+    "tail forward",
+    "tail right",
+    "heading N",
+    "heading E",
+    "heading S",
+    "heading W",
+    "room ahead",
+    "room left",
+    "room right",
 )
 OUTPUT_NAMES = ("left", "straight", "right")
 N_IN = len(INPUT_NAMES)
@@ -153,10 +164,18 @@ class Net:
 
     def to_json(self, **meta) -> dict:
         """Weights rounded to 4 decimals (the page runs the same arithmetic) plus any metadata."""
+
         def r(a):
             return np.round(a, 4).tolist()
-        return {**meta, "layers": [N_IN, N_HIDDEN, N_OUT],
-                "w1": r(self.w1), "b1": r(self.b1), "w2": r(self.w2), "b2": r(self.b2)}
+
+        return {
+            **meta,
+            "layers": [N_IN, N_HIDDEN, N_OUT],
+            "w1": r(self.w1),
+            "b1": r(self.b1),
+            "w2": r(self.w2),
+            "b2": r(self.b2),
+        }
 
     @classmethod
     def from_json(cls, data: dict) -> Net:

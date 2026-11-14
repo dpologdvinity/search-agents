@@ -43,8 +43,10 @@ def test_random_draw_with_white_to_move_is_refused():
 
 def test_the_impossible_request_is_refused_at_once(monkeypatch):
     """The refusal is decided up front, so it never reaches the sampler (which used to spin for 200,000 tries)."""
+
     def no_sampling(*args, **kwargs):
         raise AssertionError("the sampler should not run for an impossible request")
+
     monkeypatch.setattr(endgame_api, "_table", no_sampling)
     with TestClient(make_app()) as c:
         for piece in ("Q", "R"):
@@ -54,8 +56,7 @@ def test_the_impossible_request_is_refused_at_once(monkeypatch):
 
 def test_analyze_by_fen_and_by_squares_agree():
     fen = "8/8/8/5k2/8/8/1Q6/K7 w - - 0 1"
-    squares = {"piece": "Q", "wk": parse_square("a1"), "wp": parse_square("b2"),
-               "bk": parse_square("f5"), "stm": 0}
+    squares = {"piece": "Q", "wk": parse_square("a1"), "wp": parse_square("b2"), "bk": parse_square("f5"), "stm": 0}
     with TestClient(make_app()) as c:
         by_fen = c.post("/api/endgame/analyze", json={"fen": fen}).json()
         by_sq = c.post("/api/endgame/analyze", json=squares).json()
@@ -86,8 +87,10 @@ def test_heatmap_has_64_squares_and_nulls_for_overlaps():
 
 def test_analyze_is_rate_limited():
     with TestClient(make_app(rate=2)) as c:
-        codes = [c.post("/api/endgame/analyze", json={"piece": "R", "wk": 0, "wp": 9, "bk": 36, "stm": 1}).status_code
-                 for _ in range(3)]
+        codes = [
+            c.post("/api/endgame/analyze", json={"piece": "R", "wk": 0, "wp": 9, "bk": 36, "stm": 1}).status_code
+            for _ in range(3)
+        ]
     assert codes[:2] == [200, 200] and codes[2] == 429
 
 

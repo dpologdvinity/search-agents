@@ -51,15 +51,17 @@ def recorded_positions():
         game = Game(seed)
         while game.alive:
             rows = move_table(game, WEIGHTS)
-            cases.append({
-                "size": game.size,
-                "body": [list(c) for c in game.body],
-                "heading": game.heading,
-                "food": list(game.food) if game.food is not None else None,
-                "weights": WEIGHTS,
-                "rows": rows,
-                "action": choose(game, WEIGHTS),
-            })
+            cases.append(
+                {
+                    "size": game.size,
+                    "body": [list(c) for c in game.body],
+                    "heading": game.heading,
+                    "food": list(game.food) if game.food is not None else None,
+                    "weights": WEIGHTS,
+                    "rows": rows,
+                    "action": choose(game, WEIGHTS),
+                }
+            )
             game.step(choose(game, WEIGHTS))
     return cases
 
@@ -73,8 +75,9 @@ def test_js_evaluator_matches_python_on_recorded_games(tmp_path):
     cases_path = tmp_path / "cases.json"
     cases_path.write_text(json.dumps(payload))
     env = {**os.environ, "SNAKE_CORE": str(CORE), "SNAKE_CASES": str(cases_path)}
-    proc = subprocess.run([NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env,
-                          capture_output=True, text=True, timeout=120)
+    proc = subprocess.run(
+        [NODE, "--input-type=module", "-e", NODE_PROGRAM], env=env, capture_output=True, text=True, timeout=120
+    )
     assert proc.returncode == 0, proc.stderr
     js = json.loads(proc.stdout)
     assert len(js) == len(cases)

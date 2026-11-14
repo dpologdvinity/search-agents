@@ -136,13 +136,17 @@ def summarize(label: str, games) -> str:
         lo, hi = wilson(hits, n)
         return f"{100 * hits / n:.1f}% ({100 * lo:.1f}-{100 * hi:.1f})"
 
-    return (f"| {label} | {n} | {mean:,.0f} ({mean - hw:,.0f} to {mean + hw:,.0f}) "
-            f"| {statistics.median(scores):,.0f} | {reach(11)} | {reach(12)} | {reach(13)} | {1 << max(tiles)} |")
+    return (
+        f"| {label} | {n} | {mean:,.0f} ({mean - hw:,.0f} to {mean + hw:,.0f}) "
+        f"| {statistics.median(scores):,.0f} | {reach(11)} | {reach(12)} | {reach(13)} | {1 << max(tiles)} |"
+    )
 
 
-HEADER = ("| Agent | Games | Mean score (95% CI) | Median score | Reached 2048 (95% CI) "
-          "| Reached 4096 (95% CI) | Reached 8192 (95% CI) | Best tile |\n"
-          "|---|---|---|---|---|---|---|---|")
+HEADER = (
+    "| Agent | Games | Mean score (95% CI) | Median score | Reached 2048 (95% CI) "
+    "| Reached 4096 (95% CI) | Reached 8192 (95% CI) | Best tile |\n"
+    "|---|---|---|---|---|---|---|---|"
+)
 
 
 def label_for(spec: str) -> str:

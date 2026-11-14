@@ -47,8 +47,7 @@ class NeuralHeuristic:
             self.w_in, self.b_in = w["in.weight"], w["in.bias"]
             k = int(w["blocks"])
             self.blocks = [
-                (w[f"b{i}.0.weight"], w[f"b{i}.0.bias"], w[f"b{i}.1.weight"], w[f"b{i}.1.bias"])
-                for i in range(k)
+                (w[f"b{i}.0.weight"], w[f"b{i}.0.bias"], w[f"b{i}.1.weight"], w[f"b{i}.1.bias"]) for i in range(k)
             ]
             self.w_out, self.b_out = w["out.weight"], w["out.bias"]
 

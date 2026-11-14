@@ -143,6 +143,7 @@ def torch_evaluator(model: AZNet, amp: bool = False):
         # Concatenate so the result crosses back to the host in a single transfer.
         out = torch.cat((logits.float(), values.float()[:, None]), dim=1).cpu().numpy()
         return masked_softmax(out[:, :COLS], legal_mask(boards)), out[:, COLS]
+
     return evaluate
 
 
@@ -306,10 +307,13 @@ def load_buffer(path, maxlen) -> deque:
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--hours", type=float, default=2.0)
-    p.add_argument("--iterations", type=int, default=0,
-                   help="stop after this many iterations instead of after --hours (0 = use --hours)")
-    p.add_argument("--games", type=int, default=128,
-                   help="self-play games per iteration (512-1024 are fine on a GPU)")
+    p.add_argument(
+        "--iterations",
+        type=int,
+        default=0,
+        help="stop after this many iterations instead of after --hours (0 = use --hours)",
+    )
+    p.add_argument("--games", type=int, default=128, help="self-play games per iteration (512-1024 are fine on a GPU)")
     p.add_argument("--simulations", type=int, default=100)
     p.add_argument("--buffer", type=int, default=200_000)
     p.add_argument("--batch", type=int, default=256)
@@ -318,20 +322,33 @@ def main(argv=None):
     p.add_argument("--channels", type=int, default=32)
     p.add_argument("--blocks", type=int, default=4)
     p.add_argument("--threads", type=int, default=6, help="CPU threads for torch (match the cores you pinned)")
-    p.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto",
-                   help="where the network runs: auto uses CUDA when available")
-    p.add_argument("--amp", action="store_true",
-                   help="fp16 mixed precision for self-play inference and training (CUDA only)")
+    p.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        default="auto",
+        help="where the network runs: auto uses CUDA when available",
+    )
+    p.add_argument(
+        "--amp", action="store_true", help="fp16 mixed precision for self-play inference and training (CUDA only)"
+    )
     p.add_argument("--eval-every", type=int, default=5, help="play minimax matches every N iterations (0 = never)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--resume", action="store_true", help="continue from --checkpoint (must exist)")
-    p.add_argument("--checkpoint", type=Path, default=CHECKPOINT,
-                   help="checkpoint to resume from; may sit in a read-only directory")
-    p.add_argument("--checkpoint-out", type=Path, default=None,
-                   help="where to write checkpoints (default: --checkpoint)")
+    p.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=CHECKPOINT,
+        help="checkpoint to resume from; may sit in a read-only directory",
+    )
+    p.add_argument(
+        "--checkpoint-out", type=Path, default=None, help="where to write checkpoints (default: --checkpoint)"
+    )
     p.add_argument("--weights-out", type=Path, default=WEIGHTS, help="where to write the exported NumPy weights")
-    p.add_argument("--save-buffer", action="store_true",
-                   help="also write the replay buffer beside the checkpoint; --resume reloads it if present")
+    p.add_argument(
+        "--save-buffer",
+        action="store_true",
+        help="also write the replay buffer beside the checkpoint; --resume reloads it if present",
+    )
     p.add_argument("--log", type=Path, default=Path("results/connect4_train_log.jsonl"))
     args = p.parse_args(argv)
 
@@ -376,8 +393,10 @@ def main(argv=None):
         games_played += args.games
         t1 = time.time()
 
-        losses = [train_step(model, opt, py_rng.sample(buffer, min(args.batch, len(buffer))), device, amp, scaler)
-                  for _ in range(args.steps)]
+        losses = [
+            train_step(model, opt, py_rng.sample(buffer, min(args.batch, len(buffer))), device, amp, scaler)
+            for _ in range(args.steps)
+        ]
         if losses:
             value_loss, policy_loss = torch.stack([torch.stack(pair) for pair in losses]).mean(dim=0).tolist()
         else:
@@ -385,10 +404,14 @@ def main(argv=None):
         iteration += 1
         run_iterations += 1
         record = {
-            "iteration": iteration, "games": games_played, "buffer": len(buffer),
+            "iteration": iteration,
+            "games": games_played,
+            "buffer": len(buffer),
             "minutes": round((time.time() - start) / 60, 2),
-            "device": device.type, "amp": amp,
-            "selfplay_s": round(t1 - t0, 1), "train_s": round(time.time() - t1, 1),
+            "device": device.type,
+            "amp": amp,
+            "selfplay_s": round(t1 - t0, 1),
+            "train_s": round(time.time() - t1, 1),
             "value_loss": value_loss,
             "policy_loss": policy_loss,
             "first_player_score": float(np.mean([(r + 1) / 2 for r in results])),

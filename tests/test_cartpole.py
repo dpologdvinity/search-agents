@@ -19,6 +19,7 @@ from cartpole.train import VALUE_SCALE, discounted_returns, learning_summary, tr
 
 # ── Physics ──────────────────────────────────────────────────────────────
 
+
 def test_first_step_matches_the_equations():
     """From rest at the origin, one push right: check the accelerations by hand, then the Euler update."""
     env = CartPole(0)
@@ -27,11 +28,11 @@ def test_first_step_matches_the_equations():
     temp = 10.0 / 1.1
     theta_acc = -temp / (0.5 * (4.0 / 3.0 - 0.1 / 1.1))
     x_acc = temp - 0.05 * theta_acc / 1.1
-    assert env.x == pytest.approx(0.0)                       # positions use the old (zero) velocities
+    assert env.x == pytest.approx(0.0)  # positions use the old (zero) velocities
     assert env.x_dot == pytest.approx(0.02 * x_acc)
     assert env.theta == pytest.approx(0.0)
     assert env.theta_dot == pytest.approx(0.02 * theta_acc)
-    assert env.theta_dot < 0                                  # pushing right tips the pole to the left
+    assert env.theta_dot < 0  # pushing right tips the pole to the left
 
 
 def test_push_left_is_the_mirror_image():
@@ -95,6 +96,7 @@ def test_run_episode_records_a_consistent_trajectory():
 
 # ── Manual backprop, checked against finite differences ──────────────────
 
+
 def _policy_loss(params, X, A, adv):
     _, Z = MLP(params).forward(X)
     logp = np.log(softmax(Z))[np.arange(len(A)), A]
@@ -127,7 +129,7 @@ def test_policy_gradient_backprop_matches_finite_differences():
     adv = rng.normal(size=12)
     H, Z = net.forward(X)
     P = softmax(Z)
-    dZ = -(adv[:, None] / len(A)) * (np.eye(2)[A] - P)     # the formula the trainer uses
+    dZ = -(adv[:, None] / len(A)) * (np.eye(2)[A] - P)  # the formula the trainer uses
     analytic = net.backward(X, H, dZ)
     numeric = _numeric_grad(lambda p: _policy_loss(p, X, A, adv), net.params)
     for k in analytic:
@@ -157,7 +159,7 @@ def test_adam_minimises_a_quadratic():
     params = {"w": np.array([5.0, -3.0])}
     opt = Adam(params, lr=0.1)
     for _ in range(400):
-        opt.step({"w": 2 * params["w"]})            # gradient of |w|^2
+        opt.step({"w": 2 * params["w"]})  # gradient of |w|^2
     assert np.allclose(params["w"], 0.0, atol=1e-2)
 
 
@@ -171,6 +173,7 @@ def test_softmax_is_stable_for_large_logits():
 
 
 # ── Agents ───────────────────────────────────────────────────────────────
+
 
 def test_pd_controller_balances_the_full_episode():
     steps = [run_episode(PDAgent(), 10_000 + i) for i in range(10)]
@@ -206,7 +209,7 @@ def test_net_agent_probs_and_value_are_consistent():
 
 
 def test_linear_agent_pushes_toward_the_lean():
-    agent = LinearAgent([0.0, 0.0, 1.0, 0.0, 0.0])        # score = normalised theta
+    agent = LinearAgent([0.0, 0.0, 1.0, 0.0, 0.0])  # score = normalised theta
     assert agent.act((0.0, 0.0, 0.1, 0.0)) == RIGHT
     assert agent.act((0.0, 0.0, -0.1, 0.0)) == LEFT
 
@@ -219,6 +222,7 @@ def test_evaluate_and_summarise():
 
 
 # ── Training ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize("algo", ["reinforce", "actor_critic"])
 def test_policy_gradient_training_is_reproducible(algo):
@@ -256,6 +260,7 @@ def test_normalise_scales_each_variable():
 
 # ── Rendering and the terminal game ──────────────────────────────────────
 
+
 def test_render_frame_shows_cart_pole_and_fallen_flag():
     upright = render_frame(0.0, 0.0, 10)
     assert "[" in upright and "]" in upright and "|" in upright
@@ -277,6 +282,7 @@ def test_play_turns_scripted_keys_and_quit():
 def test_play_turns_treats_end_of_input_as_quit():
     def read(_):
         raise EOFError
+
     out = []
     steps = cli.play_turns(5, read=read, out=out.append)
     assert steps == 0
@@ -299,8 +305,14 @@ def test_watch_runs_one_episode_and_reports_it():
 def test_play_slow_without_a_terminal_exits_with_a_message():
     # Piped stdin is not a tty. The command must say so instead of failing with a raw termios error.
     root = Path(__file__).resolve().parent.parent
-    proc = subprocess.run([sys.executable, "-m", "cartpole", "play", "--slow"], input="", capture_output=True,
-                          text=True, timeout=60, cwd=root)
+    proc = subprocess.run(
+        [sys.executable, "-m", "cartpole", "play", "--slow"],
+        input="",
+        capture_output=True,
+        text=True,
+        timeout=60,
+        cwd=root,
+    )
     assert proc.returncode == 1 and "needs a terminal" in proc.stderr
     assert "Traceback" not in proc.stderr and "termios" not in proc.stderr
 
@@ -308,6 +320,7 @@ def test_play_slow_without_a_terminal_exits_with_a_message():
 def test_play_slow_on_q_prints_the_outcome(monkeypatch):
     # A pseudo-terminal stands in for the user: 'q' is waiting, so the loop ends at once and reports it.
     master, slave = pty.openpty()
+
     class Terminal:
         def fileno(self):
             return slave

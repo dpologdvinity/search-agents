@@ -125,17 +125,17 @@ def _pick(weights: list[float], rng: Rng) -> int:
 
 @dataclass(frozen=True)
 class Pick:
-    index: int         # position of the generated token in Generation.tokens
+    index: int  # position of the generated token in Generation.tokens
     token: str
-    prob: float        # probability the sampled token had at this temperature
+    prob: float  # probability the sampled token had at this temperature
 
 
 @dataclass(frozen=True)
 class Generation:
     tokens: list[str]  # prompt, then everything generated (and any restart jumps)
-    prompt_len: int    # the first prompt_len tokens are the starting corpus window
+    prompt_len: int  # the first prompt_len tokens are the starting corpus window
     picks: list[Pick]
-    restarts: int      # times the chain hit a context with no successor and jumped to a corpus window
+    restarts: int  # times the chain hit a context with no successor and jumped to a corpus window
 
 
 def generate(model: NGramModel, rng: Rng, count: int, temperature: float = 1.0) -> Generation:
@@ -178,9 +178,9 @@ def ngram_sets(tokens: list[str], max_len: int = MAX_RUN) -> list[set[tuple[str,
 
 @dataclass(frozen=True)
 class CopyReport:
-    copied: list[bool]     # per pick: does the token lie in a copied window (a verbatim run of COPY_RUN tokens)?
-    copied_pct: float      # share of picks that are copied
-    longest_run: int       # longest verbatim run ending at a pick, capped at MAX_RUN
+    copied: list[bool]  # per pick: does the token lie in a copied window (a verbatim run of COPY_RUN tokens)?
+    copied_pct: float  # share of picks that are copied
+    longest_run: int  # longest verbatim run ending at a pick, capped at MAX_RUN
 
 
 def run_ending_at(out: list[str], p: int, sets: list[set[tuple[str, ...]]]) -> int:

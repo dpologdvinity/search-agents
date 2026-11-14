@@ -187,13 +187,21 @@ def _solve_line(puzzle: Puzzle, trace: bool, stats: Stats) -> Result:
     else:
         status = "undecided"  # line solving alone is stuck: a search is needed
     solved = status == "unique"
-    return Result("line", status, puzzle.rows, puzzle.cols,
-                  solution=[row[:] for row in grid] if solved else None,
-                  partial=[row[:] for row in grid], rounds=rounds, stats=stats)
+    return Result(
+        "line",
+        status,
+        puzzle.rows,
+        puzzle.cols,
+        solution=[row[:] for row in grid] if solved else None,
+        partial=[row[:] for row in grid],
+        rounds=rounds,
+        stats=stats,
+    )
 
 
-def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: _Events, stats: Stats,
-                   deadline: float | None = None):
+def _search_hybrid(
+    puzzle: Puzzle, limit: int, max_guesses: int | None, events: _Events, stats: Stats, deadline: float | None = None
+):
     """Depth-first search with line propagation at every node.
 
     Returns (solutions, stop). `stop` is None when the search finished, "guesses" when the guess budget ran
@@ -231,8 +239,11 @@ def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: 
             solutions.append([row[:] for row in grid])  # no unknown cell left: every line is consistent
             return
         _, axis, idx = best
-        cells = [(idx, i) for i in range(puzzle.cols) if grid[idx][i] == CELL_UNKNOWN] if axis == "rows" \
+        cells = (
+            [(idx, i) for i in range(puzzle.cols) if grid[idx][i] == CELL_UNKNOWN]
+            if axis == "rows"
             else [(i, idx) for i in range(puzzle.rows) if grid[i][idx] == CELL_UNKNOWN]
+        )
         r, c = cells[0]  # the first unknown cell of that line
         for v in (FILLED, EMPTY):
             child = [row[:] for row in grid]
@@ -254,8 +265,9 @@ def _search_hybrid(puzzle: Puzzle, limit: int, max_guesses: int | None, events: 
     return solutions, None
 
 
-def _solve_hybrid(puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: Stats,
-                  deadline: float | None = None) -> Result:
+def _solve_hybrid(
+    puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: Stats, deadline: float | None = None
+) -> Result:
     events = _Events(trace)
     solutions, stop = _search_hybrid(puzzle, 2, max_guesses, events, stats, deadline)
     if stop is not None:
@@ -266,15 +278,23 @@ def _solve_hybrid(puzzle: Puzzle, trace: bool, max_guesses: int | None, stats: S
         status = "unique"
     else:
         status = "multiple"
-    return Result("hybrid", status, puzzle.rows, puzzle.cols,
-                  solution=solutions[0] if solutions else None,
-                  second=solutions[1] if len(solutions) > 1 else None,
-                  events=events.items if trace else None, events_truncated=events.truncated,
-                  timed_out=stop == "time", stats=stats)
+    return Result(
+        "hybrid",
+        status,
+        puzzle.rows,
+        puzzle.cols,
+        solution=solutions[0] if solutions else None,
+        second=solutions[1] if len(solutions) > 1 else None,
+        events=events.items if trace else None,
+        events_truncated=events.truncated,
+        timed_out=stop == "time",
+        stats=stats,
+    )
 
 
-def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats: Stats,
-               deadline: float | None = None) -> Result:
+def _solve_sat(
+    puzzle: Puzzle, trace: bool, max_propagations: int | None, stats: Stats, deadline: float | None = None
+) -> Result:
     cnf = encode(puzzle)
     stats.variables = cnf.nvars
     stats.clauses = len(cnf.clauses)
@@ -311,11 +331,26 @@ def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats:
     status = first.solve(max_propagations, deadline)
     absorb(first)
     if status == UNKNOWN:
-        return Result("sat", "undecided", puzzle.rows, puzzle.cols, events=events.items if trace else None,
-                      events_truncated=events.truncated, timed_out=first.timed_out, stats=stats)
+        return Result(
+            "sat",
+            "undecided",
+            puzzle.rows,
+            puzzle.cols,
+            events=events.items if trace else None,
+            events_truncated=events.truncated,
+            timed_out=first.timed_out,
+            stats=stats,
+        )
     if status == UNSAT:
-        return Result("sat", "contradiction", puzzle.rows, puzzle.cols, events=events.items if trace else None,
-                      events_truncated=events.truncated, stats=stats)
+        return Result(
+            "sat",
+            "contradiction",
+            puzzle.rows,
+            puzzle.cols,
+            events=events.items if trace else None,
+            events_truncated=events.truncated,
+            stats=stats,
+        )
     solution = read(first)
 
     # Uniqueness: forbid this picture on the cell variables and ask again. UNSAT proves uniqueness.
@@ -329,18 +364,50 @@ def _solve_sat(puzzle: Puzzle, trace: bool, max_propagations: int | None, stats:
     status2 = second_solver.solve(max_propagations, deadline)
     absorb(second_solver)
     if status2 == UNKNOWN:
-        return Result("sat", "undecided", puzzle.rows, puzzle.cols, solution=solution,
-                      events=events.items if trace else None, events_truncated=events.truncated,
-                      timed_out=second_solver.timed_out, stats=stats)
+        return Result(
+            "sat",
+            "undecided",
+            puzzle.rows,
+            puzzle.cols,
+            solution=solution,
+            events=events.items if trace else None,
+            events_truncated=events.truncated,
+            timed_out=second_solver.timed_out,
+            stats=stats,
+        )
     if status2 == UNSAT:
-        return Result("sat", "unique", puzzle.rows, puzzle.cols, solution=solution,
-                      events=events.items if trace else None, events_truncated=events.truncated, stats=stats)
-    return Result("sat", "multiple", puzzle.rows, puzzle.cols, solution=solution, second=read(second_solver),
-                  events=events.items if trace else None, events_truncated=events.truncated, stats=stats)
+        return Result(
+            "sat",
+            "unique",
+            puzzle.rows,
+            puzzle.cols,
+            solution=solution,
+            events=events.items if trace else None,
+            events_truncated=events.truncated,
+            stats=stats,
+        )
+    return Result(
+        "sat",
+        "multiple",
+        puzzle.rows,
+        puzzle.cols,
+        solution=solution,
+        second=read(second_solver),
+        events=events.items if trace else None,
+        events_truncated=events.truncated,
+        stats=stats,
+    )
 
 
-def solve(puzzle: Puzzle, method: str = "hybrid", *, trace: bool = False, max_guesses: int | None = None,
-          max_propagations: int | None = None, time_limit: float | None = None) -> Result:
+def solve(
+    puzzle: Puzzle,
+    method: str = "hybrid",
+    *,
+    trace: bool = False,
+    max_guesses: int | None = None,
+    max_propagations: int | None = None,
+    time_limit: float | None = None,
+) -> Result:
     """Solve with one method. `trace` records the replay (rounds for line, events for hybrid and sat).
 
     `time_limit` is a wall-clock limit in seconds for the search; past it the result is "undecided" with
@@ -370,8 +437,11 @@ def count_solutions(puzzle: Puzzle, limit: int = 2, max_guesses: int | None = No
     """Count solutions up to `limit` with the hybrid search. Returns (status, solutions found, guesses)."""
     stats = Stats("hybrid")
     solutions, stop = _search_hybrid(puzzle, limit, max_guesses, _Events(False), stats)
-    status = "undecided" if stop is not None and len(solutions) < limit else (
-        "contradiction" if not solutions else "unique" if len(solutions) == 1 else "multiple")
+    status = (
+        "undecided"
+        if stop is not None and len(solutions) < limit
+        else ("contradiction" if not solutions else "unique" if len(solutions) == 1 else "multiple")
+    )
     return status, solutions, stats.decisions
 
 
@@ -395,8 +465,9 @@ def hint(puzzle: Puzzle, grid) -> dict:
     for axis, idx, _, clue, info in infos:
         if not info.consistent:
             name = _line_name(axis, idx)
-            return _no_hint(contradiction=True,
-                            message=f"{name} (clue {clue_text(clue)}) cannot fit the marks made so far")
+            return _no_hint(
+                contradiction=True, message=f"{name} (clue {clue_text(clue)}) cannot fit the marks made so far"
+            )
     if all(v != CELL_UNKNOWN for row in grid for v in row):
         return _no_hint(message="every cell is marked and the marks satisfy the clues")
     for axis, idx, known, clue, info in infos:
@@ -429,8 +500,17 @@ def _line_name(axis: str, idx: int) -> str:
 
 
 def _no_hint(contradiction: bool = False, message: str = "") -> dict:
-    return {"contradiction": contradiction, "found": False, "line": None, "row": None, "col": None,
-            "value": None, "reason": message, "span": None, "message": message}
+    return {
+        "contradiction": contradiction,
+        "found": False,
+        "line": None,
+        "row": None,
+        "col": None,
+        "value": None,
+        "reason": message,
+        "span": None,
+        "message": message,
+    }
 
 
 def _reason(axis: str, idx: int, i: int, v: int, clue, info):
@@ -446,7 +526,9 @@ def _reason(axis: str, idx: int, i: int, v: int, clue, info):
                 best = (length, span)
         if best is not None:
             length, (a, b) = best
-            return (f"{name} has clue {clue_text(clue)}. Its run of {length} covers {along} {a + 1} to {b + 1} "
-                    "in every arrangement, so this cell is filled."), (a, b)
+            return (
+                f"{name} has clue {clue_text(clue)}. Its run of {length} covers {along} {a + 1} to {b + 1} "
+                "in every arrangement, so this cell is filled."
+            ), (a, b)
         return f"Every arrangement of {name} (clue {clue_text(clue)}) fills this cell.", None
     return f"No arrangement of {name} (clue {clue_text(clue)}) puts a run on this cell, so it is empty.", None

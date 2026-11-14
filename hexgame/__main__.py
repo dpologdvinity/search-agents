@@ -43,8 +43,10 @@ def play(n: int, you: int, agent: str, level: int, swap: bool, seed, read=input,
     board = Board(n, swap_rule=swap)
     rng = random.Random(seed)
     out(render(board))
-    out(f"You are {NAME[you]} ({'X' if you == DOWN else 'O'}). Agent: {agent}, level {level}."
-        + (" Swap rule on." if swap else ""))
+    out(
+        f"You are {NAME[you]} ({'X' if you == DOWN else 'O'}). Agent: {agent}, level {level}."
+        + (" Swap rule on." if swap else "")
+    )
     while board.winner() is None:
         if board.to_move == you:
             can_swap = swap and len(board.moves) == 1 and you == ACROSS
@@ -109,15 +111,16 @@ def match_table(n: int, agent: str, level: int, games: int, result: dict) -> str
     wins = result["a_wins"]
     agent_name = AGENTS[agent].split(":")[0]
     chance_name = AGENTS["chance"].split(":")[0]
-    lines = [f"Hex {n}x{n}: {agent_name} vs {chance_name}, level {level} ({sims} simulations per move), "
-             f"{games} games, colours alternating",
-             "",
-             "| Algorithm | Wins | Draws | Losses | Win rate, 95% CI |",
-             "|---|---|---|---|---|",
-             f"| {agent_name} | {wins} | 0 | {games - wins} | "
-             f"{round(100 * result['a_rate'])}% ({round(100 * lo)}-{round(100 * hi)}%) |",
-             f"| {chance_name} | {games - wins} | 0 | {wins} | "
-             f"{round(100 * (1 - result['a_rate']))}% |"]
+    lines = [
+        f"Hex {n}x{n}: {agent_name} vs {chance_name}, level {level} ({sims} simulations per move), "
+        f"{games} games, colours alternating",
+        "",
+        "| Algorithm | Wins | Draws | Losses | Win rate, 95% CI |",
+        "|---|---|---|---|---|",
+        f"| {agent_name} | {wins} | 0 | {games - wins} | "
+        f"{round(100 * result['a_rate'])}% ({round(100 * lo)}-{round(100 * hi)}%) |",
+        f"| {chance_name} | {games - wins} | 0 | {wins} | {round(100 * (1 - result['a_rate']))}% |",
+    ]
     return "\n".join(lines)
 
 

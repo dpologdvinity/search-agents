@@ -9,36 +9,36 @@
       "description": "Approximate Q-learning: a linear model scores each move from hand-built features (pellet distance, ghost distance, power pellets, and how long the ghosts' real moves let Pac-Man survive). Its weights were learned from self-play.",
       "overall": {
         "games": 400,
-        "win_rate": 0.6425,
-        "mean_score": 1350.3,
-        "mean_turns": 193.9,
+        "win_rate": 0.5975,
+        "mean_score": 1324.2,
+        "mean_turns": 208.3,
         "outcomes": {
-          "won": 257,
-          "lost": 47,
-          "timeout": 96
+          "won": 239,
+          "lost": 69,
+          "timeout": 92
         }
       },
       "mazes": {
         "lanes": {
           "games": 200,
-          "win_rate": 0.435,
-          "mean_score": 1218.0,
-          "mean_turns": 235.8,
+          "win_rate": 0.375,
+          "mean_score": 1144.0,
+          "mean_turns": 232.4,
           "outcomes": {
-            "won": 87,
-            "lost": 19,
-            "timeout": 94
+            "won": 75,
+            "lost": 44,
+            "timeout": 81
           }
         },
         "vault": {
           "games": 200,
-          "win_rate": 0.85,
-          "mean_score": 1482.5,
-          "mean_turns": 152.1,
+          "win_rate": 0.82,
+          "mean_score": 1504.5,
+          "mean_turns": 184.1,
           "outcomes": {
-            "won": 170,
-            "lost": 28,
-            "timeout": 2
+            "won": 164,
+            "lost": 25,
+            "timeout": 11
           }
         }
       }
@@ -47,35 +47,35 @@
       "description": "Greedy rule: go for the nearest pellet, but step away from any ghost within two cells.",
       "overall": {
         "games": 400,
-        "win_rate": 0.005,
-        "mean_score": 157.5,
-        "mean_turns": 22.8,
+        "win_rate": 0.0,
+        "mean_score": 111.7,
+        "mean_turns": 16.9,
         "outcomes": {
-          "won": 2,
-          "lost": 395,
-          "timeout": 3
+          "won": 0,
+          "lost": 399,
+          "timeout": 1
         }
       },
       "mazes": {
         "lanes": {
           "games": 200,
-          "win_rate": 0.005,
-          "mean_score": 178.2,
-          "mean_turns": 26.7,
+          "win_rate": 0.0,
+          "mean_score": 137.3,
+          "mean_turns": 20.6,
           "outcomes": {
-            "won": 1,
-            "lost": 196,
-            "timeout": 3
+            "won": 0,
+            "lost": 199,
+            "timeout": 1
           }
         },
         "vault": {
           "games": 200,
-          "win_rate": 0.005,
-          "mean_score": 136.8,
-          "mean_turns": 18.8,
+          "win_rate": 0.0,
+          "mean_score": 86.0,
+          "mean_turns": 13.3,
           "outcomes": {
-            "won": 1,
-            "lost": 199,
+            "won": 0,
+            "lost": 200,
             "timeout": 0
           }
         }
@@ -86,8 +86,8 @@
       "overall": {
         "games": 400,
         "win_rate": 0.0,
-        "mean_score": 45.5,
-        "mean_turns": 8.9,
+        "mean_score": 35.8,
+        "mean_turns": 8.6,
         "outcomes": {
           "won": 0,
           "lost": 400,
@@ -98,8 +98,8 @@
         "lanes": {
           "games": 200,
           "win_rate": 0.0,
-          "mean_score": 51.0,
-          "mean_turns": 10.5,
+          "mean_score": 39.2,
+          "mean_turns": 10.0,
           "outcomes": {
             "won": 0,
             "lost": 200,
@@ -109,8 +109,8 @@
         "vault": {
           "games": 200,
           "win_rate": 0.0,
-          "mean_score": 40.0,
-          "mean_turns": 7.3,
+          "mean_score": 32.4,
+          "mean_turns": 7.2,
           "outcomes": {
             "won": 0,
             "lost": 200,

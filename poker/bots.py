@@ -118,11 +118,11 @@ class MatchResult:
     a: str
     b: str
     deals: int
-    hands: int           # each deal is played twice, once in each seat
-    mean_chips: float    # chips per hand, a's side
-    se_chips: float      # standard error of the mean, from the spread over deals
+    hands: int  # each deal is played twice, once in each seat
+    mean_chips: float  # chips per hand, a's side
+    se_chips: float  # standard error of the mean, from the spread over deals
     mbb_per_hand: float  # milli-big-blinds per hand
-    mbb_se: float        # standard error in milli-big-blinds
+    mbb_se: float  # standard error in milli-big-blinds
     seconds: float = 0.0
 
     def ci95_mbb(self) -> tuple[float, float]:
@@ -141,8 +141,8 @@ def head_to_head(a, b, deals: int, seed: int) -> MatchResult:
     total_sq = 0.0
     for _ in range(deals):
         state = deal(rng)
-        seat0_first = play_hand(state, (a, b), rng)     # a in seat 0: payoff is seat 0's
-        seat0_second = play_hand(state, (b, a), rng)    # a in seat 1: a's payoff is minus seat 0's
+        seat0_first = play_hand(state, (a, b), rng)  # a in seat 0: payoff is seat 0's
+        seat0_second = play_hand(state, (b, a), rng)  # a in seat 1: a's payoff is minus seat 0's
         d = (seat0_first - seat0_second) / 2
         total += d
         total_sq += d * d
@@ -151,8 +151,12 @@ def head_to_head(a, b, deals: int, seed: int) -> MatchResult:
     se = math.sqrt(var / deals)
     scale = 1000 / BIG_BLIND
     return MatchResult(
-        a=a.name, b=b.name, deals=deals, hands=2 * deals,
-        mean_chips=mean, se_chips=se,
-        mbb_per_hand=mean * scale, mbb_se=se * scale,
+        a=a.name,
+        b=b.name,
+        deals=deals,
+        hands=2 * deals,
+        mean_chips=mean,
+        se_chips=se,
+        mbb_per_hand=mean * scale,
+        mbb_se=se * scale,
     )
-

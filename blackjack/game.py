@@ -25,8 +25,13 @@ class Shoe:
     to set up exact hands.
     """
 
-    def __init__(self, decks: int = 6, penetration: float = 0.75, rng: random.Random | None = None,
-                 stacked: list[int] | None = None) -> None:
+    def __init__(
+        self,
+        decks: int = 6,
+        penetration: float = 0.75,
+        rng: random.Random | None = None,
+        stacked: list[int] | None = None,
+    ) -> None:
         self.decks = decks
         self.penetration = penetration
         self.rng = rng if rng is not None else random.Random()
@@ -99,8 +104,7 @@ class Hand:
 
     @property
     def can_split(self) -> bool:
-        return (len(self.ranks) == 2 and not self.from_split
-                and rank_value(self.ranks[0]) == rank_value(self.ranks[1]))
+        return len(self.ranks) == 2 and not self.from_split and rank_value(self.ranks[0]) == rank_value(self.ranks[1])
 
 
 class Round:

@@ -63,7 +63,7 @@ def test_plan_agrees_with_breadth_first_search(client):
 
 def test_plan_reports_no_route_as_null(client):
     n = 6
-    walls = [1 if i % n == 3 else 0 for i in range(n * n)]   # a wall down the middle column
+    walls = [1 if i % n == 3 else 0 for i in range(n * n)]  # a wall down the middle column
     body = client.post("/api/rover/plan", json={"n": n, "walls": walls}).json()
     assert body["dstar"]["cost"] is None and body["astar"]["cost"] is None and body["dstar"]["path"] == []
 

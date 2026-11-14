@@ -19,14 +19,15 @@ import numpy as np
 from .prng import Stream
 from .world import TAU, Floor, motion, noise_sd, sense, wrap
 
-NEIGHBOURS = ((0, -1), (1, 0), (0, 1), (-1, 0))   # N, E, S, W: the fixed order every search uses
+NEIGHBOURS = ((0, -1), (1, 0), (0, 1), (-1, 0))  # N, E, S, W: the fixed order every search uses
 
 
 class Sim:
     """The hidden robot: a pose, the odometry noise, and the most recent beams."""
 
-    def __init__(self, floor: Floor, seed: int, rays: int = 8, sigma: float = 0.3, pdrop: float = 0.05,
-                 motion_scale: float = 1.0):
+    def __init__(
+        self, floor: Floor, seed: int, rays: int = 8, sigma: float = 0.3, pdrop: float = 0.05, motion_scale: float = 1.0
+    ):
         self.floor = floor
         self.rays = rays
         self.sigma = sigma
@@ -92,10 +93,10 @@ def bfs_path(walls: np.ndarray, start: tuple, goal: tuple) -> list:
 class Autopilot:
     """Drives the true robot along BFS routes to random destinations. Returns (turn, drive) commands."""
 
-    MAX_TURN = 0.25   # radians per step
-    SPEED = 0.3       # cells per step (less than a cell, so the robot cannot tunnel through a wall)
-    REACH = 0.35      # a waypoint counts as reached within this distance (cells)
-    FACE = 0.5        # the robot only drives forward once it faces the waypoint within this angle
+    MAX_TURN = 0.25  # radians per step
+    SPEED = 0.3  # cells per step (less than a cell, so the robot cannot tunnel through a wall)
+    REACH = 0.35  # a waypoint counts as reached within this distance (cells)
+    FACE = 0.5  # the robot only drives forward once it faces the waypoint within this angle
 
     def __init__(self, floor: Floor, seed: int):
         self.floor = floor
@@ -122,7 +123,7 @@ class Autopilot:
         tx, ty = self.route[0][0] + 0.5, self.route[0][1] + 0.5
         if math.hypot(tx - x, ty - y) < self.REACH:
             self.route.pop(0)
-            return 0.0, 0.0   # stop for one step; the next waypoint is aimed at on the following call
+            return 0.0, 0.0  # stop for one step; the next waypoint is aimed at on the following call
         err = float(wrap(math.atan2(ty - y, tx - x) - th))
         rot = max(-self.MAX_TURN, min(self.MAX_TURN, err))
         fwd = self.SPEED if abs(err) < self.FACE else 0.0

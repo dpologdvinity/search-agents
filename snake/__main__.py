@@ -173,18 +173,30 @@ def _write_champion(path: Path, genome, meta: dict) -> None:
 
 
 def _evolve_cmd(args) -> int:
-    s = Settings(pop=args.pop, games=args.games, generations=args.generations, elites=args.elites,
-                 tournament=args.tournament, mutation_rate=args.mutation_rate, mutation_sigma=args.mutation_sigma,
-                 seed=args.seed, workers=args.workers, starve_penalty=args.starve_penalty)
+    s = Settings(
+        pop=args.pop,
+        games=args.games,
+        generations=args.generations,
+        elites=args.elites,
+        tournament=args.tournament,
+        mutation_rate=args.mutation_rate,
+        mutation_sigma=args.mutation_sigma,
+        seed=args.seed,
+        workers=args.workers,
+        starve_penalty=args.starve_penalty,
+    )
     t0 = time.perf_counter()
     checkpoint_dir = Path(args.checkpoint_dir) if args.checkpoint_dir else None
     records: list[dict] = []
 
     def show(rec, best_genome):
         records.append(rec)
-        print(f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
-              f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
-              f"best steps {rec['best_steps']:7.1f}  {rec['elapsed_s']:7.1f}s", flush=True)
+        print(
+            f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
+            f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
+            f"best steps {rec['best_steps']:7.1f}  {rec['elapsed_s']:7.1f}s",
+            flush=True,
+        )
         # Checkpoints hold the best-ever training genome, not the validated champion, so they are marked as such.
         # They let a partial run be used or inspected without waiting for the end.
         if checkpoint_dir and rec["generation"] % args.checkpoint_every == 0:
@@ -193,8 +205,10 @@ def _evolve_cmd(args) -> int:
             (checkpoint_dir / "log.jsonl").write_text("".join(json.dumps(h) + "\n" for h in records))
 
     genome, score, history, best_gen = evolve(s, on_generation=show)
-    print(f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, "
-          f"validation fitness {score.fitness:.3f}, apples {score.apples:.2f} per game")
+    print(
+        f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, "
+        f"validation fitness {score.fitness:.3f}, apples {score.apples:.2f} per game"
+    )
     if args.no_save:
         return 0
     meta = {
@@ -215,19 +229,31 @@ def _evolve_cmd(args) -> int:
 
 
 def _cem_cmd(args) -> int:
-    s = CEMSettings(pop=args.pop, games=args.games, generations=args.generations, elites=args.elites,
-                    init_sigma=args.init_sigma, min_sigma=args.min_sigma, seed=args.seed, workers=args.workers)
+    s = CEMSettings(
+        pop=args.pop,
+        games=args.games,
+        generations=args.generations,
+        elites=args.elites,
+        init_sigma=args.init_sigma,
+        min_sigma=args.min_sigma,
+        seed=args.seed,
+        workers=args.workers,
+    )
     t0 = time.perf_counter()
 
     def show(rec):
-        print(f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
-              f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
-              f"best steps {rec['best_steps']:7.1f}  sigma {rec['sigma_mean']:.3f}  {rec['elapsed_s']:7.1f}s",
-              flush=True)
+        print(
+            f"gen {rec['generation']:>3}  best {rec['best_fitness']:7.3f}  mean {rec['mean_fitness']:7.3f}  "
+            f"best apples {rec['best_apples']:6.2f}  mean apples {rec['mean_apples']:6.2f}  "
+            f"best steps {rec['best_steps']:7.1f}  sigma {rec['sigma_mean']:.3f}  {rec['elapsed_s']:7.1f}s",
+            flush=True,
+        )
 
     weights, score, history, best_gen = cem(s, on_generation=show)
-    print(f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, validation fitness "
-          f"{score.fitness:.3f}, apples {score.apples:.2f} per game")
+    print(
+        f"done in {time.perf_counter() - t0:.0f}s: champion from generation {best_gen}, validation fitness "
+        f"{score.fitness:.3f}, apples {score.apples:.2f} per game"
+    )
     if args.no_save:
         return 0
     meta = {
@@ -276,12 +302,14 @@ def main(argv=None) -> int:
     e.add_argument("--mutation-sigma", type=float, default=d.mutation_sigma)
     e.add_argument("--seed", type=int, default=d.seed)
     e.add_argument("--workers", type=int, default=d.workers, help="processes scoring genomes in parallel")
-    e.add_argument("--starve-penalty", type=float, default=d.starve_penalty,
-                   help="fitness lost by a game that ends by starvation")
+    e.add_argument(
+        "--starve-penalty", type=float, default=d.starve_penalty, help="fitness lost by a game that ends by starvation"
+    )
     e.add_argument("--champion", help="where to write the champion (default: snake/data/champion.json)")
     e.add_argument("--log", help="where to write the per-generation log (default: results/snake_train_log.jsonl)")
-    e.add_argument("--checkpoint-dir",
-                   help="also write the best-so-far genome here, every --checkpoint-every generations")
+    e.add_argument(
+        "--checkpoint-dir", help="also write the best-so-far genome here, every --checkpoint-every generations"
+    )
     e.add_argument("--checkpoint-every", type=int, default=20)
     e.add_argument("--no-save", action="store_true", help="print the run but leave the committed files alone")
 
@@ -321,8 +349,11 @@ def main(argv=None) -> int:
     if args.command == "cem":
         return _cem_cmd(args)
     if args.command == "benchmark":
-        result = run_benchmark(args.games, tuple(args.agents),
-                               log=lambda name, s: print(f"{name}: {s['mean_apples']:.2f} mean apples", flush=True))
+        result = run_benchmark(
+            args.games,
+            tuple(args.agents),
+            log=lambda name, s: print(f"{name}: {s['mean_apples']:.2f} mean apples", flush=True),
+        )
         print()
         print(to_markdown(result))
         if args.write:

@@ -89,7 +89,8 @@ function renderBoard(movedIndex = -1) {
   const { n, board } = state;
   const el = $('board');
   const size = n === 3 ? 96 : 78;
-  el.style.gridTemplateColumns = `repeat(${n}, ${size}px)`;
+  el.style.setProperty('--n', n);
+  el.style.setProperty('--preferred-tile', `${size}px`);
   el.classList.toggle('solved', isGoal(board));
   const blank = board.indexOf(0);
   const busy = socket.busy || state.playTimer;
@@ -99,8 +100,6 @@ function renderBoard(movedIndex = -1) {
     const adjacent = Math.abs(Math.floor(i / n) - Math.floor(blank / n)) + Math.abs((i % n) - (blank % n)) === 1;
     div.className = 'np-tile' + (tile === 0 ? ' np-blank' : '') + (i === movedIndex ? ' np-moved' : '')
       + (adjacent && !busy ? ' clickable' : '');
-    div.style.width = div.style.height = `${size}px`;
-    div.style.fontSize = n === 3 ? '1.9rem' : '1.5rem';
     div.textContent = tile || '';
     if (adjacent) div.onclick = () => playerMove(i);
     el.appendChild(div);
@@ -506,7 +505,8 @@ const PRESETS = {
     { algorithm: 'bwas', heuristic: 'pdb' }, { algorithm: 'bwas', heuristic: 'neural' },
   ],
 };
-const DEFAULT_ON = { 3: [0, 1, 5, 7], 4: [1, 2, 4, 7] };
+for (const n of [2, 5, 6, 7, 8, 9, 10]) PRESETS[n] = PRESETS[3];
+const DEFAULT_ON = { 2: [1, 5, 7], 3: [0, 1, 5, 7], 4: [1, 2, 4, 7] };
 
 function renderPresets() {
   const el = $('cmp-presets');
@@ -515,7 +515,7 @@ function renderPresets() {
     const lbl = document.createElement('label');
     const box = document.createElement('input');
     box.type = 'checkbox';
-    box.checked = DEFAULT_ON[state.n].includes(i);
+    box.checked = (DEFAULT_ON[state.n] ?? [5, 7]).includes(i);
     box.dataset.index = i;
     lbl.append(box, label(p));
     el.appendChild(lbl);
@@ -581,7 +581,7 @@ function parseCustom() {
   const text = $('custom').value.trim();
   const tiles = text.split(/[\s,]+/).filter(Boolean).map(Number);
   const n = Math.round(Math.sqrt(tiles.length));
-  if (![3, 4].includes(n) || n * n !== tiles.length) return 'enter 9 or 16 tiles';
+  if (n < 2 || n > 10 || n * n !== tiles.length) return 'enter a square board from 2×2 to 10×10';
   if ([...tiles].sort((a, b) => a - b).some((t, i) => t !== i)) return `use each tile 0–${n * n - 1} once`;
   if (!isSolvable(tiles, n)) return 'that board cannot reach the goal';
   return tiles;

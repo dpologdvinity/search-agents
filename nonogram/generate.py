@@ -59,8 +59,9 @@ def random_picture(rows: int, cols: int, rng: random.Random) -> list[list[int]]:
     return picture
 
 
-def random_puzzle(rows: int, cols: int, seed: int | None = None, attempts: int = ATTEMPTS,
-                  node_budget: int | None = NODE_BUDGET) -> tuple[Puzzle, int, int]:
+def random_puzzle(
+    rows: int, cols: int, seed: int | None = None, attempts: int = ATTEMPTS, node_budget: int | None = NODE_BUDGET
+) -> tuple[Puzzle, int, int]:
     """A puzzle with exactly one solution. Returns (puzzle, seed, attempts used).
 
     Raises NoUniquePicture when `attempts` pictures all fail the density or uniqueness test.

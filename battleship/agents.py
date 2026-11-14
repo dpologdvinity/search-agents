@@ -94,8 +94,7 @@ def _line_targets(k: Knowledge, fired: int) -> list[int]:
             continue
         line = list(range(a, b + 1, step))
         beyond = [line[0] - step, line[-1] + step]
-        cands = [c for c in line + beyond if 0 <= c < SIZE * SIZE and not (fired >> c) & 1
-                 and _same_line(a, c, step)]
+        cands = [c for c in line + beyond if 0 <= c < SIZE * SIZE and not (fired >> c) & 1 and _same_line(a, c, step)]
         if cands:
             return cands
     cands = {n for h in open_hits for n in _neighbours(h) if not (fired >> n) & 1}

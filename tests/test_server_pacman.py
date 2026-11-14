@@ -53,8 +53,8 @@ def test_episode_turns_move_one_step_and_carry_q_values(client):
     m = mazes.get("lanes")
     for turn in body["turns"]:
         pac = turn["pac"]
-        assert abs(pac[0] - prev[0]) + abs(pac[1] - prev[1]) == 1
-        assert set(turn["q"]) <= {"N", "E", "S", "W"} and turn["q"][turn["action"]] == max(turn["q"].values())
+        assert abs(pac[0] - prev[0]) + abs(pac[1] - prev[1]) <= 1
+        assert set(turn["q"]) <= set(ACTIONS) and turn["q"][turn["action"]] == max(turn["q"].values())
         assert len(turn["features"][turn["action"]]) == len(FEATURE_NAMES)
         assert all(0 <= r < m.height and 0 <= c < m.width for r, c in (pac, *(g["pos"] for g in turn["ghosts"])))
         prev = pac
@@ -69,6 +69,14 @@ def test_episode_respects_max_turns(client):
     req = {"agent": "random", "maze": "lanes", "seed": 2, "max_turns": 10}
     body = client.post("/api/pacman/episode", json=req).json()
     assert len(body["turns"]) <= 10
+
+
+def test_large_map_limits_are_reported_and_request_history_is_bounded(client):
+    meta = client.get("/api/pacman/meta").json()
+    limit = next(m["max_turns"] for m in meta["mazes"] if m["name"] == "google")
+    assert limit == 825
+    res = client.post("/api/pacman/play", json={"maze": "google", "actions": ["WAIT"] * (limit + 1)})
+    assert res.status_code == 422
 
 
 def test_play_replays_moves_and_reports_legal_next(client):
@@ -89,6 +97,16 @@ def test_play_rejects_walls_and_bad_input(client):
     assert client.post("/api/pacman/play", json={"maze": "nope", "seed": 0, "actions": []}).status_code == 400
     bad_agent = client.post("/api/pacman/episode", json={"agent": "ghost", "maze": "lanes", "seed": 0})
     assert bad_agent.status_code == 422
+
+
+@pytest.mark.parametrize("maze", mazes.names())
+def test_play_accepts_wait_and_matches_engine_on_every_map(client, maze):
+    body = client.post("/api/pacman/play", json={"maze": maze, "actions": ["WAIT"]}).json()
+    game = Game(maze)
+    game.step(ACTIONS.index("WAIT"))
+    assert body["state"]["pac"] == [game.maze.row[game.state.pac], game.maze.col[game.state.pac]]
+    assert body["state"]["turn"] == 1 and body["last"]["action"] == "WAIT"
+    assert "WAIT" in body["legal"]
 
 
 def test_meta_lists_both_ghost_policies_and_the_chance_odds(client):
@@ -132,9 +150,29 @@ def test_play_replays_against_chance_ghosts(client):
     ]
 
 
-@pytest.mark.parametrize("path, body", [
-    ("/api/pacman/episode", {"agent": "random", "maze": "lanes", "seed": 0, "ghosts": "wild"}),
-    ("/api/pacman/play", {"maze": "lanes", "seed": 0, "actions": [], "ghosts": "wild"}),
-])
+@pytest.mark.parametrize(
+    "path, body",
+    [
+        ("/api/pacman/episode", {"agent": "random", "maze": "lanes", "seed": 0, "ghosts": "wild"}),
+        ("/api/pacman/play", {"maze": "lanes", "seed": 0, "actions": [], "ghosts": "wild"}),
+    ],
+)
 def test_unknown_ghost_policy_is_rejected(client, path, body):
     assert client.post(path, json=body).status_code == 422
+
+
+def test_learned_agent_only_plays_its_trained_board_dimensions(client):
+    for name in ("pocket", "arcade", "google"):
+        result = client.post("/api/pacman/episode", json={"maze": name, "agent": "q", "max_turns": 10})
+        assert result.status_code == 400 and "15x11" in result.text
+    result = client.post("/api/pacman/episode", json={"maze": "pocket", "agent": "reflex", "max_turns": 10})
+    assert result.status_code == 200
+
+
+def test_new_maps_keep_the_trained_dimensions_and_work_with_the_learned_agent(client):
+    meta = client.get("/api/pacman/meta").json()
+    for name in ("circuit", "courtyard", "switchyard", "spiral"):
+        maze = next(m for m in meta["mazes"] if m["name"] == name)
+        assert (maze["width"], maze["height"]) == (15, 11)
+        result = client.post("/api/pacman/episode", json={"maze": name, "agent": "q", "max_turns": 10})
+        assert result.status_code == 200, result.text

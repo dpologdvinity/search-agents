@@ -17,10 +17,7 @@ def _manhattan_table(n: int) -> tuple[tuple[int, ...], ...]:
     per-tile config.index() scan, which made each evaluation O(n^4).
     """
     size = n * n
-    return tuple(
-        tuple(abs(i // n - t // n) + abs(i % n - t % n) for i in range(size))
-        for t in range(size)
-    )
+    return tuple(tuple(abs(i // n - t // n) + abs(i % n - t % n) for i in range(size)) for t in range(size))
 
 
 def manhattan(config: tuple[int, ...], n: int) -> int:

@@ -44,6 +44,7 @@ def _rows_by_node(root, X):
 
 # ── RNG ──────────────────────────────────────────────────────────────────────
 
+
 def test_mulberry32_golden_values():
     # The JavaScript port (web/js/treelab-core.js) must produce the same stream; see the parity test.
     r = Mulberry32(1)
@@ -58,6 +59,7 @@ def test_rng_is_in_unit_interval():
 
 
 # ── Impurity ─────────────────────────────────────────────────────────────────
+
 
 def test_gini_values():
     assert impurity([5, 5], "gini") == pytest.approx(0.5)
@@ -78,6 +80,7 @@ def test_unknown_criterion_rejected():
 
 
 # ── Best split ───────────────────────────────────────────────────────────────
+
 
 def _brute_force_best(X, y, features, criterion, min_leaf, k):
     """Try every feature and every midpoint between distinct values, one by one."""
@@ -116,8 +119,11 @@ def test_best_split_matches_brute_force(criterion, min_leaf, seed):
     left = X[:, f] < t
     parent = impurity(np.bincount(y, minlength=k).tolist(), criterion)
     nl, nr = int(left.sum()), int((~left).sum())
-    rescored = (parent - (nl / len(y)) * impurity(np.bincount(y[left], minlength=k).tolist(), criterion)
-                - (nr / len(y)) * impurity(np.bincount(y[~left], minlength=k).tolist(), criterion))
+    rescored = (
+        parent
+        - (nl / len(y)) * impurity(np.bincount(y[left], minlength=k).tolist(), criterion)
+        - (nr / len(y)) * impurity(np.bincount(y[~left], minlength=k).tolist(), criterion)
+    )
     assert rescored == pytest.approx(gain, abs=1e-12)
 
 
@@ -128,6 +134,7 @@ def test_no_split_when_all_rows_identical():
 
 
 # ── Stopping rules and shape ─────────────────────────────────────────────────
+
 
 def test_separable_data_grows_two_pure_leaves():
     r = Mulberry32(7)
@@ -200,6 +207,7 @@ def test_entropy_fits_noise_free_xor_with_enough_depth():
 
 # ── Pruning ──────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.parametrize("name", sorted(PRESETS))
 def test_pruning_is_monotone_in_alpha(name):
     X, y = make_preset(name, 240, 3)
@@ -229,6 +237,7 @@ def test_link_strengths_are_nonnegative():
 
 
 # ── Forest ───────────────────────────────────────────────────────────────────
+
 
 def test_forest_beats_single_deep_tree_on_noisy_data():
     """The diagonal preset flips 15% of labels. A single full-depth tree memorises the noise; the bagged
@@ -272,6 +281,7 @@ def test_max_features_defaults_to_sqrt_and_limits_candidates():
 
 
 # ── Determinism and presets ──────────────────────────────────────────────────
+
 
 def test_same_seed_same_forest():
     X, y = make_preset("checkerboard", 200, 4)

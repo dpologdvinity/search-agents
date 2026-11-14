@@ -100,8 +100,13 @@ async def new_game(request: Request):
     _GAMES[game_id] = Game(secret=random.randrange(len(lex.answers)), cand=np.arange(len(lex.answers), dtype=np.intp))
     while len(_GAMES) > MAX_GAMES:
         _GAMES.popitem(last=False)
-    return {"game_id": game_id, "word_length": WORD_LENGTH, "max_guesses": MAX_GUESSES,
-            "answers": len(lex.answers), "guesses": len(lex.guesses)}
+    return {
+        "game_id": game_id,
+        "word_length": WORD_LENGTH,
+        "max_guesses": MAX_GUESSES,
+        "answers": len(lex.answers),
+        "guesses": len(lex.guesses),
+    }
 
 
 @router.post("/api/wordle/guess")
@@ -147,8 +152,12 @@ async def guess(req: GuessRequest, request: Request):
 
 
 @router.get("/api/wordle/hint")
-async def hint(request: Request, game_id: str | None = Query(None, max_length=64),
-               strategy: Strategy = "entropy", top: int = Query(8, ge=1, le=20)):
+async def hint(
+    request: Request,
+    game_id: str | None = Query(None, max_length=64),
+    strategy: Strategy = "entropy",
+    top: int = Query(8, ge=1, le=20),
+):
     if not request.app.state.rate.allow(client_key(request)):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     lex = await _lexicon()

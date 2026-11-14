@@ -43,12 +43,18 @@ DESCRIPTION = (
 # opponent draws from fixed odds (endgame/chance.py), and the page does that draw itself from the move list,
 # so the server only needs to publish the odds and say whether each move gives check.
 OPPONENTS = [
-    {"key": chance.TABLEBASE_KEY, "label": chance.TABLEBASE_LABEL,
-     "description": "plays the exact best move: the fastest mate when it is winning, the longest defence when "
-                    "it is lost"},
-    {"key": chance.KEY, "label": chance.LABEL,
-     "description": "draws each legal move from fixed odds (captures 4, checks 2, king steps toward the centre "
-                    "2, other moves 1), renormalised over the legal moves; no search or lookahead"},
+    {
+        "key": chance.TABLEBASE_KEY,
+        "label": chance.TABLEBASE_LABEL,
+        "description": "plays the exact best move: the fastest mate when it is winning, the longest defence when "
+        "it is lost",
+    },
+    {
+        "key": chance.KEY,
+        "label": chance.LABEL,
+        "description": "draws each legal move from fixed odds (captures 4, checks 2, king steps toward the centre "
+        "2, other moves 1), renormalised over the legal moves; no search or lookahead",
+    },
 ]
 
 
@@ -106,7 +112,10 @@ def analyze_json(piece: str, pos) -> dict:
     return {
         "piece": piece,
         "name": tb.name,
-        "wk": pos[0], "wp": pos[1], "bk": pos[2], "stm": pos[3],
+        "wk": pos[0],
+        "wp": pos[1],
+        "bk": pos[2],
+        "stm": pos[3],
         "fen": to_fen(piece, pos),
         "value": _outcome_json(outcome, plies),
         "moves": [
@@ -140,10 +149,12 @@ async def meta():
 
 
 @router.get("/api/endgame/random")
-async def random_position(request: Request,
-                          piece: str = Query("Q", pattern="^[QR]$"),
-                          want: str = Query("strong_wins", pattern="^(strong_wins|draw|any)$"),
-                          stm: int | None = Query(None, ge=0, le=1)):
+async def random_position(
+    request: Request,
+    piece: str = Query("Q", pattern="^[QR]$"),
+    want: str = Query("strong_wins", pattern="^(strong_wins|draw|any)$"),
+    stm: int | None = Query(None, ge=0, le=1),
+):
     _limit(request)
     if want == "draw" and stm == WHITE:
         # Every White-to-move position is a win for White (the meta counts show no drawn ones), so no answer
@@ -152,8 +163,7 @@ async def random_position(request: Request,
     tb = _table(piece)
     try:
         # The sampler is a loop of table lookups; a thread keeps it off the event loop.
-        pos = await asyncio.to_thread(tb.random_position, random.Random(), stm=stm, want=want,
-                                      max_tries=RANDOM_TRIES)
+        pos = await asyncio.to_thread(tb.random_position, random.Random(), stm=stm, want=want, max_tries=RANDOM_TRIES)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
     return analyze_json(piece, pos)
@@ -173,17 +183,20 @@ async def analyze(req: AnalyzeRequest, request: Request):
         piece = req.piece
         pos = (req.wk, req.wp, req.bk, req.stm)
         if not is_legal(piece, pos):
-            raise HTTPException(400, "not a legal position: squares repeat, the kings touch, "
-                                     "or the side not to move is in check")
+            raise HTTPException(
+                400, "not a legal position: squares repeat, the kings touch, or the side not to move is in check"
+            )
     return analyze_json(piece, pos)
 
 
 @router.get("/api/endgame/heatmap")
-async def heatmap(request: Request,
-                  piece: str = Query("Q", pattern="^[QR]$"),
-                  wk: int = Query(..., ge=0, le=63),
-                  wp: int = Query(..., ge=0, le=63),
-                  stm: int = Query(BLACK, ge=0, le=1)):
+async def heatmap(
+    request: Request,
+    piece: str = Query("Q", pattern="^[QR]$"),
+    wk: int = Query(..., ge=0, le=63),
+    wp: int = Query(..., ge=0, le=63),
+    stm: int = Query(BLACK, ge=0, le=1),
+):
     """For each square of the lone black king, with the white king and piece fixed: the value for the side to move.
 
     Squares the black king cannot stand on (it would overlap a piece, or touch the white king) are null.
@@ -204,7 +217,9 @@ async def heatmap(request: Request,
         plies.append(n)
     return {
         "piece": piece,
-        "wk": wk, "wp": wp, "stm": stm,
+        "wk": wk,
+        "wp": wp,
+        "stm": stm,
         "squares": [square_name(sq) for sq in range(64)],
         "outcome": outcomes,
         "plies": plies,

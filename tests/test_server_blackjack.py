@@ -45,14 +45,14 @@ def test_advice_for_a_natural(client):
 
 
 def test_advice_for_a_hand_from_a_split_has_no_resplit(client):
-    body = client.post("/api/blackjack/advice",
-                       json={"cards": [8, 8], "upcard": 10, "from_split": True}).json()
+    body = client.post("/api/blackjack/advice", json={"cards": [8, 8], "upcard": 10, "from_split": True}).json()
     assert "split" not in body["actions"]
 
 
 def test_advice_for_a_split_ace_is_stand_only(client):
-    body = client.post("/api/blackjack/advice",
-                       json={"cards": [1, 5], "upcard": 6, "from_split": True, "split_aces": True}).json()
+    body = client.post(
+        "/api/blackjack/advice", json={"cards": [1, 5], "upcard": 6, "from_split": True, "split_aces": True}
+    ).json()
     assert set(body["actions"]) == {"stand"}
 
 
@@ -60,8 +60,9 @@ def test_advice_rejects_bad_hands(client):
     assert client.post("/api/blackjack/advice", json={"cards": [10, 6, 9], "upcard": 10}).status_code == 400
     assert client.post("/api/blackjack/advice", json={"cards": [0, 6], "upcard": 10}).status_code == 422
     assert client.post("/api/blackjack/advice", json={"cards": [10, 6], "upcard": 14}).status_code == 422
-    assert client.post("/api/blackjack/advice",
-                       json={"cards": [1, 5], "upcard": 6, "split_aces": True}).status_code == 400
+    assert (
+        client.post("/api/blackjack/advice", json={"cards": [1, 5], "upcard": 6, "split_aces": True}).status_code == 400
+    )
 
 
 def test_learn_returns_snapshots_in_table_order(client):

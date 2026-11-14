@@ -22,7 +22,7 @@ from functools import cache
 
 MIN_N, MAX_N, DEFAULT_N = 5, 11, 7
 EMPTY = 0
-DOWN = 1    # connects the top row to the bottom row; moves first
+DOWN = 1  # connects the top row to the bottom row; moves first
 ACROSS = 2  # connects the left column to the right column
 SWAP = -1
 SYMBOL = {EMPTY: ".", DOWN: "X", ACROSS: "O"}
@@ -41,8 +41,7 @@ def neighbours(n: int) -> tuple[tuple[int, ...], ...]:
     steps = ((0, -1), (0, 1), (-1, 0), (1, 0), (-1, 1), (1, -1))
     for r in range(n):
         for c in range(n):
-            out.append(tuple((r + dr) * n + (c + dc) for dr, dc in steps
-                             if 0 <= r + dr < n and 0 <= c + dc < n))
+            out.append(tuple((r + dr) * n + (c + dc) for dr, dc in steps if 0 <= r + dr < n and 0 <= c + dc < n))
     return tuple(out)
 
 
@@ -50,11 +49,11 @@ def neighbours(n: int) -> tuple[tuple[int, ...], ...]:
 def _edges(n: int, player: int) -> tuple[tuple[int, ...], bytes]:
     """The start edge (cells a chain begins on) and a 0/1 mask of the goal edge for `player`."""
     if player == DOWN:
-        starts = tuple(range(n))                       # row 0
-        goal = [(n - 1) * n + c for c in range(n)]     # row n-1
+        starts = tuple(range(n))  # row 0
+        goal = [(n - 1) * n + c for c in range(n)]  # row n-1
     else:
-        starts = tuple(r * n for r in range(n))        # column 0
-        goal = [r * n + n - 1 for r in range(n)]       # column n-1
+        starts = tuple(r * n for r in range(n))  # column 0
+        goal = [r * n + n - 1 for r in range(n)]  # column n-1
     mask = bytearray(n * n)
     for g in goal:
         mask[g] = 1

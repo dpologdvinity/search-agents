@@ -104,8 +104,9 @@ class Reservations:
         return self._max_t
 
 
-def space_time_astar(grid: Grid, start: int, goal: int, res: Reservations,
-                     horizon: int | None = None) -> tuple[Path | None, int]:
+def space_time_astar(
+    grid: Grid, start: int, goal: int, res: Reservations, horizon: int | None = None
+) -> tuple[Path | None, int]:
     """Earliest-arrival path from ``start`` to ``goal`` that respects ``res``.
 
     Returns ``(path, expanded)``: the cells at times 0..T (the path ends on arrival), or None if

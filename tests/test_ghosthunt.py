@@ -32,8 +32,11 @@ def random_episode(maze: Maze, model: str, steps: int, sigma: float, seed: int):
     states, readings = [s], []
     readings.append(sonar.sample_reading(emis[maze.dist[s >> 2][players[0]]], rng.uniform()))
     for t in range(1, steps + 1):
-        s = rnd.choice([s2 for s2, _ in motion.transitions(maze, model, s, players[t])]) \
-            if False else _draw(motion.transitions(maze, model, s, players[t]), rng.uniform())
+        s = (
+            rnd.choice([s2 for s2, _ in motion.transitions(maze, model, s, players[t])])
+            if False
+            else _draw(motion.transitions(maze, model, s, players[t]), rng.uniform())
+        )
         states.append(s)
         readings.append(sonar.sample_reading(emis[maze.dist[s >> 2][players[t]]], rng.uniform()))
     return players, states, readings, emis
@@ -51,8 +54,9 @@ def _draw(options, u):
 def brute_enumerate(maze, model, prior, emis, players, readings):
     """Every state sequence s_0..s_T with positive probability, with its joint probability (unnormalised)."""
     dist = maze.dist
-    paths = [((s,), prior[s] * emis[dist[s >> 2][players[0]]][readings[0]])
-             for s in range(len(prior)) if prior[s] > 0.0]
+    paths = [
+        ((s,), prior[s] * emis[dist[s >> 2][players[0]]][readings[0]]) for s in range(len(prior)) if prior[s] > 0.0
+    ]
     for t in range(1, len(readings)):
         nxt = []
         for path, w in paths:
@@ -71,7 +75,7 @@ def brute_marginals(maze, model, prior, emis, players, readings):
     """
     out = []
     for t in range(len(readings)):
-        paths = brute_enumerate(maze, model, prior, emis, players[:t + 1], readings[:t + 1])
+        paths = brute_enumerate(maze, model, prior, emis, players[: t + 1], readings[: t + 1])
         z = sum(w for _, w in paths)
         m = [0.0] * len(prior)
         for path, w in paths:
@@ -232,7 +236,7 @@ def test_particle_filter_converges_to_the_exact_belief():
     while not g.done:
         g.act(agent.choose(g))
     gh = g.ghosts[0]
-    readings, players = gh.readings, g.players[:len(gh.readings)]
+    readings, players = gh.readings, g.players[: len(gh.readings)]
 
     def kl_for(n):
         ex = ExactFilter(g.maze, "random", g.prior, g.emis)

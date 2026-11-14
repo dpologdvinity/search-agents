@@ -125,8 +125,10 @@ def test_grid_of_uniform_numbers_reproduces_the_probabilities_exactly():
 def test_sampled_draws_match_the_odds_within_tolerance():
     # The position with the most categories among its moves: mixed weights make the test meaningful.
     tb, positions = sample_positions("Q", 60, seed=52)
-    best = max(((pos, tb.move_infos(pos)) for pos in positions),
-               key=lambda item: len({chance.move_category(i, item[0]) for i in item[1]}))
+    best = max(
+        ((pos, tb.move_infos(pos)) for pos in positions),
+        key=lambda item: len({chance.move_category(i, item[0]) for i in item[1]}),
+    )
     pos, infos = best
     assert len({chance.move_category(i, pos) for i in infos}) >= 3
     rng = random.Random(2024)

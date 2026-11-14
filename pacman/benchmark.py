@@ -14,7 +14,8 @@ from collections import Counter
 
 from .agents import AGENTS, DESCRIPTIONS, make_agent
 from .episode import Episode, run_episode
-from .mazes import get, names
+from .mazes import get
+from .qlearning import DEFAULT_MAZES
 
 BENCH_SEED_BASE = 10_000
 
@@ -32,9 +33,12 @@ def summarize(episodes: list[Episode]) -> dict:
     }
 
 
-def run_benchmark(games: int, mazes: tuple[str, ...] | None = None, agents: tuple[str, ...] = AGENTS) -> dict:
-    """Play every agent on every maze and return the nested results."""
-    mazes = mazes or names()
+def run_benchmark(games: int, mazes: tuple[str, ...] = DEFAULT_MAZES, agents: tuple[str, ...] = AGENTS) -> dict:
+    """Play every agent on every maze and return the nested results.
+
+    The default is the training maze set, the one results/pacman_benchmark.json was measured on, so a rerun
+    stays comparable; the newer mazes differ in size, and the learned agent can not play them.
+    """
     seeds = [BENCH_SEED_BASE + i for i in range(games)]
     result = {"games_per_maze": games, "seeds": [seeds[0], seeds[-1]], "agents": {}}
     for name in agents:

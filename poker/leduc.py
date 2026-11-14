@@ -29,7 +29,7 @@ RANKS = ("J", "Q", "K")
 DECK = tuple(range(6))
 ANTE = 1
 BET_SIZES = (2, 4)  # round 1 and round 2 bet sizes
-MAX_RAISES = 2      # bets plus raises allowed in one round
+MAX_RAISES = 2  # bets plus raises allowed in one round
 
 
 def rank_of(card: int) -> int:

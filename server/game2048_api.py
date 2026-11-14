@@ -20,6 +20,8 @@ from game2048.board import DIRECTIONS, from_grid, legal_moves
 from .limits import Busy, client_key
 
 router = APIRouter()
+
+
 class MoveRequest(BaseModel):
     # The board is 4x4: exactly 4 rows, each with exactly 4 tiles.
     grid: list[Annotated[list[int], Field(min_length=4, max_length=4)]] = Field(min_length=4, max_length=4)
@@ -30,10 +32,13 @@ class MoveRequest(BaseModel):
 async def meta():
     from game2048.ntuple import WEIGHTS
 
-    return {"agents": [{"name": k, "description": v,
-                        "available": not k.startswith("ntuple") or WEIGHTS.exists()}
-                       for k, v in DESCRIPTIONS.items()],
-            "budget_seconds": BUDGET}
+    return {
+        "agents": [
+            {"name": k, "description": v, "available": not k.startswith("ntuple") or WEIGHTS.exists()}
+            for k, v in DESCRIPTIONS.items()
+        ],
+        "budget_seconds": BUDGET,
+    }
 
 
 @router.post("/api/2048/move")

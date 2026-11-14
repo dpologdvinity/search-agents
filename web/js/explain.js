@@ -4,11 +4,13 @@
 import { renderMath } from './math.js';
 import { enhancePseudo } from './pseudo.js';
 import { foldSections } from './fold.js';
+import { fitPlayLayouts } from './play-layout.js';
 
 function start() {
   renderMath(document);
   enhancePseudo(document);
   foldSections(document);
+  fitPlayLayouts(document);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

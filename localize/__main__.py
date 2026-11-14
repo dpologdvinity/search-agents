@@ -57,9 +57,11 @@ def render(floor, pf: ParticleFilter, sim: Sim, est) -> str:
 def status(step: int, floor, sim: Sim, pf: ParticleFilter, est) -> str:
     err = math.hypot(est["x"] - sim.x, est["y"] - sim.y) * CELL_M
     modes = count_modes(pf.position_histogram(), 0.02)
-    return (f"{floor.title}  seed {floor.seed}  step {step:4d}  error {err:5.2f} m  "
-            f"ESS {pf.ess:7.1f}/{pf.n}  modes {modes}  injected {pf.injected}  "
-            f"(R = robot, E = estimate)")
+    return (
+        f"{floor.title}  seed {floor.seed}  step {step:4d}  error {err:5.2f} m  "
+        f"ESS {pf.ess:7.1f}/{pf.n}  modes {modes}  injected {pf.injected}  "
+        f"(R = robot, E = estimate)"
+    )
 
 
 def read_key(timeout: float) -> str:
@@ -68,8 +70,20 @@ def read_key(timeout: float) -> str:
     return sys.stdin.read(1) if r else ""
 
 
-def play(layout: str, seed: int, particles: int, rays: int, sigma: float, scale: float, steps: int, delay: float,
-         kidnap_at: int | None, drive: bool, clear: bool, out=sys.stdout) -> int:
+def play(
+    layout: str,
+    seed: int,
+    particles: int,
+    rays: int,
+    sigma: float,
+    scale: float,
+    steps: int,
+    delay: float,
+    kidnap_at: int | None,
+    drive: bool,
+    clear: bool,
+    out=sys.stdout,
+) -> int:
     """Animate one run. Each frame shows the cloud and the true robot; the header holds the error."""
     floor = make_floor(layout, seed)
     sim = Sim(floor, seed + 7, rays=rays, sigma=sigma, motion_scale=scale)
@@ -80,6 +94,7 @@ def play(layout: str, seed: int, particles: int, rays: int, sigma: float, scale:
     if drive:
         import termios
         import tty as ttymod
+
         old = termios.tcgetattr(sys.stdin)
         ttymod.setcbreak(sys.stdin.fileno())
     try:
@@ -111,6 +126,7 @@ def play(layout: str, seed: int, particles: int, rays: int, sigma: float, scale:
     finally:
         if old is not None:
             import termios
+
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
     return 0
 
@@ -118,9 +134,15 @@ def play(layout: str, seed: int, particles: int, rays: int, sigma: float, scale:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m localize",
-        description="Lost Robot: a robot on a known floor plan localises itself with a grid filter and particles.")
-    parser.add_argument("command", nargs="?", default="play", choices=["play", "benchmark"],
-                        help="play (default) animates one run; benchmark runs the seeded comparison")
+        description="Lost Robot: a robot on a known floor plan localises itself with a grid filter and particles.",
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="play",
+        choices=["play", "benchmark"],
+        help="play (default) animates one run; benchmark runs the seeded comparison",
+    )
     parser.add_argument("--layout", choices=sorted(LAYOUTS), default="halls", help="floor plan (default halls)")
     parser.add_argument("--seed", type=int, default=1, help="seed for the pillars and the robot (default 1)")
     parser.add_argument("--particles", type=int, default=2000, help="particle count, 10..20000 (default 2000)")
@@ -152,8 +174,19 @@ def main(argv=None) -> int:
         parser.error("--sigma must be between 0.05 and 1.5")
     if args.drive and not sys.stdin.isatty():
         parser.error("--drive needs a terminal")
-    play(args.layout, args.seed, args.particles, args.rays, args.sigma, args.scale, args.steps, args.delay,
-         args.kidnap_at, args.drive, not args.no_clear)
+    play(
+        args.layout,
+        args.seed,
+        args.particles,
+        args.rays,
+        args.sigma,
+        args.scale,
+        args.steps,
+        args.delay,
+        args.kidnap_at,
+        args.drive,
+        not args.no_clear,
+    )
     return 0
 
 

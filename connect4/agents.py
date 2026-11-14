@@ -33,7 +33,7 @@ DESCRIPTIONS = {
     "minimax": "Alpha-beta negamax with a transposition table and a hand-built window evaluation.",
     "mcts": "Monte Carlo tree search with random rollouts and no learned knowledge.",
     "chance": "Chance (fixed odds): picks a column from fixed odds 6%/12%/19%/25%/19%/12%/6%, "
-              "renormalised over open columns. No search, evaluation or lookahead.",
+    "renormalised over open columns. No search, evaluation or lookahead.",
 }
 
 

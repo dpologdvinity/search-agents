@@ -94,8 +94,9 @@ def is_solvable(board, n: int) -> bool:
 
 def format_board(board, n: int) -> str:
     width = len(str(n * n - 1))
-    return "\n".join(" ".join(str(t).rjust(width) if t else "_".rjust(width)
-                              for t in board[r * n:(r + 1) * n]) for r in range(n))
+    return "\n".join(
+        " ".join(str(t).rjust(width) if t else "_".rjust(width) for t in board[r * n : (r + 1) * n]) for r in range(n)
+    )
 
 
 class Node:

@@ -39,16 +39,21 @@ def _cases() -> list[tuple[str, str, int]]:
 def _machines_json(env: Environment) -> dict:
     """The casino in the shape GET /api/bandits/machines returns, which the page hands to bandits-core.js."""
     m = env.machines
-    return {"kind": m.kind, "k": m.k, "seed": m.seed, "pulls": m.horizon, "period": m.period,
-            "schedule": [list(seg) for seg in m.schedule]}
+    return {
+        "kind": m.kind,
+        "k": m.k,
+        "seed": m.seed,
+        "pulls": m.horizon,
+        "period": m.period,
+        "schedule": [list(seg) for seg in m.schedule],
+    }
 
 
 def _python_play(kind: str, key: str, seed: int) -> dict:
     env = Environment(kind, K, HORIZON, seed)
     reasons: list[str] = []
     run = run_agent(make_for(key, env), env, on_pull=lambda t, arm, reward, agent: reasons.append(agent.reason))
-    return {"arms": run.arms, "rewards": run.rewards, "regret": run.regret, "optimal": run.optimal,
-            "reasons": reasons}
+    return {"arms": run.arms, "rewards": run.rewards, "regret": run.regret, "optimal": run.optimal, "reasons": reasons}
 
 
 def test_lineups_are_17_agent_and_casino_pairs():
@@ -63,8 +68,7 @@ def test_js_core_plays_the_same_casinos_as_python():
     for kind, key, seed in _cases():
         env = Environment(kind, K, HORIZON, seed)
         request["runs"].append({"key": key, "machines": _machines_json(env)})
-    proc = subprocess.run([NODE, str(SCRIPT)], input=json.dumps(request), capture_output=True, text=True,
-                          timeout=300)
+    proc = subprocess.run([NODE, str(SCRIPT)], input=json.dumps(request), capture_output=True, text=True, timeout=300)
     assert proc.returncode == 0, proc.stderr
     js_runs = json.loads(proc.stdout)["runs"]
     assert len(js_runs) == len(_cases())

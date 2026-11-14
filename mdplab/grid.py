@@ -138,16 +138,28 @@ PRESETS: dict[str, Preset] = {
         Preset(
             key="cliff",
             label="Cliff walk",
-            blurb=("Sutton and Barto's cliff. Walk along the top edge or along the cliff? "
-                   "Q-learning hugs the edge; SARSA keeps away from it."),
+            blurb=(
+                "Sutton and Barto's cliff. Walk along the top edge or along the cliff? "
+                "Q-learning hugs the edge; SARSA keeps away from it."
+            ),
             rows=(
                 "............",
                 "............",
                 "............",
                 "SCCCCCCCCCC+",
             ),
-            params=Params(gamma=0.99, slip=0.0, living=-1.0, reward=0.0, cliff=-100.0,
-                          alpha=0.5, epsilon=0.1, decay=1.0, eps_min=0.1, max_steps=500),
+            params=Params(
+                gamma=0.99,
+                slip=0.0,
+                living=-1.0,
+                reward=0.0,
+                cliff=-100.0,
+                alpha=0.5,
+                epsilon=0.1,
+                decay=1.0,
+                eps_min=0.1,
+                max_steps=500,
+            ),
         ),
         Preset(
             key="rooms",

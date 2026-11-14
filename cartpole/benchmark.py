@@ -65,8 +65,10 @@ def table(doc: dict) -> str:
         "|---|---:|---:|---:|---:|---:|",
     ]
     for r in doc["agents"].values():
-        lines.append(f"| {r['label']} | {r['mean']:.1f} | ±{r['ci95']:.1f} | {r['std']:.1f} | "
-                     f"{r['min']} | {r['pct_reached_max']:.1f}% |")
+        lines.append(
+            f"| {r['label']} | {r['mean']:.1f} | ±{r['ci95']:.1f} | {r['std']:.1f} | "
+            f"{r['min']} | {r['pct_reached_max']:.1f}% |"
+        )
     return "\n".join(lines)
 
 

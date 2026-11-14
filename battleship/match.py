@@ -67,8 +67,15 @@ def match(ai_name: str, games: int, seed: int = 1) -> dict:
         wins[result.winner] += 1
         ai_shots.append(result.ai_shots)
         chance_shots.append(result.chance_shots)
-    return {"ai": ai_name, "games": games, "seed": seed, "wins": wins, "ai_shots": ai_shots,
-            "chance_shots": chance_shots, "seconds": time.perf_counter() - start}
+    return {
+        "ai": ai_name,
+        "games": games,
+        "seed": seed,
+        "wins": wins,
+        "ai_shots": ai_shots,
+        "chance_shots": chance_shots,
+        "seconds": time.perf_counter() - start,
+    }
 
 
 def report(result: dict) -> str:
@@ -88,10 +95,15 @@ def report(result: dict) -> str:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m battleship match", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--ai", choices=sorted(set(AGENTS) - {"chance"}), default="probability",
-                        help="the AI side (default probability)")
+    parser = argparse.ArgumentParser(
+        prog="python -m battleship match", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--ai",
+        choices=sorted(set(AGENTS) - {"chance"}),
+        default="probability",
+        help="the AI side (default probability)",
+    )
     parser.add_argument("--games", type=int, default=100, help="races to play (default 100)")
     parser.add_argument("--seed", type=int, default=1, help="random seed (default 1)")
     args = parser.parse_args(argv)

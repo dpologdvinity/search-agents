@@ -112,9 +112,7 @@ def table() -> dict:
         "key": KEY,
         "label": LABEL,
         "weights": [
-            {"category": cat, "weight": w, "meaning": CATEGORY_LABELS[cat]}
-            for cat, w in CHANCE_WEIGHTS.items()
+            {"category": cat, "weight": w, "meaning": CATEGORY_LABELS[cat]} for cat, w in CHANCE_WEIGHTS.items()
         ],
         "rule": "a legal move's chance is its category's weight over the total weight of all legal moves",
     }
-

@@ -233,8 +233,17 @@ def test_race_summary_matches_track_state():
 
 @pytest.mark.parametrize(
     "argv",
-    [["--steps", "0"], ["--width", "0"], ["--beta2", "1.5"], ["--beta1", "1"], ["--momentum", "nan"],
-     ["--rho", "-0.1"], ["--eps", "0"], ["--noise", "-1"], ["--tol", "-1"]],
+    [
+        ["--steps", "0"],
+        ["--width", "0"],
+        ["--beta2", "1.5"],
+        ["--beta1", "1"],
+        ["--momentum", "nan"],
+        ["--rho", "-0.1"],
+        ["--eps", "0"],
+        ["--noise", "-1"],
+        ["--tol", "-1"],
+    ],
 )
 def test_cli_rejects_settings_the_race_cannot_use(argv, capsys):
     with pytest.raises(SystemExit) as exit_info:

@@ -26,7 +26,7 @@ def _alive(game: Game, state: State, plies: int, memo: dict) -> int:
     """How many of the next `plies` turns a living position survives, under Pac-Man's best play."""
     if plies == 0 or state.over:
         return plies
-    key = (state.pac, state.facing, state.ghosts, len(state.pellets), plies)
+    key = (state.pac, state.facing, state.ghosts, state.pellets, state.turn % 4, plies)
     if key in memo:
         return memo[key]
     best = 0

@@ -1,9 +1,10 @@
 """Pac-Man rules: a turn-based game whose outcome depends only on the maze, the seed, and the moves.
 
-Each turn Pac-Man picks one open neighbour and every ghost then moves one step:
+Each turn Pac-Man picks an open neighbour or waits, and every ghost then moves one step.
+While any ghost is blue, Pac-Man skips movement on every fourth turn (75% speed).
 
- 1. Pac-Man moves. Pellet points are awarded. A power pellet scares every ghost for
-    SCARED_TURNS turns.
+ 1. Pac-Man moves. Pellet points are awarded. Stepping onto a power cell scares every ghost
+    for SCARED_TURNS turns, even after its pellet has been eaten; staying on it does not.
  2. Any ghost already on Pac-Man's new cell is collided with. A scared ghost is eaten
     (points, and it returns to its home cell). A normal ghost kills Pac-Man. Because
     ghosts always move, this check also catches a ghost that swaps places with him.
@@ -31,6 +32,7 @@ from .search import distances
 
 PLAYING, WON, LOST, TIMEOUT = "playing", "won", "lost", "timeout"
 NO_DIRECTION = -1
+WAIT = 4
 
 PELLET_POINTS = 10
 POWER_POINTS = 50
@@ -40,8 +42,16 @@ SCARED_TURNS = 8
 MAX_TURNS = 300
 
 # Learning-only shaping (the score shown to players does not include these):
-STEP_COST = 1.0        # small per-turn cost, so a quicker clear is preferred
+STEP_COST = 1.0  # small per-turn cost, so a quicker clear is preferred
 DEATH_PENALTY = 300.0  # a lost life must outweigh the points available before it
+
+
+def turn_limit(maze: Maze) -> int:
+    """Give larger mazes enough time to clear.
+
+    The first maps keep the limit they were trained and benchmarked with.
+    """
+    return max(MAX_TURNS, 3 * len(maze.pellets))
 
 
 @dataclass(frozen=True)
@@ -92,8 +102,15 @@ def initial_state(maze: Maze) -> State:
 
 
 def legal_actions(state: State) -> list[int]:
-    """Action indices of the moves that do not run into a wall."""
-    return [a for a, nb in enumerate(state.maze.nbr[state.pac]) if nb != NO_CELL]
+    """Open directions, plus waiting while the ghosts take their turn."""
+    return [a for a, nb in enumerate(state.maze.nbr[state.pac]) if nb != NO_CELL] + [WAIT]
+
+
+def destination(state: State, action: int) -> int:
+    """Blue ghosts slow Pac-Man to three moves per four turns; waiting always stays put."""
+    if action == WAIT or (state.turn % 4 == 3 and any(g.scared for g in state.ghosts)):
+        return state.pac
+    return state.maze.nbr[state.pac][action]
 
 
 def learning_reward(turn: Turn) -> float:
@@ -128,12 +145,12 @@ class Game:
     trained on) or "chance" (every ghost moves by the fixed odds in ghosts.CHANCE_ODDS).
     """
 
-    def __init__(self, maze: Maze | str, seed: int = 0, max_turns: int = MAX_TURNS, ghosts: str = "ai"):
+    def __init__(self, maze: Maze | str, seed: int = 0, max_turns: int | None = None, ghosts: str = "ai"):
         if ghosts not in GHOST_POLICIES:
             raise ValueError(f"unknown ghost policy {ghosts!r}; choose from {', '.join(GHOST_POLICIES)}")
         self.maze = get(maze) if isinstance(maze, str) else maze
         self.seed = seed
-        self.max_turns = max_turns
+        self.max_turns = turn_limit(self.maze) if max_turns is None else max_turns
         self.ghost_policy = ghosts
         self.rng = random.Random(seed)
         self.state = initial_state(self.maze)
@@ -149,7 +166,8 @@ class Game:
         if action not in legal_actions(before):
             raise ValueError(f"action {action} runs into a wall")
         maze = before.maze
-        pac = maze.nbr[before.pac][action]
+        pac = destination(before, action)
+        facing = before.facing if action == WAIT else action
         points, events = 0, []
         eaten = None
         pellets = before.pellets
@@ -164,7 +182,7 @@ class Game:
                 events.append("pellet")
 
         ghosts = before.ghosts
-        if pac in maze.powers:  # the power pellet frightens every ghost, eaten or not
+        if pac != before.pac and pac in maze.powers:  # each arrival frightens every ghost, eaten or not
             ghosts = tuple(replace(g, scared=SCARED_TURNS) for g in ghosts)
 
         # Steps 2 and 3: collisions with ghosts already here, then the win check.
@@ -187,7 +205,7 @@ class Game:
                 nxt, heading = chance_move(maze, g, self.rng)
                 target, route = None, ()
             else:
-                nxt, target, route = choose_move(maze, g, i, pac, action, self.rng, pac_dist or [])
+                nxt, target, route = choose_move(maze, g, i, pac, facing, self.rng, pac_dist or [])
                 heading = g.heading  # A* ghosts never read a heading; leaving it alone keeps their states unchanged
             # Chance ghosts record the direction of this move, so their next draw can keep going.
             moved.append(replace(g, pos=nxt, heading=heading))
@@ -214,7 +232,7 @@ class Game:
             pellets=pellets,
             points=before.points + points,
             turn=before.turn + 1,
-            facing=action,
+            facing=before.facing if action == WAIT else action,
             status=status,
         )
         if status == LOST:

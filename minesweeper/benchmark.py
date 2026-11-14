@@ -53,8 +53,9 @@ def summarize(results: list[GameResult]) -> dict:
     }
 
 
-def run_benchmark(games: dict[str, int] | None = None, agents: tuple[str, ...] = AGENT_NAMES,
-                  presets: tuple[str, ...] | None = None) -> dict:
+def run_benchmark(
+    games: dict[str, int] | None = None, agents: tuple[str, ...] = AGENT_NAMES, presets: tuple[str, ...] | None = None
+) -> dict:
     """Play every agent on every size, and return the nested results."""
     games = games or GAMES
     presets = presets or tuple(PRESETS)
@@ -77,8 +78,7 @@ def run_benchmark(games: dict[str, int] | None = None, agents: tuple[str, ...] =
 def to_markdown(result: dict) -> str:
     """Tables for the README and results/: one table per size, one row per agent."""
     lines = [
-        f"Seeds {result['seed_base']} onward, the same boards for every agent. "
-        "Win rate has a 95% Wilson interval.",
+        f"Seeds {result['seed_base']} onward, the same boards for every agent. Win rate has a 95% Wilson interval.",
         "",
     ]
     for preset in result["games"]:

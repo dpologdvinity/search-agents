@@ -109,8 +109,7 @@ def describe_hint(game: Game, move) -> str:
 
 
 def _status(game: Game) -> str:
-    return (f"piece {game.piece}   next {game.bag.peek()}   lines {game.lines}   "
-            f"pieces {game.pieces}")
+    return f"piece {game.piece}   next {game.bag.peek()}   lines {game.lines}   pieces {game.pieces}"
 
 
 def run(seed: int | None = None, weights=None, stdin=None, stdout=None) -> int:
@@ -131,8 +130,7 @@ def run(seed: int | None = None, weights=None, stdin=None, stdout=None) -> int:
         if msg:
             print(msg, file=stdout)
 
-    print("Keys: a d move, w rotate, s soft drop, space hard drop, h hint, q quit. Type keys then Enter.",
-          file=stdout)
+    print("Keys: a d move, w rotate, s soft drop, space hard drop, h hint, q quit. Type keys then Enter.", file=stdout)
     show()
     while not game.over:
         print("keys> ", end="", file=stdout, flush=True)

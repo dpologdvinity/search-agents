@@ -14,12 +14,12 @@ import numpy as np
 from .rng import Mulberry32
 
 PRESETS = {
-    "blobs": 3,         # three round clusters
-    "xor": 2,           # the four quadrants, alternating
+    "blobs": 3,  # three round clusters
+    "xor": 2,  # the four quadrants, alternating
     "checkerboard": 2,  # a 4 x 4 board, alternating squares
-    "spiral": 2,        # two interleaved arms
-    "nested": 3,        # three concentric rings
-    "diagonal": 2,      # x > y, with 15% of labels flipped
+    "spiral": 2,  # two interleaved arms
+    "nested": 3,  # three concentric rings
+    "diagonal": 2,  # x > y, with 15% of labels flipped
 }
 FLIP = 0.15
 BLOB_CENTRES = ((0.25, 0.3), (0.7, 0.35), (0.5, 0.75))

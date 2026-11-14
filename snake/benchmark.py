@@ -57,8 +57,9 @@ def summarize(records: list[dict]) -> dict:
     }
 
 
-def run_benchmark(games: int = DEFAULT_GAMES, agents=AGENT_NAMES, size: int = BOARD,
-                  net: Net | None = None, log=None) -> dict:
+def run_benchmark(
+    games: int = DEFAULT_GAMES, agents=AGENT_NAMES, size: int = BOARD, net: Net | None = None, log=None
+) -> dict:
     """Run every agent and return {"games", "board", "seed_base", "agents": {name: summary}}.
 
     The evolved agent uses the committed champion unless `net` is given.

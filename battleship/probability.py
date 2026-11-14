@@ -78,7 +78,7 @@ def _membership(lo: np.ndarray, hi: np.ndarray) -> np.ndarray:
     """
     lo_bits = np.unpackbits(lo.astype("<u8").view(np.uint8).reshape(-1, 8), axis=1, bitorder="little")
     hi_bits = np.unpackbits(hi.astype("<u8").view(np.uint8).reshape(-1, 8), axis=1, bitorder="little")
-    return np.concatenate([lo_bits, hi_bits[:, :CELLS - 64]], axis=1)
+    return np.concatenate([lo_bits, hi_bits[:, : CELLS - 64]], axis=1)
 
 
 # Per ship length: the low and high words of every placement, as arrays indexed by placement number.
@@ -126,8 +126,7 @@ def _count_exact(lengths, free: dict[int, np.ndarray], hits: int, budget: int) -
     return counts
 
 
-def _sample(lengths, free: dict[int, np.ndarray], hits: int, rng: random.Random,
-            samples: int) -> np.ndarray | None:
+def _sample(lengths, free: dict[int, np.ndarray], hits: int, rng: random.Random, samples: int) -> np.ndarray | None:
     """Estimate the per-cell probabilities by importance sampling (see the module docstring).
 
     Returns a length-100 array of probabilities, or None if no sample satisfied the open hits.
@@ -161,8 +160,9 @@ def _sample(lengths, free: dict[int, np.ndarray], hits: int, rng: random.Random,
     return (w @ _membership(used_lo, used_hi).astype(np.float64)) / total
 
 
-def ship_probabilities(k: Knowledge, rng: random.Random | None = None, samples: int = SAMPLES,
-                       budget: int = EXACT_BUDGET) -> Belief:
+def ship_probabilities(
+    k: Knowledge, rng: random.Random | None = None, samples: int = SAMPLES, budget: int = EXACT_BUDGET
+) -> Belief:
     """P(ship) for every cell, given what the shooter knows. See the module docstring for the model."""
     probs = [0.0] * CELLS
     for c in bits(k.hit):  # hits (sunk ships included) are certainly ship cells

@@ -42,9 +42,18 @@ class Episode:
 class QLearner:
     """A tabular agent that learns Q(s, a) from episodes. `algo` is "q" or "sarsa"."""
 
-    def __init__(self, mdp: GridMDP, *, algo: str = "q", seed: int = 1, alpha: float | None = None,
-                 epsilon: float | None = None, decay: float | None = None, eps_min: float | None = None,
-                 max_steps: int | None = None):
+    def __init__(
+        self,
+        mdp: GridMDP,
+        *,
+        algo: str = "q",
+        seed: int = 1,
+        alpha: float | None = None,
+        epsilon: float | None = None,
+        decay: float | None = None,
+        eps_min: float | None = None,
+        max_steps: int | None = None,
+    ):
         if algo not in ("q", "sarsa"):
             raise ValueError("algo must be 'q' or 'sarsa'")
         p = mdp.params
@@ -124,8 +133,7 @@ class QLearner:
         self.eps = max(self.eps_min, self.eps * self.decay)
         self.episodes += 1
         self.returns.append(ret)
-        ep = Episode(ret=ret, steps=steps, path=path, reached_terminal=ended,
-                     fell=ended and mdp.kinds[path[-1]] == "-")
+        ep = Episode(ret=ret, steps=steps, path=path, reached_terminal=ended, fell=ended and mdp.kinds[path[-1]] == "-")
         self.last = ep
         return ep
 
@@ -140,8 +148,9 @@ class QLearner:
             pi[s] = self.greedy(s)
         return pi
 
-    def agreement(self, optimal_pi: list[int], optimal_Q: list[list[float]], slack: float = 1e-6
-                  ) -> tuple[float, list[bool]]:
+    def agreement(
+        self, optimal_pi: list[int], optimal_Q: list[list[float]], slack: float = 1e-6
+    ) -> tuple[float, list[bool]]:
         """How often the learned greedy action is optimal, over the states the optimal policy reaches.
 
         A state agrees when the learned action equals the optimal one, or when its exact optimal value is

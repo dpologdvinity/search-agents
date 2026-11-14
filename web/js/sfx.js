@@ -110,6 +110,28 @@ const C5 = 523.25, E5 = 659.25, G5 = 783.99, B5 = 987.77, C6 = 1046.5, E6 = 1318
 
 // gap: minimum ms between two plays of this voice. soft: skipped when a banner sounds nearby, and deferred.
 const VOICES = {
+  // Dry alternating sweeps give pellets their arcade waka-waka, without the shared synth echo.
+  pacChomp: { gap: 45, play: (c, t, alternate = 0) => {
+    note(c, t, { wave: 'triangle', f0: alternate ? 450 : 900, f1: alternate ? 900 : 450,
+      dur: 0.09, vol: 0.18, cut: 5000 });
+  } },
+  pacPower: { gap: 150, important: true, play: (c, t) => {
+    for (let i = 0; i < 6; i++) note(c, t + i * 0.055, {
+      wave: 'square', f0: i % 2 ? 220 : 440, dur: 0.05, vol: 0.08, cut: 2200,
+    });
+  } },
+  pacGhost: { gap: 80, important: true, play: (c, t) => {
+    note(c, t, { wave: 'triangle', f0: 200, f1: 1600, dur: 0.2, vol: 0.18, cut: 5000 });
+  } },
+  pacDeath: { gap: 400, important: true, play: (c, t) => {
+    for (let i = 0; i < 8; i++) note(c, t + i * 0.07, {
+      wave: 'triangle', f0: 1000 - i * 100, f1: 600 - i * 70, dur: 0.065, vol: 0.15,
+    });
+  } },
+  pacWin: { gap: 400, important: true, play: (c, t) => {
+    [493.88, 987.77, 739.99, 622.25, 987.77, 739.99, 622.25, 523.25, 1046.5].forEach((f, i) =>
+      note(c, t + i * 0.09, { wave: 'triangle', f0: f, dur: 0.085, vol: 0.13 }));
+  } },
   click: { gap: 35, play: (c, t) => note(c, t, { wave: 'square', f0: 1400, f1: 800, dur: 0.045, vol: 0.05, cut: 4200 }) },
   hover: { gap: 90, play: (c, t) => note(c, t, { wave: 'triangle', f0: 2200, dur: 0.02, vol: 0.012 }) },
   menu: { gap: 150, play: (c, t) => {

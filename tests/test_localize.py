@@ -93,8 +93,9 @@ def test_range_likelihood_prefers_the_expected_range():
     bad = ray_loglik(np.array([2.5]), np.array([6.0]), 0.3, 0.05)
     assert good > bad
     # A reading at the maximum is a dropout or a long range: it is likely when the expected range is the maximum.
-    assert ray_loglik(np.array([MAX_RANGE]), np.array([MAX_RANGE]), 0.3, 0.05) > \
-        ray_loglik(np.array([MAX_RANGE]), np.array([2.0]), 0.3, 0.05)
+    assert ray_loglik(np.array([MAX_RANGE]), np.array([MAX_RANGE]), 0.3, 0.05) > ray_loglik(
+        np.array([MAX_RANGE]), np.array([2.0]), 0.3, 0.05
+    )
 
 
 def test_grid_filter_is_a_probability_and_converges():
@@ -249,23 +250,59 @@ def test_first_within_needs_a_held_window():
 
 
 def test_benchmark_markdown_has_every_section():
-    fake = {"trials": 16, "steps": 100, "reach_m": 0.5, "defaults": {}, "rows": {
-        "particles": [dict(label="100 particles", median=None, fail=2, runs=2, err10=1.0, err25=1.0, err50=1.0,
-                           err100=1.0, ms=3.0, modes2=2.0)],
-        "noise": [dict(label="x", median=5, fail=0, runs=2, err10=0.1, err25=0.1, err50=0.1, err100=0.1, ms=2.0)],
-        "filters": [dict(label="grid", median=4, fail=0, runs=2, err10=0.1, err25=0.1, err50=0.1, err100=0.1,
-                         ms=60.0, init_ms=400.0)],
-        "kidnap": [dict(label="augmented", median=10, fail=0, runs=2, ms=9.0, kidnap_at=40, false_alarm=0.0,
-                        post=0.1)],
-    }}
+    fake = {
+        "trials": 16,
+        "steps": 100,
+        "reach_m": 0.5,
+        "defaults": {},
+        "rows": {
+            "particles": [
+                dict(
+                    label="100 particles",
+                    median=None,
+                    fail=2,
+                    runs=2,
+                    err10=1.0,
+                    err25=1.0,
+                    err50=1.0,
+                    err100=1.0,
+                    ms=3.0,
+                    modes2=2.0,
+                )
+            ],
+            "noise": [dict(label="x", median=5, fail=0, runs=2, err10=0.1, err25=0.1, err50=0.1, err100=0.1, ms=2.0)],
+            "filters": [
+                dict(
+                    label="grid",
+                    median=4,
+                    fail=0,
+                    runs=2,
+                    err10=0.1,
+                    err25=0.1,
+                    err50=0.1,
+                    err100=0.1,
+                    ms=60.0,
+                    init_ms=400.0,
+                )
+            ],
+            "kidnap": [
+                dict(label="augmented", median=10, fail=0, runs=2, ms=9.0, kidnap_at=40, false_alarm=0.0, post=0.1)
+            ],
+        },
+    }
     md = benchmark.markdown(fake)
     for heading in ("Particle count", "Noise", "Grid filter vs particle filter", "Kidnapped robot"):
         assert heading in md
 
 
 def test_cli_plays_a_few_frames(tmp_path):
-    proc = subprocess.run([sys.executable, "-m", "localize", "--steps", "3", "--delay", "0", "--no-clear",
-                           "--particles", "100"], cwd=ROOT, capture_output=True, text=True, timeout=300)
+    proc = subprocess.run(
+        [sys.executable, "-m", "localize", "--steps", "3", "--delay", "0", "--no-clear", "--particles", "100"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
     assert proc.returncode == 0, proc.stderr
     frames = [ln for ln in proc.stdout.splitlines() if "step" in ln and "error" in ln]
     assert len(frames) == 3
@@ -273,7 +310,8 @@ def test_cli_plays_a_few_frames(tmp_path):
 
 
 def test_cli_rejects_bad_particle_counts():
-    proc = subprocess.run([sys.executable, "-m", "localize", "--particles", "3"], cwd=ROOT, capture_output=True,
-                          text=True, timeout=120)
+    proc = subprocess.run(
+        [sys.executable, "-m", "localize", "--particles", "3"], cwd=ROOT, capture_output=True, text=True, timeout=120
+    )
     assert proc.returncode != 0
     assert "--particles" in proc.stderr

@@ -17,10 +17,32 @@ from rover.world import Mulberry32, World, generate, neighbours, reachable, rend
 # Each scenario edits the true map every 6 ticks at cell (t * 37 + 11) % N, unless that cell is the rover or the goal.
 PARITY_SCENARIOS = [
     # (size, density, seed, radius) and the golden numbers the Python reference produces
-    ((21, 0.25, 7, 2), dict(ticks=58, steps=58, replans=29, init_dstar=441, init_astar=41,
-                            expansions_dstar=538, expansions_astar=715, walls=111)),
-    ((15, 0.30, 3, 1), dict(ticks=50, steps=50, replans=22, init_dstar=225, init_astar=29,
-                            expansions_dstar=303, expansions_astar=401, walls=72)),
+    (
+        (21, 0.25, 7, 2),
+        dict(
+            ticks=58,
+            steps=58,
+            replans=29,
+            init_dstar=441,
+            init_astar=41,
+            expansions_dstar=538,
+            expansions_astar=715,
+            walls=111,
+        ),
+    ),
+    (
+        (15, 0.30, 3, 1),
+        dict(
+            ticks=50,
+            steps=50,
+            replans=22,
+            init_dstar=225,
+            init_astar=29,
+            expansions_dstar=303,
+            expansions_astar=401,
+            walls=72,
+        ),
+    ),
 ]
 
 
@@ -55,6 +77,7 @@ def run_with_edits(n: int, density: float, seed: int, radius: int, driver: str =
 
 # ── PRNG and maps ────────────────────────────────────────────────────────
 
+
 def test_mulberry32_reference_values():
     # The first outputs for seed 1; the JavaScript port must print the same numbers.
     rng = Mulberry32(1)
@@ -78,12 +101,13 @@ def test_generated_goal_is_always_reachable(density):
 
 
 def test_sensor_is_a_square_clipped_to_the_map():
-    assert sorted(sensed_cells(5, 0, 1)) == [0, 1, 5, 6]          # corner: only three neighbours plus itself
-    assert len(list(sensed_cells(9, 40, 2))) == 25                  # centre: 5x5 square
+    assert sorted(sensed_cells(5, 0, 1)) == [0, 1, 5, 6]  # corner: only three neighbours plus itself
+    assert len(list(sensed_cells(9, 40, 2))) == 25  # centre: 5x5 square
     assert set(sensed_cells(9, 40, 1)) == {30, 31, 32, 39, 40, 41, 48, 49, 50}
 
 
 # ── planners against the breadth-first reference ─────────────────────────
+
 
 def random_belief_walk(seed: int, n: int = 12, changes: int = 40):
     """Random wall flips fed to both planners, with the rover walking along D* Lite's own route."""
@@ -104,7 +128,7 @@ def random_belief_walk(seed: int, n: int = 12, changes: int = 40):
         ref = None
         if batch:
             dstar.on_change(batch, pos)
-            astar.on_change(batch, pos)   # A*'s stored path starts at pos only right after a replan
+            astar.on_change(batch, pos)  # A*'s stored path starts at pos only right after a replan
             ref = bfs_belief(n, walls, goal)
             assert astar.cost_to_goal(pos) == ref[pos]
         else:
@@ -114,7 +138,7 @@ def random_belief_walk(seed: int, n: int = 12, changes: int = 40):
         if nxt is None:
             assert ref[pos] == INF
             continue
-        assert not walls[nxt] and ref[nxt] == ref[pos] - 1   # the step really is one closer to the goal
+        assert not walls[nxt] and ref[nxt] == ref[pos] - 1  # the step really is one closer to the goal
         pos = nxt
         if pos == goal:
             break
@@ -140,7 +164,7 @@ def test_unreachable_goal_reports_no_route_and_no_crash():
     n = 6
     walls = bytearray(n * n)
     for r in range(n):
-        walls[r * n + 3] = 1          # a full wall splits the grid
+        walls[r * n + 3] = 1  # a full wall splits the grid
     d, a = DStarLite(n, 0, n * n - 1), AStar(n, 0, n * n - 1)
     changes = [(c, 1) for c in range(n * n) if walls[c]]
     d.on_change(changes, 0)
@@ -150,6 +174,7 @@ def test_unreachable_goal_reports_no_route_and_no_crash():
 
 
 # ── the explorer ─────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize("seed", range(6))
 @pytest.mark.parametrize("driver", ["dstar", "astar"])
@@ -174,7 +199,7 @@ def test_dstar_cost_matches_reference_at_every_tick_with_edits():
                 cell = (t * 29 + seed) % (13 * 13)
                 replans = ex.replans
                 ex.edit(cell, not world.walls[cell])
-                if ex.replans != replans:   # A*'s stored path starts at the rover right after it replans
+                if ex.replans != replans:  # A*'s stored path starts at the rover right after it replans
                     assert ex.planners["astar"].cost_to_goal(ex.pos) == bfs_belief(13, ex.belief, goal)[ex.pos]
             # A replan inside tick() happens before the move, so A*'s path starts at the cell the rover was on.
             here, replans = ex.pos, ex.replans
@@ -191,10 +216,16 @@ def test_dstar_cost_matches_reference_at_every_tick_with_edits():
 def test_parity_scenarios_match_the_golden_numbers(case, golden):
     n, density, seed, radius = case
     ex, ticks = run_with_edits(n, density, seed, radius)
-    got = dict(ticks=ticks, steps=ex.steps, replans=ex.replans,
-               init_dstar=ex.init_expansions["dstar"], init_astar=ex.init_expansions["astar"],
-               expansions_dstar=ex.expansions("dstar"), expansions_astar=ex.expansions("astar"),
-               walls=sum(ex.world.walls))
+    got = dict(
+        ticks=ticks,
+        steps=ex.steps,
+        replans=ex.replans,
+        init_dstar=ex.init_expansions["dstar"],
+        init_astar=ex.init_expansions["astar"],
+        expansions_dstar=ex.expansions("dstar"),
+        expansions_astar=ex.expansions("astar"),
+        walls=sum(ex.world.walls),
+    )
     assert ex.done and ex.mismatches == 0
     assert got == golden
 
@@ -210,9 +241,9 @@ def test_edit_refuses_the_rover_cell_and_the_goal():
 def test_a_wall_dropped_in_view_triggers_a_replan_at_once():
     world = World(9, bytearray(81))
     ex = Explorer(world, radius=2)
-    ex.refresh()                     # sense the start neighbourhood
+    ex.refresh()  # sense the start neighbourhood
     before = ex.replans
-    cell = 2                         # two cells east of the start: inside the sensor square
+    cell = 2  # two cells east of the start: inside the sensor square
     assert ex.edit(cell, True)
     assert ex.replans == before + 1 and ex.belief[cell] == 1
     assert ex.last_changes == [(cell, 1)]
@@ -231,10 +262,11 @@ def test_render_marks_rover_goal_and_unseen_cells():
     seen = bytearray(9)
     seen[0] = seen[1] = 1
     text = render(3, world.walls, seen, 0, 8)
-    assert text.splitlines() == ["R. ", "   ", "  G"]   # rover, one seen free cell, unseen cells blank, goal
+    assert text.splitlines() == ["R. ", "   ", "  G"]  # rover, one seen free cell, unseen cells blank, goal
 
 
 # ── CLI and benchmark ────────────────────────────────────────────────────
+
 
 def test_cli_play_prints_a_frame_per_step_and_reaches_the_goal(capsys):
     buf = io.StringIO()

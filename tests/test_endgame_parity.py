@@ -60,13 +60,17 @@ def _cases(n_per_piece: int = 12):
                 continue
             wp = pos[1]
             moves = [
-                {"mover": i.move[0], "from": i.move[1], "to": i.move[2], "check": i.check,
-                 "capture": i.move[0] == "k" and i.move[2] == wp}
+                {
+                    "mover": i.move[0],
+                    "from": i.move[1],
+                    "to": i.move[2],
+                    "check": i.check,
+                    "capture": i.move[0] == "k" and i.move[2] == wp,
+                }
                 for i in infos
             ]
             us = [round(rng.random(), 12) for _ in range(25)] + [0.0, 0.999999999999]
-            cases.append({"piece": piece, "wp": wp, "moves": moves, "us": us, "infos": infos,
-                          "pos": pos})
+            cases.append({"piece": piece, "wp": wp, "moves": moves, "us": us, "infos": infos, "pos": pos})
             made += 1
     return cases
 

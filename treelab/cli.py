@@ -72,8 +72,7 @@ def _region_map(predict, extras: bool) -> str:
     ys = 1.0 - (np.arange(GRID_ROWS) + 0.5) / GRID_ROWS  # top row is y near 1
     gx, gy = np.meshgrid(xs, ys)
     labels = predict(expand(np.column_stack([gx.ravel(), gy.ravel()]), extras=extras))
-    rows = [("".join(CLASS_SYMBOLS[c] for c in labels[r * GRID_COLS:(r + 1) * GRID_COLS]))
-            for r in range(GRID_ROWS)]
+    rows = [("".join(CLASS_SYMBOLS[c] for c in labels[r * GRID_COLS : (r + 1) * GRID_COLS])) for r in range(GRID_ROWS)]
     return "\n".join("|" + row + "|" for row in rows)
 
 
@@ -84,8 +83,10 @@ def cmd_grow(args: argparse.Namespace) -> None:
     if args.prune > 0:
         root = prune(root, args.prune)
     names = _names(args)
-    print(f"preset {args.data}  seed {args.seed}  train {len(ytr)}  test {len(yte)}  "
-          f"criterion {args.criterion}  depth<={args.depth}  min_leaf {args.min_leaf}")
+    print(
+        f"preset {args.data}  seed {args.seed}  train {len(ytr)}  test {len(yte)}  "
+        f"criterion {args.criterion}  depth<={args.depth}  min_leaf {args.min_leaf}"
+    )
     print(rules_text(root, names, args.criterion))
     shown = DecisionTree()
     shown.root, shown.n_classes = root, k
@@ -101,13 +102,15 @@ def cmd_grow(args: argparse.Namespace) -> None:
 
 def cmd_forest(args: argparse.Namespace) -> None:
     Xtr, ytr, Xte, yte, k = _data(args)
-    forest = RandomForest(args.trees, criterion=args.criterion, max_depth=args.depth,
-                          min_samples_leaf=args.min_leaf, seed=args.seed).fit(Xtr, ytr, k)
+    forest = RandomForest(
+        args.trees, criterion=args.criterion, max_depth=args.depth, min_samples_leaf=args.min_leaf, seed=args.seed
+    ).fit(Xtr, ytr, k)
     single = DecisionTree(args.criterion, 12, 1).fit(Xtr, ytr, k)
-    print(f"preset {args.data}  seed {args.seed}  trees {args.trees}  train {len(ytr)}  test {len(yte)}  "
-          f"criterion {args.criterion}  depth<={args.depth}  min_leaf {args.min_leaf}")
-    print(f"OOB accuracy   {forest.oob_accuracy:.3f}" if forest.oob_accuracy is not None
-          else "OOB accuracy   n/a")
+    print(
+        f"preset {args.data}  seed {args.seed}  trees {args.trees}  train {len(ytr)}  test {len(yte)}  "
+        f"criterion {args.criterion}  depth<={args.depth}  min_leaf {args.min_leaf}"
+    )
+    print(f"OOB accuracy   {forest.oob_accuracy:.3f}" if forest.oob_accuracy is not None else "OOB accuracy   n/a")
     print(f"test accuracy  {np.mean(forest.predict(Xte) == yte):.3f}")
     print(f"single tree (depth 12, min_leaf 1) test accuracy  {np.mean(single.predict(Xte) == yte):.3f}")
     print("feature importances:")
@@ -127,8 +130,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--data", choices=sorted(PRESETS), default="xor")
         p.add_argument("--n", type=_at_least(2), default=240, help="points in the preset, at least 2 (default 240)")
         p.add_argument("--seed", type=int, default=1)
-        p.add_argument("--test", type=_test_fraction, default=0.3,
-                       help="test fraction, strictly between 0 and 1 (default 0.3)")
+        p.add_argument(
+            "--test", type=_test_fraction, default=0.3, help="test fraction, strictly between 0 and 1 (default 0.3)"
+        )
         p.add_argument("--criterion", choices=CRITERIA, default="gini")
         p.add_argument("--depth", type=_at_least(0), default=5, help="maximum depth (default 5)")
         p.add_argument("--min-leaf", type=_at_least(1), default=3, help="minimum samples per leaf (default 3)")
@@ -136,8 +140,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     grow = sub.add_parser("grow", help="grow one CART tree and print it")
     common(grow)
-    grow.add_argument("--prune", type=_float_at_least(0), default=0.0,
-                      help="cost-complexity alpha (default 0 = no pruning)")
+    grow.add_argument(
+        "--prune", type=_float_at_least(0), default=0.0, help="cost-complexity alpha (default 0 = no pruning)"
+    )
     grow.set_defaults(func=cmd_grow)
 
     forest = sub.add_parser("forest", help="train a random forest and report it")

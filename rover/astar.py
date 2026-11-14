@@ -30,7 +30,7 @@ class AStar:
         self.n = n
         self.goal = goal
         self.wall = bytearray(n * n)  # the belief: 1 = known wall (unknown counts as free)
-        self.path: list[int] = []     # cells from the rover's cell to the goal; empty if none
+        self.path: list[int] = []  # cells from the rover's cell to the goal; empty if none
         self.expansions = 0
         self.last_expanded: list[int] = []
         self._plan(start)
@@ -48,11 +48,11 @@ class AStar:
         closed = bytearray(N)
         g[pos] = 0
         h0 = self._h(pos, goal)
-        heap = [(h0, h0, pos)]         # entries are (f, h, cell)
+        heap = [(h0, h0, pos)]  # entries are (f, h, cell)
         order: list[int] = []
         while heap:
             _, _, u = heapq.heappop(heap)
-            if closed[u]:              # a later, worse entry for a cell that is already expanded
+            if closed[u]:  # a later, worse entry for a cell that is already expanded
                 continue
             closed[u] = 1
             self.expansions += 1
@@ -73,7 +73,7 @@ class AStar:
             self.path = []
             return
         path, cur = [goal], goal
-        while cur != pos:              # walk parent links back to the rover's cell
+        while cur != pos:  # walk parent links back to the rover's cell
             cur = parent[cur]
             path.append(cur)
         path.reverse()

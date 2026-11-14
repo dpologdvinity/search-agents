@@ -119,8 +119,15 @@ def level_json(level: Level, number: int) -> dict:
     }
 
 
-def solve_json(level_number: int, boxes: list[int] | None, player: int | None, algorithm: str, heuristic: str,
-               prune: bool, budget: int) -> dict:
+def solve_json(
+    level_number: int,
+    boxes: list[int] | None,
+    player: int | None,
+    algorithm: str,
+    heuristic: str,
+    prune: bool,
+    budget: int,
+) -> dict:
     """Run one search and describe it in the JSON shape the page reads."""
     level = get_level(level_number)
     if boxes is not None:
@@ -192,8 +199,9 @@ async def solve_level(req: SolveRequest, request: Request):
         raise HTTPException(429, "rate limit: try again in a few seconds")
     try:
         async with app.state.slots.acquire():
-            return await asyncio.to_thread(solve_json, req.level, req.boxes, req.player, req.algorithm,
-                                           req.heuristic, req.prune, req.budget)
+            return await asyncio.to_thread(
+                solve_json, req.level, req.boxes, req.player, req.algorithm, req.heuristic, req.prune, req.budget
+            )
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None
 

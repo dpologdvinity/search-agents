@@ -28,10 +28,13 @@ def test_2048_move(client, agent):
     assert body["depth"] >= 1
 
 
-@pytest.mark.parametrize("grid, fragment", [
-    ([[2, 4, 2, 4], [4, 2, 4, 2], [2, 4, 2, 4], [4, 2, 4, 2]], "game is over"),
-    ([[3, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], "invalid tile"),
-])
+@pytest.mark.parametrize(
+    "grid, fragment",
+    [
+        ([[2, 4, 2, 4], [4, 2, 4, 2], [2, 4, 2, 4], [4, 2, 4, 2]], "game is over"),
+        ([[3, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], "invalid tile"),
+    ],
+)
 def test_2048_rejects_bad_boards(client, grid, fragment):
     r = client.post("/api/2048/move", json={"grid": grid})
     assert r.status_code == 400 and fragment in r.text

@@ -39,7 +39,7 @@ class Run:
     algorithm: str
     iterations: int
     points: list[tuple[int, float]] = field(default_factory=list)  # (iteration, exploitability)
-    value: float = 0.0          # seat 0's expected payoff under the average strategy
+    value: float = 0.0  # seat 0's expected payoff under the average strategy
     solver: Solver | None = None
     seconds: float = 0.0
 
@@ -77,13 +77,18 @@ def kuhn_check(iterations: int = 10_000) -> dict:
     out = {}
     for algo in ("cfr", "cfr+"):
         r = run("kuhn", algo, iterations)
-        out[algo] = {"value": r.value, "exact": KUHN_VALUE, "value_error": abs(r.value - KUHN_VALUE),
-                     "exploitability": r.points[-1][1]}
+        out[algo] = {
+            "value": r.value,
+            "exact": KUHN_VALUE,
+            "value_error": abs(r.value - KUHN_VALUE),
+            "exploitability": r.points[-1][1],
+        }
     return out
 
 
-def save_leduc(r: Run, strategy_path: Path, training_path: Path, log_path: Path | None,
-               runs: list[Run], extra: dict | None = None) -> dict:
+def save_leduc(
+    r: Run, strategy_path: Path, training_path: Path, log_path: Path | None, runs: list[Run], extra: dict | None = None
+) -> dict:
     """Write the strategy file for a Leduc CFR+ run, the training curves, and the JSONL log.
 
     The exploitability stored with the strategy is measured on the rounded table that the file holds,
@@ -114,8 +119,12 @@ def save_leduc(r: Run, strategy_path: Path, training_path: Path, log_path: Path 
         with log_path.open("w") as f:
             for run_ in runs:
                 for t, e in run_.points:
-                    f.write(json.dumps({"game": run_.game, "algorithm": run_.algorithm, "iteration": t,
-                                        "exploitability": e}) + "\n")
+                    f.write(
+                        json.dumps(
+                            {"game": run_.game, "algorithm": run_.algorithm, "iteration": t, "exploitability": e}
+                        )
+                        + "\n"
+                    )
     return meta
 
 
@@ -124,9 +133,11 @@ def training_curves(runs: list[Run]) -> dict:
     return {
         "game": "leduc",
         "runs": [
-            {"algorithm": r.algorithm.upper(), "iterations": [t for t, _ in r.points],
-             "exploitability": [round(e, 8) for _, e in r.points]}
+            {
+                "algorithm": r.algorithm.upper(),
+                "iterations": [t for t, _ in r.points],
+                "exploitability": [round(e, 8) for _, e in r.points],
+            }
             for r in runs
         ],
     }
-

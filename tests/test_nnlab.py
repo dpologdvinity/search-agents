@@ -65,8 +65,7 @@ def test_loss_decreases_under_gradient_descent():
 
 
 def test_learns_xor_to_high_accuracy():
-    run = train(TrainConfig(data="xor", n=200, hidden=(4,), act="tanh", epochs=400, test_frac=0.0,
-                            lr=0.03, batch=16))
+    run = train(TrainConfig(data="xor", n=200, hidden=(4,), act="tanh", epochs=400, test_frac=0.0, lr=0.03, batch=16))
     assert run.history.train_acc[-1] >= 0.98
 
 

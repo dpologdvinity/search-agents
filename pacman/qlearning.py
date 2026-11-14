@@ -31,6 +31,9 @@ from .features import FEATURE_NAMES, state_features
 from .mazes import get
 
 DEFAULT_MAZES = ("lanes", "vault")
+# Board size (width, height) the committed weights were trained on. Some features are measured in cells, so
+# the learned agent is only played on boards of this size (pacman/episode.py and the server enforce it).
+TRAINED_SIZE = (15, 11)
 
 
 def dot(w: Sequence[float], f: Sequence[float]) -> float:

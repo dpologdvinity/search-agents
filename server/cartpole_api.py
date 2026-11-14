@@ -78,8 +78,15 @@ async def meta():
     return {
         "agents": [{"name": n, "label": LABELS[n]} for n in AGENT_NAMES],
         "physics": {
-            "gravity": 9.8, "mass_cart": 1.0, "mass_pole": 0.1, "half_length": 0.5, "force": 10.0,
-            "tau": 0.02, "theta_limit": THETA_LIMIT, "x_limit": X_LIMIT, "max_steps": MAX_STEPS,
+            "gravity": 9.8,
+            "mass_cart": 1.0,
+            "mass_pole": 0.1,
+            "half_length": 0.5,
+            "force": 10.0,
+            "tau": 0.02,
+            "theta_limit": THETA_LIMIT,
+            "x_limit": X_LIMIT,
+            "max_steps": MAX_STEPS,
         },
         "actions": list(ACTIONS),
         "obs_scale": [float(v) for v in OBS_SCALE],

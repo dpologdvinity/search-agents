@@ -47,14 +47,17 @@ class SolveRequest(BaseModel):
 
 @router.get("/api/sudoku/meta")
 async def meta():
-    return {"solvers": [{"name": k, "description": v} for k, v in DESCRIPTIONS.items()],
-            "hard": list(HARD), "generated_count": len(generated_puzzles()),
-            "max_nodes": MAX_NODES, "trace_limit": TRACE_LIMIT}
+    return {
+        "solvers": [{"name": k, "description": v} for k, v in DESCRIPTIONS.items()],
+        "hard": list(HARD),
+        "generated_count": len(generated_puzzles()),
+        "max_nodes": MAX_NODES,
+        "trace_limit": TRACE_LIMIT,
+    }
 
 
 @router.get("/api/sudoku/puzzle")
-async def puzzle(set: Literal["generated", "hard"] = "generated", index: int | None = None,
-                 name: str | None = None):
+async def puzzle(set: Literal["generated", "hard"] = "generated", index: int | None = None, name: str | None = None):
     if set == "hard":
         if name is None:
             name = random.choice(list(HARD))
@@ -67,8 +70,13 @@ async def puzzle(set: Literal["generated", "hard"] = "generated", index: int | N
     if not 0 <= index < len(puzzles):
         raise HTTPException(404, "index out of range")
     row = puzzles[index]
-    return {"set": "generated", "index": index, "puzzle": row["puzzle"],
-            "clues": row["clues"], "guesses": row["guesses"]}
+    return {
+        "set": "generated",
+        "index": index,
+        "puzzle": row["puzzle"],
+        "clues": row["clues"],
+        "guesses": row["guesses"],
+    }
 
 
 @router.post("/api/sudoku/solve")
@@ -84,7 +92,8 @@ async def solve(req: SolveRequest, request: Request):
     try:
         async with app.state.slots.acquire():
             result = await asyncio.to_thread(
-                SOLVERS[req.solver], req.puzzle, max_nodes=MAX_NODES, trace_limit=TRACE_LIMIT)
+                SOLVERS[req.solver], req.puzzle, max_nodes=MAX_NODES, trace_limit=TRACE_LIMIT
+            )
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None
     return asdict(result)

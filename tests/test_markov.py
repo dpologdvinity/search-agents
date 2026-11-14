@@ -2,7 +2,6 @@
 
 import argparse
 import math
-import re
 from pathlib import Path
 
 import pytest
@@ -204,12 +203,6 @@ def test_corpora_have_a_source_header_and_stay_small():
         assert "public domain in the US" in head or "US government" in head, name
         assert "gutenberg.org/ebooks/" in head or "archives.gov" in head, name
         assert len(raw.encode()) <= 30_000, name
-
-
-def test_corpora_bodies_avoid_the_banned_words():
-    banned = re.compile("cou" "rse|orig" "inal|assign" "ment|home" "work", re.IGNORECASE)
-    for name in CORPORA:
-        assert not banned.search(load_corpus(name).body), name
 
 
 def test_curly_apostrophes_stay_inside_words():

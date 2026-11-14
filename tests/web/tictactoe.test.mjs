@@ -1,4 +1,4 @@
-// Tests for the 404 page's tic-tac-toe core. The parity test runs the Python reference (tictactoe/) on every
+// Tests for the tic-tac-toe core (game page and 404 page). The parity test runs the Python reference (tictactoe/) on every
 // reachable position and checks the JS core returns the same move, value, counts and recorded tree.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {
-  winner, legalMoves, search, reachablePositions, turnOf, EMPTY_BOARD,
+  winner, legalMoves, search, reachablePositions, turnOf, EMPTY_BOARD, LEVELS,
 } from '../../web/js/tictactoe-core.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -59,8 +59,9 @@ test('turnOf follows the mark counts', () => {
 });
 
 // Python reference: positions for every reachable in-play board, with the search result for its side to move.
-function pythonPositions() {
-  const raw = execFileSync(PYTHON, ['-m', 'tictactoe', 'positions'], {
+// depth (optional) caps both searches at that many plies.
+function pythonPositions(depth = null) {
+  const raw = execFileSync(PYTHON, ['-m', 'tictactoe', 'positions', ...(depth === null ? [] : [String(depth)])], {
     cwd: ROOT,
     env: { ...process.env, PYTHONPATH: ROOT },
     maxBuffer: 1 << 28,
@@ -70,19 +71,23 @@ function pythonPositions() {
 }
 
 let reference = null;
+let medium = null;
 try {
   reference = pythonPositions();
+  medium = pythonPositions(LEVELS.medium);
 } catch (err) {
-  // Without a Python that can import tictactoe, the parity test is skipped rather than failed.
+  // Skipped only when no Python was chosen; with TTT_PYTHON set (as in CI) a broken reference must fail.
+  if (process.env.TTT_PYTHON) throw err;
   reference = null;
   console.log(`# parity skipped: ${err.code || err.message.split('\n')[0]}`);
 }
 
-test('JS core agrees with the Python reference on every reachable position', { skip: !reference }, () => {
-  assert.equal(reference.length, 4520);
-  assert.deepEqual(reference.map((p) => p.board), reachablePositions());
-  for (const p of reference) {
-    const r = search(p.board, p.turn);
+// Checks the JS search against one Python dump, position by position.
+function agrees(positions, depth) {
+  assert.equal(positions.length, 4520);
+  assert.deepEqual(positions.map((p) => p.board), reachablePositions());
+  for (const p of positions) {
+    const r = search(p.board, p.turn, depth);
     assert.equal(turnOf(p.board), p.turn, p.board);
     assert.deepEqual(
       { move: r.move, value: r.value, searched: r.searched, pruned: r.pruned, tree: r.tree },
@@ -90,4 +95,22 @@ test('JS core agrees with the Python reference on every reachable position', { s
       `position ${p.board}`,
     );
   }
+}
+
+test('JS core agrees with the Python reference on every reachable position', { skip: !reference }, () => {
+  agrees(reference, null);
+});
+
+test('the depth-capped MEDIUM search agrees with the Python reference too', { skip: !medium }, () => {
+  agrees(medium, LEVELS.medium);
+});
+
+test('EASY blocks a threat that a one-ply search misses', () => {
+  assert.deepEqual(LEVELS, { easy: 2, medium: 4, perfect: null });
+  assert.equal(search('O.....XX.', 'O', 1).move, 1);
+  assert.equal(search('O.....XX.', 'O', LEVELS.easy).move, 8);
+});
+
+test('a depth below one is rejected', () => {
+  assert.throws(() => search(EMPTY_BOARD, 'X', 0), RangeError);
 });

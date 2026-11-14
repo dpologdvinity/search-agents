@@ -18,7 +18,7 @@ SEPARATOR = "\n---\n"
 class Corpus:
     name: str
     source: str  # the header's Source line
-    body: str    # the text after the header
+    body: str  # the text after the header
 
 
 def parse_corpus(name: str, raw: str) -> Corpus:
@@ -26,7 +26,7 @@ def parse_corpus(name: str, raw: str) -> Corpus:
     head, sep, body = raw.partition(SEPARATOR)
     if not sep:
         raise ValueError(f"corpus {name!r} has no '---' line between its header and text")
-    source = next((ln[len("Source:"):].strip() for ln in head.splitlines() if ln.startswith("Source:")), name)
+    source = next((ln[len("Source:") :].strip() for ln in head.splitlines() if ln.startswith("Source:")), name)
     return Corpus(name, source, body)
 
 

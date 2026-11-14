@@ -40,8 +40,16 @@ KL_FLOOR = 1e-6
 def play(model: str, sigma: float, seed: int, filt: str, particles: int, size: int = 15, ghosts: int = 2):
     """One autopilot game. Also returns the belief checks: the probability on each true cell (summed and counted)
     and, per ghost, whether the filtered MAP cell was right at each turn it was live."""
-    g = Game(size=size, ghosts=ghosts, model=model, sigma=sigma, seed=seed, filt=filt, particles=particles,
-             max_turns=TURN_CAP)
+    g = Game(
+        size=size,
+        ghosts=ghosts,
+        model=model,
+        sigma=sigma,
+        seed=seed,
+        filt=filt,
+        particles=particles,
+        max_turns=TURN_CAP,
+    )
     mass_sum, mass_n = 0.0, 0
     hits: dict[int, list[bool]] = {gh.id: [] for gh in g.ghosts}
     while not g.done:
@@ -78,13 +86,19 @@ def play_block(seeds: int, size: int, ghosts: int) -> list[dict]:
                     all_busted += int(g.busted == ghosts)
                     mass_sum += ms
                     mass_n += mn
-                rows.append({
-                    "model": model, "noise": name, "sigma": sigma,
-                    "filter": "exact" if filt == "exact" else f"particles-{n}",
-                    "turns_mean": sum(turns) / len(turns), "turns_median": sorted(turns)[len(turns) // 2],
-                    "all_busted": all_busted / seeds, "true_mass": mass_sum / max(1, mass_n),
-                    "seconds_per_game": secs / seeds,
-                })
+                rows.append(
+                    {
+                        "model": model,
+                        "noise": name,
+                        "sigma": sigma,
+                        "filter": "exact" if filt == "exact" else f"particles-{n}",
+                        "turns_mean": sum(turns) / len(turns),
+                        "turns_median": sorted(turns)[len(turns) // 2],
+                        "all_busted": all_busted / seeds,
+                        "true_mass": mass_sum / max(1, mass_n),
+                        "seconds_per_game": secs / seeds,
+                    }
+                )
     return rows
 
 
@@ -106,9 +120,16 @@ def viterbi_block(seeds: int, size: int, ghosts: int) -> list[dict]:
                         v_hit += int(cell == gh.true[t])
                         m_hit += int(hits[gh.id][t])
                         n_turns += 1
-            rows.append({"model": model, "noise": name, "sigma": sigma,
-                         "viterbi_acc": v_hit / max(1, n_turns), "filtered_map_acc": m_hit / max(1, n_turns),
-                         "scored_turns": n_turns})
+            rows.append(
+                {
+                    "model": model,
+                    "noise": name,
+                    "sigma": sigma,
+                    "viterbi_acc": v_hit / max(1, n_turns),
+                    "filtered_map_acc": m_hit / max(1, n_turns),
+                    "scored_turns": n_turns,
+                }
+            )
     return rows
 
 
@@ -123,10 +144,11 @@ def convergence_block(seeds: int, size: int, ghosts: int) -> list[dict]:
             g, _, _, _ = play("random", sigma, seed, "exact", 0, size, ghosts)
             for gh in g.ghosts:
                 readings = gh.readings
-                players = g.players[:len(readings)]
+                players = g.players[: len(readings)]
                 exact = ExactFilter(g.maze, "random", g.prior, g.emis)
-                pfs = {n: ParticleFilter(g.maze, "random", g.prior, g.emis, n,
-                                         _rng(seed, gh.id, n)) for n in CONVERGENCE_N}
+                pfs = {
+                    n: ParticleFilter(g.maze, "random", g.prior, g.emis, n, _rng(seed, gh.id, n)) for n in CONVERGENCE_N
+                }
                 for t, r in enumerate(readings):
                     if t > 0:
                         exact.predict(players[t])
@@ -143,10 +165,16 @@ def convergence_block(seeds: int, size: int, ghosts: int) -> list[dict]:
                         kls[n].append(kl(e, q))
                         mass_pf[n].append(q[truth])
         for n in CONVERGENCE_N:
-            out.append({"noise": name, "sigma": sigma, "particles": n,
-                        "kl_mean": sum(kls[n]) / len(kls[n]),
-                        "true_mass_pf": sum(mass_pf[n]) / len(mass_pf[n]),
-                        "true_mass_exact": sum(mass_ex) / len(mass_ex)})
+            out.append(
+                {
+                    "noise": name,
+                    "sigma": sigma,
+                    "particles": n,
+                    "kl_mean": sum(kls[n]) / len(kls[n]),
+                    "true_mass_pf": sum(mass_pf[n]) / len(mass_pf[n]),
+                    "true_mass_exact": sum(mass_ex) / len(mass_ex),
+                }
+            )
     return out
 
 
@@ -158,9 +186,18 @@ def _rng(seed: int, gid: int, n: int):
 def run(play_seeds: int = 12, conv_seeds: int = 6, size: int = 15, ghosts: int = 2) -> dict:
     """All three experiments with the committed seeds. Returns a JSON-ready dict."""
     return {
-        "config": {"size": size, "ghosts": ghosts, "play_seeds": play_seeds, "convergence_seeds": conv_seeds,
-                   "turn_cap": TURN_CAP, "stay_p": motion.STAY_P, "straight_p": motion.STRAIGHT_P,
-                   "beta": motion.BETA, "sigmas": SIGMAS, "bust_threshold": agent.BUST_THRESHOLD},
+        "config": {
+            "size": size,
+            "ghosts": ghosts,
+            "play_seeds": play_seeds,
+            "convergence_seeds": conv_seeds,
+            "turn_cap": TURN_CAP,
+            "stay_p": motion.STAY_P,
+            "straight_p": motion.STRAIGHT_P,
+            "beta": motion.BETA,
+            "sigmas": SIGMAS,
+            "bust_threshold": agent.BUST_THRESHOLD,
+        },
         "play": play_block(play_seeds, size, ghosts),
         "viterbi": viterbi_block(play_seeds, size, ghosts),
         "convergence": convergence_block(conv_seeds, size, ghosts),
@@ -169,22 +206,36 @@ def run(play_seeds: int = 12, conv_seeds: int = 6, size: int = 15, ghosts: int =
 
 def markdown(result: dict) -> str:
     """The benchmark as three Markdown tables, the same ones the CLI prints and the page quotes."""
-    lines = ["| motion | noise (sigma) | filter | turns (mean) | turns (median) | all busted | true-cell mass "
-             "| s/game |", "|---|---|---|---:|---:|---:|---:|---:|"]
+    lines = [
+        "| motion | noise (sigma) | filter | turns (mean) | turns (median) | all busted | true-cell mass | s/game |",
+        "|---|---|---|---:|---:|---:|---:|---:|",
+    ]
     for r in result["play"]:
-        lines.append(f"| {r['model']} | {r['noise']} ({r['sigma']}) | {r['filter']} | {r['turns_mean']:.1f} | "
-                     f"{r['turns_median']} | {r['all_busted']:.0%} | {r['true_mass']:.3f} | "
-                     f"{r['seconds_per_game']:.3f} |")
-    lines += ["", "| motion | noise (sigma) | Viterbi path accuracy | filtered MAP accuracy | scored turns |",
-              "|---|---|---:|---:|---:|"]
+        lines.append(
+            f"| {r['model']} | {r['noise']} ({r['sigma']}) | {r['filter']} | {r['turns_mean']:.1f} | "
+            f"{r['turns_median']} | {r['all_busted']:.0%} | {r['true_mass']:.3f} | "
+            f"{r['seconds_per_game']:.3f} |"
+        )
+    lines += [
+        "",
+        "| motion | noise (sigma) | Viterbi path accuracy | filtered MAP accuracy | scored turns |",
+        "|---|---|---:|---:|---:|",
+    ]
     for r in result["viterbi"]:
-        lines.append(f"| {r['model']} | {r['noise']} ({r['sigma']}) | {r['viterbi_acc']:.3f} | "
-                     f"{r['filtered_map_acc']:.3f} | {r['scored_turns']} |")
-    lines += ["", "| noise (sigma) | particles | KL(exact to particles) | true-cell mass (particles) | "
-                  "true-cell mass (exact) |", "|---|---:|---:|---:|---:|"]
+        lines.append(
+            f"| {r['model']} | {r['noise']} ({r['sigma']}) | {r['viterbi_acc']:.3f} | "
+            f"{r['filtered_map_acc']:.3f} | {r['scored_turns']} |"
+        )
+    lines += [
+        "",
+        "| noise (sigma) | particles | KL(exact to particles) | true-cell mass (particles) | true-cell mass (exact) |",
+        "|---|---:|---:|---:|---:|",
+    ]
     for r in result["convergence"]:
-        lines.append(f"| {r['noise']} ({r['sigma']}) | {r['particles']} | {r['kl_mean']:.4f} | "
-                     f"{r['true_mass_pf']:.3f} | {r['true_mass_exact']:.3f} |")
+        lines.append(
+            f"| {r['noise']} ({r['sigma']}) | {r['particles']} | {r['kl_mean']:.4f} | "
+            f"{r['true_mass_pf']:.3f} | {r['true_mass_exact']:.3f} |"
+        )
     return "\n".join(lines)
 
 

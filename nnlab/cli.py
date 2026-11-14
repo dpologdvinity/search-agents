@@ -60,19 +60,31 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("train", help="train on a preset dataset and report the result")
     t.add_argument("--data", choices=PRESETS, default=DEFAULTS["data"], help="preset dataset")
     t.add_argument("--n", type=_at_least(2), default=DEFAULTS["n"], help="number of points, at least 2")
-    t.add_argument("--layers", type=_ints, default=tuple(DEFAULTS["hidden"]),
-                   help="hidden layer widths, comma separated, e.g. 8,8 (0 for none)")
+    t.add_argument(
+        "--layers",
+        type=_ints,
+        default=tuple(DEFAULTS["hidden"]),
+        help="hidden layer widths, comma separated, e.g. 8,8 (0 for none)",
+    )
     t.add_argument("--act", choices=ACTIVATIONS, default=DEFAULTS["act"], help="hidden activation")
-    t.add_argument("--features", type=_features, default=tuple(DEFAULTS["features"]),
-                   help="input features, comma separated from " + ", ".join(FEATURES))
+    t.add_argument(
+        "--features",
+        type=_features,
+        default=tuple(DEFAULTS["features"]),
+        help="input features, comma separated from " + ", ".join(FEATURES),
+    )
     t.add_argument("--epochs", type=_at_least(0), default=DEFAULTS["epochs"])
     t.add_argument("--lr", type=float, default=DEFAULTS["lr"], help="learning rate")
     t.add_argument("--batch", type=_at_least(0), default=DEFAULTS["batch"], help="mini-batch size (0 for full batch)")
     t.add_argument("--l2", type=float, default=DEFAULTS["l2"], help="L2 weight penalty (lambda)")
     t.add_argument("--optimizer", choices=OPTIMIZERS, default=DEFAULTS["optimizer"])
     t.add_argument("--noise", type=float, default=DEFAULTS["noise"], help="jitter added to the points")
-    t.add_argument("--test-frac", type=_test_fraction, default=DEFAULTS["test_frac"],
-                   help="fraction held out for test, strictly between 0 and 1")
+    t.add_argument(
+        "--test-frac",
+        type=_test_fraction,
+        default=DEFAULTS["test_frac"],
+        help="fraction held out for test, strictly between 0 and 1",
+    )
     t.add_argument("--seed", type=int, default=DEFAULTS["seed"])
     t.add_argument("--every", type=int, default=0, help="print a line every N epochs (default: about 10 lines)")
     t.add_argument("--no-ascii", action="store_true", help="skip the decision boundary drawing")
@@ -84,14 +96,26 @@ def cmd_train(args: argparse.Namespace) -> int:
         print("error: layer widths must be >= 1", file=sys.stderr)
         return 2
     cfg = TrainConfig(
-        data=args.data, n=args.n, seed=args.seed, noise=args.noise, features=args.features,
-        test_frac=args.test_frac, hidden=args.layers, act=args.act, lr=args.lr, batch=args.batch,
-        l2=args.l2, optimizer=args.optimizer, epochs=args.epochs,
+        data=args.data,
+        n=args.n,
+        seed=args.seed,
+        noise=args.noise,
+        features=args.features,
+        test_frac=args.test_frac,
+        hidden=args.layers,
+        act=args.act,
+        lr=args.lr,
+        batch=args.batch,
+        l2=args.l2,
+        optimizer=args.optimizer,
+        epochs=args.epochs,
     )
     every = args.every if args.every > 0 else max(1, cfg.epochs // 10)
 
-    print(f"data={cfg.data} n={cfg.n} features={','.join(cfg.features)} layers={list(cfg.hidden)} "
-          f"act={cfg.act} opt={cfg.optimizer} lr={cfg.lr} batch={cfg.batch} l2={cfg.l2} seed={cfg.seed}")
+    print(
+        f"data={cfg.data} n={cfg.n} features={','.join(cfg.features)} layers={list(cfg.hidden)} "
+        f"act={cfg.act} opt={cfg.optimizer} lr={cfg.lr} batch={cfg.batch} l2={cfg.l2} seed={cfg.seed}"
+    )
     print(f"{'epoch':>6}  {'train loss':>10}  {'train acc':>9}  {'test loss':>10}  {'test acc':>8}")
 
     def show(epoch, history):

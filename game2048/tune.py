@@ -72,21 +72,33 @@ def evaluate(paths, games: int, seed: int, out: Path, command: str):
         scores = greedy_scores(np.array(load_weights(path)), games, seed=seed).astype(float)
         std = scores.std(ddof=1)
         half = 1.96 * std / np.sqrt(games)
-        rows.append({"file": str(path), "smooth": recorded["weights"]["smooth"],
-                     "mean": float(scores.mean()), "std": float(std),
-                     "ci95": [float(scores.mean() - half), float(scores.mean() + half)],
-                     "recorded_greedy_mean_score": recorded.get("greedy_mean_score")})
+        rows.append(
+            {
+                "file": str(path),
+                "smooth": recorded["weights"]["smooth"],
+                "mean": float(scores.mean()),
+                "std": float(std),
+                "ci95": [float(scores.mean() - half), float(scores.mean() + half)],
+                "recorded_greedy_mean_score": recorded.get("greedy_mean_score"),
+            }
+        )
         print(json.dumps(rows[-1]), flush=True)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"command": command, "games": games, "seed": seed, "results": rows}, indent=1))
-    lines = [f"Command: `{command}`", "",
-             f"Greedy one-move lookahead, {games} games, one batch seed {seed}; 95% normal interval.", "",
-             "| Weights file | Smoothness weight | Mean score (95% CI) | Std | Recorded greedy_mean_score |",
-             "|---|---|---|---|---|"]
+    lines = [
+        f"Command: `{command}`",
+        "",
+        f"Greedy one-move lookahead, {games} games, one batch seed {seed}; 95% normal interval.",
+        "",
+        "| Weights file | Smoothness weight | Mean score (95% CI) | Std | Recorded greedy_mean_score |",
+        "|---|---|---|---|---|",
+    ]
     for r in rows:
-        lines.append(f"| `{r['file']}` | {r['smooth']:g} | "
-                     f"{r['mean']:,.0f} ({r['ci95'][0]:,.0f} to {r['ci95'][1]:,.0f}) | "
-                     f"{r['std']:,.0f} | {r['recorded_greedy_mean_score']:,.2f} |")
+        lines.append(
+            f"| `{r['file']}` | {r['smooth']:g} | "
+            f"{r['mean']:,.0f} ({r['ci95'][0]:,.0f} to {r['ci95'][1]:,.0f}) | "
+            f"{r['std']:,.0f} | {r['recorded_greedy_mean_score']:,.2f} |"
+        )
     out.with_suffix(".md").write_text("\n".join(lines) + "\n")
     print(f"wrote {out} and {out.with_suffix('.md')}")
 
@@ -97,12 +109,17 @@ def main(argv=None):
     p.add_argument("--population", type=int, default=16)
     p.add_argument("--elite", type=int, default=4)
     p.add_argument("--games", type=int, default=200, help="games per candidate per generation")
-    p.add_argument("--seed", type=int, default=0,
-                   help="seeds the Gaussian sampler (with --evaluate: the shared game seed)")
+    p.add_argument(
+        "--seed", type=int, default=0, help="seeds the Gaussian sampler (with --evaluate: the shared game seed)"
+    )
     p.add_argument("--out", type=Path, default=None, help=f"weights file to write (default {WEIGHTS})")
-    p.add_argument("--evaluate", nargs="+", type=Path, metavar="WEIGHTS_JSON",
-                   help="instead of tuning, score these weight files on held-out greedy games "
-                        "and write --out (.json and .md)")
+    p.add_argument(
+        "--evaluate",
+        nargs="+",
+        type=Path,
+        metavar="WEIGHTS_JSON",
+        help="instead of tuning, score these weight files on held-out greedy games and write --out (.json and .md)",
+    )
     args = p.parse_args(argv)
 
     if args.evaluate:
@@ -121,7 +138,7 @@ def main(argv=None):
         # Clip at zero: weights of penalty features must not turn into rewards.
         candidates = np.maximum(mean + std * rng.standard_normal((args.population, len(FEATURES))), 0.0)
         fitness = np.array([greedy_scores(w, args.games, seed=1000 + gen).mean() for w in candidates])
-        elite = candidates[np.argsort(fitness)[-args.elite:]]
+        elite = candidates[np.argsort(fitness)[-args.elite :]]
         mean, std = elite.mean(axis=0), elite.std(axis=0) + 0.05
         top = int(fitness.argmax())
         if fitness[top] > best_score:
@@ -135,15 +152,27 @@ def main(argv=None):
     pick = max(scored, key=scored.get)
     weights = final[pick] / max(final[pick].max(), 1e-12)  # scale is irrelevant to move choice
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps({
-        "weights": dict(zip(FEATURES, map(float, weights.round(4)))),
-        "method": "cross-entropy method on greedy one-move-lookahead play, weights bounded at zero",
-        "settings": {"generations": args.generations, "population": args.population, "elite": args.elite,
-                     "games_per_candidate": args.games, "seed": args.seed,
-                     "generation_seeds": "1000 + generation", "final_rescore_seed": 99,
-                     "final_rescore_games": args.games * 2},
-        "greedy_mean_score": scored[pick], "generations": history,
-    }, indent=1))
+    args.out.write_text(
+        json.dumps(
+            {
+                "weights": dict(zip(FEATURES, map(float, weights.round(4)))),
+                "method": "cross-entropy method on greedy one-move-lookahead play, weights bounded at zero",
+                "settings": {
+                    "generations": args.generations,
+                    "population": args.population,
+                    "elite": args.elite,
+                    "games_per_candidate": args.games,
+                    "seed": args.seed,
+                    "generation_seeds": "1000 + generation",
+                    "final_rescore_seed": 99,
+                    "final_rescore_games": args.games * 2,
+                },
+                "greedy_mean_score": scored[pick],
+                "generations": history,
+            },
+            indent=1,
+        )
+    )
     print(f"wrote {args.out}: {scored}")
 
 

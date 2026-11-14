@@ -83,8 +83,17 @@ class _Run:
 
     def result(self, status, path=None):
         path = path or []
-        return SearchResult(self.algorithm, status, path, len(path), self.expanded, self.generated,
-                            self.max_depth, self.max_frontier, time.perf_counter() - self.start)
+        return SearchResult(
+            self.algorithm,
+            status,
+            path,
+            len(path),
+            self.expanded,
+            self.generated,
+            self.max_depth,
+            self.max_frontier,
+            time.perf_counter() - self.start,
+        )
 
 
 def _start(board, algorithm, limits, on_expand):
@@ -194,8 +203,7 @@ def a_star(board, heuristic=manhattan, limits=None, on_expand=None):
     Many boards share each f value; among them the deeper one has the
     smaller h and is likely nearer the goal, which cuts expansions sharply.
     """
-    return best_first(board, lambda nd, n: (nd.depth + heuristic(nd.board, n), -nd.depth),
-                      "astar", limits, on_expand)
+    return best_first(board, lambda nd, n: (nd.depth + heuristic(nd.board, n), -nd.depth), "astar", limits, on_expand)
 
 
 def ucs(board, limits=None, on_expand=None):
@@ -210,8 +218,9 @@ def greedy(board, heuristic=manhattan, limits=None, on_expand=None):
 
 def weighted_a_star(board, heuristic=manhattan, weight=2.0, limits=None, on_expand=None):
     """A* with f = g + w*h. With an admissible h, the path is at most w times optimal."""
-    return best_first(board, lambda nd, n: (nd.depth + weight * heuristic(nd.board, n), -nd.depth),
-                      "wastar", limits, on_expand)
+    return best_first(
+        board, lambda nd, n: (nd.depth + weight * heuristic(nd.board, n), -nd.depth), "wastar", limits, on_expand
+    )
 
 
 def bidirectional_bfs(board, limits=None, on_expand=None):

@@ -161,15 +161,29 @@ async def meta():
     for name, rows in LAYOUTS.items():
         grid = layout_grid(name)
         info = LAYOUT_INFO[name]
-        layouts.append({"name": name, "title": info["title"], "blurb": info["blurb"],
-                        "rows": list(rows), "width": grid.width, "height": grid.height})
-    planners = [{"name": n, "title": PLANNER_INFO[n]["title"], "description": PLANNER_INFO[n]["description"]}
-                for n in PLANNERS]
+        layouts.append(
+            {
+                "name": name,
+                "title": info["title"],
+                "blurb": info["blurb"],
+                "rows": list(rows),
+                "width": grid.width,
+                "height": grid.height,
+            }
+        )
+    planners = [
+        {"name": n, "title": PLANNER_INFO[n]["title"], "description": PLANNER_INFO[n]["description"]} for n in PLANNERS
+    ]
     return {
         "layouts": layouts,
         "planners": planners,
-        "limits": {"max_robots": MAX_ROBOTS, "max_width": MAX_WIDTH, "max_height": MAX_HEIGHT,
-                   "max_nodes": MAX_NODES, "max_seconds": MAX_SECONDS},
+        "limits": {
+            "max_robots": MAX_ROBOTS,
+            "max_width": MAX_WIDTH,
+            "max_height": MAX_HEIGHT,
+            "max_nodes": MAX_NODES,
+            "max_seconds": MAX_SECONDS,
+        },
     }
 
 
@@ -180,8 +194,13 @@ async def random_route(req: RandomRequest, request: Request):
     try:
         async with request.app.state.slots.acquire():
             problem = await asyncio.to_thread(
-                random_instance, grid, req.robots, req.seed,
-                attempts=RANDOM_ATTEMPTS, max_nodes=RANDOM_NODES, max_seconds=RANDOM_SECONDS,
+                random_instance,
+                grid,
+                req.robots,
+                req.seed,
+                attempts=RANDOM_ATTEMPTS,
+                max_nodes=RANDOM_NODES,
+                max_seconds=RANDOM_SECONDS,
             )
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None
@@ -209,8 +228,12 @@ async def solve_route(req: SolveRequest, request: Request):
         async with request.app.state.slots.acquire():
             # The limits only reach CBS; the other planners take no budget and ignore these keyword arguments.
             result = await asyncio.to_thread(
-                solve, problem, req.planner,
-                max_nodes=req.max_nodes, max_seconds=req.max_seconds, trace_limit=TRACE_LIMIT,
+                solve,
+                problem,
+                req.planner,
+                max_nodes=req.max_nodes,
+                max_seconds=req.max_seconds,
+                trace_limit=TRACE_LIMIT,
             )
     except Busy:
         raise HTTPException(503, "server busy: try again shortly") from None

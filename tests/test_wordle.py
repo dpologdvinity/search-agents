@@ -20,11 +20,13 @@ def lex():
 
 def small_lexicon():
     """A hand-sized lexicon, so the expected numbers can be worked out by hand."""
-    return Lexicon.from_words(["crane", "slate", "trace", "abide", "apple", "allee", "llama", "hello"],
-                              ["tares", "lares"])
+    return Lexicon.from_words(
+        ["crane", "slate", "trace", "abide", "apple", "allee", "llama", "hello"], ["tares", "lares"]
+    )
 
 
 # ── Feedback rule ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "guess, answer, expected",
@@ -74,6 +76,7 @@ def test_table_handles_duplicates_in_a_small_lexicon():
 
 # ── Word lists ─────────────────────────────────────────────────────────────
 
+
 def test_bundled_lists_are_five_letter_lowercase(lex):
     assert len(lex.answers) > 1000 and len(lex.guesses) >= len(lex.answers)
     for w in lex.guesses:
@@ -92,6 +95,7 @@ def test_encode_maps_letters_to_codes():
 
 
 # ── Solver ─────────────────────────────────────────────────────────────────
+
 
 def test_scores_match_a_direct_entropy_computation(lex):
     rng = random.Random(5)
@@ -165,13 +169,20 @@ def test_benchmark_run_counts_every_answer():
 
 
 def test_benchmark_summary_table_text():
-    result = {"strategy": "x", "mean_guesses": 3.5, "failures": 2, "failure_rate": 0.2, "seconds": 0.1,
-              "distribution": {str(k): (2 if k == 1 else 0) for k in range(1, 8)}}
+    result = {
+        "strategy": "x",
+        "mean_guesses": 3.5,
+        "failures": 2,
+        "failure_rate": 0.2,
+        "seconds": 0.1,
+        "distribution": {str(k): (2 if k == 1 else 0) for k in range(1, 8)},
+    }
     text = bench.summarise([result])
     assert "| x | 3.500 |" in text and "20.00%" in text
 
 
 # ── Terminal game ──────────────────────────────────────────────────────────
+
 
 def scripted(lines):
     it = iter(lines)
@@ -248,4 +259,3 @@ def test_cli_play_rejects_an_unknown_answer():
 def test_cli_watch_runs(capsys):
     assert main(["watch", "--answer", "abide", "--delay", "0"]) == 0
     assert "guess 1" in capsys.readouterr().out
-

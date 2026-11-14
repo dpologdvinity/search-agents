@@ -68,8 +68,9 @@ def test_illegal_histories_are_refused():
 
 def test_swap_is_accepted_with_the_swap_rule_on():
     with TestClient(make_app()) as client:
-        body = client.post("/api/hexgame/move", json={"size": 5, "moves": [12, -1], "swap": True,
-                                                       "agent": "random"}).json()
+        body = client.post(
+            "/api/hexgame/move", json={"size": 5, "moves": [12, -1], "swap": True, "agent": "random"}
+        ).json()
     assert body["to_move"] == DOWN and body["winner"] is None
     assert body["move"] in range(25) and body["move"] != 12
 

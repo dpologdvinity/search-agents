@@ -66,8 +66,9 @@ def test_same_seed_gives_the_same_moves():
     assert choose(board, "chance", seed=9)[0] == choose(board, "chance", seed=9)[0]
     a, b = random.Random(4), random.Random(4)
     cells = list(board.cells)
-    assert [player("chance")(7, cells, board.to_move, a) for _ in range(30)] == \
-        [player("chance")(7, cells, board.to_move, b) for _ in range(30)]
+    assert [player("chance")(7, cells, board.to_move, a) for _ in range(30)] == [
+        player("chance")(7, cells, board.to_move, b) for _ in range(30)
+    ]
 
 
 def test_empirical_frequencies_match_the_table_on_an_empty_board():

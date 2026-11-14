@@ -70,8 +70,10 @@ def main(argv=None):
         for row in pool.imap_unordered(_solve, todo):
             done[tuple(row["board"])] = row
             save()
-            print(f"{len(done)}/{len(states)} cost={row['optimal_cost']} "
-                  f"nodes={row['expanded']:,} {row['seconds']}s", flush=True)
+            print(
+                f"{len(done)}/{len(states)} cost={row['optimal_cost']} nodes={row['expanded']:,} {row['seconds']}s",
+                flush=True,
+            )
     print(f"wrote {out}")
 
 

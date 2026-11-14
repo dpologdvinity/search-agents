@@ -82,14 +82,16 @@ def test_rollout_rejects_bad_requests(client):
 
 def test_rollout_is_rate_limited():
     with TestClient(make_app(rate=2)) as c:
-        codes = [c.post("/api/cartpole/rollout", json={"agent": "pd", "seed": i, "steps": 10}).status_code
-                 for i in range(3)]
+        codes = [
+            c.post("/api/cartpole/rollout", json={"agent": "pd", "seed": i, "steps": 10}).status_code for i in range(3)
+        ]
     assert codes == [200, 200, 429]
 
 
 def test_rollout_reports_a_fall_on_the_last_allowed_step():
     """An episode that falls exactly on its final step still fell, so the flag comes from the state, not the count."""
     from server.cartpole_api import rollout_json
+
     n = rollout_json("random", 3, 500)["steps"]
     assert n < 500  # the random agent falls well before the cap
     exact = rollout_json("random", 3, n)

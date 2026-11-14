@@ -117,12 +117,15 @@ def test_agent_shot_with_chance_never_picks_a_fired_cell(client):
     assert body["probs"][battleship_api.parse_cell("E5")] == 0.0
 
 
-@pytest.mark.parametrize("payload", [
-    {"shots": [], "agent": "hunt"},
-    {"shots": [], "agent": "chance", "seed": -1},
-    {"shots": [], "agent": "chance", "seed": 2**31},
-    {"shots": [], "agent": "chance", "seed": "x"},
-])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"shots": [], "agent": "hunt"},
+        {"shots": [], "agent": "chance", "seed": -1},
+        {"shots": [], "agent": "chance", "seed": 2**31},
+        {"shots": [], "agent": "chance", "seed": "x"},
+    ],
+)
 def test_agent_shot_rejects_bad_chance_options(client, payload):
     assert client.post("/api/battleship/agent-shot", json=payload).status_code == 422
 
@@ -130,8 +133,13 @@ def test_agent_shot_rejects_bad_chance_options(client, payload):
 def test_agent_shot_with_chance_still_refuses_a_finished_game(client):
     # Eight ships' worth of sunk reports (the full fleet) leaves nothing afloat, so the request is refused.
     shots = []
-    for cells, _length in (([0, 1, 2, 3, 4], 5), ([10, 11, 12, 13], 4), ([20, 21, 22], 3),
-                          ([30, 31, 32], 3), ([40, 41], 2)):
+    for cells, _length in (
+        ([0, 1, 2, 3, 4], 5),
+        ([10, 11, 12, 13], 4),
+        ([20, 21, 22], 3),
+        ([30, 31, 32], 3),
+        ([40, 41], 2),
+    ):
         names = [battleship_api.cell_name(c) for c in cells]
         shots += [{"cell": n, "result": "hit"} for n in names[:-1]]
         shots.append({"cell": names[-1], "result": "sunk", "ship": {"cells": names}})

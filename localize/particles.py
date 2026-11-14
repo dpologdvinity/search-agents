@@ -29,18 +29,27 @@ import numpy as np
 from .prng import Stream
 from .world import TAU, Floor, beam_angles, cast, motion, noise_sd, ray_loglik, wrap
 
-ALPHA_FAST = 0.1      # smoothing of the fast likelihood average (per step)
-ALPHA_SLOW = 0.01     # smoothing of the slow average
-KIDNAP_NATS = 2.5     # the fast average must fall this far (in log units) below the slow one before injecting
-CLUSTER_R = 1.5       # cells: particles this close to the heaviest one, and within CLUSTER_ANGLE, form its cluster
-CLUSTER_ANGLE = 0.6   # radians
+ALPHA_FAST = 0.1  # smoothing of the fast likelihood average (per step)
+ALPHA_SLOW = 0.01  # smoothing of the slow average
+KIDNAP_NATS = 2.5  # the fast average must fall this far (in log units) below the slow one before injecting
+CLUSTER_R = 1.5  # cells: particles this close to the heaviest one, and within CLUSTER_ANGLE, form its cluster
+CLUSTER_ANGLE = 0.6  # radians
 
 
 class ParticleFilter:
     """A set of N weighted pose guesses over the free cells of `floor`."""
 
-    def __init__(self, floor: Floor, n: int, rays: int, sigma: float, pdrop: float, motion_scale: float,
-                 seed: int, augmented: bool = True):
+    def __init__(
+        self,
+        floor: Floor,
+        n: int,
+        rays: int,
+        sigma: float,
+        pdrop: float,
+        motion_scale: float,
+        seed: int,
+        augmented: bool = True,
+    ):
         self.floor = floor
         self.n = n
         self.rays = rays
@@ -65,8 +74,8 @@ class ParticleFilter:
         self.injected = 0
         self.replaced = np.empty(0, dtype=np.int64)  # indices replaced by the injection on the latest tick
         self.resampled = False
-        self.ls = None   # slow log-likelihood average
-        self.lf = None   # fast log-likelihood average
+        self.ls = None  # slow log-likelihood average
+        self.lf = None  # fast log-likelihood average
         self.steps = 0
 
     def _sample_cells(self, m: int) -> None:
@@ -82,8 +91,7 @@ class ParticleFilter:
         # 1. Motion: two normals per particle, the turn noise first, then the drive noise.
         nn = self.stream.normals(2 * n)
         sr, st = noise_sd(rot, fwd, self.scale)
-        self.x, self.y, self.th = motion(walls, self.x, self.y, self.th,
-                                         rot + sr * nn[0::2], fwd + st * nn[1::2])
+        self.x, self.y, self.th = motion(walls, self.x, self.y, self.th, rot + sr * nn[0::2], fwd + st * nn[1::2])
         # 2. Sensing: each particle's expected beams, then its log-likelihood summed over beams.
         ang = beam_angles(self.th, self.rays)
         e = cast(walls, np.repeat(self.x, self.rays), np.repeat(self.y, self.rays), ang.ravel()).reshape(n, self.rays)
@@ -164,8 +172,10 @@ class ParticleFilter:
         eth = math.atan2(float((ww * np.sin(self.th)).sum()), float((ww * np.cos(self.th)).sum()))
         dx = self.x - ex
         dy = self.y - ey
-        cov = [[float((ww * dx * dx).sum()), float((ww * dx * dy).sum())],
-               [float((ww * dx * dy).sum()), float((ww * dy * dy).sum())]]
+        cov = [
+            [float((ww * dx * dx).sum()), float((ww * dx * dy).sum())],
+            [float((ww * dx * dy).sum()), float((ww * dy * dy).sum())],
+        ]
         return {"x": ex, "y": ey, "th": eth, "mass": mass, "cov": cov, "heaviest": i}
 
     def position_histogram(self) -> dict:

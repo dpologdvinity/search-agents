@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .engine import State, legal_actions
+from .engine import State, destination, legal_actions
 from .lookahead import SURVIVAL_HORIZON, survival_depths
 from .mazes import NO_CELL
 from .search import UNREACHABLE, distances
@@ -76,7 +76,7 @@ class Successor:
 def successor(state: State, action: int) -> Successor:
     """The position after Pac-Man takes `action`, before any ghost moves."""
     maze = state.maze
-    pac = maze.nbr[state.pac][action]
+    pac = destination(state, action)
     dist = distances(maze, pac)
     food = min((dist[p] for p in state.pellets), default=None)
     capsule = min((dist[p] for p in state.pellets if p in maze.powers), default=None)

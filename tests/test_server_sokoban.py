@@ -27,7 +27,7 @@ def client_for(rate: int = 30):
 def test_levels_lists_every_level_with_its_optimal_pushes():
     with client_for() as c:
         body = c.get("/api/sokoban/levels").json()
-    assert body["count"] == len(all_levels()) == 12
+    assert body["count"] == len(all_levels()) == 16
     assert [lv["name"] for lv in body["levels"]] == list(NAMES)
     assert body["levels"][0]["optimal_pushes"] == 1
 
@@ -46,7 +46,7 @@ def test_one_level_has_rows_goals_dead_squares_and_distances():
 def test_level_number_out_of_range_is_404():
     with client_for() as c:
         assert c.get("/api/sokoban/level/0").status_code == 404
-        assert c.get("/api/sokoban/level/13").status_code == 404
+        assert c.get("/api/sokoban/level/17").status_code == 404
 
 
 def test_solve_the_warm_up_level():
@@ -60,8 +60,10 @@ def test_solve_the_warm_up_level():
 
 def test_solve_reports_budget_exhaustion_without_a_plan():
     with client_for() as c:
-        body = c.post("/api/sokoban/solve", json={"level": 12, "algorithm": "bfs", "prune": False,
-                                                    "heuristic": "none", "budget": 40}).json()
+        body = c.post(
+            "/api/sokoban/solve",
+            json={"level": 12, "algorithm": "bfs", "prune": False, "heuristic": "none", "budget": 40},
+        ).json()
     assert body["status"] == "budget" and body["solved"] is False and body["moves"] is None
 
 

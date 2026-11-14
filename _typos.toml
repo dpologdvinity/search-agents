@@ -1,0 +1,32 @@
+# typos config: https://github.com/crate-ci/typos
+[files]
+extend-exclude = [
+  "*.{gif,png,jpg,jpeg,webp,ico,svg,pdf,woff,woff2,ttf}",
+  # Vendored third-party library (minified).
+  "web/vendor/**",
+  # Word lists and public-domain corpora: archaic/elided spellings and non-words by design.
+  "wordle/data/*.txt",
+  "markov/data/*.txt",
+  "web/data/markov/*.txt",
+  # Generated benchmark output echoing word-list entries.
+  "results/*.json",
+]
+
+[default]
+# Key hints that bracket the shortcut letter, e.g. blackjack's "[t]ake a card".
+extend-ignore-re = ["\\[[a-z]\\][a-z]+"]
+
+[default.extend-words]
+# Short, standard abbreviations used as variable and CSS/DOM names.
+"nd" = "nd"       # node (tree and search code), Unicode category Nd
+"ba" = "ba"       # block/best "a" variables; "Kingma and Ba" (Adam paper author)
+"ded" = "ded"     # DEDUCE (line-solver) state and element ids in the nonogram page
+"lik" = "lik"     # per-particle likelihood array
+"lits" = "lits"   # SAT literals
+"strat" = "strat" # strategy
+"vor" = "vor"     # Voronoi canvas
+"yhat" = "yhat"   # predicted value
+"dout" = "dout"   # output dimension of a layer
+"ser" = "ser"     # tree serializer helper (JS ser() / Python _ser())
+"cpy" = "cpy"     # copy-button CSS class
+"pn" = "pn"       # 6PN (Fly.io private network)

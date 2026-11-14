@@ -31,7 +31,7 @@ from .particles import ParticleFilter
 ACTIONS = ("N", "E", "S", "W", ".", "bN", "bE", "bS", "bW", "b.")
 DIR_OF = {"N": 0, "E": 1, "S": 2, "W": 3, ".": 4}
 MIN_START_DISTANCE = 4  # ghosts never start this close to the player (in steps)
-TURN_CAP = 300          # a game ends after this many turns if some ghost is still free
+TURN_CAP = 300  # a game ends after this many turns if some ghost is still free
 FILTERS = ("exact", "particles")
 
 
@@ -50,13 +50,13 @@ class Ghost:
 
     def __init__(self, gid: int, x: int, rng: Rng, filt):
         self.id = gid
-        self.x = x                 # true hidden state 4*k + h
-        self.rng = rng             # world stream: motion draws and sonar draws
-        self.filter = filt         # ExactFilter or ParticleFilter over this ghost's states
+        self.x = x  # true hidden state 4*k + h
+        self.rng = rng  # world stream: motion draws and sonar draws
+        self.filter = filt  # ExactFilter or ParticleFilter over this ghost's states
         self.live = True
         self.bust_turn: int | None = None
         self.true: list[int] = [x >> 2]  # true open cell at every turn it was live (ends at the bust turn)
-        self.readings: list[int] = []    # sonar readings, one per turn it was live
+        self.readings: list[int] = []  # sonar readings, one per turn it was live
 
     @property
     def k(self) -> int:
@@ -69,8 +69,17 @@ class Game:
     filt="exact" runs the forward algorithm; filt="particles" uses `particles` samples per ghost.
     """
 
-    def __init__(self, size: int = 15, ghosts: int = 2, model: str = "random", sigma: float = 1.0,
-                 seed: int = 1, filt: str = "exact", particles: int = 200, max_turns: int = TURN_CAP):
+    def __init__(
+        self,
+        size: int = 15,
+        ghosts: int = 2,
+        model: str = "random",
+        sigma: float = 1.0,
+        seed: int = 1,
+        filt: str = "exact",
+        particles: int = 200,
+        max_turns: int = TURN_CAP,
+    ):
         if model not in motion.MODELS:
             raise ValueError(f"model must be one of {motion.MODELS}")
         if filt not in FILTERS:
@@ -81,8 +90,12 @@ class Game:
         self.filt, self.particles, self.max_turns = filt, particles, max_turns
         self.maze = Maze(size, generate(size, seed))
         self.emis = sonar.emission_table(sigma, self.maze.diameter)
-        eligible = [4 * k + h for k in range(self.maze.K) for h in range(4)
-                    if self.maze.dist[k][self.maze.start] >= MIN_START_DISTANCE]
+        eligible = [
+            4 * k + h
+            for k in range(self.maze.K)
+            for h in range(4)
+            if self.maze.dist[k][self.maze.start] >= MIN_START_DISTANCE
+        ]
         self.eligible = eligible
         # The prior is what every filter starts from: uniform over eligible (cell, heading) states.
         self.prior = [0.0] * (4 * self.maze.K)
@@ -98,8 +111,9 @@ class Game:
             if filt == "exact":
                 f = ExactFilter(self.maze, model, self.prior, self.emis)
             else:
-                f = ParticleFilter(self.maze, model, self.prior, self.emis, particles,
-                                   Rng(seed + 7919 * (g + 1) + 0x10000))
+                f = ParticleFilter(
+                    self.maze, model, self.prior, self.emis, particles, Rng(seed + 7919 * (g + 1) + 0x10000)
+                )
             self.ghosts.append(Ghost(g, x, rng, f))
         for gh in self.ghosts:  # the first ping, before anyone has acted
             self._ping(gh)
@@ -194,5 +208,9 @@ class Game:
     def trace(self, gid: int) -> dict:
         """Everything the page needs to replay one ghost: its true cells, the Viterbi cells and the readings."""
         gh = self.ghosts[gid]
-        return {"true": list(gh.true), "viterbi": self.viterbi_path(gid), "readings": list(gh.readings),
-                "bust_turn": gh.bust_turn}
+        return {
+            "true": list(gh.true),
+            "viterbi": self.viterbi_path(gid),
+            "readings": list(gh.readings),
+            "bust_turn": gh.bust_turn,
+        }

@@ -34,8 +34,16 @@ OPPONENT_LABELS = {
 }
 
 ACTION_WORDS = {
-    "k": CHECK, "check": CHECK, "b": BET, "bet": BET, "c": CALL, "call": CALL,
-    "r": RAISE, "raise": RAISE, "f": FOLD, "fold": FOLD,
+    "k": CHECK,
+    "check": CHECK,
+    "b": BET,
+    "bet": BET,
+    "c": CALL,
+    "call": CALL,
+    "r": RAISE,
+    "raise": RAISE,
+    "f": FOLD,
+    "fold": FOLD,
 }
 # The same actions as they read after "you" (base verb) and after "the bot" (third person).
 YOU_WORDS = {CHECK: "check", BET: "bet", CALL: "call", RAISE: "raise", FOLD: "fold"}
@@ -83,8 +91,7 @@ def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, o
             mine = put0 if me == 0 else put1
             pot = put0 + put1
             pub = card_name(state.public) if _public_shown(state) else "hidden"
-            out(f"  Your card: {card_name(state.cards[me])}   public: {pub}   pot: {pot}   "
-                f"you have put in: {mine}")
+            out(f"  Your card: {card_name(state.cards[me])}   public: {pub}   pot: {pot}   you have put in: {mine}")
             acts = state.actions()
             out(f"  Legal: {_legal_text(acts)}")
             while True:
@@ -110,26 +117,33 @@ def play_hand(state, me: int, bot_table: dict, rng: random.Random, read=input, o
             state = state.apply(action)
     payoff = state.payoff() if me == 0 else -state.payoff()
     bot_card = card_name(state.cards[opp])
-    out(f"  the bot held {bot_card}; public {card_name(state.public)}. "
+    out(
+        f"  the bot held {bot_card}; public {card_name(state.public)}. "
         + ("You win" if payoff > 0 else "You lose" if payoff < 0 else "Split pot")
-        + f" {abs(payoff):g} chips.")
+        + f" {abs(payoff):g} chips."
+    )
     return payoff
 
 
-def session(seed: int | None, table: dict, read=input, out=print, hands: int | None = None,
-            opponent: str = "cfr") -> None:
+def session(
+    seed: int | None, table: dict, read=input, out=print, hands: int | None = None, opponent: str = "cfr"
+) -> None:
     """Keep dealing hands until q, EOF, or `hands` hands. Seats alternate, so each player gets both."""
     rng = random.Random(seed)
     bot = make_opponent(opponent, table)
     net = 0.0
     played = 0
-    out("Leduc hold'em. Six cards (two each of J, Q, K), a public card after round 1, bets of "
-        f"{BET_SIZES[0]} then {BET_SIZES[1]}, at most two bets or raises a round.")
+    out(
+        "Leduc hold'em. Six cards (two each of J, Q, K), a public card after round 1, bets of "
+        f"{BET_SIZES[0]} then {BET_SIZES[1]}, at most two bets or raises a round."
+    )
     if opponent == "cfr":
         out("The bot plays the CFR+ average strategy. Type h at any decision to see its equilibrium mix.")
     else:
-        out(f"The bot plays {OPPONENT_LABELS[opponent]}: its moves ignore its card. "
-            "Type h at any decision to see the equilibrium mix for your card.")
+        out(
+            f"The bot plays {OPPONENT_LABELS[opponent]}: its moves ignore its card. "
+            "Type h at any decision to see the equilibrium mix for your card."
+        )
     try:
         while hands is None or played < hands:
             state = deal(rng)
@@ -153,9 +167,11 @@ def cmd_train(args) -> int:
         iters = args.iterations or 10_000
         for algo in ("cfr", "cfr+"):
             r = tr.run("kuhn", algo, iters)
-            print(f"Kuhn {r.algorithm.upper()} {iters} iterations: exploitability {r.points[-1][1]:.2e}, "
-                  f"value for seat 0 {r.value:.8f} (exact -1/18 = {tr.KUHN_VALUE:.8f}, "
-                  f"error {abs(r.value - tr.KUHN_VALUE):.1e})")
+            print(
+                f"Kuhn {r.algorithm.upper()} {iters} iterations: exploitability {r.points[-1][1]:.2e}, "
+                f"value for seat 0 {r.value:.8f} (exact -1/18 = {tr.KUHN_VALUE:.8f}, "
+                f"error {abs(r.value - tr.KUHN_VALUE):.1e})"
+            )
         return 0
 
     iters = args.iterations or 10_000
@@ -163,19 +179,35 @@ def cmd_train(args) -> int:
     runs = []
     for algo in algos:
         print(f"Leduc {algo.upper()}, {iters} iterations")
-        r = tr.run("leduc", algo, iters, progress=lambda t, e: print(f"  iter {t:>6}  exploitability {e:.3e}")
-                   if t in (1, 10, 100, 1000) or t == iters else None)
+        r = tr.run(
+            "leduc",
+            algo,
+            iters,
+            progress=lambda t, e: (
+                print(f"  iter {t:>6}  exploitability {e:.3e}") if t in (1, 10, 100, 1000) or t == iters else None
+            ),
+        )
         print(f"  value for seat 0 {r.value:.5f}, {r.seconds:.0f} s")
         runs.append(r)
     if args.save:
         plus = next(r for r in runs if r.algorithm == "cfr+")
         kuhn = tr.kuhn_check(10_000)
-        print(f"Kuhn check: CFR value error {kuhn['cfr']['value_error']:.1e}, "
-              f"CFR+ value error {kuhn['cfr+']['value_error']:.1e} (exact -1/18)")
-        meta = tr.save_leduc(plus, strategy.LEDUC_STRATEGY, strategy.LEDUC_TRAINING,
-                             tr.RESULTS / "poker_train_log.jsonl", runs, extra={"kuhn_check": kuhn})
-        print(f"saved {strategy.LEDUC_STRATEGY.name}: exploitability of the rounded table "
-              f"{meta['exploitability']:.2e} chips, value {meta['value_seat0']:.5f}")
+        print(
+            f"Kuhn check: CFR value error {kuhn['cfr']['value_error']:.1e}, "
+            f"CFR+ value error {kuhn['cfr+']['value_error']:.1e} (exact -1/18)"
+        )
+        meta = tr.save_leduc(
+            plus,
+            strategy.LEDUC_STRATEGY,
+            strategy.LEDUC_TRAINING,
+            tr.RESULTS / "poker_train_log.jsonl",
+            runs,
+            extra={"kuhn_check": kuhn},
+        )
+        print(
+            f"saved {strategy.LEDUC_STRATEGY.name}: exploitability of the rounded table "
+            f"{meta['exploitability']:.2e} chips, value {meta['value_seat0']:.5f}"
+        )
     return 0
 
 
@@ -199,8 +231,7 @@ def cmd_exploit(args) -> int:
     print(f"  game value for seat 0:       {value:+.6f} chips")
     print(f"  best response, seat 0:       {br0:+.6f}")
     print(f"  best response, seat 1:       {br1:+.6f}")
-    print(f"  exploitability:              {expl:.3e} chips per hand "
-          f"({1000 * expl / big_blind:.4f} milli-big-blinds)")
+    print(f"  exploitability:              {expl:.3e} chips per hand ({1000 * expl / big_blind:.4f} milli-big-blinds)")
     if args.game == "kuhn":
         print(f"  exact value -1/18:           {tr.KUHN_VALUE:+.6f}")
     return 0
@@ -217,8 +248,10 @@ def cmd_match(args) -> int:
     r = head_to_head(ai, opp, deals, args.seed)
     seconds = time.time() - start
     lo, hi = r.ci95_mbb()
-    print(f"Poker match, seed {args.seed}: {OPPONENT_LABELS['cfr']} (cfr) vs {OPPONENT_LABELS[args.opponent]} "
-          f"({args.opponent})")
+    print(
+        f"Poker match, seed {args.seed}: {OPPONENT_LABELS['cfr']} (cfr) vs {OPPONENT_LABELS[args.opponent]} "
+        f"({args.opponent})"
+    )
     print(f"  {r.hands:,} hands ({deals:,} deals, each played in both seats), {seconds:.1f} s")
     print(f"  CFR+ side: {r.mbb_per_hand:+.1f} mbb/hand, 95% CI [{lo:+.1f}, {hi:+.1f}]")
     print(f"  CFR+ side: {r.mean_chips:+.4f} chips/hand, {r.mean_chips * r.hands:+.1f} chips over the match")
@@ -235,12 +268,17 @@ def cmd_benchmark(args) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m poker",
-                                     description="Leduc hold'em against a CFR+ bot, and the CFR tools behind it.")
+    parser = argparse.ArgumentParser(
+        prog="python -m poker", description="Leduc hold'em against a CFR+ bot, and the CFR tools behind it."
+    )
     parser.add_argument("--seed", type=int, help="seed the deals and the bot, for a repeatable session")
     parser.add_argument("--hands", type=int, help="stop after this many hands (default: until q)")
-    parser.add_argument("--opponent", choices=OPPONENTS, default="cfr",
-                        help="who you play: cfr (the CFR+ average strategy) or chance (fixed odds)")
+    parser.add_argument(
+        "--opponent",
+        choices=OPPONENTS,
+        default="cfr",
+        help="who you play: cfr (the CFR+ average strategy) or chance (fixed odds)",
+    )
     sub = parser.add_subparsers(dest="command")
 
     t = sub.add_parser("train", help="train CFR or CFR+ and measure exploitability")

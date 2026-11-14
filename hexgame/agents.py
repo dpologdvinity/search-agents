@@ -19,7 +19,7 @@ AGENTS = {
     "shortest": "One-ply shortest-path race: the move that most lengthens the opponent's distance.",
     "random": "Uniform random legal move.",
     "chance": "Chance (fixed odds): a random empty cell weighted 4/3/2/1 by hex ring from the centre "
-              "(rings 0/1/2/3+), renormalised over empty cells. No search, evaluation or lookahead.",
+    "(rings 0/1/2/3+), renormalised over empty cells. No search, evaluation or lookahead.",
 }
 
 # Fixed weight for the chance opponent, by hex distance from the centre cell (ring 0 is the centre,
@@ -72,13 +72,19 @@ def chance_move(n: int, cells, rng: random.Random) -> int:
 
 def _mcts_move(board: Board, agent: str, sims: int, seconds, seed):
     """Run the search for the mover. Returns (cell, search result)."""
-    res = search(board.n, board.cells, board.to_move, sims=sims, seconds=seconds,
-                 rave=(agent == "rave"), seed=seed)
+    res = search(board.n, board.cells, board.to_move, sims=sims, seconds=seconds, rave=(agent == "rave"), seed=seed)
     return res["move"], res
 
 
-def choose(board: Board, agent: str = "rave", *, level: int = 2, sims: int | None = None,
-           seconds: float | None = None, seed: int | None = None) -> tuple[int, dict]:
+def choose(
+    board: Board,
+    agent: str = "rave",
+    *,
+    level: int = 2,
+    sims: int | None = None,
+    seconds: float | None = None,
+    seed: int | None = None,
+) -> tuple[int, dict]:
     """The agent's move for `board`, with an analysis dict explaining the choice.
 
     At the second player's first turn with the swap rule on, the agent compares two searches: one for
@@ -97,8 +103,14 @@ def choose(board: Board, agent: str = "rave", *, level: int = 2, sims: int | Non
         # No search and no swap: the odds are the whole decision, and the analysis carries them.
         cells = list(board.cells)
         move = chance_move(board.n, cells, rng)
-        return move, {"agent": agent, "sims": 0, "playouts": 0, "seconds": 0.0,
-                      "odds": [round(p, 4) for p in chance_odds(board.n, cells)], "swap": None}
+        return move, {
+            "agent": agent,
+            "sims": 0,
+            "playouts": 0,
+            "seconds": 0.0,
+            "odds": [round(p, 4) for p in chance_odds(board.n, cells)],
+            "swap": None,
+        }
 
     budget = LEVELS[level]
     sims = budget["sims"] if sims is None else sims
@@ -106,21 +118,38 @@ def choose(board: Board, agent: str = "rave", *, level: int = 2, sims: int | Non
     swap_note = None
     if board.swap_rule and len(board.moves) == 1 and board.to_move == ACROSS:
         # The second player's first turn: estimate win chance for staying and for swapping.
-        stay = search(board.n, board.cells, board.to_move, sims=sims, seconds=seconds,
-                      rave=(agent == "rave"), seed=rng.randrange(2**32))
+        stay = search(
+            board.n,
+            board.cells,
+            board.to_move,
+            sims=sims,
+            seconds=seconds,
+            rave=(agent == "rave"),
+            seed=rng.randrange(2**32),
+        )
         swapped = list(board.cells)
         first = board.moves[0]
         swapped[first] = other(swapped[first])
-        after = search(board.n, swapped, DOWN, sims=sims, seconds=seconds,
-                       rave=(agent == "rave"), seed=rng.randrange(2**32))
+        after = search(
+            board.n, swapped, DOWN, sims=sims, seconds=seconds, rave=(agent == "rave"), seed=rng.randrange(2**32)
+        )
         win_stay = stay["value"]
         win_swap = round(1 - after["value"], 4)  # `after` is from DOWN's view, to move after the swap
         swap_note = {"stay": win_stay, "swap": win_swap, "chose": "swap" if win_swap > win_stay else "play"}
         if win_swap > win_stay:
-            return SWAP, {"agent": agent, "sims": stay["sims"] + after["sims"], "playouts":
-                          stay["playouts"] + after["playouts"], "seconds": stay["seconds"] + after["seconds"],
-                          "swap": swap_note, "value": win_swap, "pv": [], "visits": None,
-                          "win_rate": None, "rave_rate": None, "rave": agent == "rave"}
+            return SWAP, {
+                "agent": agent,
+                "sims": stay["sims"] + after["sims"],
+                "playouts": stay["playouts"] + after["playouts"],
+                "seconds": stay["seconds"] + after["seconds"],
+                "swap": swap_note,
+                "value": win_swap,
+                "pv": [],
+                "visits": None,
+                "win_rate": None,
+                "rave_rate": None,
+                "rave": agent == "rave",
+            }
         res = stay
         move = stay["move"]
     else:
@@ -139,6 +168,7 @@ def player(name: str, sims: int | None = None):
         def play(n, cells, to_move, rng):
             res = search(n, cells, to_move, sims=budget, rave=(name == "rave"), seed=rng.randrange(2**32))
             return res["move"]
+
         return play
     if name == "shortest":
         return lambda n, cells, to_move, rng: shortest_path_move(n, list(cells), to_move, rng)

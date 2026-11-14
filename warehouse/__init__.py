@@ -36,15 +36,12 @@ PLANNER_INFO = {
     "prioritized": {
         "title": "Prioritized planning",
         "description": (
-            "Plans robots one at a time, treating earlier paths as moving obstacles. "
-            "Fast, but can fail or cost more."
+            "Plans robots one at a time, treating earlier paths as moving obstacles. Fast, but can fail or cost more."
         ),
     },
     "independent": {
         "title": "Independent A*",
-        "description": (
-            "Each robot ignores the others. Fastest, and the collisions it leaves are what CBS solves."
-        ),
+        "description": ("Each robot ignores the others. Fastest, and the collisions it leaves are what CBS solves."),
     },
 }
 
@@ -61,7 +58,21 @@ def solve(problem: Problem, planner: str = "cbs", **limits) -> PlanResult:
 
 
 __all__ = [
-    "LAYOUTS", "LAYOUT_INFO", "PLANNERS", "PLANNER_INFO", "Conflict", "Grid", "PlanResult", "Problem",
-    "cbs", "find_conflicts", "independent", "layout_grid", "makespan", "prioritized",
-    "random_instance", "solve", "sum_of_costs",
+    "LAYOUTS",
+    "LAYOUT_INFO",
+    "PLANNERS",
+    "PLANNER_INFO",
+    "Conflict",
+    "Grid",
+    "PlanResult",
+    "Problem",
+    "cbs",
+    "find_conflicts",
+    "independent",
+    "layout_grid",
+    "makespan",
+    "prioritized",
+    "random_instance",
+    "solve",
+    "sum_of_costs",
 ]

@@ -9,7 +9,7 @@ import random
 
 import pytest
 
-from warehouse import Grid, Problem, cbs, independent, layout_grid, prioritized, random_instance
+from warehouse import LAYOUTS, Grid, Problem, cbs, independent, layout_grid, prioritized, random_instance
 from warehouse.conflicts import find_conflicts, makespan, sum_of_costs
 from warehouse.space_time import EdgeConstraint, Reservations, VertexConstraint, space_time_astar
 
@@ -51,6 +51,7 @@ def brute_min_soc(problem, H=9):
 
 # Single-robot space-time search
 
+
 def test_vertex_constraint_forces_a_wait_and_the_arrival_is_minimal():
     # On a 1-row corridor 0..5, blocking cell 2 at time 2 forces one wait at cell 1.
     # The fastest legal walk is 0,1,1,2,3,4,5: arrival at time 6.
@@ -89,6 +90,7 @@ def test_parked_robot_blocks_its_cell_for_good():
 
 # Collision detection
 
+
 def test_find_conflicts_vertex_and_edge_and_none():
     vertex = find_conflicts([(0, 1, 2), (3, 4, 2)])  # both robots stand on cell 2 at time 2
     assert len(vertex) == 1
@@ -108,6 +110,7 @@ def test_sum_of_costs_and_makespan_clamp_finished_robots():
 
 
 # Baselines
+
 
 def test_independent_astar_swap_on_a_two_cell_corridor_is_an_edge_conflict():
     g = Grid([".."])
@@ -132,6 +135,7 @@ def test_prioritized_fails_on_the_swap_corridor():
 
 
 # CBS
+
 
 def test_cbs_solves_swap_corridor_with_a_wait():
     result = cbs(swap_problem())
@@ -195,6 +199,7 @@ def test_cbs_matches_brute_force_optimum_on_tiny_maps():
 
 # Limits and status
 
+
 def test_node_limit_returns_status_without_a_plan():
     result = cbs(swap_problem(), max_nodes=1)
     assert result.status == "node_limit"
@@ -220,6 +225,7 @@ def test_unsolvable_instance_never_returns_a_plan():
 
 # Problems and instances
 
+
 def test_problem_rejects_duplicate_starts_and_unreachable_goals():
     g = Grid(["...", "..."])
     with pytest.raises(ValueError, match="same cell"):
@@ -237,6 +243,14 @@ def test_random_instance_is_deterministic_and_solved():
 
 
 def test_builtin_layouts_are_connected_floor():
-    for name in ("aisles", "crossroads", "bottleneck"):
+    for name in LAYOUTS:
         grid = layout_grid(name)
         assert len(grid.largest_component()) == len(grid.floor_cells()), name
+
+
+@pytest.mark.parametrize("layout", ["serpentine", "ring", "staging"])
+def test_new_layouts_admit_collision_free_three_robot_plans(layout):
+    problem = random_instance(layout, 3, 7)
+    result = cbs(problem)
+    assert result.status == "solved"
+    assert not find_conflicts(result.paths)

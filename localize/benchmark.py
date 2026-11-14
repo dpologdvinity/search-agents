@@ -37,8 +37,18 @@ def _err(est_x: float, est_y: float, sim: Sim) -> float:
     return math.hypot(est_x - sim.x, est_y - sim.y) * CELL_M
 
 
-def run_pf(floor, sseed: int, n: int, rays: int, sigma: float, pdrop: float, scale: float,
-           steps: int = STEPS, kidnap_at: int | None = None, augmented: bool = True) -> dict:
+def run_pf(
+    floor,
+    sseed: int,
+    n: int,
+    rays: int,
+    sigma: float,
+    pdrop: float,
+    scale: float,
+    steps: int = STEPS,
+    kidnap_at: int | None = None,
+    augmented: bool = True,
+) -> dict:
     """One particle-filter trial: per-step errors (m), per-step filter time (s), and the modes seen after step 2."""
     sim = Sim(floor, sseed, rays, sigma, pdrop, scale)
     ap = Autopilot(floor, sseed + 1000)
@@ -63,8 +73,16 @@ def run_pf(floor, sseed: int, n: int, rays: int, sigma: float, pdrop: float, sca
     return {"errs": errs, "times": times, "modes": modes2, "inj": inj, "kidnap_at": kidnap_at}
 
 
-def run_grid(floor, sseed: int, rays: int, sigma: float, pdrop: float, scale: float, steps: int = STEPS,
-             kidnap_at: int | None = None) -> dict:
+def run_grid(
+    floor,
+    sseed: int,
+    rays: int,
+    sigma: float,
+    pdrop: float,
+    scale: float,
+    steps: int = STEPS,
+    kidnap_at: int | None = None,
+) -> dict:
     """One grid-filter trial. Building the grid (the sensor table) is timed separately as `init`."""
     sim = Sim(floor, sseed, rays, sigma, pdrop, scale)
     ap = Autopilot(floor, sseed + 1000)
@@ -145,8 +163,10 @@ def run(quick: bool = False) -> dict:
     d = DEFAULTS
     # Particle counts, default noise.
     for n in (100, 500, 2000):
-        runs = [run_pf(floor_for(k, f), s, n, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps)
-                for k, f, s in trials]
+        runs = [
+            run_pf(floor_for(k, f), s, n, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps)
+            for k, f, s in trials
+        ]
         row = summarise(runs, f"{n} particles")
         row["modes2"] = statistics.mean(r["modes"] for r in runs)
         rows["particles"].append(row)
@@ -155,32 +175,68 @@ def run(quick: bool = False) -> dict:
         runs = [run_pf(floor_for(k, f), s, d["n"], d["rays"], sig, d["pdrop"], 1.0, steps=steps) for k, f, s in trials]
         rows["noise"].append(summarise(runs, f"sensor sigma {sig} cells ({sig * CELL_M:.2f} m)"))
     for sc in (0.5, 2.0):
-        runs = [run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], sc, steps=steps)
-                for k, f, s in trials]
+        runs = [
+            run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], sc, steps=steps) for k, f, s in trials
+        ]
         rows["noise"].append(summarise(runs, f"odometry scale {sc}"))
     # Grid filter and particle filter, same trials.
-    grid_runs = [run_grid(floor_for(k, f), s, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps)
-                 for k, f, s in trials]
-    pf_runs = [run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps)
-               for k, f, s in trials]
+    grid_runs = [
+        run_grid(floor_for(k, f), s, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps) for k, f, s in trials
+    ]
+    pf_runs = [
+        run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=steps)
+        for k, f, s in trials
+    ]
     rows["filters"].append(summarise(grid_runs, "grid filter (16 headings, 0.25 m bins)"))
     rows["filters"][-1]["init_ms"] = 1000.0 * statistics.mean(r["init"] for r in grid_runs)
     rows["filters"].append(summarise(pf_runs, f"particle filter, {d['n']} particles"))
     # Kidnapping: the robot teleports at KIDNAP_AT; time to re-converge within REACH_M.
     kstart = 30 if quick else KIDNAP_AT
     kidnap_steps = steps
-    aug = [run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kidnap_steps,
-                  kidnap_at=kstart, augmented=True) for k, f, s in trials]
-    plain = [run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kidnap_steps,
-                    kidnap_at=kstart, augmented=False) for k, f, s in trials]
-    gkid = [run_grid(floor_for(k, f), s, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kidnap_steps,
-                     kidnap_at=kstart) for k, f, s in trials]
+    aug = [
+        run_pf(
+            floor_for(k, f),
+            s,
+            d["n"],
+            d["rays"],
+            d["sigma"],
+            d["pdrop"],
+            d["scale"],
+            steps=kidnap_steps,
+            kidnap_at=kstart,
+            augmented=True,
+        )
+        for k, f, s in trials
+    ]
+    plain = [
+        run_pf(
+            floor_for(k, f),
+            s,
+            d["n"],
+            d["rays"],
+            d["sigma"],
+            d["pdrop"],
+            d["scale"],
+            steps=kidnap_steps,
+            kidnap_at=kstart,
+            augmented=False,
+        )
+        for k, f, s in trials
+    ]
+    gkid = [
+        run_grid(
+            floor_for(k, f), s, d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kidnap_steps, kidnap_at=kstart
+        )
+        for k, f, s in trials
+    ]
     rows["kidnap"].append(summarise(aug, "augmented MCL (injection)", kidnap_at=kstart))
     rows["kidnap"].append(summarise(plain, "plain MCL (no injection)", kidnap_at=kstart))
     rows["kidnap"].append(summarise(gkid, "grid filter (exact Bayes)", kidnap_at=kstart))
     # False alarms: particles injected per step before the kidnap, with no kidnap in the run. Post-kidnap: after it.
-    calm = [run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kstart,
-                   augmented=True) for k, f, s in trials]
+    calm = [
+        run_pf(floor_for(k, f), s, d["n"], d["rays"], d["sigma"], d["pdrop"], d["scale"], steps=kstart, augmented=True)
+        for k, f, s in trials
+    ]
     rows["kidnap"][0]["false_alarm"] = statistics.mean(v for r in calm for v in r["inj"])
     rows["kidnap"][0]["post"] = statistics.mean(v for r in aug for v in r["inj"][kstart:])
     rows["kidnap"][0]["kidnap_at"] = kstart
@@ -208,28 +264,53 @@ def markdown(result: dict) -> str:
         lines.extend([f"## {title}", "", head, rule])
         for row in rows:
             med = "-" if row["median"] is None else f"{row['median']:.0f}"
-            cells = [row["label"], med, f"{row['fail']}/{row['runs']}", f"{row['err10']:.2f}",
-                     f"{row['err25']:.2f}", f"{row['err50']:.2f}", f"{row['err100']:.2f}", f"{row['ms']:.1f}"]
+            cells = [
+                row["label"],
+                med,
+                f"{row['fail']}/{row['runs']}",
+                f"{row['err10']:.2f}",
+                f"{row['err25']:.2f}",
+                f"{row['err50']:.2f}",
+                f"{row['err100']:.2f}",
+                f"{row['ms']:.1f}",
+            ]
             if extra:
                 cells.append(extra[1](row))
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
 
-    table("Particle count (default noise)", r["particles"],
-          extra=("belief modes after step 2", lambda row: f"{row['modes2']:.1f}"))
+    table(
+        "Particle count (default noise)",
+        r["particles"],
+        extra=("belief modes after step 2", lambda row: f"{row['modes2']:.1f}"),
+    )
     table("Noise (2000 particles)", r["noise"])
-    table("Grid filter vs particle filter (same trials)", r["filters"],
-          extra=("init ms", lambda row: f"{row.get('init_ms', 0):.0f}" if "init_ms" in row else "-"))
+    table(
+        "Grid filter vs particle filter (same trials)",
+        r["filters"],
+        extra=("init ms", lambda row: f"{row.get('init_ms', 0):.0f}" if "init_ms" in row else "-"),
+    )
     kid = r["kidnap"]
     a = kid[0]
-    lines.extend([f"## Kidnapped robot (teleported at step {a['kidnap_at']})", "",
-                  "| filter | median steps to recover | failures | ms/step |",
-                  "|---|---:|---:|---:|"])
+    lines.extend(
+        [
+            f"## Kidnapped robot (teleported at step {a['kidnap_at']})",
+            "",
+            "| filter | median steps to recover | failures | ms/step |",
+            "|---|---:|---:|---:|",
+        ]
+    )
     for row in kid:
         med = "-" if row["median"] is None else f"{row['median']:.0f}"
         lines.append(f"| {row['label']} | {med} | {row['fail']}/{row['runs']} | {row['ms']:.1f} |")
-    lines.extend(["", f"Augmented MCL injects {100 * a['false_alarm']:.2f}% of particles per step on average when "
-                  f"nothing is wrong, and {100 * a['post']:.1f}% per step after the kidnap.", ""])
+    lines.extend(
+        [
+            "",
+            f"Augmented MCL injects {100 * a['false_alarm']:.2f}% of particles per step on average when "
+            f"nothing is wrong, and {100 * a['post']:.1f}% per step after the kidnap.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

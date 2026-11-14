@@ -8,7 +8,7 @@ Modules, in the order a reader meets them:
   cnf        the whole puzzle as CNF (the automaton encoding)
   dpll       the DPLL solver (watched literals, pure literals, VSIDS-lite, phase saving)
   generate   random pictures that have exactly one solution
-  library    twelve hand-drawn pictures
+  library    the hand-drawn picture collection
   benchmark  the measurements in results/nonogram_benchmark.md
 """
 

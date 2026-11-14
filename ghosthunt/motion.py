@@ -20,9 +20,9 @@ from __future__ import annotations
 import math
 
 MODELS = ("random", "lurker", "patrol")
-STAY_P = 0.1       # random: chance of not moving on a turn
-BETA = 1.0         # lurker: strength of the pull toward the player (per step of distance)
-STRAIGHT_P = 0.8   # patrol: chance to keep going straight when the corridor continues
+STAY_P = 0.1  # random: chance of not moving on a turn
+BETA = 1.0  # lurker: strength of the pull toward the player (per step of distance)
+STRAIGHT_P = 0.8  # patrol: chance to keep going straight when the corridor continues
 
 
 def _random(maze, k: int, h: int) -> list[tuple[int, float]]:

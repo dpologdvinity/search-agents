@@ -15,18 +15,18 @@ from __future__ import annotations
 import math
 import random
 
-GRAVITY = 9.8          # m/s^2
-MASS_CART = 1.0        # kg
-MASS_POLE = 0.1        # kg
+GRAVITY = 9.8  # m/s^2
+MASS_CART = 1.0  # kg
+MASS_POLE = 0.1  # kg
 TOTAL_MASS = MASS_CART + MASS_POLE
-HALF_LENGTH = 0.5      # m, distance from the hinge to the pole's centre of mass
+HALF_LENGTH = 0.5  # m, distance from the hinge to the pole's centre of mass
 POLE_MASS_LENGTH = MASS_POLE * HALF_LENGTH
-FORCE = 10.0           # N, the magnitude of every push
-TAU = 0.02             # s per step (50 Hz control)
+FORCE = 10.0  # N, the magnitude of every push
+TAU = 0.02  # s per step (50 Hz control)
 THETA_LIMIT = math.radians(12)
-X_LIMIT = 2.4          # m, the track is |x| <= 2.4
-MAX_STEPS = 500        # the episode is truncated here and counts as a full balance
-INIT_RANGE = 0.05      # every state variable starts uniform in [-0.05, 0.05]
+X_LIMIT = 2.4  # m, the track is |x| <= 2.4
+MAX_STEPS = 500  # the episode is truncated here and counts as a full balance
+INIT_RANGE = 0.05  # every state variable starts uniform in [-0.05, 0.05]
 
 LEFT, RIGHT = 0, 1
 ACTIONS = (LEFT, RIGHT)
@@ -76,7 +76,8 @@ class CartPole:
         temp = (force + POLE_MASS_LENGTH * self.theta_dot * self.theta_dot * sin_t) / TOTAL_MASS
         # Angular acceleration of the pole (the 4/3 comes from the pole's moment of inertia about its end).
         theta_acc = (GRAVITY * sin_t - cos_t * temp) / (
-            HALF_LENGTH * (4.0 / 3.0 - MASS_POLE * cos_t * cos_t / TOTAL_MASS))
+            HALF_LENGTH * (4.0 / 3.0 - MASS_POLE * cos_t * cos_t / TOTAL_MASS)
+        )
         # Cart acceleration once the pole's reaction on the cart is subtracted.
         x_acc = temp - POLE_MASS_LENGTH * theta_acc * cos_t / TOTAL_MASS
         # Explicit Euler, positions first: x and theta advance with the velocities from the start of the step.

@@ -26,12 +26,12 @@ WEIGHTS = Path(__file__).parent / "data" / "ntuple_2048.npz"
 
 # Cells are numbered row-major: index = 4 * row + col. Shapes are drawn on the 4x4 board.
 PATTERNS = (
-    (0, 1, 2, 3, 4),        # 5 cells: top row plus the cell below its first tile
-    (4, 5, 6, 7, 8),        # 5 cells: second row plus the cell below its first tile
-    (0, 1, 2, 4, 5),        # 5 cells: top-left 2x3 block without its bottom-right corner
-    (4, 5, 6, 8, 9),        # 5 cells: the same block one row down
-    (0, 1, 2, 3, 4, 5),     # 6 cells: top row plus the first two cells of row 1
-    (0, 1, 2, 4, 5, 6),     # 6 cells: top-left 2x3 rectangle
+    (0, 1, 2, 3, 4),  # 5 cells: top row plus the cell below its first tile
+    (4, 5, 6, 7, 8),  # 5 cells: second row plus the cell below its first tile
+    (0, 1, 2, 4, 5),  # 5 cells: top-left 2x3 block without its bottom-right corner
+    (4, 5, 6, 8, 9),  # 5 cells: the same block one row down
+    (0, 1, 2, 3, 4, 5),  # 6 cells: top row plus the first two cells of row 1
+    (0, 1, 2, 4, 5, 6),  # 6 cells: top-left 2x3 rectangle
 )
 # The two 6-cell patterns are taken from the 4x6-tuple network of Yeh et al. (as in the
 # moporgic/TDL2048-Demo). Its other two, {4,5,6,7,8,9} and {4,5,6,8,9,10}, are left out to keep
@@ -40,6 +40,7 @@ PATTERNS = (
 
 def _symmetries():
     """The 8 maps from a cell index to its image under rotation/reflection."""
+
     def rot(i):  # 90 degrees clockwise
         r, c = divmod(i, 4)
         return 4 * c + (3 - r)

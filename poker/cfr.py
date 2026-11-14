@@ -42,7 +42,7 @@ class Solver:
 
     tree: GameTree
     algo: str = "cfr+"  # "cfr" (vanilla) or "cfr+"
-    t: int = 0          # iterations completed
+    t: int = 0  # iterations completed
     regret: list[list[float]] = field(default_factory=list)
     strat_sum: list[list[float]] = field(default_factory=list)
 
@@ -89,8 +89,16 @@ class Solver:
                     r = reg[j] + d
                     reg[j] = max(r, 0.0) if self.plus else r
 
-    def _walk(self, n: int, seat: int, pi_seat: float, pi_other: float,
-              sigma: list[list[float]], delta: list[list[float]], weight: float) -> float:
+    def _walk(
+        self,
+        n: int,
+        seat: int,
+        pi_seat: float,
+        pi_other: float,
+        sigma: list[list[float]],
+        delta: list[list[float]],
+        weight: float,
+    ) -> float:
         """Expected payoff to `seat` at node n. pi_seat and pi_other are the reach probabilities of the
         seat and of everyone else (the opponent plus chance). Regret updates use pi_other only, and the
         average strategy uses pi_seat only, which is what makes the regret counterfactual.
@@ -150,8 +158,4 @@ def train(tree: GameTree, algo: str, iterations: int, on_point=None) -> Solver:
 
 def table(tree: GameTree, avg: list[list[float]]) -> dict[str, dict[str, float]]:
     """The average strategy keyed by information-set key: {key: {action: probability}}."""
-    return {
-        tree.infosets[iid]: dict(zip(tree.info_actions[iid], avg[iid]))
-        for iid in range(len(tree.infosets))
-    }
-
+    return {tree.infosets[iid]: dict(zip(tree.info_actions[iid], avg[iid])) for iid in range(len(tree.infosets))}

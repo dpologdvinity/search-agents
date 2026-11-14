@@ -44,11 +44,11 @@ DESCRIPTIONS = {
 class Params(BaseModel):
     """Tuning knobs, each bounded so a request stays cheap."""
 
-    iterations: int = Field(60_000, ge=1_000, le=150_000)       # simulated annealing
-    cooling: float | None = Field(None, gt=0.9, lt=1.0)          # simulated annealing
-    population_size: int = Field(120, ge=10, le=200)             # genetic algorithm
-    generations: int = Field(300, ge=10, le=500)                 # genetic algorithm
-    mutation_rate: float = Field(0.3, ge=0.0, le=1.0)            # genetic algorithm
+    iterations: int = Field(60_000, ge=1_000, le=150_000)  # simulated annealing
+    cooling: float | None = Field(None, gt=0.9, lt=1.0)  # simulated annealing
+    population_size: int = Field(120, ge=10, le=200)  # genetic algorithm
+    generations: int = Field(300, ge=10, le=500)  # genetic algorithm
+    mutation_rate: float = Field(0.3, ge=0.0, le=1.0)  # genetic algorithm
     seed: int | None = None
 
 
@@ -63,8 +63,12 @@ def run(req: SolveRequest) -> dict:
     if req.algorithm == "simulated_annealing":
         kwargs = {"iterations": p.iterations, "cooling": p.cooling, "seed": p.seed}
     elif req.algorithm == "genetic_algorithm":
-        kwargs = {"population_size": p.population_size, "generations": p.generations,
-                  "mutation_rate": p.mutation_rate, "seed": p.seed}
+        kwargs = {
+            "population_size": p.population_size,
+            "generations": p.generations,
+            "mutation_rate": p.mutation_rate,
+            "seed": p.seed,
+        }
     else:
         kwargs = {}
     start = time.perf_counter()
@@ -85,8 +89,11 @@ def run(req: SolveRequest) -> dict:
 
 @router.get("/api/routes/meta")
 async def meta():
-    return {"algorithms": [{"name": k, "description": v} for k, v in DESCRIPTIONS.items()],
-            "max_cities": MAX_CITIES, "exact_limit": HELD_KARP_LIMIT}
+    return {
+        "algorithms": [{"name": k, "description": v} for k, v in DESCRIPTIONS.items()],
+        "max_cities": MAX_CITIES,
+        "exact_limit": HELD_KARP_LIMIT,
+    }
 
 
 @router.post("/api/routes/solve")

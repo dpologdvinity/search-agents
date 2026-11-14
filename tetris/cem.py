@@ -67,8 +67,14 @@ def _evaluate(task) -> float:
     return sum(play(policy, s, cap, height=height).lines for s in seeds) / len(seeds)
 
 
-def run_cem(cfg: CEMConfig, workers: int = 2, checkpoint: Path | None = None, log_path: Path | None = None,
-            resume: bool = False, out=print) -> dict:
+def run_cem(
+    cfg: CEMConfig,
+    workers: int = 2,
+    checkpoint: Path | None = None,
+    log_path: Path | None = None,
+    resume: bool = False,
+    out=print,
+) -> dict:
     """Run CEM and return {'weights', 'fitness', 'history', 'config', 'sigma', 'best'}.
 
     weights is the final mean mu. best is the best sampled vector seen (by its training score on that
@@ -101,8 +107,11 @@ def run_cem(cfg: CEMConfig, workers: int = 2, checkpoint: Path | None = None, lo
             order = sorted(range(cfg.samples), key=lambda i: -fits[i])
             elites = [samples[i] for i in order[:n_elite]]
             if fits[order[0]] > best["fitness"]:
-                best = {"fitness": round(fits[order[0]], 3), "weights": [round(w, 4) for w in samples[order[0]]],
-                        "iteration": it}
+                best = {
+                    "fitness": round(fits[order[0]], 3),
+                    "weights": [round(w, 4) for w in samples[order[0]]],
+                    "iteration": it,
+                }
             # Refit: mean of the elites, their variance, plus the decreasing extra noise z_t.
             z = noise(it, cfg)
             mu = [sum(e[j] for e in elites) / n_elite for j in range(n_feat)]
@@ -119,18 +128,27 @@ def run_cem(cfg: CEMConfig, workers: int = 2, checkpoint: Path | None = None, lo
                 "seeds": seeds,
                 "seconds": round(time.time() - t0, 1),
             }
-            history.append({k: row[k] for k in ("iteration", "best_sample", "elite_mean", "population_mean",
-                                                 "mean_sigma")})
-            out(f"iter {it:3d}  best {row['best_sample']:8.1f}  elite mean {row['elite_mean']:8.1f}  "
-                f"sigma {row['mean_sigma']:.3f}  ({row['seconds']:.0f} s)")
+            history.append(
+                {k: row[k] for k in ("iteration", "best_sample", "elite_mean", "population_mean", "mean_sigma")}
+            )
+            out(
+                f"iter {it:3d}  best {row['best_sample']:8.1f}  elite mean {row['elite_mean']:8.1f}  "
+                f"sigma {row['mean_sigma']:.3f}  ({row['seconds']:.0f} s)"
+            )
             if log_path is not None:
                 with log_path.open("a") as f:
                     f.write(json.dumps(row) + "\n")
             if checkpoint is not None and ((it + 1) % cfg.checkpoint_every == 0 or it == cfg.iterations - 1):
                 checkpoint.parent.mkdir(parents=True, exist_ok=True)
-                checkpoint.write_text(json.dumps({"iteration": it, "mu": mu, "sigma": sigma, "history": history,
-                                                  "best": best}) + "\n")
+                checkpoint.write_text(
+                    json.dumps({"iteration": it, "mu": mu, "sigma": sigma, "history": history, "best": best}) + "\n"
+                )
 
-    return {"weights": [round(w, 4) for w in mu], "sigma": [round(s, 4) for s in sigma],
-            "fitness": history[-1]["elite_mean"] if history else None, "history": history,
-            "best": best, "config": asdict(cfg)}
+    return {
+        "weights": [round(w, 4) for w in mu],
+        "sigma": [round(s, 4) for s in sigma],
+        "fitness": history[-1]["elite_mean"] if history else None,
+        "history": history,
+        "best": best,
+        "config": asdict(cfg),
+    }

@@ -32,6 +32,7 @@ def rows_from(*strings):
 
 # ── pieces ────────────────────────────────────────────────────────────────
 
+
 def test_seven_pieces_with_the_expected_rotation_counts():
     assert PIECES == "IOTSZJL"
     counts = {p: len(ROTATIONS[p]) for p in PIECES}
@@ -51,6 +52,7 @@ def test_spawn_shapes_fit_in_the_top_two_rows():
 
 
 # ── board ─────────────────────────────────────────────────────────────────
+
 
 def test_drop_puts_an_o_on_the_floor_and_on_top_of_a_stack():
     board = empty_board()
@@ -86,6 +88,7 @@ def test_render_shows_the_board_top_first():
 
 # ── features ──────────────────────────────────────────────────────────────
 
+
 def test_row_transition_table_counts_walls_as_filled():
     assert ROW_TRANSITIONS[0] == 2  # an empty row: the left wall and the right wall are the only changes
     assert ROW_TRANSITIONS[FULL] == 0
@@ -114,6 +117,7 @@ def test_feature_names_match_the_weights():
 
 # ── search and game ───────────────────────────────────────────────────────
 
+
 def test_the_search_finds_the_line_clearing_placement():
     rows = [0] * H
     rows[0] = FULL & ~0b11  # the bottom row has a two-wide gap at columns 0-1, which an O fills exactly
@@ -125,8 +129,9 @@ def test_the_search_finds_the_line_clearing_placement():
 def test_every_legal_placement_is_reachable_on_an_empty_board():
     moves = legal_moves(empty_board(), "T", HAND_WEIGHTS)
     assert len(moves) == 34  # T has two 3-wide and two 2-wide states: 8 + 9 + 8 + 9 columns to choose from
-    assert {(m.rot, m.x) for m in moves} == {(ri, px) for ri, r in enumerate(ROTATIONS["T"])
-                                             for px in range(W - r.width + 1)}
+    assert {(m.rot, m.x) for m in moves} == {
+        (ri, px) for ri, r in enumerate(ROTATIONS["T"]) for px in range(W - r.width + 1)
+    }
 
 
 def test_lookahead_with_one_candidate_is_the_greedy_choice():
@@ -170,6 +175,7 @@ def test_benchmark_smoke():
 
 # ── GA and committed weights ──────────────────────────────────────────────
 
+
 def test_ga_is_reproducible_and_returns_nine_weights(tmp_path):
     cfg = GAConfig(population=6, generations=2, train_games=1, train_pieces=40, seed=4)
     a = evolve(cfg, workers=1, log_path=tmp_path / "log.jsonl", out=lambda *_: None)
@@ -196,11 +202,13 @@ def test_games_run_on_a_shorter_board():
 
 def test_ga_generations_use_fresh_seeds():
     from tetris.evolve import generation_seeds
+
     g0, g1 = generation_seeds(0, 6), generation_seeds(1, 6)
     assert len(set(g0) | set(g1)) == 12  # no game is shared between generations
 
 
 # ── terminal game ─────────────────────────────────────────────────────────
+
 
 def test_terminal_hint_and_hard_drop():
     out = io.StringIO()
@@ -240,6 +248,7 @@ def test_cli_rejects_unknown_commands():
 
 
 # ── JavaScript engine parity ──────────────────────────────────────────────
+
 
 def _python_cases():
     """Boards from real games (several stages each) with the tuned weights and a few random ones."""
@@ -292,6 +301,7 @@ def test_js_engine_matches_python_placements_and_features(tmp_path):
 
 def test_cem_noise_shrinks_to_its_floor_and_seeds_are_disjoint():
     from tetris.cem import CEM_SEED_BASE, CEMConfig, iteration_seeds, noise
+
     cfg = CEMConfig()
     assert noise(0, cfg) == cfg.noise0
     assert noise(10**6, cfg) == cfg.noise_min

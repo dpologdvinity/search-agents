@@ -43,11 +43,19 @@ MAX_NODES_LINEAR_MEMORY = 3_000_000
 LINEAR_MEMORY = {"ids", "idastar"}
 
 
-def node_limit(algorithm: str) -> int:
-    return MAX_NODES_LINEAR_MEMORY if algorithm in LINEAR_MEMORY else MAX_NODES
+def node_limit(algorithm: str, n: int = 3) -> int:
+    """Node cap for one search on an n x n board.
+
+    IDS and IDA* keep only the current path, so they get the large linear-memory cap. Searches that store
+    every board use 250K nodes up to 4x4, where the per-node memory was measured; above that each stored
+    board holds n * n tiles, so the cap shrinks by 16 / n**2 to keep total memory about the same.
+    """
+    return MAX_NODES_LINEAR_MEMORY if algorithm in LINEAR_MEMORY else MAX_NODES * 16 // max(16, n * n)
+
 
 # Algorithms that take a heuristic argument.
 INFORMED = {"greedy", "astar", "wastar", "idastar", "bwas"}
+SIZES = tuple(range(2, 11))
 FOUR_BY_FOUR_ONLY = {"pdb", "neural"}
 
 DESCRIPTIONS = {
@@ -71,7 +79,7 @@ HEURISTIC_DESCRIPTIONS = {
 
 
 class SolveRequest(BaseModel):
-    board: list[int] = Field(max_length=16)  # the largest board is 4x4; valid_board() then checks 9 or 16
+    board: list[int] = Field(max_length=100)
     algorithm: Literal["bfs", "dfs", "ids", "ucs", "bibfs", "greedy", "astar", "wastar", "idastar", "bwas"]
     heuristic: Literal["manhattan", "linear_conflict", "pdb", "neural"] = "manhattan"
     weight: float = Field(2.0, ge=1.0, le=10.0, description="h weight for wastar")
@@ -83,8 +91,8 @@ class SolveRequest(BaseModel):
     @classmethod
     def valid_board(cls, board):
         n = math.isqrt(len(board))
-        if n not in (3, 4) or n * n != len(board):
-            raise ValueError("board must have 9 or 16 tiles")
+        if n not in SIZES or n * n != len(board):
+            raise ValueError("board must be square, from 2x2 to 10x10")
         if sorted(board) != list(range(n * n)):
             raise ValueError("board must contain each tile 0..n*n-1 once")
         return board
@@ -108,7 +116,8 @@ def make_solver(req: SolveRequest):
             raise ValueError("bwas supports manhattan, pdb, and neural heuristics")
         h = batch_heuristic(req.heuristic, n)
         return lambda start, limits, cb: batch_weighted_a_star(
-            start, h, batch_size=req.batch_size, g_weight=req.g_weight, limits=limits, on_expand=cb)
+            start, h, batch_size=req.batch_size, g_weight=req.g_weight, limits=limits, on_expand=cb
+        )
     if req.heuristic == "neural" and req.algorithm in INFORMED:
         raise ValueError("the neural heuristic runs with bwas (batched) only")
     fn = ALGORITHMS[req.algorithm]
@@ -125,18 +134,25 @@ def make_solver(req: SolveRequest):
 async def meta():
     return {
         "algorithms": [{"name": k, "description": v, "informed": k in INFORMED} for k, v in DESCRIPTIONS.items()],
-        "heuristics": [{"name": k, "description": v, "sizes": [4] if k in FOUR_BY_FOUR_ONLY else [3, 4]}
-                       for k, v in HEURISTIC_DESCRIPTIONS.items()],
-        "limits": {"max_seconds": MAX_SECONDS, "max_nodes": MAX_NODES,
-                   "max_nodes_linear_memory": MAX_NODES_LINEAR_MEMORY, "trace_limit": TRACE_LIMIT},
+        "heuristics": [
+            {"name": k, "description": v, "sizes": [4] if k in FOUR_BY_FOUR_ONLY else list(SIZES)}
+            for k, v in HEURISTIC_DESCRIPTIONS.items()
+        ],
+        "limits": {
+            "max_seconds": MAX_SECONDS,
+            "max_nodes": MAX_NODES,
+            "max_nodes_by_size": {n: node_limit("astar", n) for n in SIZES},
+            "max_nodes_linear_memory": MAX_NODES_LINEAR_MEMORY,
+            "trace_limit": TRACE_LIMIT,
+        },
     }
 
 
 @router.get("/api/npuzzle/scramble")
 async def scramble(n: int = 3, moves: int | None = None, seed: int | None = None):
     """A solvable board: a random walk of `moves` from the goal, or uniformly random if omitted."""
-    if n not in (3, 4):
-        raise HTTPException(400, "n must be 3 or 4")
+    if n not in SIZES:
+        raise HTTPException(400, "n must be between 2 and 10")
     rng = random.Random(seed)
     if moves is None:
         while True:
@@ -172,14 +188,20 @@ async def solve_stream(ws: WebSocket, req: SolveRequest):
         now = time.perf_counter()
         if now - stats["last"] >= PROGRESS_INTERVAL:
             stats["last"] = now
-            new = trace[stats["sent"]:]
+            new = trace[stats["sent"] :]
             stats["sent"] = len(trace)
-            msg = {"type": "progress", "nodes": stats["nodes"], "frontier": frontier_size,
-                   "elapsed": round(now - start_time, 3), "board": list(node.board), "expanded": new}
+            msg = {
+                "type": "progress",
+                "nodes": stats["nodes"],
+                "frontier": frontier_size,
+                "elapsed": round(now - start_time, 3),
+                "board": list(node.board),
+                "expanded": new,
+            }
             loop.call_soon_threadsafe(queue.put_nowait, msg)
 
     def run():
-        limits = SearchLimits(max_nodes=node_limit(req.algorithm), max_seconds=req.max_seconds)
+        limits = SearchLimits(max_nodes=node_limit(req.algorithm, req.n), max_seconds=req.max_seconds)
         return solver(tuple(req.board), limits, on_expand)
 
     async def forward():
@@ -198,8 +220,15 @@ async def solve_stream(ws: WebSocket, req: SolveRequest):
             pass
         cancel.set()
 
-    await ws.send_json({"type": "start", "algorithm": req.algorithm, "heuristic": req.heuristic,
-                        "n": req.n, "trace_limit": TRACE_LIMIT})
+    await ws.send_json(
+        {
+            "type": "start",
+            "algorithm": req.algorithm,
+            "heuristic": req.heuristic,
+            "n": req.n,
+            "trace_limit": TRACE_LIMIT,
+        }
+    )
     search = asyncio.create_task(asyncio.to_thread(run))
     sender = asyncio.create_task(forward())
     watcher = asyncio.create_task(watch_client())
@@ -218,11 +247,18 @@ async def solve_stream(ws: WebSocket, req: SolveRequest):
     if result is None:
         await ws.send_json({"type": "result", "status": "cancelled", "expanded": stats["nodes"]})
         return
-    tail = trace[stats["sent"]:]
+    tail = trace[stats["sent"] :]
     if tail:
-        await ws.send_json({"type": "progress", "nodes": stats["nodes"], "frontier": 0,
-                            "elapsed": round(time.perf_counter() - start_time, 3),
-                            "board": tail[-1][0], "expanded": tail})
+        await ws.send_json(
+            {
+                "type": "progress",
+                "nodes": stats["nodes"],
+                "frontier": 0,
+                "elapsed": round(time.perf_counter() - start_time, 3),
+                "board": tail[-1][0],
+                "expanded": tail,
+            }
+        )
     await ws.send_json({"type": "result", **asdict(result)})
 
 

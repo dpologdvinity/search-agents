@@ -28,13 +28,16 @@ CLEAR = "\033[H\033[2J"
 def status_line(ex: Explorer) -> str:
     """One line of counters under the map: progress, replans, and both planners' work so far."""
     state = "GOAL" if ex.done else ("WAITING (no known route)" if ex.stuck else "exploring")
-    return (f"step {ex.steps:4d}  {state:<24} replans {ex.replans:4d}   "
-            f"D* Lite exp {ex.expansions('dstar'):7d}   A* exp {ex.expansions('astar'):7d}   "
-            f"driver {ex.driver}")
+    return (
+        f"step {ex.steps:4d}  {state:<24} replans {ex.replans:4d}   "
+        f"D* Lite exp {ex.expansions('dstar'):7d}   A* exp {ex.expansions('astar'):7d}   "
+        f"driver {ex.driver}"
+    )
 
 
-def play(size: int, density: float, seed: int, radius: int, driver: str, delay: float, clear: bool,
-         out=sys.stdout) -> Explorer:
+def play(
+    size: int, density: float, seed: int, radius: int, driver: str, delay: float, clear: bool, out=sys.stdout
+) -> Explorer:
     """Animate one exploration. Each frame shows the map as the rover knows it and the counters."""
     world = World(size, generate(size, density, seed))
     ex = Explorer(world, radius=radius, driver=driver)
@@ -51,23 +54,35 @@ def play(size: int, density: float, seed: int, radius: int, driver: str, delay: 
         ex.tick()
         if delay and tty:
             time.sleep(delay)  # pause only when animating on a terminal; piped output prints every frame at once
-    out.write(f"\nreached the goal in {ex.steps} steps with {ex.replans} replans. "
-              f"D* Lite expanded {ex.expansions('dstar')} cells and A* {ex.expansions('astar')}.\n")
+    out.write(
+        f"\nreached the goal in {ex.steps} steps with {ex.replans} replans. "
+        f"D* Lite expanded {ex.expansions('dstar')} cells and A* {ex.expansions('astar')}.\n"
+    )
     return ex
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m rover",
-        description="Rover exploring an unknown maze: D* Lite (incremental replanning) versus A* from scratch.")
-    parser.add_argument("command", nargs="?", default="play", choices=["play", "benchmark"],
-                        help="play (default) animates one route; benchmark runs the seeded comparison")
+        description="Rover exploring an unknown maze: D* Lite (incremental replanning) versus A* from scratch.",
+    )
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="play",
+        choices=["play", "benchmark"],
+        help="play (default) animates one route; benchmark runs the seeded comparison",
+    )
     parser.add_argument("--size", type=int, default=21, help="grid side length, 5..81 (default 21)")
     parser.add_argument("--density", type=float, default=0.2, help="fraction of walls, 0..0.4 (default 0.2)")
     parser.add_argument("--seed", type=int, default=1, help="seed for the map (default 1)")
     parser.add_argument("--radius", type=int, default=2, help="sensor half-width in cells, 1..4 (default 2)")
-    parser.add_argument("--driver", choices=PLANNERS, default="dstar",
-                        help="the planner that steers the rover; the other one replans alongside it")
+    parser.add_argument(
+        "--driver",
+        choices=PLANNERS,
+        default="dstar",
+        help="the planner that steers the rover; the other one replans alongside it",
+    )
     parser.add_argument("--delay", type=float, default=0.06, help="seconds between frames on a terminal (default 0.06)")
     parser.add_argument("--no-clear", action="store_true", help="print frames one after another, without clearing")
     parser.add_argument("--sizes", default=None, help="benchmark: comma-separated sizes (default 21,41,61)")

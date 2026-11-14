@@ -63,8 +63,15 @@ def strategy_payload() -> dict:
     table = get_solver().strategy()
     rows = []
     for row in table["rows"]:
-        cells = [{"upcard": c["upcard"], "action": c["action"], "ev": round(c["ev"], 4),
-                  "evs": {k: round(v, 4) for k, v in c["evs"].items()}} for c in row["cells"]]
+        cells = [
+            {
+                "upcard": c["upcard"],
+                "action": c["action"],
+                "ev": round(c["ev"], 4),
+                "evs": {k: round(v, 4) for k, v in c["evs"].items()},
+            }
+            for c in row["cells"]
+        ]
         rows.append({"kind": row["kind"], "total": row["total"], "label": row["label"], "cells": cells})
     return {
         "upcards": table["upcards"],
@@ -91,8 +98,9 @@ async def advice(req: AdviceRequest, request: Request):
     hard, ace = hard_and_ace(values)
     if hard > 21:
         raise HTTPException(400, "the hand is over 21: no decision is left")
-    evs = get_solver().hand_values(tuple(values), rank_value(req.upcard), from_split=req.from_split,
-                                   split_aces=req.split_aces)
+    evs = get_solver().hand_values(
+        tuple(values), rank_value(req.upcard), from_split=req.from_split, split_aces=req.split_aces
+    )
     natural = len(values) == 2 and sorted(values) == [1, 10] and not req.from_split
     return {
         "total": total(hard, ace),
@@ -117,6 +125,14 @@ async def learn_route(req: LearnRequest, request: Request):
         "episodes": req.episodes,
         "seed": req.seed,
         "exact": exact_actions(),
-        "snapshots": [{"episodes": s.episodes, "agreement": round(s.agreement, 4), "decisive": s.decisive,
-                       "loss": round(s.loss, 5), "actions": s.actions} for s in snaps],
+        "snapshots": [
+            {
+                "episodes": s.episodes,
+                "agreement": round(s.agreement, 4),
+                "decisive": s.decisive,
+                "loss": round(s.loss, 5),
+                "actions": s.actions,
+            }
+            for s in snaps
+        ],
     }

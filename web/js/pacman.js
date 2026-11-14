@@ -11,21 +11,25 @@
 
 import { getJSON, postJSON } from './api.js';
 import { banner, burst, pop, shake } from './fx.js';
+import { play } from './sfx.js';
 
 const $ = (id) => document.getElementById(id);
 const CELL = 36; // canvas pixels per maze cell
 const SCARED = '#3d5cff';
 const GHOST_COLOR = { chaser: '#ff3b6b', ambusher: '#00f5ff', scatter: '#ffe600' };
 const ANGLE = { N: -Math.PI / 2, E: 0, S: Math.PI / 2, W: Math.PI }; // canvas y grows downward
-const STEP = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1] };
-const LETTERS = ['N', 'E', 'S', 'W'];
+const STEP = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1], WAIT: [0, 0] };
+const LETTERS = ['N', 'E', 'S', 'W', 'WAIT'];
 const KEY_MOVES = {
+  ' ': 'WAIT', '.': 'WAIT',
   w: 'N', arrowup: 'N', s: 'S', arrowdown: 'S', a: 'W', arrowleft: 'W', d: 'E', arrowright: 'E',
 };
 const DEATH_MS = 700; // how long Pac-Man takes to shrink away
 const ODDS_NAMES = { straight: 'Keep going', left: 'Turn left', right: 'Turn right', back: 'Reverse' };
 const NEXT_GAME_MS = 900; // pause between games when auto-restart is on, so the last board can be read
-const HINT_PLAY = 'Use W A S D, the arrow keys, or the buttons under the board. Each key is one turn. Ghosts move after you.';
+const HINT_PLAY = 'Arrows / W A S D to move. Space or STOP to wait while ghosts move. Blue ghosts slow Pac-Man to 75% speed.';
+const humanMs = () => Math.max(200, speedMs());
+const continuous = () => $('movement').value === 'continuous';
 const HINT_WATCH = 'Press Run to watch the agent play the seeded game. Pause and step to read its values turn by turn.';
 
 const canvas = $('pm-canvas');
@@ -34,7 +38,8 @@ const ctx = canvas.getContext('2d');
 // Everything on screen. `from` holds the sprite positions an animation starts from; the
 // sprites glide between `from` and their current cells over `animDur` milliseconds.
 const S = {
-  meta: null, rows: [], busy: false,
+  meta: null, rows: [], busy: false, generation: 0,
+  humanTimer: 0, humanRunning: false, direction: 'WAIT', requested: 'WAIT',
   pac: [0, 0], ghosts: [], pellets: new Set(), plans: [],
   q: null, features: null, qAt: null, // qAt: the cell the Q-values were computed from
   lastAction: 'E', lastChosen: null, lastAgent: null,
@@ -58,6 +63,7 @@ const lerp = (a, b, k) => a + (b - a) * k;
 function sizeCanvas() {
   const w = S.rows[0].length, h = S.rows.length;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.aspectRatio = `${w} / ${h}`;
   canvas.width = w * CELL * dpr;
   canvas.height = h * CELL * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -204,7 +210,8 @@ function drawGhost(x, y, r, color, scared, flicker) {
 function drawPac(x, y, r, now) {
   const dying = S.deathAt && now - S.deathAt < DEATH_MS;
   const shrink = dying ? Math.max(0, 1 - (now - S.deathAt) / DEATH_MS) : 1;
-  const mouth = dying ? 0.1 + (1 - shrink) * Math.PI : 0.25 + 0.2 * Math.abs(Math.sin(now / 140));
+  const moving = S.from && now < S.animStart + S.animDur && S.from.pac.some((v, i) => v !== S.pac[i]);
+  const mouth = dying ? 0.1 + (1 - shrink) * Math.PI : moving ? 0.25 + 0.2 * Math.abs(Math.sin(now / 70)) : 0.12;
   const angle = ANGLE[S.lastAction] ?? 0;
   ctx.save();
   ctx.fillStyle = '#ffe600';
@@ -221,7 +228,8 @@ function drawPac(x, y, r, now) {
 // Where each sprite is right now: partway between its starting cell and its new cell.
 function positions(now) {
   if (!S.from || !S.animDur) return { pac: S.pac, ghosts: S.ghosts.map((g) => g.pos) };
-  const k = smooth(Math.min(1, Math.max(0, (now - S.animStart) / S.animDur)));
+  const progress = Math.min(1, Math.max(0, (now - S.animStart) / S.animDur));
+  const k = $('mode').value === 'play' && continuous() ? progress : smooth(progress);
   const place = (a, b) => {
     // A ghost that was eaten jumps back home; gliding it across the maze would look wrong.
     const jump = Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) > 2;
@@ -279,6 +287,7 @@ function ghostInfo(policy) {
 // Names the algorithm on each side. Shown under the title and in the GHOSTS chip, so the page
 // always says what Pac-Man and the ghosts are running.
 function updateMatchup() {
+  $('agent').title = S.meta?.agents.find(a => a.name === $('agent').value)?.description ?? '';
   const policy = $('ghosts').value;
   const ghosts = ghostInfo(policy)?.label ?? policy;
   const pacman = $('mode').value === 'play' ? 'You play Pac-Man' : `${$('agent').selectedOptions[0].textContent} plays Pac-Man`;
@@ -479,6 +488,9 @@ function updateAll() {
 
 // Starts a fresh board from a start state (from the server), with no animation.
 function setBoard(maze, start, policy) {
+  const learned = $('agent').querySelector('option[value="q"]');
+  learned.disabled = maze.width !== 15 || maze.height !== 11;
+  if (learned.disabled && $('agent').value === 'q') $('agent').value = 'reflex';
   S.policy = policy;
   S.rows = maze.rows;
   sizeCanvas();
@@ -501,32 +513,39 @@ function beginTurn(now, next) {
   S.pac = next.pac;
   S.ghosts = next.ghosts.map((g) => ({ ...g }));
   S.animStart = now;
-  S.animDur = Math.max(120, speedMs() * 0.85);
+  S.animDur = $('mode').value === 'play' && continuous() ? humanMs() : Math.max(60, speedMs() * 0.85);
 }
 
 // Power bursts, eaten ghosts, deaths and the end of the maze, with a matching log line.
 function reactToEvents(events) {
   const now = performance.now();
   for (const e of events) {
-    if (e === 'power') {
-      burst(screenXY(S.pac), { count: 70, colors: ['#3d5cff', '#00f5ff', '#ffffff'] });
-      banner('POWER', 'ghosts turn blue for a while', '#3d5cff');
+    if (e === 'pellet') {
+      play('pacChomp', S.turn % 2);
+    } else if (e === 'power') {
+      play('pacPower');
+      burst(screenXY(S.pac), { sound: false, count: 70, colors: ['#3d5cff', '#00f5ff', '#ffffff'] });
+      banner('POWER', 'blue ghosts · Pac-Man at 75% speed', '#3d5cff', false);
       log('power pellet: the ghosts are scared', 'log-best');
     } else if (e === 'ghost') {
-      pop(screenXY(S.pac), `+${S.meta?.constants.ghost_points ?? 200}`, '#00ff88');
-      burst(screenXY(S.pac), { count: 50, colors: ['#00ff88', '#00f5ff'] });
+      play('pacGhost');
+      pop(screenXY(S.pac), `+${S.meta?.constants.ghost_points ?? 200}`, '#00ff88', false);
+      burst(screenXY(S.pac), { sound: false, count: 50, colors: ['#00ff88', '#00f5ff'] });
       log('ate a scared ghost', 'log-move');
     } else if (e === 'death') {
+      play('pacDeath');
       S.deathAt = now;
-      shake(canvas, 'big');
-      banner('CAUGHT', `score ${S.points}`, '#ff3b3b');
+      shake(canvas, 'big', false);
+      banner('CAUGHT', `score ${S.points}`, '#ff3b3b', false);
       log('caught by a ghost', 'log-err');
     } else if (e === 'win') {
-      burst(canvas, { count: 160, colors: ['#00ff88', '#ffe600', '#00f5ff'] });
-      banner('MAZE CLEARED', `score ${S.points}`, '#00ff88');
+      play('pacWin');
+      burst(canvas, { sound: false, count: 160, colors: ['#00ff88', '#ffe600', '#00f5ff'] });
+      banner('MAZE CLEARED', `score ${S.points}`, '#00ff88', false);
       log(`all pellets eaten: ${S.points} points`, 'log-best');
     } else if (e === 'timeout') {
-      banner('TIME UP', `score ${S.points}`, '#ffe600');
+      play('pacDeath');
+      banner('TIME UP', `score ${S.points}`, '#ffe600', false);
       log('out of turns', 'log-info');
     }
   }
@@ -538,7 +557,7 @@ function applyWatchTurn(turn) {
   S.qAt = [...S.pac]; // the decision was made from the cell Pac-Man is leaving
   beginTurn(now, { pac: turn.pac, ghosts: turn.ghosts });
   if (turn.eaten) S.pellets.delete(key(turn.eaten[0], turn.eaten[1]));
-  S.lastAction = turn.action;
+  if (turn.action !== 'WAIT') S.lastAction = turn.action;
   S.lastChosen = turn.action;
   S.plans = turn.plans;
   S.q = turn.q;
@@ -557,7 +576,7 @@ function applyWatchTurn(turn) {
 function applyHumanState(res, letter) {
   const { state, last } = res;
   beginTurn(performance.now(), { pac: state.pac, ghosts: state.ghosts });
-  S.lastAction = letter;
+  if (letter !== 'WAIT') S.lastAction = letter;
   S.lastChosen = null;
   S.qAt = null;
   S.pellets = new Set(state.pellets.map(([r, c]) => key(r, c)));
@@ -594,37 +613,52 @@ function setBusy(flag) {
 
 // Loads the board for the current maze and seed. Both modes start from the same opening position.
 async function loadBoard() {
-  const res = await postJSON('/api/pacman/play', {
-    maze: $('maze').value, seed: seedValue(), actions: [], ghosts: $('ghosts').value,
-  });
+  pauseHuman();
   stopPlayback();
-  S.actions = [];
-  S.episode = null;
-  S.legal = res.legal;
-  setBoard(res.maze, res.state, res.ghosts);
-  updateMatchup();
+  const generation = ++S.generation;
+  S.status = 'loading';
+  setBusy(true);
+  try {
+    const res = await postJSON('/api/pacman/play', {
+      maze: $('maze').value, seed: seedValue(), actions: [], ghosts: $('ghosts').value,
+    });
+    if (generation !== S.generation) return;
+    S.direction = S.requested = 'WAIT';
+    S.actions = [];
+    S.episode = null;
+    S.legal = res.legal;
+    setBoard(res.maze, res.state, res.ghosts);
+    updateMatchup();
+  } finally {
+    if (generation === S.generation) setBusy(false);
+  }
 }
 
 function setMode(mode) {
   const watch = mode === 'watch';
   for (const id of ['btn-run', 'btn-toggle', 'btn-step']) $(id).hidden = !watch;
   $('agent-row').hidden = !watch;
-  $('speed').closest('div').hidden = !watch;
+  $('movement-row').hidden = watch;
+  $('btn-human-pause').hidden = watch || !continuous();
   $('score-row').hidden = !watch;
   $('pm-hint').textContent = watch ? HINT_WATCH : HINT_PLAY;
   $('pm-dpad').hidden = watch;
+  $('speed-val').textContent = `${watch || !continuous() ? speedMs() : humanMs()} ms per turn`;
   $('btn-new').querySelector('.btn-txt').textContent = watch ? '↺ NEW SEED' : '↺ NEW GAME';
   loadBoard().catch((e) => log(e.message, 'log-err'));
 }
 
 async function runAgent() {
+  pauseHuman();
   stopPlayback();
+  const generation = ++S.generation;
   setBusy(true);
   const seed = seedValue();
   try {
     const episode = await postJSON('/api/pacman/episode', {
-      agent: $('agent').value, maze: $('maze').value, seed, max_turns: 300, ghosts: $('ghosts').value,
+      agent: $('agent').value, maze: $('maze').value, seed, ghosts: $('ghosts').value,
     });
+    if (generation !== S.generation) return;
     S.episode = episode;
     S.index = 0;
     setBoard(episode.maze, episode.start, episode.ghosts);
@@ -634,7 +668,7 @@ async function runAgent() {
   } catch (e) {
     log(e.message, 'log-err');
   } finally {
-    setBusy(false);
+    if (generation === S.generation) setBusy(false);
   }
 }
 
@@ -677,9 +711,10 @@ function playFrom() {
 }
 
 async function humanMove(letter) {
-  if (S.busy) return;
+  if (S.busy || S.status !== 'playing') return false;
+  const generation = S.generation;
   if (!S.legal.includes(letter)) {
-    shake(canvas);
+    shake(canvas, 'small', false);
     $('pm-hint').textContent = 'A wall is in the way. Pick another direction.';
     return;
   }
@@ -689,19 +724,57 @@ async function humanMove(letter) {
     const res = await postJSON('/api/pacman/play', {
       maze: $('maze').value, seed: seedValue(), actions, ghosts: S.policy,
     });
+    if (generation !== S.generation) return false;
     S.actions = actions;
     applyHumanState(res, letter);
     if (S.status === 'playing') {
       $('pm-hint').textContent = HINT_PLAY;
     } else {
       $('pm-hint').textContent = 'Game over. Press New game to try again.';
+      pauseHuman();
       log(`game over: ${S.status}, score ${S.points}`, S.status === 'won' ? 'log-best' : 'log-info');
     }
+    return true;
   } catch (e) {
+    pauseHuman();
     log(e.message, 'log-err');
+    return false;
   } finally {
-    setBusy(false);
+    if (generation === S.generation) setBusy(false);
   }
+}
+
+function pauseHuman() {
+  S.humanRunning = false;
+  clearTimeout(S.humanTimer);
+  $('btn-human-pause').querySelector('.btn-txt').textContent = '▶ RESUME';
+}
+
+async function tickHuman() {
+  if (!S.humanRunning || document.hidden || $('mode').value !== 'play' || !continuous()) return;
+  const generation = S.generation;
+  const started = performance.now();
+  if (S.legal.includes(S.requested)) S.direction = S.requested;
+  const action = S.legal.includes(S.direction) ? S.direction : 'WAIT';
+  const ok = await humanMove(action);
+  if (ok && S.humanRunning && generation === S.generation) {
+    S.humanTimer = setTimeout(tickHuman, Math.max(0, humanMs() - (performance.now() - started)));
+  }
+}
+
+function resumeHuman() {
+  if (S.humanRunning || S.busy || S.status !== 'playing') return;
+  S.humanRunning = true;
+  $('btn-human-pause').querySelector('.btn-txt').textContent = '❚❚ PAUSE';
+  tickHuman();
+}
+
+function inputMove(letter) {
+  if ($('mode').value !== 'play') return;
+  if (!continuous()) { humanMove(letter); return; }
+  S.requested = letter;
+  if (letter === 'WAIT') S.direction = 'WAIT';
+  resumeHuman();
 }
 
 // ── Wiring ───────────────────────────────────────────────────────────────
@@ -709,6 +782,17 @@ async function humanMove(letter) {
 function wire() {
   const reload = () => loadBoard().catch((e) => log(e.message, 'log-err'));
 
+  $('movement').addEventListener('change', () => {
+    pauseHuman();
+    $('btn-human-pause').hidden = !continuous() || $('mode').value !== 'play';
+    $('pm-hint').textContent = HINT_PLAY;
+    $('speed-val').textContent = `${continuous() ? humanMs() : speedMs()} ms per turn`;
+  });
+  $('btn-human-pause').addEventListener('click', () => {
+    if (S.humanRunning) pauseHuman(); else resumeHuman();
+  });
+  addEventListener('blur', pauseHuman);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseHuman(); });
   $('mode').addEventListener('change', () => setMode($('mode').value));
   $('maze').addEventListener('change', () => { resetTally(); reload(); });
   $('seed').addEventListener('change', () => { if ($('mode').value === 'play') reload(); });
@@ -725,7 +809,7 @@ function wire() {
     loadBoard().catch((e) => log(e.message, 'log-err'));
   });
   $('btn-reset-score').addEventListener('click', resetTally);
-  $('speed').addEventListener('input', () => { $('speed-val').textContent = `${speedMs()} ms per turn`; });
+  $('speed').addEventListener('input', () => { $('speed-val').textContent = `${$('mode').value === 'play' && continuous() ? humanMs() : speedMs()} ms per turn`; });
   $('btn-run').addEventListener('click', runAgent);
   $('btn-toggle').addEventListener('click', () => {
     if (!S.episode) return;
@@ -743,21 +827,21 @@ function wire() {
     randomSeed();
     if ($('mode').value === 'play') reload();
   });
-  for (const [id, letter] of [['dpad-n', 'N'], ['dpad-e', 'E'], ['dpad-s', 'S'], ['dpad-w', 'W']]) {
-    $(id).addEventListener('click', () => humanMove(letter));
+  for (const [id, letter] of [['dpad-n', 'N'], ['dpad-e', 'E'], ['dpad-s', 'S'], ['dpad-w', 'W'], ['dpad-stop', 'WAIT']]) {
+    $(id).addEventListener('click', () => inputMove(letter));
   }
   addEventListener('keydown', (e) => {
     if (e.target.matches('input, select, textarea')) return;
     const letter = KEY_MOVES[e.key.toLowerCase()];
     if (!letter || $('mode').value !== 'play') return;
     e.preventDefault();
-    humanMove(letter);
+    if (!e.repeat) inputMove(letter);
   });
 }
 
 async function init() {
   wire();
-  $('speed-val').textContent = `${speedMs()} ms per turn`;
+  $('speed-val').textContent = `${$('mode').value === 'play' && continuous() ? humanMs() : speedMs()} ms per turn`;
   requestAnimationFrame(frame);
   try {
     S.meta = await getJSON('/api/pacman/meta');
@@ -768,7 +852,7 @@ async function init() {
   for (const m of S.meta.mazes) {
     const opt = document.createElement('option');
     opt.value = m.name;
-    opt.textContent = m.title;
+    opt.textContent = `${m.title} · ${m.width} × ${m.height}`;
     $('maze').appendChild(opt);
   }
   $('agent').title = S.meta.agents[0].description;

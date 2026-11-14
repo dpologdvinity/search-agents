@@ -39,9 +39,9 @@ class DStarLite:
     def __init__(self, n: int, start: int, goal: int):
         self.n = n
         self.goal = goal
-        self.start = start        # s_start: the rover's current cell, which moves over time
-        self.s_last = start       # the rover's cell when the queue was last repaired
-        self.km = 0               # accumulated heuristic offset, see the module docstring
+        self.start = start  # s_start: the rover's current cell, which moves over time
+        self.s_last = start  # the rover's cell when the queue was last repaired
+        self.km = 0  # accumulated heuristic offset, see the module docstring
         N = n * n
         self.wall = bytearray(N)  # the planner's belief: 1 = known wall (unknown counts as free)
         self.g = [INF] * N
@@ -112,7 +112,7 @@ class DStarLite:
                     best = c
             self.rhs[u] = best
         if self.ver[u]:
-            self.ver[u] = 0          # drop the old queue entry
+            self.ver[u] = 0  # drop the old queue entry
         if self.g[u] != self.rhs[u]:
             self._insert(u, self._key(u))
 
@@ -125,7 +125,7 @@ class DStarLite:
         """
         self.last_expanded = []
         while True:
-            top = self._top()          # also drops stale entries, so the emptiness test below is exact
+            top = self._top()  # also drops stale entries, so the emptiness test below is exact
             if not self.heap:
                 break
             ks = self._key(self.start)

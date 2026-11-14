@@ -191,4 +191,3 @@ def make_policy(name: str, seed: int = 0, net: Net | None = None, weights=None):
     if name == "evolved-eval":
         return evolved_eval(weights)
     raise KeyError(f"unknown agent {name!r}; choose from {', '.join(AGENT_NAMES)}")
-

@@ -93,8 +93,9 @@ def table_rows() -> list[tuple[str, int]]:
     Hard 20 has no two-card form without a pair (only 10+10), so it is covered by the 10,10 pair row. Hard 4 is
     likewise only 2,2. For pairs, the total is the card value of the pair (1 = aces, 10 = any ten-card pair).
     """
-    return ([("hard", t) for t in range(5, 20)] + [("soft", t) for t in range(13, 21)]
-            + [("pair", r) for r in range(1, 11)])
+    return (
+        [("hard", t) for t in range(5, 20)] + [("soft", t) for t in range(13, 21)] + [("pair", r) for r in range(1, 11)]
+    )
 
 
 def row_label(kind: str, t: int) -> str:
@@ -145,13 +146,15 @@ class Solver:
         values = {"stand": stand_value(total(hard, ace), dist)}
         # Hit: a card that takes the hard total past 21 busts the hand (-1). Any other card leaves the
         # player in a smaller state with a larger hard total, whose best action is already known.
-        values["hit"] = sum(p * (-1.0 if hard + v > 21 else self._best(hard + v, ace or v == 1, False, u))
-                            for v, p in CARD_PROB.items())
+        values["hit"] = sum(
+            p * (-1.0 if hard + v > 21 else self._best(hard + v, ace or v == 1, False, u)) for v, p in CARD_PROB.items()
+        )
         if two:
             # Double: the bet doubles, exactly one card arrives, and the hand must stand afterwards.
             values["double"] = 2 * sum(
                 p * (-1.0 if hard + v > 21 else stand_value(total(hard + v, ace or v == 1), dist))
-                for v, p in CARD_PROB.items())
+                for v, p in CARD_PROB.items()
+            )
         self._states[key] = values
         return values
 
@@ -198,8 +201,9 @@ class Solver:
             cond = self._state(*row_state(kind, t), u)
         return self._adjust(cond, u) if peek else dict(cond)
 
-    def hand_values(self, values: tuple[int, ...] | list[int], u: int, *, from_split: bool = False,
-                    split_aces: bool = False) -> dict[str, float]:
+    def hand_values(
+        self, values: tuple[int, ...] | list[int], u: int, *, from_split: bool = False, split_aces: bool = False
+    ) -> dict[str, float]:
         """Expected return per unit bet for each legal action of a specific hand, peek included.
 
         `values` are card values (1..10). A two-card hand that is a natural pays 3:2 and has no decisions.

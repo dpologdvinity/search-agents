@@ -22,6 +22,7 @@ PUZZLES = Path(__file__).parent / "puzzles.txt"
 
 def random_solution(rng: random.Random) -> list[int]:
     """A randomly shuffled variant of a valid base grid."""
+
     def shuffled_groups():
         groups = [0, 1, 2]
         rng.shuffle(groups)
@@ -109,8 +110,14 @@ def load_puzzles(path: Path = PUZZLES) -> list[dict]:
     for line in path.read_text().splitlines():
         if line and not line.startswith("#"):
             puzzle, solution, guesses = line.split()
-            rows.append({"puzzle": puzzle, "solution": solution, "guesses": int(guesses),
-                         "clues": sum(ch != "0" for ch in puzzle)})
+            rows.append(
+                {
+                    "puzzle": puzzle,
+                    "solution": solution,
+                    "guesses": int(guesses),
+                    "clues": sum(ch != "0" for ch in puzzle),
+                }
+            )
     return rows
 
 
@@ -133,4 +140,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
-

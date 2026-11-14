@@ -53,10 +53,15 @@ async def meta():
     from connect4.net import WEIGHTS
 
     return {
-        "agents": [{"name": k, "description": v, "available": k != "alphazero" or WEIGHTS.exists()}
-                   for k, v in DESCRIPTIONS.items()],
-        "levels": {"alphazero_simulations": ALPHAZERO_SIMS, "minimax_seconds": MINIMAX_SECONDS,
-                   "mcts_simulations": MCTS_SIMS},
+        "agents": [
+            {"name": k, "description": v, "available": k != "alphazero" or WEIGHTS.exists()}
+            for k, v in DESCRIPTIONS.items()
+        ],
+        "levels": {
+            "alphazero_simulations": ALPHAZERO_SIMS,
+            "minimax_seconds": MINIMAX_SECONDS,
+            "mcts_simulations": MCTS_SIMS,
+        },
         # The chance table: the raw weights, and the odds on an empty board (every column open).
         "chance": {"weights": list(CHANCE_WEIGHTS), "odds": [round(p, 4) for p in chance_odds(Board())]},
     }

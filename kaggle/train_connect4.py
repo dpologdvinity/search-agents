@@ -112,12 +112,19 @@ def check_cuda(repo: Path) -> str:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--hours", type=float, default=8.0,
-                   help="training time; stops after the iteration that passes it (Kaggle GPU sessions: about 12 h)")
+    p.add_argument(
+        "--hours",
+        type=float,
+        default=8.0,
+        help="training time; stops after the iteration that passes it (Kaggle GPU sessions: about 12 h)",
+    )
     p.add_argument("--repo", help="directory containing connect4/ (default: search for it)")
     p.add_argument("--checkpoint", help="checkpoint to resume (default: newest az_connect4.pt under /kaggle/input)")
-    p.add_argument("--fresh", action="store_true",
-                   help="start from scratch when no checkpoint is attached (otherwise that is an error)")
+    p.add_argument(
+        "--fresh",
+        action="store_true",
+        help="start from scratch when no checkpoint is attached (otherwise that is an error)",
+    )
     p.add_argument("--no-amp", action="store_true", help="disable fp16 mixed precision on the GPU")
     p.add_argument("--threads", type=int, default=4, help="Kaggle notebooks have 4 CPU cores")
     p.add_argument("--output", type=Path, default=WORKING, help="where results are written")
@@ -137,14 +144,39 @@ def main(argv=None):
     out = args.output
     out.mkdir(parents=True, exist_ok=True)
     log = out / LOG_NAME
-    cmd = [sys.executable, "-u", "-m", "connect4.train_az",
-           "--hours", str(args.hours), "--device", device,
-           # GPU settings: 512 parallel self-play games in one batched network call per simulation round,
-           # 512-row minibatches, 400k-row replay buffer (about 0.5 GB of RAM), and a 4-thread CPU budget.
-           "--games", "512", "--simulations", "100", "--batch", "512", "--steps", "400",
-           "--buffer", "400000", "--threads", str(args.threads), "--eval-every", "5",
-           "--checkpoint-out", str(out / CHECKPOINT_NAME), "--weights-out", str(out / "az_connect4.npz"),
-           "--log", str(log), "--save-buffer"]
+    cmd = [
+        sys.executable,
+        "-u",
+        "-m",
+        "connect4.train_az",
+        "--hours",
+        str(args.hours),
+        "--device",
+        device,
+        # GPU settings: 512 parallel self-play games in one batched network call per simulation round,
+        # 512-row minibatches, 400k-row replay buffer (about 0.5 GB of RAM), and a 4-thread CPU budget.
+        "--games",
+        "512",
+        "--simulations",
+        "100",
+        "--batch",
+        "512",
+        "--steps",
+        "400",
+        "--buffer",
+        "400000",
+        "--threads",
+        str(args.threads),
+        "--eval-every",
+        "5",
+        "--checkpoint-out",
+        str(out / CHECKPOINT_NAME),
+        "--weights-out",
+        str(out / "az_connect4.npz"),
+        "--log",
+        str(log),
+        "--save-buffer",
+    ]
     if device == "cuda" and not args.no_amp:
         cmd.append("--amp")
     if ckpt is not None:

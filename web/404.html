@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="tictactoe.css">
 <link rel="stylesheet" href="notfound.css">
 </head>
 <body>
@@ -33,7 +34,7 @@
   <div class="nf-grid">
     <section class="nf-panel" aria-labelledby="nf-game-title">
       <h2 class="section-title pink-ttl" id="nf-game-title">YOU ARE X // THE AGENT IS O</h2>
-      <div class="nf-board-wrap">
+      <div class="ttt-stage">
         <div class="ttt-board" id="ttt-board" role="group" aria-label="Tic-tac-toe board"></div>
       </div>
       <div class="nf-status" id="ttt-status" role="status" aria-live="polite">Your move. Pick a square.</div>
@@ -48,10 +49,10 @@
       <div class="field-hint">Each column is a move the agent considered, with the minimax value from its side
         (+1 it wins, 0 draw, -1 it loses). Below it, your replies. Struck branches were pruned: alpha-beta
         proved they could not change the choice, so they were never searched.</div>
-      <div class="nf-tree-wrap">
-        <svg class="nf-tree" id="ttt-tree" viewBox="0 0 522 236" role="img" aria-label="The agent's search tree"></svg>
+      <div class="ttt-tree-wrap">
+        <svg class="ttt-tree" id="ttt-tree" viewBox="0 0 522 236" role="img" aria-label="The agent's search tree"></svg>
       </div>
-      <div class="nf-readout" id="ttt-readout" aria-live="off">
+      <div class="ttt-readout" id="ttt-readout" aria-live="off">
         <span>positions searched <b id="ttt-searched">0</b></span>
         <span>pruned <b id="ttt-pruned">0</b></span>
       </div>

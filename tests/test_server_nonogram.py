@@ -61,14 +61,17 @@ def test_solve_by_each_method_returns_the_picture():
         row_clues, col_clues = heart_clues(client)
         picture = [[1 if ch == "#" else 0 for ch in row] for row in PICTURES[0][2]]
         for method in ("line", "hybrid", "sat"):
-            body = client.post("/api/nonogram/solve", json={
-                "row_clues": row_clues, "col_clues": col_clues, "method": method, "trace": True}).json()
+            body = client.post(
+                "/api/nonogram/solve",
+                json={"row_clues": row_clues, "col_clues": col_clues, "method": method, "trace": True},
+            ).json()
             assert body["status"] == "unique", method
             assert body["solution"] == picture
             assert body["stats"]["method"] == method
             assert verify(get("heart"), body["solution"])
-        body = client.post("/api/nonogram/solve", json={
-            "row_clues": row_clues, "col_clues": col_clues, "method": "sat", "trace": True}).json()
+        body = client.post(
+            "/api/nonogram/solve", json={"row_clues": row_clues, "col_clues": col_clues, "method": "sat", "trace": True}
+        ).json()
         assert body["stats"]["variables"] > 25 and body["events"] is not None
         assert body["events_truncated"] is False
 
@@ -76,31 +79,37 @@ def test_solve_by_each_method_returns_the_picture():
 def test_line_method_returns_rounds_only_when_traced():
     with TestClient(make_app()) as client:
         row_clues, col_clues = heart_clues(client)
-        body = client.post("/api/nonogram/solve", json={
-            "row_clues": row_clues, "col_clues": col_clues, "method": "line", "trace": True}).json()
+        body = client.post(
+            "/api/nonogram/solve",
+            json={"row_clues": row_clues, "col_clues": col_clues, "method": "line", "trace": True},
+        ).json()
         assert body["rounds"] and body["rounds"][0]["axis"] == "rows"
-        body = client.post("/api/nonogram/solve", json={
-            "row_clues": row_clues, "col_clues": col_clues, "method": "line"}).json()
+        body = client.post(
+            "/api/nonogram/solve", json={"row_clues": row_clues, "col_clues": col_clues, "method": "line"}
+        ).json()
         assert body["rounds"]  # trace defaults to true
-        plain = client.post("/api/nonogram/solve", json={
-            "row_clues": row_clues, "col_clues": col_clues, "method": "line", "trace": False}).json()
+        plain = client.post(
+            "/api/nonogram/solve",
+            json={"row_clues": row_clues, "col_clues": col_clues, "method": "line", "trace": False},
+        ).json()
         assert plain["rounds"] is None
 
 
 def test_invalid_clues_and_methods_are_rejected():
     with TestClient(make_app()) as client:
-        bad = client.post("/api/nonogram/solve", json={"row_clues": [[3, 3]], "col_clues": [[1]] * 6,
-                                                       "method": "hybrid"})
+        bad = client.post(
+            "/api/nonogram/solve", json={"row_clues": [[3, 3]], "col_clues": [[1]] * 6, "method": "hybrid"}
+        )
         assert bad.status_code == 422
-        unknown = client.post("/api/nonogram/solve", json={"row_clues": [[1]], "col_clues": [[1]],
-                                                           "method": "magic"})
+        unknown = client.post("/api/nonogram/solve", json={"row_clues": [[1]], "col_clues": [[1]], "method": "magic"})
         assert unknown.status_code == 422
 
 
 def test_solve_reports_multiple_solutions():
     with TestClient(make_app()) as client:
-        body = client.post("/api/nonogram/solve", json={
-            "row_clues": [[1], [1]], "col_clues": [[1], [1]], "method": "hybrid"}).json()
+        body = client.post(
+            "/api/nonogram/solve", json={"row_clues": [[1], [1]], "col_clues": [[1], [1]], "method": "hybrid"}
+        ).json()
         assert body["status"] == "multiple"
         assert body["second"] is not None and body["second"] != body["solution"]
         assert body["timed_out"] is False
@@ -115,9 +124,15 @@ def test_server_time_limit_ends_a_hard_25x25_as_a_timed_out_undecided(monkeypatc
     with TestClient(make_app()) as client:
         for method in ("hybrid", "sat"):
             start = time.perf_counter()
-            r = client.post("/api/nonogram/solve", json={"row_clues": [list(c) for c in rows],
-                                                         "col_clues": [list(c) for c in cols],
-                                                         "method": method, "trace": False})
+            r = client.post(
+                "/api/nonogram/solve",
+                json={
+                    "row_clues": [list(c) for c in rows],
+                    "col_clues": [list(c) for c in cols],
+                    "method": method,
+                    "trace": False,
+                },
+            )
             elapsed = time.perf_counter() - start
             assert r.status_code == 200, method
             assert r.json()["status"] == "undecided" and r.json()["timed_out"] is True, method
@@ -128,14 +143,17 @@ def test_hint_endpoint_and_grid_checks():
     with TestClient(make_app()) as client:
         row_clues, col_clues = heart_clues(client)
         grid = [[-1] * 5 for _ in range(5)]
-        body = client.post("/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues,
-                                                       "grid": grid}).json()
+        body = client.post(
+            "/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues, "grid": grid}
+        ).json()
         assert body["found"] is True and body["reason"]
-        wrong_shape = client.post("/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues,
-                                                              "grid": [[-1] * 4] * 5})
+        wrong_shape = client.post(
+            "/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues, "grid": [[-1] * 4] * 5}
+        )
         assert wrong_shape.status_code == 400
-        wrong_value = client.post("/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues,
-                                                              "grid": [[2] * 5] * 5})
+        wrong_value = client.post(
+            "/api/nonogram/hint", json={"row_clues": row_clues, "col_clues": col_clues, "grid": [[2] * 5] * 5}
+        )
         assert wrong_value.status_code == 400
 
 

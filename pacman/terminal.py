@@ -16,7 +16,7 @@ from .episode import run_episode
 from .ghosts import GHOST_LABELS
 from .mazes import ACTIONS, Maze, get
 
-KEYS = {"w": "N", "d": "E", "s": "S", "a": "W"}
+KEYS = {"w": "N", "d": "E", "s": "S", "a": "W", ".": "WAIT"}
 CLEAR = "\033[H\033[2J"  # ANSI: move the cursor home and clear the screen
 
 
@@ -34,7 +34,7 @@ def render(state: State) -> str:
     for i, g in enumerate(state.ghosts):
         chars[g.pos] = "~" if g.scared else str((i + 1) % 10)
     chars[state.pac] = "P"
-    rows = ["".join(chars[r * maze.width:(r + 1) * maze.width]) for r in range(maze.height)]
+    rows = ["".join(chars[r * maze.width : (r + 1) * maze.width]) for r in range(maze.height)]
     status = f"{maze.title}  turn {state.turn}  score {state.points}  pellets left {len(state.pellets)}"
     if state.over:
         status += f"  [{state.status.upper()}]"
@@ -53,17 +53,22 @@ def describe(turn: Turn) -> str:
     return "; ".join(words[e] for e in turn.events if e in words)
 
 
-def play_human(maze: Maze | str, seed: int, read: Callable[[str], str] = input,
-               out: Callable[[str], None] = print, ghosts: str = "ai") -> str:
+def play_human(
+    maze: Maze | str,
+    seed: int,
+    read: Callable[[str], str] = input,
+    out: Callable[[str], None] = print,
+    ghosts: str = "ai",
+) -> str:
     """One interactive game against the chosen ghost policy. Returns the final status, or "quit"."""
     game = Game(maze, seed, ghosts=ghosts)
     while not game.state.over:
         out("\n" + render(game.state))
-        text = read("move (w/a/s/d, q to quit): ").strip().lower()
+        text = read("move (w/a/s/d, . to wait, q to quit): ").strip().lower()
         if text == "q":
             return "quit"
         if text not in KEYS:
-            out("  use w (up), a (left), s (down), d (right)")
+            out("  use w (up), a (left), s (down), d (right), . (wait)")
             continue
         action = ACTIONS.index(KEYS[text])
         if action not in legal_actions(game.state):
@@ -76,9 +81,16 @@ def play_human(maze: Maze | str, seed: int, read: Callable[[str], str] = input,
     return game.state.status
 
 
-def watch(agent_name: str, maze: Maze | str, seed: int, delay: float = 0.25,
-          out: Callable[[str], None] = print, sleep: Callable[[float], None] = time.sleep,
-          clear: bool = True, ghosts: str = "ai") -> str:
+def watch(
+    agent_name: str,
+    maze: Maze | str,
+    seed: int,
+    delay: float = 0.25,
+    out: Callable[[str], None] = print,
+    sleep: Callable[[float], None] = time.sleep,
+    clear: bool = True,
+    ghosts: str = "ai",
+) -> str:
     """Play `agent_name` on `maze` and redraw the board after every turn. Returns the final status."""
     m = get(maze) if isinstance(maze, str) else maze
     agent = make_agent(agent_name)

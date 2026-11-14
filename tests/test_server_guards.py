@@ -210,9 +210,9 @@ def test_bad_websocket_frames_get_an_error_and_the_socket_stays_open(client):
         assert msg["type"] == "result"
 
 
-def test_npuzzle_board_longer_than_16_is_rejected_over_the_socket(client):
+def test_npuzzle_board_longer_than_100_is_rejected_over_the_socket(client):
     with client.websocket_connect("/ws/npuzzle") as ws:
-        ws.send_json({"board": list(range(17)), "algorithm": "bfs"})
+        ws.send_json({"board": list(range(101)), "algorithm": "bfs"})
         msg = ws.receive_json()
     assert msg["type"] == "error"
-    assert "16" in msg["message"]
+    assert "100" in msg["message"]

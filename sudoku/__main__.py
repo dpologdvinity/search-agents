@@ -1,7 +1,7 @@
 """Solve Sudoku puzzles or benchmark the solvers.
 
-    python -m sudoku solve 003020600900305001001806400008102900700000008006708200002609500800203009005010300
-    python -m sudoku benchmark
+python -m sudoku solve 003020600900305001001806400008102900700000008006708200002609500800203009005010300
+python -m sudoku benchmark
 """
 
 from __future__ import annotations
@@ -27,19 +27,31 @@ HARD = {
 def benchmark(max_nodes):
     puzzles = [row["puzzle"] for row in load_puzzles()]
     rows = []
-    lines = ["| Solver | Set | Solved | Mean nodes | Max nodes | Mean backtracks | Total time (s) |",
-             "|---|---|---|---|---|---|---|"]
+    lines = [
+        "| Solver | Set | Solved | Mean nodes | Max nodes | Mean backtracks | Total time (s) |",
+        "|---|---|---|---|---|---|---|",
+    ]
     for name, solve in SOLVERS.items():
         for label, items in ((f"{len(puzzles)} generated puzzles", puzzles), ("4 hard puzzles", list(HARD.values()))):
             results = [solve(p, max_nodes=max_nodes) for p in items]
             solved = [r for r in results if r.status == "solved"]
-            rows += [{"solver": name, "set": label, "status": r.status, "nodes": r.nodes,
-                      "backtracks": r.backtracks, "seconds": r.seconds} for r in results]
+            rows += [
+                {
+                    "solver": name,
+                    "set": label,
+                    "status": r.status,
+                    "nodes": r.nodes,
+                    "backtracks": r.backtracks,
+                    "seconds": r.seconds,
+                }
+                for r in results
+            ]
             lines.append(
                 f"| {name} | {label} | {len(solved)}/{len(items)} "
                 f"| {statistics.mean(r.nodes for r in results):,.0f} | {max(r.nodes for r in results):,} "
                 f"| {statistics.mean(r.backtracks for r in results):,.0f} "
-                f"| {sum(r.seconds for r in results):.2f} |")
+                f"| {sum(r.seconds for r in results):.2f} |"
+            )
             print(lines[-1], flush=True)
     Path("results").mkdir(exist_ok=True)
     Path("results/sudoku.json").write_text(json.dumps(rows, indent=1))

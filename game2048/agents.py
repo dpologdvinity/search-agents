@@ -18,8 +18,7 @@ DESCRIPTIONS = {
     ),
     "ntuple": "No search: picks the move whose afterstate a TD-learned n-tuple network values most.",
     "ntuple_search": (
-        "Expectimax search that scores positions with the learned n-tuple network instead of the "
-        "hand-tuned evaluation."
+        "Expectimax search that scores positions with the learned n-tuple network instead of the hand-tuned evaluation."
     ),
 }
 

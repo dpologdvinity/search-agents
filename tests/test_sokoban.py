@@ -49,12 +49,15 @@ def test_parse_reads_symbols_and_pads_with_walls():
     assert lv.floor[0] == 0 and lv.floor[lv.width * lv.height - 1] == 0
 
 
-@pytest.mark.parametrize("text, message", [
-    ("#####\n#$ .#\n#####", "exactly one player"),
-    ("#####\n#@$$#\n#####", "one goal per box"),
-    ("#####\n#@ .#\n#####", "at least one box"),
-    ("#####\n#@x.#\n#####", "unexpected character"),
-])
+@pytest.mark.parametrize(
+    "text, message",
+    [
+        ("#####\n#$ .#\n#####", "exactly one player"),
+        ("#####\n#@$$#\n#####", "one goal per box"),
+        ("#####\n#@ .#\n#####", "at least one box"),
+        ("#####\n#@x.#\n#####", "unexpected character"),
+    ],
+)
 def test_parse_rejects_broken_levels(text, message):
     with pytest.raises(ValueError, match=message):
         parse_level(text)
@@ -303,3 +306,15 @@ def test_benchmark_rows_cover_every_configuration():
     assert all(r["levels"] == 2 for r in rows)
     matching_on = next(r for r in rows if r["config"] == "A* (matching)" and r["prune"])
     assert matching_on["solved"] == 2 and matching_on["optimal"] == 2
+
+
+def test_benchmark_defaults_to_the_published_twelve_levels():
+    # results/sokoban_benchmark.json covers levels 1-12; levels added later must not change what a rerun measures.
+    import json
+    from pathlib import Path
+
+    from sokoban.benchmark import benchmark_levels
+
+    published = {r["level"] for r in json.loads(Path("results/sokoban_benchmark.json").read_text())["runs"]}
+    assert {lv.name for lv in benchmark_levels()} == published
+    assert len(benchmark_levels()) == 12

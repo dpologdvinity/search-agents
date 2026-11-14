@@ -39,19 +39,27 @@ def table(results: dict[str, dict]) -> str:
     rows = [f"{'agent':<12}{'games':>6}{'mean shots':>12}{'median':>8}{'worst':>7}{'s/game':>9}"]
     for name, r in results.items():
         shots = r["shots"]
-        rows.append(f"{name:<12}{len(shots):>6}{statistics.fmean(shots):>12.1f}{statistics.median(shots):>8.1f}"
-                    f"{max(shots):>7}{r['seconds'] / len(shots):>9.3f}")
+        rows.append(
+            f"{name:<12}{len(shots):>6}{statistics.fmean(shots):>12.1f}{statistics.median(shots):>8.1f}"
+            f"{max(shots):>7}{r['seconds'] / len(shots):>9.3f}"
+        )
     rows.append(f"(ships occupy {sum(FLEET)} of the {CELLS} cells; shots to sink them all, lower is better)")
     return "\n".join(rows)
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m battleship benchmark", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m battleship benchmark", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--games", type=int, default=10, help="fleets to play (default 10)")
     parser.add_argument("--seed", type=int, default=1, help="random seed (default 1)")
-    parser.add_argument("--agents", nargs="+", choices=sorted(AGENTS), default=list(ORDER),
-                        help="agents to compare (default: all three)")
+    parser.add_argument(
+        "--agents",
+        nargs="+",
+        choices=sorted(AGENTS),
+        default=list(ORDER),
+        help="agents to compare (default: all three)",
+    )
     args = parser.parse_args(argv)
     print(table(run(args.games, args.seed, tuple(args.agents))))
     return 0

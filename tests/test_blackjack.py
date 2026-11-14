@@ -31,17 +31,20 @@ def test_dealer_busts_about_42_percent_from_six(solver):
     assert 0.40 < dealer_outcomes(6)[1][5] < 0.44
 
 
-@pytest.mark.parametrize(("kind", "t", "upcard", "action"), [
-    ("hard", 16, 10, "hit"),
-    ("hard", 11, 6, "double"),
-    ("hard", 12, 4, "stand"),
-    ("hard", 9, 3, "double"),
-    ("soft", 18, 9, "hit"),
-    ("soft", 18, 2, "stand"),
-    ("pair", 8, 10, "split"),
-    ("pair", 10, 6, "stand"),
-    ("pair", 1, 10, "split"),
-])
+@pytest.mark.parametrize(
+    ("kind", "t", "upcard", "action"),
+    [
+        ("hard", 16, 10, "hit"),
+        ("hard", 11, 6, "double"),
+        ("hard", 12, 4, "stand"),
+        ("hard", 9, 3, "double"),
+        ("soft", 18, 9, "hit"),
+        ("soft", 18, 2, "stand"),
+        ("pair", 8, 10, "split"),
+        ("pair", 10, 6, "stand"),
+        ("pair", 1, 10, "split"),
+    ],
+)
 def test_known_basic_strategy_cells(solver, kind, t, upcard, action):
     assert best(solver.cell_values(kind, t, upcard)) == action
 
@@ -73,6 +76,7 @@ def test_pairs_split_only_once(solver):
 
 
 # Engine: the deal order is player, dealer upcard, player, dealer hole card (see Round).
+
 
 def test_player_natural_pays_three_to_two():
     rnd = Round(Shoe(stacked=[1, 6, 13, 9]), 10)  # A-K against 6 and 9
@@ -142,6 +146,7 @@ def test_simulated_basic_strategy_is_near_the_exact_edge(solver):
 
 # Terminal game and subcommands.
 
+
 def test_terminal_session_hints_then_settles():
     from blackjack.__main__ import play
 
@@ -161,8 +166,14 @@ def test_terminal_session_hints_then_settles():
     text = "\n".join(lines)
     assert "Basic strategy:" in text and "Expected chips:" in text
     assert text.count("Bankroll:") == 3
-    assert final == pytest.approx(100 + sum(float(x.split()[-1]) * (1 if "win" in x else -1)
-                                            for x in lines if x.strip().startswith(("you win", "you lose"))))
+    assert final == pytest.approx(
+        100
+        + sum(
+            float(x.split()[-1]) * (1 if "win" in x else -1)
+            for x in lines
+            if x.strip().startswith(("you win", "you lose"))
+        )
+    )
 
 
 def test_strategy_and_simulate_subcommands(capsys):
@@ -176,6 +187,7 @@ def test_strategy_and_simulate_subcommands(capsys):
 
 
 # Monte Carlo control.
+
 
 def test_learning_is_reproducible_with_a_seed():
     a = learn(1500, seed=7, snapshots=2)

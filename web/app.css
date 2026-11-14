@@ -303,15 +303,19 @@ body:not(.landing-page)::before { z-index: 0; }
 .fx-pop { position: fixed; z-index: 61; pointer-events: none; transform: translate(-50%, -50%);
   font-family: var(--orb); font-weight: 900; font-size: 1.3rem; text-shadow: 0 0 10px currentColor; animation: pop 0.9s ease-out forwards; }
 @keyframes pop { from { opacity: 1; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 0; transform: translate(-50%, -160%) scale(1.25); } }
-.fx-banner { position: fixed; left: 0; right: 0; top: 38%; z-index: 62; pointer-events: none; text-align: center; padding: 1.1rem 1rem;
-  background: linear-gradient(90deg, transparent, rgba(2,6,16,0.92) 15%, rgba(2,6,16,0.92) 85%, transparent);
-  border-top: 2px solid var(--fx-c); border-bottom: 2px solid var(--fx-c); box-shadow: 0 0 40px color-mix(in srgb, var(--fx-c) 50%, transparent);
-  animation: banner-in 0.35s cubic-bezier(.2,1.4,.4,1); }
-.fx-banner.fx-out { opacity: 0; transition: opacity 0.6s; }
-.fx-banner-main { display: block; font-family: var(--orb); font-weight: 900; font-size: clamp(1.8rem, 6vw, 3.6rem); color: #fff;
-  text-shadow: 0 0 12px var(--fx-c), 0 0 32px var(--fx-c); letter-spacing: 0.04em; }
-.fx-banner-sub { display: block; font-family: var(--mono); font-size: 0.85rem; color: var(--fx-c); margin-top: 0.3rem; }
-@keyframes banner-in { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+/* Outcome toast: a small card in the top-right corner, under the nav, so it never hides the board. It is
+   informational only (pointer-events off) and fades after about two seconds. On phones it spans the top edge. */
+.fx-banner { position: fixed; top: 64px; right: 16px; z-index: 62; pointer-events: none; max-width: min(280px, calc(100vw - 24px)); overflow-wrap: anywhere;
+  padding: 0.45rem 0.65rem; text-align: left; background: rgba(2,6,16,0.94); border: 1px solid var(--fx-c);
+  border-left: 3px solid var(--fx-c); box-shadow: 0 0 14px color-mix(in srgb, var(--fx-c) 35%, transparent);
+  animation: banner-in 0.25s ease-out; }
+.fx-banner.fx-out { opacity: 0; transition: opacity 0.5s; }
+.fx-banner-main { display: block; font-family: var(--orb); font-weight: 800; font-size: 0.85rem; color: #fff;
+  text-shadow: 0 0 8px var(--fx-c); letter-spacing: 0.05em; }
+.fx-banner-sub { display: block; font-family: var(--mono); font-size: 0.65rem; color: var(--fx-c); margin-top: 0.15rem; }
+.fx-banner-sub:empty { display: none; }
+@keyframes banner-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 600px) { .fx-banner { right: 12px; top: 60px; } }
 
 @media (prefers-reduced-motion: reduce) {
   .neon-floor-plane, .np-grid, .c4-board, .g-board, .s-board { animation: none; }

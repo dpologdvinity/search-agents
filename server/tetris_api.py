@@ -63,18 +63,22 @@ async def meta():
 
 def choose_json(board: list[int], piece: str, preview: str | None, weights, lookahead: bool) -> dict:
     """Run the placement search and shape the answer: the choice and every one-piece candidate."""
-    move, moves = best_move(tuple(board), piece, weights,
-                            preview=preview if lookahead else None, top_k=LOOKAHEAD_TOP_K)
+    move, moves = best_move(tuple(board), piece, weights, preview=preview if lookahead else None, top_k=LOOKAHEAD_TOP_K)
     chosen = None
     if move is not None:
-        chosen = {"rot": move.rot, "x": move.x, "y": move.y, "lines": move.lines,
-                  "score": round(move.score, 4), "total": round(move.total, 4)}
+        chosen = {
+            "rot": move.rot,
+            "x": move.x,
+            "y": move.y,
+            "lines": move.lines,
+            "score": round(move.score, 4),
+            "total": round(move.total, 4),
+        }
     return {
         "piece": piece,
         "game_over": move is None,
         "chosen": chosen,
-        "candidates": [{"rot": m.rot, "x": m.x, "y": m.y, "lines": m.lines, "score": round(m.score, 4)}
-                       for m in moves],
+        "candidates": [{"rot": m.rot, "x": m.x, "y": m.y, "lines": m.lines, "score": round(m.score, 4)} for m in moves],
     }
 
 

@@ -24,8 +24,10 @@ from .library import get, library
 from .puzzle import EMPTY, FILLED, UNKNOWN, Puzzle, clues_of, empty_grid, picture_text, render
 from .solvers import METHODS, hint, solve, verify
 
-HELP = ("commands: f r c fill | x r c cross | e r c clear | r c fill | h hint | s solution | k check | q quit\n"
-        "rows and columns are counted from 1")
+HELP = (
+    "commands: f r c fill | x r c cross | e r c clear | r c fill | h hint | s solution | k check | q quit\n"
+    "rows and columns are counted from 1"
+)
 
 
 def _parse_size(text: str) -> tuple[int, int]:
@@ -109,10 +111,16 @@ def _check_text(puzzle: Puzzle, grid) -> str:
     """Which rows and columns already match their clue, and which do not."""
     filled = [[1 if v == FILLED else 0 for v in row] for row in grid]
     rows, cols = clues_of(filled)
-    bad_rows = [str(i + 1) for i, (a, b) in enumerate(zip(rows, puzzle.row_clues))
-                if a != b and all(v != UNKNOWN for v in grid[i])]
-    bad_cols = [str(j + 1) for j, (a, b) in enumerate(zip(cols, puzzle.col_clues))
-                if a != b and all(grid[i][j] != UNKNOWN for i in range(puzzle.rows))]
+    bad_rows = [
+        str(i + 1)
+        for i, (a, b) in enumerate(zip(rows, puzzle.row_clues))
+        if a != b and all(v != UNKNOWN for v in grid[i])
+    ]
+    bad_cols = [
+        str(j + 1)
+        for j, (a, b) in enumerate(zip(cols, puzzle.col_clues))
+        if a != b and all(grid[i][j] != UNKNOWN for i in range(puzzle.rows))
+    ]
     done_rows = sum(a == b for a, b in zip(rows, puzzle.row_clues))
     done_cols = sum(a == b for a, b in zip(cols, puzzle.col_clues))
     text = f"rows matching their clue: {done_rows}/{puzzle.rows}, columns: {done_cols}/{puzzle.cols}"
@@ -135,8 +143,10 @@ def cmd_solve(args) -> int:
         print(picture_text(res.second))
     if args.stats:
         s = res.stats
-        print(f"seconds {s.seconds:.4f}  decisions {s.decisions}  conflicts {s.conflicts}  "
-              f"propagations {s.propagations}  backtracks {s.backtracks}  sweeps {s.sweeps}")
+        print(
+            f"seconds {s.seconds:.4f}  decisions {s.decisions}  conflicts {s.conflicts}  "
+            f"propagations {s.propagations}  backtracks {s.backtracks}  sweeps {s.sweeps}"
+        )
         if s.variables is not None:
             print(f"variables {s.variables}  clauses {s.clauses}  pure eliminated {s.pure_eliminated}")
     return 0 if res.status in ("unique", "undecided", "multiple") else 1
@@ -168,8 +178,9 @@ def cmd_benchmark(args) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m nonogram",
-                                     description="Nonograms: play, solve, generate, benchmark.")
+    parser = argparse.ArgumentParser(
+        prog="python -m nonogram", description="Nonograms: play, solve, generate, benchmark."
+    )
     sub = parser.add_subparsers(dest="cmd")
 
     p_play = sub.add_parser("play", help="play a puzzle in the terminal")

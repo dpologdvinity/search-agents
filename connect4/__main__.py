@@ -47,8 +47,7 @@ def describe(result: dict) -> str:
     """One line explaining how an agent chose its move."""
     a = result["analysis"]
     if a["kind"] == "alphazero":
-        return (f"{a['simulations']} simulations; estimates its chance of winning at "
-                f"{100 * a['win_probability']:.0f}%")
+        return f"{a['simulations']} simulations; estimates its chance of winning at {100 * a['win_probability']:.0f}%"
     if a["kind"] == "minimax":
         best = a["best"]
         verdict = {"win": "a forced win", "loss": "a forced loss"}.get(best["result"], f"score {best.get('score')}")
@@ -80,26 +79,32 @@ def run_match(agent: str, level: int, games: int, seed: int = 0) -> dict:
     Each game opens with two random moves (see connect4.evaluate.play_game), so the games differ even
     though the search agents are deterministic. The seed fixes both the openings and the chance draws.
     """
+
     def agent_move(board: Board) -> int:
         return AGENTS[agent](board, level)["move"]
 
     chance_rng = random.Random(seed)
-    return match(agent_move, lambda board: chance_move(board, 1, chance_rng)["move"], games,
-                 np.random.default_rng(seed))
+    return match(
+        agent_move, lambda board: chance_move(board, 1, chance_rng)["move"], games, np.random.default_rng(seed)
+    )
 
 
 def match_table(agent: str, level: int, games: int, counts: dict) -> str:
     """A markdown table with W/D/L for the agent and for the chance opponent, naming each algorithm."""
-    budget = {"alphazero": f"{ALPHAZERO_SIMS[level]} simulations per move",
-              "minimax": f"{MINIMAX_SECONDS[level]} s per move",
-              "mcts": f"{MCTS_SIMS[level]} simulations per move"}.get(agent, "no search")
-    lines = [f"Connect Four: {NAMES[agent]} (level {level}, {budget}) vs Chance (fixed odds), "
-             f"{games} games, colours alternating",
-             "",
-             "| Algorithm | Wins | Draws | Losses |",
-             "|---|---|---|---|",
-             f"| {NAMES[agent]} ({agent}) | {counts['win']} | {counts['draw']} | {counts['loss']} |",
-             f"| Chance (chance, fixed odds) | {counts['loss']} | {counts['draw']} | {counts['win']} |"]
+    budget = {
+        "alphazero": f"{ALPHAZERO_SIMS[level]} simulations per move",
+        "minimax": f"{MINIMAX_SECONDS[level]} s per move",
+        "mcts": f"{MCTS_SIMS[level]} simulations per move",
+    }.get(agent, "no search")
+    lines = [
+        f"Connect Four: {NAMES[agent]} (level {level}, {budget}) vs Chance (fixed odds), "
+        f"{games} games, colours alternating",
+        "",
+        "| Algorithm | Wins | Draws | Losses |",
+        "|---|---|---|---|",
+        f"| {NAMES[agent]} ({agent}) | {counts['win']} | {counts['draw']} | {counts['loss']} |",
+        f"| Chance (chance, fixed odds) | {counts['loss']} | {counts['draw']} | {counts['win']} |",
+    ]
     return "\n".join(lines)
 
 
@@ -131,15 +136,21 @@ def play(players: dict, level: int, read=input) -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m connect4", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m connect4", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--agent", choices=sorted(AGENTS), default="alphazero", help="opponent (default alphazero)")
     parser.add_argument("--level", type=int, choices=(1, 2, 3), default=2, help="search budget (default 2)")
     parser.add_argument("--ai-first", action="store_true", help="let the agent move first")
-    parser.add_argument("--watch", nargs=2, metavar=("FIRST", "SECOND"), choices=sorted(AGENTS),
-                        help="watch two agents play each other")
-    parser.add_argument("--match", type=int, metavar="GAMES",
-                        help="play GAMES games of --agent against chance and print the W/D/L table")
+    parser.add_argument(
+        "--watch", nargs=2, metavar=("FIRST", "SECOND"), choices=sorted(AGENTS), help="watch two agents play each other"
+    )
+    parser.add_argument(
+        "--match",
+        type=int,
+        metavar="GAMES",
+        help="play GAMES games of --agent against chance and print the W/D/L table",
+    )
     parser.add_argument("--seed", type=int, default=0, help="seed for --match (default 0)")
     args = parser.parse_args(argv)
 

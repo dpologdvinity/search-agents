@@ -74,7 +74,7 @@ def test_scalar_and_batch_values_agree(random_net):
 def test_value_is_invariant_under_symmetry(random_net):
     for b in random_boards(20, 3):
         grid = to_grid(b)
-        rotated = from_grid([list(r) for r in zip(*grid[::-1])])   # 90 degrees clockwise
+        rotated = from_grid([list(r) for r in zip(*grid[::-1])])  # 90 degrees clockwise
         mirrored = from_grid([row[::-1] for row in grid])
         v = random_net.value(b)
         assert random_net.value(rotated) == pytest.approx(v, rel=1e-5)
@@ -96,8 +96,7 @@ def test_short_training_run_learns_something(tmp_path):
     from game2048 import train_td
 
     out = tmp_path / "w.npz"
-    train_td.main(["--minutes", "0.05", "--games", "64", "--out", str(out),
-                   "--log", str(tmp_path / "log.jsonl")])
+    train_td.main(["--minutes", "0.05", "--games", "64", "--out", str(out), "--log", str(tmp_path / "log.jsonl")])
     loaded = NTupleNetwork.load(out)
     assert any(t.any() for t in loaded.tables)
     # The run ends with a record of the games finished so far, so the log is never missing its last games.
@@ -109,7 +108,7 @@ def test_legacy_npz_layout_loads(tmp_path):
     """The first committed network stored one (patterns, 16 ** 5) array plus the pattern cells."""
     rng = np.random.default_rng(0)
     patterns = np.array(PATTERNS[:4], dtype=np.int8)  # four 5-cell patterns, as in the legacy layout
-    weights = rng.normal(size=(len(patterns), 16 ** 5)).astype(np.float16)
+    weights = rng.normal(size=(len(patterns), 16**5)).astype(np.float16)
     path = tmp_path / "legacy.npz"
     np.savez(path, patterns=patterns, weights=weights)
     loaded = NTupleNetwork.load(path)

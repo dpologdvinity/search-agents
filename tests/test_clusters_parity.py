@@ -26,14 +26,24 @@ CORE = ROOT / "web" / "js" / "clusters-core.js"
 NODE = shutil.which("node")
 
 PRESET_CASES = [
-    ("blobs", 0, 120), ("aniso", 3, 90), ("rings", 0, 150), ("moons", 2, 100), ("uniform", 1, 80), ("smiley", 5, 140),
+    ("blobs", 0, 120),
+    ("aniso", 3, 90),
+    ("rings", 0, 150),
+    ("moons", 2, 100),
+    ("uniform", 1, 80),
+    ("smiley", 5, 140),
 ]
 KMEANS_CASES = [
-    ("blobs", 0, 3, "kmeans++"), ("aniso", 1, 3, "kmeans++"), ("smiley", 5, 4, "random"), ("moons", 2, 2, "kmeans++"),
+    ("blobs", 0, 3, "kmeans++"),
+    ("aniso", 1, 3, "kmeans++"),
+    ("smiley", 5, 4, "random"),
+    ("moons", 2, 2, "kmeans++"),
 ]
 DBSCAN_CASES = [("rings", 0, 0.09, 5), ("blobs", 4, 0.06, 4), ("moons", 2, 0.07, 3)]
 GMM_CASES = [
-    ("blobs", 6, 4, "kmeans++", 200), ("aniso", 1, 3, "kmeans++", 200), ("moons", 2, 2, "random", 200),
+    ("blobs", 6, 4, "kmeans++", 200),
+    ("aniso", 1, 3, "kmeans++", 200),
+    ("moons", 2, 2, "random", 200),
     ("aniso", 1, 3, "kmeans++", 2),  # cut short by max_iter: the returned parameters must match resp and loglik
 ]
 ELBOW_CASE = ("blobs", 2, 120, 6)

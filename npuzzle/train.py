@@ -40,8 +40,7 @@ class ResidualMLP(nn.Module):
         super().__init__()
         self.inp = nn.Linear(N**4, hidden)
         self.blocks = nn.ModuleList(
-            nn.ModuleList([nn.Linear(hidden, hidden), nn.Linear(hidden, hidden)])
-            for _ in range(blocks)
+            nn.ModuleList([nn.Linear(hidden, hidden), nn.Linear(hidden, hidden)]) for _ in range(blocks)
         )
         self.out = nn.Linear(hidden, 1)
         # Start the residual near zero so h starts near the PDB.
@@ -68,8 +67,10 @@ def bellman_targets(target, boards, chunk=50_000):
     kids, valid = children(boards, N)
     flat = kids.reshape(-1, N * N)
     h = np.concatenate(
-        [heuristic(target, flat[i : i + chunk], pdb_batch(flat[i : i + chunk])).numpy()
-         for i in range(0, len(flat), chunk)]
+        [
+            heuristic(target, flat[i : i + chunk], pdb_batch(flat[i : i + chunk])).numpy()
+            for i in range(0, len(flat), chunk)
+        ]
     ).reshape(len(boards), 4)
     h = np.where(valid, h, np.inf)
     y = 1.0 + h.min(axis=1)
@@ -79,8 +80,10 @@ def bellman_targets(target, boards, chunk=50_000):
 def export(model, path=WEIGHTS):
     sd = {k: v.detach().numpy() for k, v in model.state_dict().items()}
     arrays = {
-        "in.weight": sd["inp.weight"], "in.bias": sd["inp.bias"],
-        "out.weight": sd["out.weight"], "out.bias": sd["out.bias"],
+        "in.weight": sd["inp.weight"],
+        "in.bias": sd["inp.bias"],
+        "out.weight": sd["out.weight"],
+        "out.bias": sd["out.bias"],
         "blocks": np.array(len(model.blocks)),
     }
     for i in range(len(model.blocks)):
@@ -162,8 +165,12 @@ def main(argv=None):
         target.load_state_dict(model.state_dict())
         round_ += 1
 
-        record = {"round": round_, "minutes": round((time.time() - start) / 60, 2),
-                  "loss": float(np.mean(losses)), "mean_target": float(y.mean())}
+        record = {
+            "round": round_,
+            "minutes": round((time.time() - start) / 60, 2),
+            "loss": float(np.mean(losses)),
+            "mean_target": float(y.mean()),
+        }
         if round_ % 10 == 0:
             data = load_eval(args.eval)
             if data is not None:

@@ -63,12 +63,15 @@ def describe(result: PlanResult) -> list[str]:
         f"status:     {result.status}",
     ]
     if result.paths is not None:
-        lines.append(f"sum of costs: {result.sum_of_costs}   makespan: {result.makespan}   "
-                     f"collisions: {len(result.conflicts)}")
+        lines.append(
+            f"sum of costs: {result.sum_of_costs}   makespan: {result.makespan}   collisions: {len(result.conflicts)}"
+        )
     lines.append(f"seconds:    {result.seconds:.3f}")
     if result.planner == "cbs":
-        lines.append(f"CBS: high-level nodes {result.high_nodes}, expanded {result.expanded_nodes}, "
-                     f"conflicts resolved {result.conflicts_resolved}, low-level states {result.low_expansions:,}")
+        lines.append(
+            f"CBS: high-level nodes {result.high_nodes}, expanded {result.expanded_nodes}, "
+            f"conflicts resolved {result.conflicts_resolved}, low-level states {result.low_expansions:,}"
+        )
     return lines
 
 
@@ -113,8 +116,9 @@ def run(argv: list[str]) -> int:
     parser.add_argument("--no-animate", action="store_true", help="print only the stats and the final map")
     parser.add_argument("--delay", type=float, default=0.25, help="seconds per frame (default 0.25)")
     parser.add_argument("--max-nodes", type=int, default=CBS_NODES, help=f"CBS node budget (default {CBS_NODES})")
-    parser.add_argument("--max-seconds", type=float, default=CBS_SECONDS,
-                        help=f"CBS time budget in seconds (default {CBS_SECONDS})")
+    parser.add_argument(
+        "--max-seconds", type=float, default=CBS_SECONDS, help=f"CBS time budget in seconds (default {CBS_SECONDS})"
+    )
     args = parser.parse_args(argv)
 
     layout, robots = args.layout, args.robots
@@ -175,8 +179,9 @@ def benchmark(argv: list[str]) -> int:
     problems = []
     for seed in range(args.seed, args.seed + args.instances):
         try:
-            problems.append(random_instance(args.layout, args.robots, seed,
-                                            max_nodes=args.max_nodes, max_seconds=args.max_seconds))
+            problems.append(
+                random_instance(args.layout, args.robots, seed, max_nodes=args.max_nodes, max_seconds=args.max_seconds)
+            )
         except ValueError:
             pass  # no solvable draw in the attempt budget; counted as skipped below
     if not problems:
@@ -191,11 +196,14 @@ def benchmark(argv: list[str]) -> int:
 
     n = len(problems)
     skipped = args.instances - n
-    print(f"{LAYOUT_INFO[args.layout]['title']} ({args.layout}), {args.robots} robots, {n} instances "
-          f"(seeds {args.seed}-{args.seed + args.instances - 1}"
-          f"{f', {skipped} skipped' if skipped else ''})")
-    header = (f"{'planner':<22}{'solved':>8}{'mean SOC':>10}{'makespan':>10}"
-              f"{'collisions':>12}{'CBS nodes':>11}{'seconds':>9}")
+    print(
+        f"{LAYOUT_INFO[args.layout]['title']} ({args.layout}), {args.robots} robots, {n} instances "
+        f"(seeds {args.seed}-{args.seed + args.instances - 1}"
+        f"{f', {skipped} skipped' if skipped else ''})"
+    )
+    header = (
+        f"{'planner':<22}{'solved':>8}{'mean SOC':>10}{'makespan':>10}{'collisions':>12}{'CBS nodes':>11}{'seconds':>9}"
+    )
     print(header)
     print("-" * len(header))
     for planner in PLANNERS:
@@ -208,16 +216,21 @@ def benchmark(argv: list[str]) -> int:
         coll = sum(len(r.conflicts) for r in rs) / n
         nodes = f"{sum(r.high_nodes for r in rs) / n:.1f}" if planner == "cbs" else "-"
         secs = sum(r.seconds for r in rs) / n
-        print(f"{PLANNER_INFO[planner]['title']:<22}{f'{solved}/{n}':>8}{soc:>10.1f}{span:>10.1f}"
-              f"{coll:>12.2f}{nodes:>11}{secs:>9.4f}")
+        print(
+            f"{PLANNER_INFO[planner]['title']:<22}{f'{solved}/{n}':>8}{soc:>10.1f}{span:>10.1f}"
+            f"{coll:>12.2f}{nodes:>11}{secs:>9.4f}"
+        )
 
-    both = [(c, p) for c, p in zip(results["cbs"], results["prioritized"])
-            if c.status == "solved" and p.status == "solved"]
+    both = [
+        (c, p) for c, p in zip(results["cbs"], results["prioritized"]) if c.status == "solved" and p.status == "solved"
+    ]
     if both:
         worse = sum(p.sum_of_costs > c.sum_of_costs for c, p in both)
         extra = sum(p.sum_of_costs - c.sum_of_costs for c, p in both) / len(both)
-        print(f"prioritized is suboptimal on {worse}/{len(both)} instances where both solved "
-              f"(mean extra cost {extra:.2f})")
+        print(
+            f"prioritized is suboptimal on {worse}/{len(both)} instances where both solved "
+            f"(mean extra cost {extra:.2f})"
+        )
     failed = sum(r.status == "failed" for r in results["prioritized"])
     if failed:
         print(f"prioritized failed to route a robot on {failed}/{n} instances")

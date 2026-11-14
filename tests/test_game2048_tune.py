@@ -31,8 +31,9 @@ def test_tuner_keeps_weights_non_negative_and_records_settings(tmp_path):
 def test_evaluate_scores_saved_weights_on_shared_games(tmp_path):
     # Held-out report: each file is scored on the same seed, and the recorded command is kept.
     shipped = tmp_path / "a.json"
-    shipped.write_text(json.dumps({"weights": dict(zip(FEATURES, [1.0, 1.0, 0.0, 1.0, 0.5, 0.2])),
-                                   "greedy_mean_score": 1.0}))
+    shipped.write_text(
+        json.dumps({"weights": dict(zip(FEATURES, [1.0, 1.0, 0.0, 1.0, 0.5, 0.2])), "greedy_mean_score": 1.0})
+    )
     bad = tmp_path / "b.json"
     bad.write_text(json.dumps({"weights": dict(zip(FEATURES, [-5.0, 0, 0, 0, 0, 0])), "greedy_mean_score": 2.0}))
     out = tmp_path / "report.json"

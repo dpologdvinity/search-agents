@@ -52,8 +52,10 @@ def play_human(kind: str, k: int, pulls: int, seed: int, read=input, out=print) 
     The player and the agents see the same outcome table, so the comparison is on identical luck.
     """
     env = Environment(kind, k, pulls, seed)
-    out(f"Neon casino: {k} machines ({kind}), {pulls} pulls, seed {seed}. "
-        "Type a machine (A..) to pull, q to stop. The payouts are hidden.")
+    out(
+        f"Neon casino: {k} machines ({kind}), {pulls} pulls, seed {seed}. "
+        "Type a machine (A..) to pull, q to stop. The payouts are hidden."
+    )
     arms: list[int] = []
     total = 0.0
     while len(arms) < pulls:
@@ -86,15 +88,19 @@ def play_human(kind: str, k: int, pulls: int, seed: int, read=input, out=print) 
     for line in describe_segments(env):
         out(line)
     out("")
-    out(f"{'player':<26}  regret {mine.total_regret:7.2f}   best machine {100 * mine.share_optimal():5.1f}%   "
-        f"reward {sum(mine.rewards):8.2f}")
+    out(
+        f"{'player':<26}  regret {mine.total_regret:7.2f}   best machine {100 * mine.share_optimal():5.1f}%   "
+        f"reward {sum(mine.rewards):8.2f}"
+    )
     rows = []
     for key in LINEUP[kind]:
         run = play(key, env)
         rows.append((AGENTS[key].label, run))
     for label, run in rows:
-        out(f"{label:<26}  regret {run.total_regret:7.2f}   best machine {100 * run.share_optimal():5.1f}%   "
-            f"reward {sum(run.rewards):8.2f}")
+        out(
+            f"{label:<26}  regret {run.total_regret:7.2f}   best machine {100 * run.share_optimal():5.1f}%   "
+            f"reward {sum(run.rewards):8.2f}"
+        )
     beaten = sum(1 for _, run in rows if run.total_regret > mine.total_regret)
     tied = sum(1 for _, run in rows if run.total_regret == mine.total_regret)
     out("")
@@ -123,13 +129,18 @@ def watch(key: str, kind: str, k: int, pulls: int, seed: int, delay: float = 0.0
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m bandits",
-                                     description="Neon casino: multi-armed bandits, exploration vs exploitation.")
+    parser = argparse.ArgumentParser(
+        prog="python -m bandits", description="Neon casino: multi-armed bandits, exploration vs exploitation."
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_casino(p):
-        p.add_argument("--kind", choices=KINDS, default="bernoulli",
-                       help="bernoulli (0/1 payouts), gaussian (noisy real payouts), or drifting (payouts redrawn)")
+        p.add_argument(
+            "--kind",
+            choices=KINDS,
+            default="bernoulli",
+            help="bernoulli (0/1 payouts), gaussian (noisy real payouts), or drifting (payouts redrawn)",
+        )
         p.add_argument("-k", "--machines", type=int, default=K, help=f"number of machines, 2..20 (default {K})")
         p.add_argument("--seed", type=int, help="seed for the machines and outcomes (default: a random one, printed)")
 
@@ -155,6 +166,7 @@ def main(argv=None) -> int:
             parser.error("--seeds must be at least 1")
         if args.horizon <= 1000:
             parser.error("--horizon must be more than 1000")
+
         def progress(kind, seed):
             if seed % 25 == 0:
                 print(f"  {kind}: seed {seed} of {args.seeds}", file=sys.stderr)

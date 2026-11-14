@@ -119,11 +119,14 @@ def cmd_solve(args: argparse.Namespace) -> int:
     summary = pi.solve(args.eps)
     # Agreement counts equally good actions as agreeing (a dead end where every move is worth the same).
     vi_Q = q_table(mdp, vi.V)
-    agree = sum(1 for s in mdp.states
-                if pi.pi[s] == vi_pi[s] or vi_Q[s][pi.pi[s]] >= max(vi_Q[s]) - 1e-6) / len(mdp.states)
+    agree = sum(1 for s in mdp.states if pi.pi[s] == vi_pi[s] or vi_Q[s][pi.pi[s]] >= max(vi_Q[s]) - 1e-6) / len(
+        mdp.states
+    )
 
-    print(f"{pr.label}  {mdp.width}x{mdp.height}  states={len(mdp.states)}  "
-          f"gamma={params.gamma:g} slip={params.slip:g} living={params.living:g}")
+    print(
+        f"{pr.label}  {mdp.width}x{mdp.height}  states={len(mdp.states)}  "
+        f"gamma={params.gamma:g} slip={params.slip:g} living={params.living:g}"
+    )
     print()
     print(f"VALUE ITERATION  {vi.sweeps} sweeps to residual < {args.eps:g} (last residual {vi.residual:.2e})")
     print(render_values(mdp, vi.V))
@@ -133,8 +136,10 @@ def cmd_solve(args: argparse.Namespace) -> int:
     print()
     stable = "stable" if summary["stable"] else "NOT stable (round cap reached)"
     capped = "  evaluation hit its sweep cap" if summary["capped"] else ""
-    print(f"POLICY ITERATION  {summary['rounds']} improvement rounds, {summary['eval_sweeps']} evaluation sweeps, "
-          f"policy {stable}{capped}")
+    print(
+        f"POLICY ITERATION  {summary['rounds']} improvement rounds, {summary['eval_sweeps']} evaluation sweeps, "
+        f"policy {stable}{capped}"
+    )
     print(f"agreement with value iteration: {agree:.1%}")
     return 0
 
@@ -148,11 +153,21 @@ def cmd_learn(args: argparse.Namespace) -> int:
     vi.solve(1e-9)
     opt_pi, opt_Q = optimal_reference(mdp, vi.V)
 
-    agent = QLearner(mdp, algo=args.algo, seed=args.seed, alpha=args.alpha, epsilon=args.epsilon,
-                     decay=args.decay, eps_min=args.eps_min, max_steps=args.max_steps)
+    agent = QLearner(
+        mdp,
+        algo=args.algo,
+        seed=args.seed,
+        alpha=args.alpha,
+        epsilon=args.epsilon,
+        decay=args.decay,
+        eps_min=args.eps_min,
+        max_steps=args.max_steps,
+    )
     name = "Q-learning" if args.algo == "q" else "SARSA"
-    print(f"{name} on {pr.label}  alpha={agent.alpha:g} epsilon={agent.epsilon0:g} decay={agent.decay:g} "
-          f"gamma={params.gamma:g} slip={params.slip:g} seed={args.seed}")
+    print(
+        f"{name} on {pr.label}  alpha={agent.alpha:g} epsilon={agent.epsilon0:g} decay={agent.decay:g} "
+        f"gamma={params.gamma:g} slip={params.slip:g} seed={args.seed}"
+    )
     scope = len(reachable(mdp, opt_pi))
     print(f"agreement is scored on the {scope} states the optimal policy reaches from the start")
     print(f"{'episodes':>12}  {'mean return':>12}  {'falls':>6}  {'agree':>7}")
@@ -188,22 +203,34 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("solve", help="value iteration and policy iteration on a grid")
     _add_world_args(s)
-    s.add_argument("--eps", type=_in_range(0, float("inf"), low_open=True), default=1e-6,
-                   help="convergence threshold on the residual, above 0")
+    s.add_argument(
+        "--eps",
+        type=_in_range(0, float("inf"), low_open=True),
+        default=1e-6,
+        help="convergence threshold on the residual, above 0",
+    )
     s.set_defaults(func=cmd_solve)
 
     lp = sub.add_parser("learn", help="Q-learning or SARSA from sampled episodes")
     _add_world_args(lp)
     lp.add_argument("--algo", choices=("q", "sarsa"), default="q")
     lp.add_argument("--episodes", type=_in_range(1, float("inf"), integer=True), default=2000)
-    lp.add_argument("--every", type=_in_range(1, float("inf"), integer=True), default=200,
-                    help="print one row per this many episodes")
+    lp.add_argument(
+        "--every",
+        type=_in_range(1, float("inf"), integer=True),
+        default=200,
+        help="print one row per this many episodes",
+    )
     lp.add_argument("--alpha", type=_in_range(0, 1, low_open=True), help="step size, in (0, 1]")
     lp.add_argument("--epsilon", type=_in_range(0, 1), help="starting exploration rate, in [0, 1]")
     lp.add_argument("--decay", type=_in_range(0, 1, low_open=True), help="per-episode multiplier on epsilon, in (0, 1]")
     lp.add_argument("--eps-min", dest="eps_min", type=_in_range(0, 1), help="floor for epsilon, in [0, 1]")
-    lp.add_argument("--max-steps", dest="max_steps", type=_in_range(1, float("inf"), integer=True),
-                    help="episode length cap, at least 1")
+    lp.add_argument(
+        "--max-steps",
+        dest="max_steps",
+        type=_in_range(1, float("inf"), integer=True),
+        help="episode length cap, at least 1",
+    )
     lp.set_defaults(func=cmd_learn)
     return parser
 

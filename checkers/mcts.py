@@ -87,8 +87,7 @@ class MCTS:
     def _select(self, node):
         """The child with the best UCB1 score. Children always have at least one visit."""
         log_n = math.log(node.visits)
-        return max(node.children,
-                   key=lambda c: c.wins / c.visits + EXPLORATION * math.sqrt(log_n / c.visits))
+        return max(node.children, key=lambda c: c.wins / c.visits + EXPLORATION * math.sqrt(log_n / c.visits))
 
     def search(self, board, side) -> SearchInfo:
         """Run the iterations from this position and return the most visited move, with win rates."""
@@ -134,5 +133,6 @@ class MCTS:
             child = tried.get(m.path)
             scored.append((m, child.wins / child.visits if child is not None else None))
         best = max(root.children, key=lambda c: (c.visits, c.wins / c.visits))
-        return SearchInfo(best.move, best.wins / best.visits, deepest, nodes, 0,
-                          time.perf_counter() - start, scored, rollouts)
+        return SearchInfo(
+            best.move, best.wins / best.visits, deepest, nodes, 0, time.perf_counter() - start, scored, rollouts
+        )

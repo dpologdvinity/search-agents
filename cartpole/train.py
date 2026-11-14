@@ -39,17 +39,17 @@ from .agents import LinearAgent
 from .env import CartPole, run_episode
 from .nets import MLP, Adam, normalise, save_npz, softmax
 
-GAMMA = 0.99          # discount factor
-BATCH = 8             # episodes per REINFORCE gradient update
-CRITIC_BATCH = 8      # episodes per actor-critic update
+GAMMA = 0.99  # discount factor
+BATCH = 8  # episodes per REINFORCE gradient update
+CRITIC_BATCH = 8  # episodes per actor-critic update
 ACTOR_CRITIC_TARGET = "mc"  # critic regresses onto the Monte Carlo return ("mc") or the TD(0) target ("td")
-HIDDEN = 16           # tanh units in each MLP
-LR = 1e-2             # Adam step size for the policy
-CRITIC_LR = 1e-2      # Adam step size for the critic (its output is multiplied by VALUE_SCALE)
-VALUE_SCALE = 50.0    # the critic predicts V / VALUE_SCALE, so its outputs stay near 1 (V can reach ~100)
-CEM_POP = 40          # linear policies sampled per generation
-CEM_ELITE = 10        # the best quarter refits the sampling distribution
-CEM_NOISE = 0.01      # floor on the sampling std, so the search never collapses to a point too early
+HIDDEN = 16  # tanh units in each MLP
+LR = 1e-2  # Adam step size for the policy
+CRITIC_LR = 1e-2  # Adam step size for the critic (its output is multiplied by VALUE_SCALE)
+VALUE_SCALE = 50.0  # the critic predicts V / VALUE_SCALE, so its outputs stay near 1 (V can reach ~100)
+CEM_POP = 40  # linear policies sampled per generation
+CEM_ELITE = 10  # the best quarter refits the sampling distribution
+CEM_NOISE = 0.01  # floor on the sampling std, so the search never collapses to a point too early
 ALGOS = ("reinforce", "actor_critic", "cem")
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -58,11 +58,12 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 @dataclass
 class Episode:
     """One rollout, stored as arrays so a whole batch can be processed with matrix ops."""
-    obs: np.ndarray      # (T, 4) normalised observations the agent saw
-    act: np.ndarray      # (T,) actions taken
-    rew: np.ndarray      # (T,) rewards, all 1.0 for CartPole
-    nxt: np.ndarray      # (T, 4) normalised observation after each step
-    terminated: bool     # True if the pole fell or the cart left the track; False if truncated at 500
+
+    obs: np.ndarray  # (T, 4) normalised observations the agent saw
+    act: np.ndarray  # (T,) actions taken
+    rew: np.ndarray  # (T,) rewards, all 1.0 for CartPole
+    nxt: np.ndarray  # (T, 4) normalised observation after each step
+    terminated: bool  # True if the pole fell or the cart left the track; False if truncated at 500
 
     @property
     def steps(self) -> int:
@@ -137,7 +138,7 @@ def actor_critic_update(policy: MLP, opt_pi: Adam, critic: MLP, opt_v: Adam, bat
     else:
         _, Zn = critic.forward(Xn)
         Vn = VALUE_SCALE * Zn[:, 0]
-        y = R + GAMMA * Vn * (1.0 - done)   # TD target; treated as a constant when differentiating
+        y = R + GAMMA * Vn * (1.0 - done)  # TD target; treated as a constant when differentiating
 
     # Critic: minimise 0.5 * mean (V - y)^2. dL/dZ = VALUE_SCALE * (V - y) / T.
     dZv = (VALUE_SCALE * (V - y) / T)[:, None]

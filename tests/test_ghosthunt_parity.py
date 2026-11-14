@@ -81,7 +81,9 @@ def node_results(scenarios):
     proc = subprocess.run(
         [NODE, "--input-type=module", "-e", NODE_PROGRAM],
         env={**os.environ, "GH_CORE": str(CORE), "GH_SCENARIOS": json.dumps(scenarios)},
-        capture_output=True, text=True, timeout=300,
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout.strip().splitlines()[-1])

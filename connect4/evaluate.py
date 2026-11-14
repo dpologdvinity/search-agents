@@ -60,8 +60,9 @@ def match(agent, opponent, games: int, rng: np.random.Generator) -> dict:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m connect4.evaluate", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="python -m connect4.evaluate", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--games", type=int, default=50, help="games per opponent (default 50)")
     parser.add_argument("--simulations", type=int, default=200, help="PUCT simulations per move (default 200)")
     parser.add_argument("--depths", type=int, nargs="+", default=[2, 4, 6], help="minimax depths to play")

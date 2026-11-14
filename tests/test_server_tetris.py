@@ -80,4 +80,3 @@ def test_choose_is_rate_limited():
     with TestClient(make_app(rate=2)) as c:
         req = {"board": [0] * H, "piece": "T"}
         assert [c.post("/api/tetris/choose", json=req).status_code for _ in range(3)] == [200, 200, 429]
-

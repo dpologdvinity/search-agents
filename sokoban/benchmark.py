@@ -46,17 +46,39 @@ class Run:
     optimal: bool  # the plan has the optimal push count (A* with matching found it)
 
 
+# The benchmark set: levels 1-12, the ones results/sokoban_benchmark.json was measured on. Levels added to the
+# catalog later stay out, so a rerun measures the same thing as the published table.
+BENCHMARK_LEVELS = 12
+
+
+def benchmark_levels():
+    """The levels the benchmark runs by default (the first BENCHMARK_LEVELS of the catalog)."""
+    return all_levels()[:BENCHMARK_LEVELS]
+
+
 def run_benchmark(node_budget: int = DEFAULT_NODES, time_limit: float = DEFAULT_SECONDS, levels=None) -> list[Run]:
     """Run every configuration on every level (or the given subset). Returns one Run per pair."""
-    levels = all_levels() if levels is None else levels
+    levels = benchmark_levels() if levels is None else levels
     runs: list[Run] = []
     for name, algo, heur in CONFIGS:
         for prune in (False, True):
             for lv in levels:
                 r: Result = solve(lv, algo, heur, prune, node_budget=node_budget, time_limit=time_limit)
                 optimal = r.solved and r.pushes == OPTIMAL_PUSHES[lv.name]
-                runs.append(Run(name, prune, lv.name, r.status, r.expanded, r.generated, r.pruned,
-                                round(r.seconds, 4), r.pushes, optimal))
+                runs.append(
+                    Run(
+                        name,
+                        prune,
+                        lv.name,
+                        r.status,
+                        r.expanded,
+                        r.generated,
+                        r.pruned,
+                        round(r.seconds, 4),
+                        r.pushes,
+                        optimal,
+                    )
+                )
     return runs
 
 
@@ -67,17 +89,19 @@ def summarize(runs: list[Run]) -> list[dict]:
         for prune in (False, True):
             group = [r for r in runs if r.config == name and r.prune == prune]
             solved = [r for r in group if r.status == "solved"]
-            rows.append({
-                "config": name,
-                "prune": prune,
-                "solved": len(solved),
-                "levels": len(group),
-                "optimal": sum(1 for r in group if r.optimal),
-                "expanded_solved": sum(r.expanded for r in solved),
-                "expanded_all": sum(r.expanded for r in group),
-                "seconds": round(sum(r.seconds for r in group), 2),
-                "pruned": sum(r.pruned for r in group),
-            })
+            rows.append(
+                {
+                    "config": name,
+                    "prune": prune,
+                    "solved": len(solved),
+                    "levels": len(group),
+                    "optimal": sum(1 for r in group if r.optimal),
+                    "expanded_solved": sum(r.expanded for r in solved),
+                    "expanded_all": sum(r.expanded for r in group),
+                    "seconds": round(sum(r.seconds for r in group), 2),
+                    "pruned": sum(r.pruned for r in group),
+                }
+            )
     return rows
 
 
@@ -89,7 +113,7 @@ def render_table(runs: list[Run], budget: int, seconds: float) -> str:
     """Markdown: the summary table, then a per-level table of nodes expanded for each configuration."""
     lines = [
         f"Node budget {_fmt_int(budget)} and {seconds:g} s per run. Pushes are counted for solved runs; "
-        "\"optimal\" means the pushes equal the optimal count.",
+        '"optimal" means the pushes equal the optimal count.',
         "",
         "| search | deadlock pruning | solved | optimal | nodes expanded (solved levels) "
         "| nodes expanded (all) | time (all) | states pruned |",
@@ -102,8 +126,11 @@ def render_table(runs: list[Run], budget: int, seconds: float) -> str:
             f"{_fmt_int(row['expanded_all'])} | {row['seconds']:.1f} s | {_fmt_int(row['pruned'])} |"
         )
     lines += ["", "Nodes expanded per level (`-` unsolved within the budget; `*` solved but not optimal):", ""]
-    header = "| level | optimal pushes | " + " | ".join(
-        f"{name} {'+P' if prune else ''}".strip() for name, _, _ in CONFIGS for prune in (False, True)) + " |"
+    header = (
+        "| level | optimal pushes | "
+        + " | ".join(f"{name} {'+P' if prune else ''}".strip() for name, _, _ in CONFIGS for prune in (False, True))
+        + " |"
+    )
     lines.append(header)
     lines.append("|---|---:|" + "---:|" * (2 * len(CONFIGS)))
     for lv in NAMES:

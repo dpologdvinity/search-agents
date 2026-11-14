@@ -30,16 +30,16 @@ class GameTree:
     """Arrays describing the tree. Index every list by node id, or by information-set id where noted."""
 
     kind: list[int] = field(default_factory=list)
-    player: list[int] = field(default_factory=list)      # decision nodes: seat to act; others -1
-    info: list[int] = field(default_factory=list)        # decision nodes: information-set id; others -1
+    player: list[int] = field(default_factory=list)  # decision nodes: seat to act; others -1
+    info: list[int] = field(default_factory=list)  # decision nodes: information-set id; others -1
     children: list[list[int]] = field(default_factory=list)
     probs: list[list[float]] = field(default_factory=list)  # chance nodes: outcome probabilities
-    util: list[float] = field(default_factory=list)      # terminal nodes: seat 0's payoff
+    util: list[float] = field(default_factory=list)  # terminal nodes: seat 0's payoff
     depth: list[int] = field(default_factory=list)
-    levels: list[list[int]] = field(default_factory=list)   # node ids grouped by depth
-    infosets: list[str] = field(default_factory=list)       # information-set id -> key
+    levels: list[list[int]] = field(default_factory=list)  # node ids grouped by depth
+    infosets: list[str] = field(default_factory=list)  # information-set id -> key
     info_actions: list[tuple[str, ...]] = field(default_factory=list)  # information-set id -> actions
-    info_player: list[int] = field(default_factory=list)    # information-set id -> seat
+    info_player: list[int] = field(default_factory=list)  # information-set id -> seat
     info_index: dict[str, int] = field(default_factory=dict)
 
     @property

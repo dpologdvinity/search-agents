@@ -49,13 +49,26 @@ console.log(JSON.stringify({ scenarios: out, presets: core.PRESETS }));
 """
 
 SCENARIOS = [
-    {"rows": list(p.rows), "params": dataclasses.asdict(p.params), "vi_sweeps": 20, "pi_seed": 1,
-     "eps": 1e-9, "seed": 7, "episodes": 150}
+    {
+        "rows": list(p.rows),
+        "params": dataclasses.asdict(p.params),
+        "vi_sweeps": 20,
+        "pi_seed": 1,
+        "eps": 1e-9,
+        "seed": 7,
+        "episodes": 150,
+    }
     for p in PRESETS.values()
 ] + [
-    {"rows": ["#####", "#S.-#", "#..+#", "#####"],
-     "params": dataclasses.asdict(Params(gamma=0.9, slip=0.25, living=-0.05)),
-     "vi_sweeps": 12, "pi_seed": 4, "eps": 1e-9, "seed": 3, "episodes": 200},
+    {
+        "rows": ["#####", "#S.-#", "#..+#", "#####"],
+        "params": dataclasses.asdict(Params(gamma=0.9, slip=0.25, living=-0.05)),
+        "vi_sweeps": 12,
+        "pi_seed": 4,
+        "eps": 1e-9,
+        "seed": 3,
+        "episodes": 200,
+    },
 ]
 
 
@@ -78,8 +91,14 @@ def python_result(s):
         }
     return {
         "vi": vi.V,
-        "pi": {"rounds": pi.rounds, "evalSweeps": pi.eval_sweeps, "stable": summary["stable"],
-               "capped": summary["capped"], "V": pi.V, "pi": pi.pi},
+        "pi": {
+            "rounds": pi.rounds,
+            "evalSweeps": pi.eval_sweeps,
+            "stable": summary["stable"],
+            "capped": summary["capped"],
+            "V": pi.V,
+            "pi": pi.pi,
+        },
         "learned": learned,
     }
 
@@ -88,7 +107,9 @@ def node_results():
     proc = subprocess.run(
         [NODE, "--input-type=module", "-e", NODE_PROGRAM],
         env={**os.environ, "MDPLAB_CORE": str(CORE), "MDPLAB_SCENARIOS": json.dumps(SCENARIOS)},
-        capture_output=True, text=True, timeout=300,
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout.strip().splitlines()[-1])
@@ -103,10 +124,14 @@ def close_list(a, b, tol=1e-9):
 @pytest.mark.skipif(NODE is None, reason="node is not installed")
 def test_js_presets_equal_the_python_presets():
     js = node_results()["presets"]
-    py = [{"key": p.key, "label": p.label, "blurb": p.blurb, "rows": list(p.rows),
-           "params": dataclasses.asdict(p.params)} for p in PRESETS.values()]
-    got = [{"key": p["key"], "label": p["label"], "blurb": p["blurb"], "rows": p["rows"], "params": p["params"]}
-           for p in js]
+    py = [
+        {"key": p.key, "label": p.label, "blurb": p.blurb, "rows": list(p.rows), "params": dataclasses.asdict(p.params)}
+        for p in PRESETS.values()
+    ]
+    got = [
+        {"key": p["key"], "label": p["label"], "blurb": p["blurb"], "rows": p["rows"], "params": p["params"]}
+        for p in js
+    ]
     assert got == py
 
 

@@ -28,9 +28,19 @@ CORE = ROOT / "web" / "js" / "localize-core.js"
 NODE = shutil.which("node")
 
 SCENARIO = {
-    "floors": [["halls", 1], ["halls", 2], ["vault", 1], ["vault", 3]],
-    "sim": {"key": "halls", "floor_seed": 1, "seed": 11, "auto_seed": 12, "rays": 8, "sigma": 0.3, "pdrop": 0.05,
-            "scale": 1.0, "steps": 26, "kidnap_at": 14},
+    "floors": [[key, seed] for key in LAYOUTS for seed in (1, 3)],
+    "sim": {
+        "key": "halls",
+        "floor_seed": 1,
+        "seed": 11,
+        "auto_seed": 12,
+        "rays": 8,
+        "sigma": 0.3,
+        "pdrop": 0.05,
+        "scale": 1.0,
+        "steps": 26,
+        "kidnap_at": 14,
+    },
     "grid": {"rays": 8, "sigma": 0.3, "pdrop": 0.05, "scale": 1.0},
     "pf": {"n": 300, "seed": 13, "rays": 8, "sigma": 0.3, "pdrop": 0.05, "scale": 1.0},
 }
@@ -80,8 +90,9 @@ process.stdout.write(JSON.stringify(out));
 
 def run_node() -> dict:
     env = dict(os.environ, LOC_CORE=str(CORE), LOC_SCENARIO=json.dumps(SCENARIO))
-    proc = subprocess.run([NODE, "--input-type=module", "-e", NODE_PROGRAM], capture_output=True, text=True,
-                          env=env, timeout=600)
+    proc = subprocess.run(
+        [NODE, "--input-type=module", "-e", NODE_PROGRAM], capture_output=True, text=True, env=env, timeout=600
+    )
     assert proc.returncode == 0, proc.stderr
     return json.loads(proc.stdout)
 
@@ -216,8 +227,9 @@ def bump_cases(f, g) -> list:
     for rot, fwd in ((0.5, 0.45), (-0.5, 0.45)):
         counts = {"bump": 0, "free": 0}
         for idx in range(0, g.size, 11):
-            x2, y2, _ = motion(f.walls, np.array(g.x[idx]), np.array(g.y[idx]), np.array(g.th[idx]),
-                               np.array(rot), np.array(fwd))
+            x2, y2, _ = motion(
+                f.walls, np.array(g.x[idx]), np.array(g.y[idx]), np.array(g.th[idx]), np.array(rot), np.array(fwd)
+            )
             kind = "bump" if x2 == g.x[idx] and y2 == g.y[idx] else "free"
             if counts[kind] < (3 if kind == "bump" else 2):
                 counts[kind] += 1
@@ -239,11 +251,18 @@ def test_grid_bump_matches_javascript():
         g.belief[idx] = 1.0
         g.predict(rot, fwd)
         want.append(g.belief)
-    payload = {"key": "halls", "seed": 1, "rays": 8, "sigma": 0.3, "pdrop": 0.05,
-               "cases": [{"idx": idx, "rot": rot, "fwd": fwd} for idx, rot, fwd in cases]}
+    payload = {
+        "key": "halls",
+        "seed": 1,
+        "rays": 8,
+        "sigma": 0.3,
+        "pdrop": 0.05,
+        "cases": [{"idx": idx, "rot": rot, "fwd": fwd} for idx, rot, fwd in cases],
+    }
     env = dict(os.environ, LOC_CORE=str(CORE), LOC_BUMP=json.dumps(payload))
-    proc = subprocess.run([NODE, "--input-type=module", "-e", BUMP_PROGRAM], capture_output=True, text=True,
-                          env=env, timeout=600)
+    proc = subprocess.run(
+        [NODE, "--input-type=module", "-e", BUMP_PROGRAM], capture_output=True, text=True, env=env, timeout=600
+    )
     assert proc.returncode == 0, proc.stderr
     got = json.loads(proc.stdout)
     for (idx, rot, fwd), w, jb in zip(cases, want, got):

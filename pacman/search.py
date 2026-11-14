@@ -35,7 +35,10 @@ def distances(maze: Maze, source: int) -> list[int]:
 
 def manhattan(maze: Maze, a: int, b: int) -> int:
     """Grid distance ignoring walls. Used as the A* heuristic and for ghost fallbacks."""
-    return abs(maze.row[a] - maze.row[b]) + abs(maze.col[a] - maze.col[b])
+    dc = abs(maze.col[a] - maze.col[b])
+    if maze.wraps:
+        dc = min(dc, maze.width - dc)
+    return abs(maze.row[a] - maze.row[b]) + dc
 
 
 def astar(maze: Maze, start: int, goal: int) -> list[int] | None:

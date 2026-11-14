@@ -4,8 +4,10 @@ import sys
 from functools import cache
 from pathlib import Path
 
+import pytest
+
 from tictactoe import legal_moves, minimax, reachable_positions, search, winner
-from tictactoe.core import EMPTY_BOARD
+from tictactoe.core import EMPTY_BOARD, LEVELS
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -135,3 +137,59 @@ def test_help_prints_usage(capsys):
 
     main(["tictactoe", "--help"])
     assert "python -m tictactoe stats" in capsys.readouterr().out
+
+
+def human_can_force_win(depth, human):
+    """True if a human playing `human` can force a win against the agent searching `depth` plies."""
+
+    @cache
+    def win(board):
+        w = winner(board)
+        if w:
+            return w == human
+        if "." not in board:
+            return False
+        turn = turn_of(board)
+        if turn != human:
+            m = search(board, turn, depth).move
+            return win(board[:m] + turn + board[m + 1 :])
+        return any(win(board[:m] + human + board[m + 1 :]) for m in legal_moves(board))
+
+    return win(EMPTY_BOARD)
+
+
+def test_levels_are_beatable_except_perfect():
+    # EASY and MEDIUM can be beaten whichever side the human takes; PERFECT never.
+    for human in "XO":
+        assert human_can_force_win(LEVELS["easy"], human)
+        assert human_can_force_win(LEVELS["medium"], human)
+        assert not human_can_force_win(LEVELS["perfect"], human)
+    # The boundary the LEVELS comment states: depth 5 loses only to X, depth 6 never loses.
+    assert human_can_force_win(5, "X") and not human_can_force_win(5, "O")
+    assert not human_can_force_win(6, "X") and not human_can_force_win(6, "O")
+
+
+def test_depth_below_one_is_rejected():
+    # Depth 0 would score the root itself and return no move for a game still in play.
+    with pytest.raises(ValueError):
+        search(EMPTY_BOARD, "X", 0)
+    assert cli("positions", "0").returncode != 0
+
+
+def test_depth_limit_scores_the_horizon_as_a_draw():
+    # X threatens 6-7-8. One ply sees its own wins but not the reply, so it takes the first empty square;
+    # two plies see the threat and block.
+    assert search("O.....XX.", "O", 1).move == 1
+    assert search("O.....XX.", "O", 2).move == 8
+    # A cap deeper than the game changes nothing.
+    assert search(EMPTY_BOARD, "X", 9) == search(EMPTY_BOARD, "X")
+    # A shallow search visits far fewer positions.
+    assert search(EMPTY_BOARD, "X", 2).searched < search(EMPTY_BOARD, "X").searched
+
+
+def test_positions_cli_takes_a_depth():
+    import json
+
+    out = json.loads(cli("positions", "2").stdout)
+    p = next(p for p in out if p["board"] == "O.....XX.")
+    assert p["move"] == 8
