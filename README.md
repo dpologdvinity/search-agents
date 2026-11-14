@@ -1073,6 +1073,10 @@ against every answer, one byte each) is precomputed, so scoring a guess is a gat
 
 See [ARCHITECTURE.md](ARCHITECTURE.md): how the static frontend, the FastAPI server and the game packages fit together, the request guards, and the limits the 1 GB server sets.
 
+## Backgrounds
+
+Every game page has its own calm night scene behind it, in the site's navy, pink, cyan and violet, with small details tied to the game that you only notice up close: the deer and lit 3x3 window by the Sudoku house, four pink portholes in a row on the Connect Four ship, eight queens standing as a real solution on the N-Queens park chessboard, a tic-tac-toe game drawn on a fogged car window. The scenes are plain SVG files in `web/img/bg/`, one per game.
+
 ## Sound
 
 The site has optional synth sound effects, made with the Web Audio API (`web/js/sfx.js`, no audio files). They are off by default. To turn them on or off, press the speaker icon at the right end of the nav bar (keyboard: Tab to it, then Enter or Space). The choice is kept in this browser's localStorage and applies to every page. Sound starts only after you interact with the page, pauses while the tab is hidden, and is rate limited so long searches and watch modes stay quiet.

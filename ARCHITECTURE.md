@@ -34,6 +34,8 @@ site's menus; their pages, APIs and tests still exist (see the `HIDDEN` list in 
 - **`web/` is static.** Pages are plain HTML with ES modules, no bundler. Shared modules: `nav.js` (the game and
   lab lists, the only place they live), `api.js` (server calls), `fx.js` and `sfx.js` (effects and sound),
   `play-layout.js` (fitting boards to the screen), and `explain.js` (formulas, pseudocode and folding sections).
+- **Game backgrounds.** Each game page shows its own night scene with small hidden details tied to the game
+  (`web/img/bg/<page>.svg`, a fixed `.game-bg` layer in `web/app.css`). Labs and hidden games keep the neon floor.
 - **Browser ports of algorithms.** Some pages run their algorithm in the browser so they need no server round trip
   (tic-tac-toe, most labs, the landing-page sims). Each port is a pure `*-core.js` module mirroring its Python
   package, and a parity test (`tests/test_*_parity.py`, `tests/web/*.test.mjs`) checks they agree.
@@ -49,6 +51,8 @@ site's menus; their pages, APIs and tests still exist (see the `HIDDEN` list in 
 4. The work runs in a worker thread with node and time limits, and the result goes back as JSON.
 
 Unknown pages get `web/404.html` (a tic-tac-toe game) with status 404; unknown paths under `/api/` stay JSON 404s.
+Frontend files go out with `Cache-Control: no-cache`, so browsers check the ETag on each load and a deploy shows up
+at once instead of after a stale cached copy.
 
 ## Data and models
 

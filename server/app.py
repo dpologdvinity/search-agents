@@ -23,6 +23,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
@@ -102,6 +103,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+# Outermost: compresses pages, scripts and the game backgrounds (the SVG scenes shrink about 6x).
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.include_router(npuzzle_api.router)
 app.include_router(connect4_api.router)
 app.include_router(game2048_api.router)
@@ -222,6 +225,9 @@ class WebFiles(StaticFiles):
         if path == "404.html":
             # StaticFiles serves this file by name with status 200. Asking for the 404 page directly is still a 404.
             return not_found_page()
+        # Without this, browsers guess how long to keep a file and can show an old menu or page after a deploy.
+        # "no-cache" means: keep it, but check the ETag first; an unchanged file costs a 304.
+        response.headers["Cache-Control"] = "no-cache"
         return response
 
 

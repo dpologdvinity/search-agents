@@ -246,12 +246,16 @@ input[type=range].cyber-range { width: 100%; accent-color: var(--pink); }
 
 /* ── Game pages: maximalist layer ─────────────────────────────────────── */
 
-/* Perspective neon floor behind every game page. The plane is clipped by a viewport-sized fixed wrapper
-   (.neon-floor, the first child of .proj-page on each game page). Its far, sideways projection would otherwise
+/* Perspective neon floor behind the labs and hidden games (the game pages have .game-bg instead). The plane is
+   clipped by a viewport-sized fixed wrapper (.neon-floor, the first child of .proj-page). Its far, sideways projection would otherwise
    count toward the document's scrollable width (scrollWidth ~8800px at 1280) until layout settles. */
 body:not(.landing-page)::before { z-index: 0; }
 .proj-page { position: relative; z-index: 2; }
 .neon-floor { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+/* Each game's own night scene (web/img/bg/<page>.svg, generated from the design sources) in place of the neon
+   floor: fixed behind the page, covering the window, cropped at the edges on other shapes. It sits before
+   .proj-page, not inside it, so the vignette and scanlines still paint over it. */
+.game-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: #020610 center / cover no-repeat; }
 .neon-floor-plane {
   position: absolute; left: -50%; right: -50%; bottom: -10vh; height: 60vh;
   background-image:
