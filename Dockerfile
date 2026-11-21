@@ -1,6 +1,6 @@
 # Serving image: search code, data files, backend, and frontend. No torch:
 # the neural heuristic runs from exported NumPy weights.
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
